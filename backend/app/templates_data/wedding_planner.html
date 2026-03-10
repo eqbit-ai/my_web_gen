@@ -1,0 +1,1598 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+  --wp-charcoal: #2c2c2c;
+  --wp-rose-gold: #d4a574;
+  --wp-blush: #fef7f0;
+  --wp-white: #ffffff;
+  --wp-rose-light: rgba(212, 165, 116, 0.15);
+  --wp-rose-dark: #b8906a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.wp-template {
+  font-family: 'Lato', sans-serif;
+  color: var(--wp-charcoal);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ============ NAVIGATION ============ */
+.wp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 20px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.wp-nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--wp-charcoal);
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.wp-nav-logo span {
+  color: var(--wp-rose-gold);
+}
+
+.wp-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 35px;
+}
+
+.wp-nav-links a {
+  text-decoration: none;
+  color: var(--wp-charcoal);
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.wp-nav-links a:hover {
+  color: var(--wp-rose-gold);
+}
+
+.wp-nav-cta {
+  background: var(--wp-rose-gold);
+  color: var(--wp-white) !important;
+  padding: 10px 28px;
+  border-radius: 30px;
+  font-weight: 700 !important;
+}
+
+.wp-nav-cta:hover {
+  background: var(--wp-rose-dark) !important;
+  color: var(--wp-white) !important;
+}
+
+.wp-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.wp-mobile-toggle span {
+  width: 25px;
+  height: 2px;
+  background: var(--wp-charcoal);
+  transition: 0.3s;
+}
+
+/* ============ HERO ============ */
+.wp-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.wp-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.45);
+}
+
+.wp-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(44, 44, 44, 0.3) 0%, rgba(44, 44, 44, 0.5) 100%);
+}
+
+.wp-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  padding: 0 30px;
+}
+
+.wp-hero-subtitle {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--wp-rose-gold);
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+
+.wp-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 4.5rem;
+  font-weight: 500;
+  color: var(--wp-white);
+  line-height: 1.15;
+  margin-bottom: 25px;
+}
+
+.wp-hero-title em {
+  font-style: italic;
+  color: var(--wp-rose-gold);
+}
+
+.wp-hero-desc {
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 550px;
+  margin: 0 auto 40px;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.wp-hero-btns {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.wp-btn-primary {
+  display: inline-block;
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+  padding: 16px 45px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 2px solid var(--wp-rose-gold);
+}
+
+.wp-btn-primary:hover {
+  background: var(--wp-rose-dark);
+  border-color: var(--wp-rose-dark);
+}
+
+.wp-btn-secondary {
+  display: inline-block;
+  background: transparent;
+  color: var(--wp-white);
+  padding: 16px 45px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.wp-btn-secondary:hover {
+  border-color: var(--wp-rose-gold);
+  color: var(--wp-rose-gold);
+}
+
+.wp-hero-scroll {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  color: var(--wp-white);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-hero-scroll-line {
+  width: 1px;
+  height: 40px;
+  background: var(--wp-rose-gold);
+  animation: wp-scroll-pulse 2s ease-in-out infinite;
+}
+
+@keyframes wp-scroll-pulse {
+  0%, 100% { height: 40px; opacity: 1; }
+  50% { height: 25px; opacity: 0.5; }
+}
+
+/* ============ SECTION COMMON ============ */
+.wp-section {
+  padding: 110px 60px;
+}
+
+.wp-section-header {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 70px;
+}
+
+.wp-section-label {
+  font-size: 0.8rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--wp-rose-gold);
+  margin-bottom: 15px;
+  font-weight: 400;
+}
+
+.wp-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.8rem;
+  font-weight: 500;
+  color: var(--wp-charcoal);
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.wp-section-divider {
+  width: 60px;
+  height: 2px;
+  background: var(--wp-rose-gold);
+  margin: 20px auto;
+}
+
+.wp-section-desc {
+  font-size: 1.05rem;
+  color: #777;
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+/* ============ SERVICES ============ */
+.wp-services {
+  background: var(--wp-blush);
+}
+
+.wp-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wp-service-card {
+  background: var(--wp-white);
+  padding: 50px 40px;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.4s ease;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.wp-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--wp-rose-gold);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.wp-service-card:hover::before {
+  transform: scaleX(1);
+}
+
+.wp-service-card:hover {
+  box-shadow: 0 20px 50px rgba(44, 44, 44, 0.08);
+  transform: translateY(-5px);
+}
+
+.wp-service-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--wp-rose-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 25px;
+  font-size: 2rem;
+}
+
+.wp-service-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--wp-charcoal);
+}
+
+.wp-service-text {
+  font-size: 0.95rem;
+  color: #888;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.wp-service-features {
+  list-style: none;
+  text-align: left;
+  padding: 0;
+}
+
+.wp-service-features li {
+  padding: 8px 0;
+  font-size: 0.9rem;
+  color: #666;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-service-features li::before {
+  content: "\2726";
+  color: var(--wp-rose-gold);
+  font-size: 0.7rem;
+}
+
+/* ============ GALLERY ============ */
+.wp-gallery {
+  background: var(--wp-white);
+}
+
+.wp-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 300px);
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wp-gallery-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.wp-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.wp-gallery-item:hover img {
+  transform: scale(1.08);
+}
+
+.wp-gallery-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 30px 20px 20px;
+  background: linear-gradient(transparent, rgba(44, 44, 44, 0.8));
+  color: var(--wp-white);
+  transform: translateY(100%);
+  transition: transform 0.4s ease;
+}
+
+.wp-gallery-item:hover .wp-gallery-caption {
+  transform: translateY(0);
+}
+
+.wp-gallery-caption h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.wp-gallery-caption p {
+  font-size: 0.8rem;
+  color: var(--wp-rose-gold);
+  letter-spacing: 1px;
+}
+
+/* ============ PROCESS ============ */
+.wp-process {
+  background: var(--wp-blush);
+}
+
+.wp-process-timeline {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.wp-process-timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--wp-rose-gold);
+  transform: translateX(-50%);
+}
+
+.wp-process-step {
+  display: flex;
+  align-items: center;
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.wp-process-step:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.wp-process-step:last-child {
+  margin-bottom: 0;
+}
+
+.wp-process-content {
+  width: 45%;
+  padding: 35px;
+  background: var(--wp-white);
+  border-radius: 12px;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+}
+
+.wp-process-step:nth-child(odd) .wp-process-content {
+  margin-right: auto;
+  text-align: right;
+}
+
+.wp-process-step:nth-child(even) .wp-process-content {
+  margin-left: auto;
+  text-align: left;
+}
+
+.wp-process-number {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.wp-process-step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--wp-charcoal);
+  margin-bottom: 10px;
+}
+
+.wp-process-step-text {
+  font-size: 0.95rem;
+  color: #777;
+  line-height: 1.7;
+}
+
+/* ============ VENDORS ============ */
+.wp-vendors {
+  background: var(--wp-white);
+}
+
+.wp-vendors-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.wp-vendor-card {
+  text-align: center;
+  padding: 40px 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  transition: all 0.3s ease;
+  background: var(--wp-blush);
+}
+
+.wp-vendor-card:hover {
+  border-color: var(--wp-rose-gold);
+  box-shadow: 0 10px 30px rgba(212, 165, 116, 0.15);
+}
+
+.wp-vendor-icon {
+  font-size: 2.2rem;
+  margin-bottom: 18px;
+}
+
+.wp-vendor-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--wp-charcoal);
+  margin-bottom: 8px;
+}
+
+.wp-vendor-desc {
+  font-size: 0.85rem;
+  color: #999;
+  line-height: 1.6;
+}
+
+/* ============ TESTIMONIALS ============ */
+.wp-testimonials {
+  background: var(--wp-charcoal);
+  position: relative;
+}
+
+.wp-testimonials .wp-section-title {
+  color: var(--wp-white);
+}
+
+.wp-testimonials .wp-section-desc {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.wp-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 35px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wp-testimonial-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 165, 116, 0.2);
+  border-radius: 12px;
+  padding: 40px 35px;
+  position: relative;
+}
+
+.wp-testimonial-quote {
+  font-size: 3rem;
+  color: var(--wp-rose-gold);
+  font-family: 'Playfair Display', serif;
+  line-height: 1;
+  margin-bottom: 15px;
+}
+
+.wp-testimonial-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.8;
+  font-style: italic;
+  margin-bottom: 25px;
+}
+
+.wp-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.wp-testimonial-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--wp-rose-gold);
+}
+
+.wp-testimonial-info h5 {
+  color: var(--wp-white);
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.wp-testimonial-info span {
+  font-size: 0.8rem;
+  color: var(--wp-rose-gold);
+  letter-spacing: 1px;
+}
+
+.wp-testimonial-stars {
+  color: var(--wp-rose-gold);
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  margin-bottom: 15px;
+}
+
+/* ============ PRICING ============ */
+.wp-pricing {
+  background: var(--wp-blush);
+}
+
+.wp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 35px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.wp-pricing-card {
+  background: var(--wp-white);
+  border-radius: 12px;
+  padding: 50px 40px;
+  text-align: center;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.wp-pricing-card.wp-featured {
+  border-color: var(--wp-rose-gold);
+  box-shadow: 0 20px 50px rgba(212, 165, 116, 0.2);
+  transform: scale(1.05);
+}
+
+.wp-pricing-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+  padding: 6px 25px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.wp-pricing-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--wp-charcoal);
+  margin-bottom: 10px;
+}
+
+.wp-pricing-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--wp-rose-gold);
+  margin-bottom: 5px;
+}
+
+.wp-pricing-price span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #999;
+}
+
+.wp-pricing-desc {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 30px;
+}
+
+.wp-pricing-list {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 35px;
+  padding: 0;
+}
+
+.wp-pricing-list li {
+  padding: 10px 0;
+  font-size: 0.9rem;
+  color: #666;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-pricing-list li::before {
+  content: "\2713";
+  color: var(--wp-rose-gold);
+  font-weight: 700;
+}
+
+.wp-pricing-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 15px 30px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 2px solid var(--wp-rose-gold);
+  color: var(--wp-rose-gold);
+  background: transparent;
+}
+
+.wp-pricing-btn:hover {
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+}
+
+.wp-pricing-card.wp-featured .wp-pricing-btn {
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+}
+
+.wp-pricing-card.wp-featured .wp-pricing-btn:hover {
+  background: var(--wp-rose-dark);
+  border-color: var(--wp-rose-dark);
+}
+
+/* ============ CONTACT ============ */
+.wp-contact {
+  background: var(--wp-white);
+}
+
+.wp-contact-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.wp-contact-image {
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  min-height: 500px;
+}
+
+.wp-contact-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wp-contact-image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 40px 30px;
+  background: linear-gradient(transparent, rgba(44, 44, 44, 0.9));
+  color: var(--wp-white);
+}
+
+.wp-contact-image-overlay h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.wp-contact-image-overlay p {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+}
+
+.wp-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.wp-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.wp-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.wp-form-group label {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--wp-charcoal);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+
+.wp-form-group input,
+.wp-form-group select,
+.wp-form-group textarea {
+  padding: 14px 18px;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  border-radius: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  background: var(--wp-blush);
+  color: var(--wp-charcoal);
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.wp-form-group input:focus,
+.wp-form-group select:focus,
+.wp-form-group textarea:focus {
+  border-color: var(--wp-rose-gold);
+}
+
+.wp-form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.wp-form-submit {
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+  padding: 16px 45px;
+  border: none;
+  border-radius: 30px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  align-self: flex-start;
+}
+
+.wp-form-submit:hover {
+  background: var(--wp-rose-dark);
+}
+
+/* ============ FOOTER ============ */
+.wp-footer {
+  background: var(--wp-charcoal);
+  padding: 80px 60px 30px;
+}
+
+.wp-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto 60px;
+}
+
+.wp-footer-brand h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--wp-white);
+  margin-bottom: 15px;
+}
+
+.wp-footer-brand h3 span {
+  color: var(--wp-rose-gold);
+}
+
+.wp-footer-brand p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.wp-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.wp-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wp-rose-gold);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.wp-footer-social a:hover {
+  background: var(--wp-rose-gold);
+  color: var(--wp-white);
+  border-color: var(--wp-rose-gold);
+}
+
+.wp-footer-col h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--wp-white);
+  margin-bottom: 20px;
+}
+
+.wp-footer-col ul {
+  list-style: none;
+  padding: 0;
+}
+
+.wp-footer-col ul li {
+  margin-bottom: 12px;
+}
+
+.wp-footer-col ul li a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.wp-footer-col ul li a:hover {
+  color: var(--wp-rose-gold);
+}
+
+.wp-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wp-footer-bottom p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.wp-footer-bottom a {
+  color: var(--wp-rose-gold);
+  text-decoration: none;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1024px) {
+  .wp-section {
+    padding: 80px 40px;
+  }
+
+  .wp-services-grid,
+  .wp-testimonials-grid,
+  .wp-pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wp-pricing-card.wp-featured {
+    transform: scale(1);
+  }
+
+  .wp-vendors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wp-gallery-grid {
+    grid-template-rows: repeat(2, 250px);
+  }
+
+  .wp-hero-title {
+    font-size: 3.5rem;
+  }
+
+  .wp-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .wp-nav {
+    padding: 15px 25px;
+  }
+
+  .wp-nav-links {
+    display: none;
+  }
+
+  .wp-mobile-toggle {
+    display: flex;
+  }
+
+  .wp-hero {
+    min-height: 600px;
+  }
+
+  .wp-hero-title {
+    font-size: 2.5rem;
+  }
+
+  .wp-hero-desc {
+    font-size: 1rem;
+  }
+
+  .wp-section {
+    padding: 70px 25px;
+  }
+
+  .wp-section-title {
+    font-size: 2.2rem;
+  }
+
+  .wp-services-grid,
+  .wp-testimonials-grid,
+  .wp-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 220px);
+  }
+
+  .wp-process-timeline::before {
+    left: 25px;
+  }
+
+  .wp-process-step,
+  .wp-process-step:nth-child(even) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 70px;
+  }
+
+  .wp-process-content {
+    width: 100%;
+    text-align: left !important;
+  }
+
+  .wp-process-number {
+    left: 25px;
+    transform: translateX(-50%);
+  }
+
+  .wp-contact-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-contact-image {
+    min-height: 300px;
+  }
+
+  .wp-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-vendors-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-footer {
+    padding: 60px 25px 25px;
+  }
+
+  .wp-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .wp-footer-bottom {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .wp-hero-btns {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .wp-hero-title {
+    font-size: 2rem;
+  }
+
+  .wp-section-title {
+    font-size: 1.8rem;
+  }
+
+  .wp-gallery-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(6, 220px);
+  }
+}
+</style>
+
+<div class="wp-template">
+
+  <!-- Navigation -->
+  <nav class="wp-nav">
+    <a href="#" class="wp-nav-logo">Eternal <span>Moments</span></a>
+    <ul class="wp-nav-links">
+      <li><a href="#wp-services">Services</a></li>
+      <li><a href="#wp-gallery">Gallery</a></li>
+      <li><a href="#wp-process">Process</a></li>
+      <li><a href="#wp-pricing">Pricing</a></li>
+      <li><a href="#wp-contact" class="wp-nav-cta">Inquire</a></li>
+    </ul>
+    <button class="wp-mobile-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="wp-hero">
+    <img src="https://images.pexels.com/photos/35204343/pexels-photo-35204343.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Beautiful wedding setting" class="wp-hero-bg">
+    <div class="wp-hero-overlay"></div>
+    <div class="wp-hero-content">
+      <p class="wp-hero-subtitle">Wedding Planning & Design</p>
+      <h1 class="wp-hero-title">Your Dream <em>Wedding</em> Starts Here</h1>
+      <p class="wp-hero-desc">We craft unforgettable celebrations filled with love, beauty, and every detail that makes your story uniquely yours.</p>
+      <div class="wp-hero-btns">
+        <a href="#wp-contact" class="wp-btn-primary">Start Planning</a>
+        <a href="#wp-gallery" class="wp-btn-secondary">View Our Work</a>
+      </div>
+    </div>
+    <div class="wp-hero-scroll">
+      <span>Scroll</span>
+      <div class="wp-hero-scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="wp-section wp-services" id="wp-services">
+    <div class="wp-section-header">
+      <p class="wp-section-label">What We Offer</p>
+      <h2 class="wp-section-title">Our Wedding Services</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">From intimate elopements to grand celebrations, we tailor every detail to reflect your love story.</p>
+    </div>
+    <div class="wp-services-grid">
+      <div class="wp-service-card">
+        <div class="wp-service-icon">&#9829;</div>
+        <h3 class="wp-service-name">Full Planning</h3>
+        <p class="wp-service-text">Complete wedding planning from engagement to honeymoon. We handle every detail so you can enjoy the journey.</p>
+        <ul class="wp-service-features">
+          <li>Budget management & tracking</li>
+          <li>Venue selection & booking</li>
+          <li>Vendor sourcing & coordination</li>
+          <li>Design concept & styling</li>
+          <li>Timeline & logistics planning</li>
+        </ul>
+      </div>
+      <div class="wp-service-card">
+        <div class="wp-service-icon">&#10047;</div>
+        <h3 class="wp-service-name">Partial Planning</h3>
+        <p class="wp-service-text">Already started planning? We step in wherever you need us and bring your vision together seamlessly.</p>
+        <ul class="wp-service-features">
+          <li>Vendor recommendations</li>
+          <li>Design consultation</li>
+          <li>Month-of coordination</li>
+          <li>Rehearsal management</li>
+          <li>Day-of timeline creation</li>
+        </ul>
+      </div>
+      <div class="wp-service-card">
+        <div class="wp-service-icon">&#10024;</div>
+        <h3 class="wp-service-name">Day-Of Coordination</h3>
+        <p class="wp-service-text">Relax and enjoy your wedding day while we manage every moment, ensuring a flawless celebration.</p>
+        <ul class="wp-service-features">
+          <li>Vendor confirmation & management</li>
+          <li>Setup & decor oversight</li>
+          <li>Guest coordination</li>
+          <li>Emergency kit & problem solving</li>
+          <li>End-of-night wrap up</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Real Weddings Gallery -->
+  <section class="wp-section wp-gallery" id="wp-gallery">
+    <div class="wp-section-header">
+      <p class="wp-section-label">Real Weddings</p>
+      <h2 class="wp-section-title">Love Stories We've Crafted</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">Browse through some of the beautiful weddings we've had the honor of bringing to life.</p>
+    </div>
+    <div class="wp-gallery-grid">
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/33438374/pexels-photo-33438374.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Garden wedding ceremony">
+        <div class="wp-gallery-caption">
+          <h4>Sarah & James</h4>
+          <p>Garden Ceremony</p>
+        </div>
+      </div>
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/29655731/pexels-photo-29655731.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant ballroom reception">
+        <div class="wp-gallery-caption">
+          <h4>Emily & Michael</h4>
+          <p>Ballroom Reception</p>
+        </div>
+      </div>
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/29655731/pexels-photo-29655731.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Beach wedding at sunset">
+        <div class="wp-gallery-caption">
+          <h4>Olivia & Daniel</h4>
+          <p>Sunset Beach Wedding</p>
+        </div>
+      </div>
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/27140160/pexels-photo-27140160.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Rustic barn celebration">
+        <div class="wp-gallery-caption">
+          <h4>Jessica & Ryan</h4>
+          <p>Rustic Barn Celebration</p>
+        </div>
+      </div>
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/33364997/pexels-photo-33364997.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Vineyard wedding">
+        <div class="wp-gallery-caption">
+          <h4>Lauren & Andrew</h4>
+          <p>Vineyard Romance</p>
+        </div>
+      </div>
+      <div class="wp-gallery-item">
+        <img src="https://images.pexels.com/photos/3094345/pexels-photo-3094345.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Intimate destination wedding">
+        <div class="wp-gallery-caption">
+          <h4>Sophia & William</h4>
+          <p>Destination Elopement</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Planning Process -->
+  <section class="wp-section wp-process" id="wp-process">
+    <div class="wp-section-header">
+      <p class="wp-section-label">How It Works</p>
+      <h2 class="wp-section-title">Your Planning Journey</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">A seamless four-step process designed to turn your wedding dreams into a breathtaking reality.</p>
+    </div>
+    <div class="wp-process-timeline">
+      <div class="wp-process-step">
+        <div class="wp-process-content">
+          <h3 class="wp-process-step-title">Discovery & Vision</h3>
+          <p class="wp-process-step-text">We begin with a complimentary consultation to learn your story, style, and dreams. Together, we define the vision for your perfect day.</p>
+        </div>
+        <div class="wp-process-number">01</div>
+      </div>
+      <div class="wp-process-step">
+        <div class="wp-process-content">
+          <h3 class="wp-process-step-title">Design & Planning</h3>
+          <p class="wp-process-step-text">Our team curates a detailed design concept, selects the ideal vendors, and builds a comprehensive timeline tailored to your celebration.</p>
+        </div>
+        <div class="wp-process-number">02</div>
+      </div>
+      <div class="wp-process-step">
+        <div class="wp-process-content">
+          <h3 class="wp-process-step-title">Coordination & Details</h3>
+          <p class="wp-process-step-text">Every element is refined and confirmed, from floral arrangements to seating charts. We manage all logistics so you never have to worry.</p>
+        </div>
+        <div class="wp-process-number">03</div>
+      </div>
+      <div class="wp-process-step">
+        <div class="wp-process-content">
+          <h3 class="wp-process-step-title">Your Perfect Day</h3>
+          <p class="wp-process-step-text">We orchestrate every moment of your wedding day with grace and precision, ensuring you and your guests experience pure magic.</p>
+        </div>
+        <div class="wp-process-number">04</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vendor Partners -->
+  <section class="wp-section wp-vendors" id="wp-vendors">
+    <div class="wp-section-header">
+      <p class="wp-section-label">Our Network</p>
+      <h2 class="wp-section-title">Trusted Vendor Partners</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">We collaborate with the finest professionals in the industry to ensure every element of your wedding is exceptional.</p>
+    </div>
+    <div class="wp-vendors-grid">
+      <div class="wp-vendor-card">
+        <div class="wp-vendor-icon">&#127860;</div>
+        <h4 class="wp-vendor-name">Catering & Cuisine</h4>
+        <p class="wp-vendor-desc">Award-winning chefs creating custom menus from elegant plated dinners to festive food stations.</p>
+      </div>
+      <div class="wp-vendor-card">
+        <div class="wp-vendor-icon">&#127804;</div>
+        <h4 class="wp-vendor-name">Floral Design</h4>
+        <p class="wp-vendor-desc">Artisan florists crafting stunning bouquets, centerpieces, and botanical installations.</p>
+      </div>
+      <div class="wp-vendor-card">
+        <div class="wp-vendor-icon">&#127909;</div>
+        <h4 class="wp-vendor-name">Photo & Video</h4>
+        <p class="wp-vendor-desc">Talented photographers and cinematographers capturing every precious moment beautifully.</p>
+      </div>
+      <div class="wp-vendor-card">
+        <div class="wp-vendor-icon">&#127926;</div>
+        <h4 class="wp-vendor-name">Music & Entertainment</h4>
+        <p class="wp-vendor-desc">Live bands, DJs, and performers creating the perfect atmosphere for your celebration.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="wp-section wp-testimonials" id="wp-testimonials">
+    <div class="wp-section-header">
+      <p class="wp-section-label">Love Notes</p>
+      <h2 class="wp-section-title">Words From Happy Couples</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">Hear from the couples whose love stories we've had the privilege of bringing to life.</p>
+    </div>
+    <div class="wp-testimonials-grid">
+      <div class="wp-testimonial-card">
+        <div class="wp-testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <div class="wp-testimonial-quote">&ldquo;</div>
+        <p class="wp-testimonial-text">They turned our wildest dreams into the most magical day of our lives. Every detail was perfect, from the ceremony to the last dance.</p>
+        <div class="wp-testimonial-author">
+          <img src="https://images.pexels.com/photos/169193/pexels-photo-169193.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah & James" class="wp-testimonial-avatar">
+          <div class="wp-testimonial-info">
+            <h5>Sarah & James</h5>
+            <span>June 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="wp-testimonial-card">
+        <div class="wp-testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <div class="wp-testimonial-quote">&ldquo;</div>
+        <p class="wp-testimonial-text">We were blown away by their creativity and attention to detail. Our guests are still talking about how beautiful everything was!</p>
+        <div class="wp-testimonial-author">
+          <img src="https://images.pexels.com/photos/12889987/pexels-photo-12889987.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Emily & Michael" class="wp-testimonial-avatar">
+          <div class="wp-testimonial-info">
+            <h5>Emily & Michael</h5>
+            <span>September 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="wp-testimonial-card">
+        <div class="wp-testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <div class="wp-testimonial-quote">&ldquo;</div>
+        <p class="wp-testimonial-text">Planning from abroad felt effortless with this team. They handled everything with such care and made our destination wedding a dream come true.</p>
+        <div class="wp-testimonial-author">
+          <img src="https://images.pexels.com/photos/29081017/pexels-photo-29081017.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Olivia & Daniel" class="wp-testimonial-avatar">
+          <div class="wp-testimonial-info">
+            <h5>Olivia & Daniel</h5>
+            <span>December 2025</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Packages -->
+  <section class="wp-section wp-pricing" id="wp-pricing">
+    <div class="wp-section-header">
+      <p class="wp-section-label">Investment</p>
+      <h2 class="wp-section-title">Pricing Packages</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">Thoughtfully designed packages to suit every couple's needs, style, and budget.</p>
+    </div>
+    <div class="wp-pricing-grid">
+      <div class="wp-pricing-card">
+        <h3 class="wp-pricing-name">Day-Of</h3>
+        <div class="wp-pricing-price">$2,500 <span>starting</span></div>
+        <p class="wp-pricing-desc">Perfect for the organized couple</p>
+        <ul class="wp-pricing-list">
+          <li>Detailed day-of timeline</li>
+          <li>Vendor confirmations</li>
+          <li>Ceremony & reception management</li>
+          <li>Up to 10 hours of coverage</li>
+          <li>Setup & breakdown oversight</li>
+          <li>Emergency kit on hand</li>
+        </ul>
+        <a href="#wp-contact" class="wp-pricing-btn">Get Started</a>
+      </div>
+      <div class="wp-pricing-card wp-featured">
+        <div class="wp-pricing-badge">Most Popular</div>
+        <h3 class="wp-pricing-name">Full Planning</h3>
+        <div class="wp-pricing-price">$8,000 <span>starting</span></div>
+        <p class="wp-pricing-desc">The complete wedding experience</p>
+        <ul class="wp-pricing-list">
+          <li>Everything in Day-Of package</li>
+          <li>Unlimited planning meetings</li>
+          <li>Custom design concept & mood board</li>
+          <li>Venue scouting & selection</li>
+          <li>Full vendor management</li>
+          <li>Budget tracking & negotiation</li>
+          <li>RSVP & guest management</li>
+          <li>Rehearsal coordination</li>
+        </ul>
+        <a href="#wp-contact" class="wp-pricing-btn">Get Started</a>
+      </div>
+      <div class="wp-pricing-card">
+        <h3 class="wp-pricing-name">Luxury</h3>
+        <div class="wp-pricing-price">$15,000 <span>starting</span></div>
+        <p class="wp-pricing-desc">For the most discerning couples</p>
+        <ul class="wp-pricing-list">
+          <li>Everything in Full Planning</li>
+          <li>Destination wedding support</li>
+          <li>Welcome party & farewell brunch</li>
+          <li>Custom stationery design</li>
+          <li>Guest experience curation</li>
+          <li>Honeymoon planning assistance</li>
+          <li>Dedicated lead planner</li>
+        </ul>
+        <a href="#wp-contact" class="wp-pricing-btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Inquiry -->
+  <section class="wp-section wp-contact" id="wp-contact">
+    <div class="wp-section-header">
+      <p class="wp-section-label">Get In Touch</p>
+      <h2 class="wp-section-title">Begin Your Love Story</h2>
+      <div class="wp-section-divider"></div>
+      <p class="wp-section-desc">We would love to hear about your wedding vision. Fill out the form below and we will be in touch within 24 hours.</p>
+    </div>
+    <div class="wp-contact-wrapper">
+      <div class="wp-contact-image">
+        <img src="https://images.pexels.com/photos/32147257/pexels-photo-32147257.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Romantic wedding setup">
+        <div class="wp-contact-image-overlay">
+          <h3>Let's Create Something Beautiful</h3>
+          <p>Every great wedding begins with a conversation. We can not wait to hear about yours.</p>
+        </div>
+      </div>
+      <form class="wp-contact-form">
+        <div class="wp-form-row">
+          <div class="wp-form-group">
+            <label for="wp-name1">Your Name</label>
+            <input type="text" id="wp-name1" placeholder="Partner one">
+          </div>
+          <div class="wp-form-group">
+            <label for="wp-name2">Partner's Name</label>
+            <input type="text" id="wp-name2" placeholder="Partner two">
+          </div>
+        </div>
+        <div class="wp-form-row">
+          <div class="wp-form-group">
+            <label for="wp-email">Email Address</label>
+            <input type="email" id="wp-email" placeholder="your@email.com">
+          </div>
+          <div class="wp-form-group">
+            <label for="wp-phone">Phone Number</label>
+            <input type="tel" id="wp-phone" placeholder="+1 (555) 000-0000">
+          </div>
+        </div>
+        <div class="wp-form-row">
+          <div class="wp-form-group">
+            <label for="wp-date">Wedding Date</label>
+            <input type="text" id="wp-date" placeholder="MM / DD / YYYY or TBD">
+          </div>
+          <div class="wp-form-group">
+            <label for="wp-guests">Estimated Guests</label>
+            <select id="wp-guests">
+              <option value="">Select range</option>
+              <option value="under-50">Under 50</option>
+              <option value="50-100">50 - 100</option>
+              <option value="100-200">100 - 200</option>
+              <option value="200+">200+</option>
+            </select>
+          </div>
+        </div>
+        <div class="wp-form-group">
+          <label for="wp-package">Interested Package</label>
+          <select id="wp-package">
+            <option value="">Select a package</option>
+            <option value="day-of">Day-Of Coordination</option>
+            <option value="full">Full Planning</option>
+            <option value="luxury">Luxury Experience</option>
+            <option value="unsure">Not Sure Yet</option>
+          </select>
+        </div>
+        <div class="wp-form-group">
+          <label for="wp-message">Tell Us About Your Vision</label>
+          <textarea id="wp-message" placeholder="Share your wedding dreams, venue ideas, theme inspiration..."></textarea>
+        </div>
+        <button type="submit" class="wp-form-submit">Send Inquiry</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="wp-footer">
+    <div class="wp-footer-grid">
+      <div class="wp-footer-brand">
+        <h3>Eternal <span>Moments</span></h3>
+        <p>Creating unforgettable wedding experiences with elegance, passion, and meticulous attention to every detail. Your love story deserves nothing less than perfection.</p>
+        <div class="wp-footer-social">
+          <a href="#" aria-label="Instagram">IG</a>
+          <a href="#" aria-label="Pinterest">PI</a>
+          <a href="#" aria-label="Facebook">FB</a>
+          <a href="#" aria-label="TikTok">TK</a>
+        </div>
+      </div>
+      <div class="wp-footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#">Full Planning</a></li>
+          <li><a href="#">Partial Planning</a></li>
+          <li><a href="#">Day-Of Coordination</a></li>
+          <li><a href="#">Destination Weddings</a></li>
+          <li><a href="#">Elopement Packages</a></li>
+        </ul>
+      </div>
+      <div class="wp-footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Our Team</a></li>
+          <li><a href="#">Real Weddings</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+      <div class="wp-footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="#">hello@eternalmoments.com</a></li>
+          <li><a href="#">+1 (555) 123-4567</a></li>
+          <li><a href="#">123 Blossom Lane</a></li>
+          <li><a href="#">New York, NY 10001</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wp-footer-bottom">
+      <p>&copy; 2026 Eternal Moments. All rights reserved.</p>
+      <p><a href="#">Privacy Policy</a> &middot; <a href="#">Terms of Service</a></p>
+    </div>
+  </footer>
+
+</div>

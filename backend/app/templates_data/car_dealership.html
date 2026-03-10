@@ -1,0 +1,1676 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* === RESET & BASE === */
+.cardeal-wrapper * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cardeal-wrapper {
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  overflow-x: hidden;
+  background: #f8f9fa;
+}
+
+.cardeal-wrapper h1,
+.cardeal-wrapper h2,
+.cardeal-wrapper h3,
+.cardeal-wrapper h4,
+.cardeal-wrapper h5 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cardeal-wrapper a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.cardeal-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.cardeal-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* === NAVIGATION === */
+.cardeal-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(230, 57, 70, 0.2);
+  padding: 0 40px;
+}
+
+.cardeal-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+.cardeal-logo {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.cardeal-logo span {
+  color: #e63946;
+}
+
+.cardeal-nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+  align-items: center;
+}
+
+.cardeal-nav-links li a {
+  color: #b0b8c4;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+
+.cardeal-nav-links li a:hover {
+  color: #e63946;
+}
+
+.cardeal-nav-cta {
+  background: #e63946;
+  color: #ffffff !important;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.cardeal-nav-cta:hover {
+  background: #c52f3b;
+  transform: translateY(-1px);
+}
+
+.cardeal-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 5px;
+}
+
+.cardeal-mobile-toggle span {
+  width: 26px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+/* === HERO === */
+.cardeal-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d1117;
+  overflow: hidden;
+}
+
+.cardeal-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.cardeal-hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.3);
+}
+
+.cardeal-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(135deg, rgba(13,17,23,0.85) 0%, rgba(13,17,23,0.5) 50%, rgba(230,57,70,0.15) 100%);
+}
+
+.cardeal-hero-content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  max-width: 850px;
+  padding: 0 20px;
+}
+
+.cardeal-hero-badge {
+  display: inline-block;
+  background: rgba(230, 57, 70, 0.15);
+  border: 1px solid rgba(230, 57, 70, 0.4);
+  color: #e63946;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  padding: 8px 24px;
+  border-radius: 2px;
+  margin-bottom: 24px;
+}
+
+.cardeal-hero h1 {
+  font-size: 72px;
+  line-height: 1.05;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.cardeal-hero h1 span {
+  color: #e63946;
+  display: block;
+}
+
+.cardeal-hero-sub {
+  font-size: 18px;
+  color: #9ca3af;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+.cardeal-hero-btns {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cardeal-btn-primary {
+  background: #e63946;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 16px 40px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+.cardeal-btn-primary:hover {
+  background: #c52f3b;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(230, 57, 70, 0.35);
+}
+
+.cardeal-btn-outline {
+  background: transparent;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 16px 40px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.cardeal-btn-outline:hover {
+  border-color: #e63946;
+  background: rgba(230, 57, 70, 0.1);
+}
+
+.cardeal-hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin-top: 64px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.cardeal-hero-stat h3 {
+  font-size: 36px;
+  color: #e63946;
+  margin-bottom: 4px;
+}
+
+.cardeal-hero-stat p {
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* === SECTION SHARED === */
+.cardeal-section {
+  padding: 100px 0;
+}
+
+.cardeal-section-dark {
+  background: #0d1117;
+  color: #ffffff;
+}
+
+.cardeal-section-light {
+  background: #f8f9fa;
+}
+
+.cardeal-section-white {
+  background: #ffffff;
+}
+
+.cardeal-section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.cardeal-section-header h2 {
+  font-size: 42px;
+  margin-bottom: 16px;
+  color: inherit;
+}
+
+.cardeal-section-header .cardeal-accent-line {
+  width: 60px;
+  height: 4px;
+  background: #e63946;
+  margin: 0 auto 20px;
+  border-radius: 2px;
+}
+
+.cardeal-section-header p {
+  font-size: 16px;
+  color: #6b7280;
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.cardeal-section-dark .cardeal-section-header p {
+  color: #9ca3af;
+}
+
+/* === FEATURED VEHICLES === */
+.cardeal-vehicles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.cardeal-vehicle-card {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cardeal-vehicle-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+
+.cardeal-vehicle-img {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.cardeal-vehicle-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.cardeal-vehicle-card:hover .cardeal-vehicle-img img {
+  transform: scale(1.05);
+}
+
+.cardeal-vehicle-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #e63946;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 2px;
+}
+
+.cardeal-vehicle-body {
+  padding: 20px;
+}
+
+.cardeal-vehicle-body h3 {
+  font-size: 20px;
+  color: #0d1117;
+  margin-bottom: 4px;
+}
+
+.cardeal-vehicle-year {
+  font-size: 13px;
+  color: #e63946;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.cardeal-vehicle-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.cardeal-spec {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cardeal-spec strong {
+  color: #333;
+  display: block;
+  font-size: 13px;
+}
+
+.cardeal-vehicle-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardeal-vehicle-price {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #e63946;
+}
+
+.cardeal-vehicle-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0d1117;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+
+.cardeal-vehicle-link:hover {
+  color: #e63946;
+}
+
+/* === INVENTORY SEARCH === */
+.cardeal-search-bar {
+  background: #0d1117;
+  border-radius: 12px;
+  padding: 32px 40px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+
+.cardeal-search-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.cardeal-search-group label {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.cardeal-search-group select,
+.cardeal-search-group input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.cardeal-search-group select:focus,
+.cardeal-search-group input:focus {
+  border-color: #e63946;
+}
+
+.cardeal-search-group select option {
+  background: #0d1117;
+  color: #ffffff;
+}
+
+.cardeal-search-btn {
+  background: #e63946;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 12px 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s;
+}
+
+.cardeal-search-btn:hover {
+  background: #c52f3b;
+}
+
+/* === WHY CHOOSE US === */
+.cardeal-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+
+.cardeal-feature-card {
+  text-align: center;
+  padding: 40px 24px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.cardeal-feature-card:hover {
+  border-color: rgba(230, 57, 70, 0.3);
+  background: rgba(230, 57, 70, 0.05);
+}
+
+.cardeal-feature-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(230, 57, 70, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.cardeal-feature-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: #e63946;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cardeal-feature-card h3 {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.cardeal-feature-card p {
+  font-size: 14px;
+  color: #9ca3af;
+  line-height: 1.7;
+}
+
+/* === FINANCING === */
+.cardeal-financing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.cardeal-finance-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  border: 2px solid transparent;
+  transition: border-color 0.3s, transform 0.3s;
+  position: relative;
+}
+
+.cardeal-finance-card:hover {
+  transform: translateY(-4px);
+}
+
+.cardeal-finance-featured {
+  border-color: #e63946;
+}
+
+.cardeal-finance-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #e63946;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 6px 20px;
+  border-radius: 2px;
+}
+
+.cardeal-finance-card h3 {
+  font-size: 22px;
+  color: #0d1117;
+  margin-bottom: 8px;
+}
+
+.cardeal-finance-rate {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: #e63946;
+  line-height: 1;
+  margin: 20px 0 8px;
+}
+
+.cardeal-finance-rate span {
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.cardeal-finance-term {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.cardeal-finance-perks {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.cardeal-finance-perks li {
+  font-size: 14px;
+  color: #555;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardeal-finance-perks li::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  background: rgba(230, 57, 70, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23e63946' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px;
+}
+
+.cardeal-finance-btn {
+  display: inline-block;
+  background: #0d1117;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.cardeal-finance-featured .cardeal-finance-btn {
+  background: #e63946;
+}
+
+.cardeal-finance-btn:hover {
+  background: #e63946;
+}
+
+.cardeal-finance-featured .cardeal-finance-btn:hover {
+  background: #c52f3b;
+}
+
+/* === REVIEWS === */
+.cardeal-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.cardeal-review-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.cardeal-review-quote {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 48px;
+  font-family: 'Rajdhani', sans-serif;
+  color: rgba(230, 57, 70, 0.15);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cardeal-review-stars {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 16px;
+}
+
+.cardeal-star {
+  width: 16px;
+  height: 16px;
+  color: #e63946;
+}
+
+.cardeal-review-card p {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.cardeal-review-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardeal-review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.cardeal-review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardeal-review-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0d1117;
+}
+
+.cardeal-review-title {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* === TEST DRIVE CTA === */
+.cardeal-cta-section {
+  position: relative;
+  padding: 120px 0;
+  overflow: hidden;
+}
+
+.cardeal-cta-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.cardeal-cta-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.2);
+}
+
+.cardeal-cta-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(230,57,70,0.5) 0%, rgba(13,17,23,0.9) 100%);
+}
+
+.cardeal-cta-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.cardeal-cta-content h2 {
+  font-size: 52px;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.cardeal-cta-content p {
+  font-size: 18px;
+  color: rgba(255,255,255,0.7);
+  max-width: 550px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+.cardeal-cta-form {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cardeal-cta-form input {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.cardeal-cta-form input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.cardeal-cta-form input:focus {
+  border-color: #e63946;
+}
+
+.cardeal-cta-form button {
+  background: #e63946;
+  color: #ffffff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 16px 40px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.cardeal-cta-form button:hover {
+  background: #c52f3b;
+}
+
+/* === CONTACT / DEALERSHIP INFO === */
+.cardeal-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.cardeal-contact-info h3 {
+  font-size: 26px;
+  color: #0d1117;
+  margin-bottom: 20px;
+}
+
+.cardeal-contact-info > p {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.cardeal-contact-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cardeal-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cardeal-contact-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: rgba(230, 57, 70, 0.08);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardeal-contact-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #e63946;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cardeal-contact-item h4 {
+  font-size: 14px;
+  color: #0d1117;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cardeal-contact-item p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.cardeal-contact-map {
+  border-radius: 12px;
+  overflow: hidden;
+  height: 400px;
+  background: #e5e7eb;
+}
+
+.cardeal-contact-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardeal-hours-table {
+  margin-top: 28px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cardeal-hours-table td {
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.cardeal-hours-table td:first-child {
+  font-weight: 600;
+  color: #0d1117;
+  width: 140px;
+}
+
+.cardeal-hours-table td:last-child {
+  color: #6b7280;
+}
+
+/* === FOOTER === */
+.cardeal-footer {
+  background: #0d1117;
+  padding: 64px 0 0;
+}
+
+.cardeal-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.cardeal-footer-brand p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.8;
+  margin-top: 16px;
+  max-width: 300px;
+}
+
+.cardeal-footer-social {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cardeal-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.cardeal-footer-social a:hover {
+  background: #e63946;
+}
+
+.cardeal-footer-social svg {
+  width: 16px;
+  height: 16px;
+  stroke: #ffffff;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cardeal-footer-col h4 {
+  font-size: 14px;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.cardeal-footer-col ul {
+  list-style: none;
+}
+
+.cardeal-footer-col ul li {
+  margin-bottom: 12px;
+}
+
+.cardeal-footer-col ul li a {
+  font-size: 14px;
+  color: #6b7280;
+  transition: color 0.3s;
+}
+
+.cardeal-footer-col ul li a:hover {
+  color: #e63946;
+}
+
+.cardeal-footer-bottom {
+  padding: 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.cardeal-footer-bottom p {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.cardeal-footer-bottom-links {
+  display: flex;
+  gap: 24px;
+}
+
+.cardeal-footer-bottom-links a {
+  font-size: 13px;
+  color: #6b7280;
+  transition: color 0.3s;
+}
+
+.cardeal-footer-bottom-links a:hover {
+  color: #e63946;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
+  .cardeal-vehicles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cardeal-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cardeal-hero h1 {
+    font-size: 52px;
+  }
+  .cardeal-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cardeal-nav-links {
+    display: none;
+  }
+  .cardeal-mobile-toggle {
+    display: flex;
+  }
+  .cardeal-hero h1 {
+    font-size: 40px;
+  }
+  .cardeal-hero-stats {
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .cardeal-hero-stat h3 {
+    font-size: 28px;
+  }
+  .cardeal-vehicles-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .cardeal-search-bar {
+    padding: 24px;
+    flex-direction: column;
+  }
+  .cardeal-search-group {
+    min-width: 100%;
+  }
+  .cardeal-features-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .cardeal-financing-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .cardeal-reviews-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .cardeal-contact-grid {
+    grid-template-columns: 1fr;
+  }
+  .cardeal-section-header h2 {
+    font-size: 32px;
+  }
+  .cardeal-cta-content h2 {
+    font-size: 36px;
+  }
+  .cardeal-section {
+    padding: 72px 0;
+  }
+  .cardeal-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardeal-hero h1 {
+    font-size: 32px;
+  }
+  .cardeal-hero-btns {
+    flex-direction: column;
+    align-items: center;
+  }
+  .cardeal-cta-form {
+    flex-direction: column;
+  }
+  .cardeal-hero-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+</style>
+
+<div class="cardeal-wrapper">
+
+  <!-- NAVIGATION -->
+  <nav class="cardeal-nav">
+    <div class="cardeal-nav-inner">
+      <div class="cardeal-logo">Apex<span>Motors</span></div>
+      <ul class="cardeal-nav-links">
+        <li><a href="#vehicles">Inventory</a></li>
+        <li><a href="#why-us">About</a></li>
+        <li><a href="#financing">Financing</a></li>
+        <li><a href="#reviews">Reviews</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="#test-drive" class="cardeal-nav-cta">Book Test Drive</a></li>
+      </ul>
+      <button class="cardeal-mobile-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="cardeal-hero">
+    <div class="cardeal-hero-bg">
+      <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury car on road">
+    </div>
+    <div class="cardeal-hero-overlay"></div>
+    <div class="cardeal-hero-content">
+      <div class="cardeal-hero-badge">Premium Auto Dealership</div>
+      <h1>Find Your <span>Perfect Drive</span></h1>
+      <p class="cardeal-hero-sub">Discover an unrivaled selection of certified pre-owned and brand new vehicles. Every car inspected, every deal transparent.</p>
+      <div class="cardeal-hero-btns">
+        <button class="cardeal-btn-primary">Browse Inventory</button>
+        <button class="cardeal-btn-outline">Schedule Test Drive</button>
+      </div>
+      <div class="cardeal-hero-stats">
+        <div class="cardeal-hero-stat">
+          <h3>2,400+</h3>
+          <p>Vehicles Sold</p>
+        </div>
+        <div class="cardeal-hero-stat">
+          <h3>15+</h3>
+          <p>Years Experience</p>
+        </div>
+        <div class="cardeal-hero-stat">
+          <h3>98%</h3>
+          <p>Customer Satisfaction</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED VEHICLES -->
+  <section class="cardeal-section cardeal-section-light" id="vehicles">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>Featured Vehicles</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>Hand-picked selections from our premium inventory, each rigorously inspected and ready for the road.</p>
+      </div>
+      <div class="cardeal-vehicles-grid">
+
+        <div class="cardeal-vehicle-card">
+          <div class="cardeal-vehicle-img">
+            <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sports sedan">
+            <div class="cardeal-vehicle-tag">New Arrival</div>
+          </div>
+          <div class="cardeal-vehicle-body">
+            <h3>Aero Sport GT</h3>
+            <div class="cardeal-vehicle-year">2025 Model</div>
+            <div class="cardeal-vehicle-specs">
+              <div class="cardeal-spec"><strong>382 HP</strong>Twin Turbo V6</div>
+              <div class="cardeal-spec"><strong>AWD</strong>Drivetrain</div>
+              <div class="cardeal-spec"><strong>8-Speed</strong>Automatic</div>
+              <div class="cardeal-spec"><strong>12,400 mi</strong>Mileage</div>
+            </div>
+            <div class="cardeal-vehicle-footer">
+              <div class="cardeal-vehicle-price">$54,900</div>
+              <a href="#" class="cardeal-vehicle-link">Details &rarr;</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardeal-vehicle-card">
+          <div class="cardeal-vehicle-img">
+            <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury SUV">
+            <div class="cardeal-vehicle-tag">Best Seller</div>
+          </div>
+          <div class="cardeal-vehicle-body">
+            <h3>Summit LX Pro</h3>
+            <div class="cardeal-vehicle-year">2024 Model</div>
+            <div class="cardeal-vehicle-specs">
+              <div class="cardeal-spec"><strong>295 HP</strong>Turbo I4</div>
+              <div class="cardeal-spec"><strong>4WD</strong>Drivetrain</div>
+              <div class="cardeal-spec"><strong>9-Speed</strong>Automatic</div>
+              <div class="cardeal-spec"><strong>8,200 mi</strong>Mileage</div>
+            </div>
+            <div class="cardeal-vehicle-footer">
+              <div class="cardeal-vehicle-price">$47,500</div>
+              <a href="#" class="cardeal-vehicle-link">Details &rarr;</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardeal-vehicle-card">
+          <div class="cardeal-vehicle-img">
+            <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Electric coupe">
+            <div class="cardeal-vehicle-tag">Electric</div>
+          </div>
+          <div class="cardeal-vehicle-body">
+            <h3>Volt E-Coupe</h3>
+            <div class="cardeal-vehicle-year">2025 Model</div>
+            <div class="cardeal-vehicle-specs">
+              <div class="cardeal-spec"><strong>450 HP</strong>Dual Motor</div>
+              <div class="cardeal-spec"><strong>AWD</strong>Drivetrain</div>
+              <div class="cardeal-spec"><strong>1-Speed</strong>Direct Drive</div>
+              <div class="cardeal-spec"><strong>3,100 mi</strong>Mileage</div>
+            </div>
+            <div class="cardeal-vehicle-footer">
+              <div class="cardeal-vehicle-price">$62,900</div>
+              <a href="#" class="cardeal-vehicle-link">Details &rarr;</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardeal-vehicle-card">
+          <div class="cardeal-vehicle-img">
+            <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury sedan">
+            <div class="cardeal-vehicle-tag">Certified</div>
+          </div>
+          <div class="cardeal-vehicle-body">
+            <h3>Prestige S-Class</h3>
+            <div class="cardeal-vehicle-year">2024 Model</div>
+            <div class="cardeal-vehicle-specs">
+              <div class="cardeal-spec"><strong>510 HP</strong>V8 BiTurbo</div>
+              <div class="cardeal-spec"><strong>RWD</strong>Drivetrain</div>
+              <div class="cardeal-spec"><strong>7-Speed</strong>Automatic</div>
+              <div class="cardeal-spec"><strong>18,700 mi</strong>Mileage</div>
+            </div>
+            <div class="cardeal-vehicle-footer">
+              <div class="cardeal-vehicle-price">$78,400</div>
+              <a href="#" class="cardeal-vehicle-link">Details &rarr;</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- INVENTORY SEARCH -->
+  <section class="cardeal-section cardeal-section-white">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>Search Our Inventory</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>Filter through hundreds of vehicles to find exactly what fits your lifestyle and budget.</p>
+      </div>
+      <div class="cardeal-search-bar">
+        <div class="cardeal-search-group">
+          <label>Make</label>
+          <select>
+            <option>All Makes</option>
+            <option>Aero</option>
+            <option>Summit</option>
+            <option>Volt</option>
+            <option>Prestige</option>
+          </select>
+        </div>
+        <div class="cardeal-search-group">
+          <label>Body Type</label>
+          <select>
+            <option>All Types</option>
+            <option>Sedan</option>
+            <option>SUV</option>
+            <option>Coupe</option>
+            <option>Truck</option>
+          </select>
+        </div>
+        <div class="cardeal-search-group">
+          <label>Year</label>
+          <select>
+            <option>Any Year</option>
+            <option>2025</option>
+            <option>2024</option>
+            <option>2023</option>
+            <option>2022</option>
+          </select>
+        </div>
+        <div class="cardeal-search-group">
+          <label>Max Price</label>
+          <input type="text" placeholder="$100,000">
+        </div>
+        <button class="cardeal-search-btn">Search</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY CHOOSE US -->
+  <section class="cardeal-section cardeal-section-dark" id="why-us">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>Why Choose Apex Motors</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>We combine decades of expertise with a commitment to transparency, quality, and customer satisfaction.</p>
+      </div>
+      <div class="cardeal-features-grid">
+
+        <div class="cardeal-feature-card">
+          <div class="cardeal-feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>150-Point Inspection</h3>
+          <p>Every vehicle undergoes a rigorous multi-point inspection by our certified technicians before hitting the lot.</p>
+        </div>
+
+        <div class="cardeal-feature-card">
+          <div class="cardeal-feature-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M12 12v6"/></svg>
+          </div>
+          <h3>Best Price Guarantee</h3>
+          <p>Found a lower price elsewhere? We will match it. Our transparent pricing means no hidden fees, ever.</p>
+        </div>
+
+        <div class="cardeal-feature-card">
+          <div class="cardeal-feature-icon">
+            <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <h3>Flexible Financing</h3>
+          <p>We partner with top lenders to offer competitive rates and flexible terms tailored to your financial situation.</p>
+        </div>
+
+        <div class="cardeal-feature-card">
+          <div class="cardeal-feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <h3>Dedicated Support</h3>
+          <p>From selection to service, our team provides ongoing support long after you drive off the lot.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FINANCING OPTIONS -->
+  <section class="cardeal-section cardeal-section-light" id="financing">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>Financing Options</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>Flexible plans designed to put you behind the wheel without stretching your budget.</p>
+      </div>
+      <div class="cardeal-financing-grid">
+
+        <div class="cardeal-finance-card">
+          <h3>Standard Plan</h3>
+          <div class="cardeal-finance-rate">3.9<span>% APR</span></div>
+          <div class="cardeal-finance-term">Up to 60 months</div>
+          <ul class="cardeal-finance-perks">
+            <li>No down payment required</li>
+            <li>Fixed monthly payments</li>
+            <li>Pre-approval in minutes</li>
+            <li>All credit types welcome</li>
+          </ul>
+          <button class="cardeal-finance-btn">Apply Now</button>
+        </div>
+
+        <div class="cardeal-finance-card cardeal-finance-featured">
+          <div class="cardeal-finance-badge">Most Popular</div>
+          <h3>Premium Plan</h3>
+          <div class="cardeal-finance-rate">2.5<span>% APR</span></div>
+          <div class="cardeal-finance-term">Up to 72 months</div>
+          <ul class="cardeal-finance-perks">
+            <li>Low down payment options</li>
+            <li>GAP insurance included</li>
+            <li>Rate lock for 30 days</li>
+            <li>Extended warranty bundle</li>
+            <li>Free maintenance for 1 year</li>
+          </ul>
+          <button class="cardeal-finance-btn">Apply Now</button>
+        </div>
+
+        <div class="cardeal-finance-card">
+          <h3>Lease Plan</h3>
+          <div class="cardeal-finance-rate">$299<span>/mo</span></div>
+          <div class="cardeal-finance-term">36-month lease</div>
+          <ul class="cardeal-finance-perks">
+            <li>Low monthly payments</li>
+            <li>New car every 3 years</li>
+            <li>Maintenance covered</li>
+            <li>Flexible end-of-lease options</li>
+          </ul>
+          <button class="cardeal-finance-btn">Apply Now</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CUSTOMER REVIEWS -->
+  <section class="cardeal-section cardeal-section-white" id="reviews">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>What Our Customers Say</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>Real stories from real drivers who found their perfect vehicle with us.</p>
+      </div>
+      <div class="cardeal-reviews-grid">
+
+        <div class="cardeal-review-card">
+          <div class="cardeal-review-quote">"</div>
+          <div class="cardeal-review-stars">
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p>The entire process was seamless from start to finish. The team at Apex Motors found me the exact SUV I wanted at a price I could actually afford. Absolutely recommend!</p>
+          <div class="cardeal-review-author">
+            <div class="cardeal-review-avatar"><img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Customer"></div>
+            <div>
+              <div class="cardeal-review-name">Marcus Thompson</div>
+              <div class="cardeal-review-title">Purchased Summit LX Pro</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardeal-review-card">
+          <div class="cardeal-review-quote">"</div>
+          <div class="cardeal-review-stars">
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p>I was nervous about buying my first car, but the financing team walked me through every step. Got approved same day with a rate I never expected. Five stars all around.</p>
+          <div class="cardeal-review-author">
+            <div class="cardeal-review-avatar"><img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Customer"></div>
+            <div>
+              <div class="cardeal-review-name">Sarah Mitchell</div>
+              <div class="cardeal-review-title">Purchased Volt E-Coupe</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardeal-review-card">
+          <div class="cardeal-review-quote">"</div>
+          <div class="cardeal-review-stars">
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg class="cardeal-star" viewBox="0 0 24 24" fill="#e63946" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p>Third car I have bought from Apex and every experience has been outstanding. Their after-sale service is what keeps me coming back. Truly a dealership that cares.</p>
+          <div class="cardeal-review-author">
+            <div class="cardeal-review-avatar"><img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Customer"></div>
+            <div>
+              <div class="cardeal-review-name">David Chen</div>
+              <div class="cardeal-review-title">Loyal Customer Since 2019</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TEST DRIVE CTA -->
+  <section class="cardeal-cta-section" id="test-drive">
+    <div class="cardeal-cta-bg">
+      <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Car driving on highway">
+    </div>
+    <div class="cardeal-cta-overlay"></div>
+    <div class="cardeal-container cardeal-cta-content">
+      <h2>Book A Test Drive</h2>
+      <p>Feel the power firsthand. Schedule a no-obligation test drive today and experience the difference.</p>
+      <div class="cardeal-cta-form">
+        <input type="text" placeholder="Your Full Name">
+        <input type="email" placeholder="Email Address">
+        <input type="tel" placeholder="Phone Number">
+        <button>Book Now</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT / DEALERSHIP INFO -->
+  <section class="cardeal-section cardeal-section-white" id="contact">
+    <div class="cardeal-container">
+      <div class="cardeal-section-header">
+        <h2>Visit Our Dealership</h2>
+        <div class="cardeal-accent-line"></div>
+        <p>Stop by and explore our showroom. Our team is ready to help you find your next vehicle.</p>
+      </div>
+      <div class="cardeal-contact-grid">
+
+        <div class="cardeal-contact-info">
+          <h3>Apex Motors Showroom</h3>
+          <p>Located in the heart of the city, our state-of-the-art showroom features over 200 vehicles on display. Walk in anytime during business hours or book an appointment for a personalized experience.</p>
+
+          <ul class="cardeal-contact-list">
+            <li class="cardeal-contact-item">
+              <div class="cardeal-contact-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div>
+                <h4>Address</h4>
+                <p>1200 Motor City Boulevard<br>Dubai, United Arab Emirates</p>
+              </div>
+            </li>
+            <li class="cardeal-contact-item">
+              <div class="cardeal-contact-icon">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              </div>
+              <div>
+                <h4>Phone</h4>
+                <p>+971 4 555 0123<br>+971 4 555 0124</p>
+              </div>
+            </li>
+            <li class="cardeal-contact-item">
+              <div class="cardeal-contact-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div>
+                <h4>Email</h4>
+                <p>sales@apexmotors.ae<br>support@apexmotors.ae</p>
+              </div>
+            </li>
+          </ul>
+
+          <table class="cardeal-hours-table">
+            <tr><td>Monday - Friday</td><td>9:00 AM - 9:00 PM</td></tr>
+            <tr><td>Saturday</td><td>10:00 AM - 8:00 PM</td></tr>
+            <tr><td>Sunday</td><td>11:00 AM - 6:00 PM</td></tr>
+          </table>
+        </div>
+
+        <div class="cardeal-contact-map">
+          <img src="https://images.pexels.com/photos/831475/pexels-photo-831475.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Dealership location map">
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="cardeal-footer">
+    <div class="cardeal-container">
+      <div class="cardeal-footer-grid">
+        <div class="cardeal-footer-brand">
+          <div class="cardeal-logo">Apex<span>Motors</span></div>
+          <p>Your trusted automotive partner since 2009. We are committed to delivering the finest vehicles and the most transparent buying experience in the region.</p>
+          <div class="cardeal-footer-social">
+            <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+            <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 11.75a29 29 0 00.46 5.33A2.78 2.78 0 003.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 001.94-2 29 29 0 00.46-5.25 29 29 0 00-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+          </div>
+        </div>
+        <div class="cardeal-footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#vehicles">New Inventory</a></li>
+            <li><a href="#vehicles">Pre-Owned</a></li>
+            <li><a href="#financing">Financing</a></li>
+            <li><a href="#test-drive">Test Drive</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="cardeal-footer-col">
+          <h4>Services</h4>
+          <ul>
+            <li><a href="#">Car Servicing</a></li>
+            <li><a href="#">Parts & Accessories</a></li>
+            <li><a href="#">Trade-In Appraisal</a></li>
+            <li><a href="#">Insurance</a></li>
+            <li><a href="#">Roadside Assistance</a></li>
+          </ul>
+        </div>
+        <div class="cardeal-footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Car Buying Guide</a></li>
+            <li><a href="#">Finance Calculator</a></li>
+            <li><a href="#">Vehicle Comparison</a></li>
+            <li><a href="#">Blog & News</a></li>
+            <li><a href="#">FAQs</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="cardeal-footer-bottom">
+        <p>&copy; 2025 Apex Motors. All rights reserved.</p>
+        <div class="cardeal-footer-bottom-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,1339 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+/* ===== BOOKSTORE RESET & BASE ===== */
+.bkst-wrapper * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.bkst-wrapper {
+  font-family: 'Source Serif 4', Georgia, serif;
+  color: #3d2b1f;
+  background-color: #faf3eb;
+  overflow-x: hidden;
+  line-height: 1.7;
+}
+
+.bkst-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bkst-wrapper a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s ease;
+}
+
+.bkst-wrapper a:hover {
+  color: #c9815b;
+}
+
+.bkst-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.bkst-section-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+  color: #3d2b1f;
+}
+
+.bkst-section-subtitle {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #6b5548;
+  max-width: 600px;
+  margin: 0 auto 48px;
+  font-style: italic;
+}
+
+.bkst-section {
+  padding: 80px 0;
+}
+
+.bkst-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  font-family: 'Libre Baskerville', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.bkst-btn-primary {
+  background-color: #c9815b;
+  color: #ffffff;
+}
+
+.bkst-btn-primary:hover {
+  background-color: #b06e48;
+  color: #ffffff;
+}
+
+.bkst-btn-outline {
+  background: transparent;
+  border: 2px solid #3d2b1f;
+  color: #3d2b1f;
+}
+
+.bkst-btn-outline:hover {
+  background-color: #3d2b1f;
+  color: #ffffff;
+}
+
+/* ===== BOOKSTORE NAVBAR ===== */
+.bkst-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(250, 243, 235, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(61, 43, 31, 0.1);
+  padding: 16px 0;
+}
+
+.bkst-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.bkst-logo {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #3d2b1f;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bkst-logo-icon {
+  font-size: 1.8rem;
+}
+
+.bkst-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+  align-items: center;
+}
+
+.bkst-nav-links a {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.bkst-nav-links a:hover {
+  color: #c9815b;
+}
+
+.bkst-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.bkst-mobile-toggle span {
+  width: 26px;
+  height: 2px;
+  background: #3d2b1f;
+  border-radius: 2px;
+}
+
+/* ===== BOOKSTORE HERO ===== */
+.bkst-hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: linear-gradient(135deg, #faf3eb 0%, #f0e4d4 50%, #e8d5c0 100%);
+  padding-top: 80px;
+}
+
+.bkst-hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.bkst-hero-tagline {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #c9815b;
+  margin-bottom: 16px;
+}
+
+.bkst-hero-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #3d2b1f;
+  margin-bottom: 24px;
+}
+
+.bkst-hero-desc {
+  font-size: 1.15rem;
+  color: #6b5548;
+  margin-bottom: 36px;
+  max-width: 480px;
+  line-height: 1.8;
+}
+
+.bkst-hero-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bkst-hero-image {
+  position: relative;
+}
+
+.bkst-hero-img-main {
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(61, 43, 31, 0.2);
+}
+
+.bkst-hero-decor {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border: 3px solid #c9815b;
+  border-radius: 50%;
+  top: -30px;
+  right: -20px;
+  z-index: -1;
+}
+
+/* ===== STAFF PICKS ===== */
+.bkst-picks {
+  background-color: #ffffff;
+}
+
+.bkst-picks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+.bkst-book-card {
+  background: #faf3eb;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(61, 43, 31, 0.08);
+}
+
+.bkst-book-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(61, 43, 31, 0.15);
+}
+
+.bkst-book-cover {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+}
+
+.bkst-book-info {
+  padding: 20px;
+}
+
+.bkst-book-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #3d2b1f;
+}
+
+.bkst-book-author {
+  font-size: 0.9rem;
+  color: #8a7060;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+.bkst-book-desc {
+  font-size: 0.88rem;
+  color: #6b5548;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.bkst-book-price {
+  font-family: 'Libre Baskerville', serif;
+  font-weight: 700;
+  color: #c9815b;
+  font-size: 1.05rem;
+}
+
+.bkst-staff-badge {
+  display: inline-block;
+  background: #c9815b;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===== BROWSE BY GENRE ===== */
+.bkst-genres {
+  background: #faf3eb;
+}
+
+.bkst-genres-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.bkst-genre-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 220px;
+  cursor: pointer;
+}
+
+.bkst-genre-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.bkst-genre-card:hover img {
+  transform: scale(1.08);
+}
+
+.bkst-genre-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(61, 43, 31, 0.85) 0%, rgba(61, 43, 31, 0.2) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.bkst-genre-name {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.bkst-genre-count {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ===== AUTHOR EVENTS ===== */
+.bkst-events {
+  background: #ffffff;
+}
+
+.bkst-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.bkst-event-card {
+  display: flex;
+  gap: 28px;
+  background: #faf3eb;
+  border-radius: 10px;
+  padding: 28px;
+  align-items: center;
+  border: 1px solid rgba(61, 43, 31, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.bkst-event-card:hover {
+  box-shadow: 0 10px 30px rgba(61, 43, 31, 0.1);
+}
+
+.bkst-event-date {
+  text-align: center;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.bkst-event-month {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #c9815b;
+}
+
+.bkst-event-day {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #3d2b1f;
+  line-height: 1;
+}
+
+.bkst-event-details h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #3d2b1f;
+}
+
+.bkst-event-details p {
+  font-size: 0.95rem;
+  color: #6b5548;
+  margin-bottom: 4px;
+}
+
+.bkst-event-time {
+  font-size: 0.85rem;
+  color: #8a7060;
+  font-style: italic;
+}
+
+/* ===== BOOK CLUB ===== */
+.bkst-bookclub {
+  background: #3d2b1f;
+  color: #faf3eb;
+  position: relative;
+  overflow: hidden;
+}
+
+.bkst-bookclub .bkst-section-title {
+  color: #faf3eb;
+}
+
+.bkst-bookclub .bkst-section-subtitle {
+  color: rgba(250, 243, 235, 0.7);
+}
+
+.bkst-bookclub-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.bkst-bookclub-text h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #faf3eb;
+}
+
+.bkst-bookclub-text p {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: rgba(250, 243, 235, 0.8);
+  margin-bottom: 16px;
+}
+
+.bkst-bookclub-features {
+  list-style: none;
+  margin: 24px 0 32px;
+}
+
+.bkst-bookclub-features li {
+  padding: 8px 0;
+  font-size: 1rem;
+  color: rgba(250, 243, 235, 0.85);
+  padding-left: 28px;
+  position: relative;
+}
+
+.bkst-bookclub-features li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: #c9815b;
+  font-weight: 700;
+}
+
+.bkst-bookclub-img {
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.bkst-btn-copper {
+  background-color: #c9815b;
+  color: #fff;
+}
+
+.bkst-btn-copper:hover {
+  background-color: #d9956f;
+  color: #fff;
+}
+
+/* ===== ABOUT OUR STORE ===== */
+.bkst-about {
+  background: #faf3eb;
+}
+
+.bkst-about-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.bkst-about-img {
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(61, 43, 31, 0.15);
+}
+
+.bkst-about-text h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #3d2b1f;
+}
+
+.bkst-about-text p {
+  font-size: 1.05rem;
+  color: #6b5548;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.bkst-about-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 32px;
+}
+
+.bkst-stat-item {
+  text-align: center;
+}
+
+.bkst-stat-number {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #c9815b;
+  display: block;
+}
+
+.bkst-stat-label {
+  font-size: 0.88rem;
+  color: #8a7060;
+  margin-top: 4px;
+}
+
+/* ===== NEW ARRIVALS ===== */
+.bkst-arrivals {
+  background: #ffffff;
+}
+
+.bkst-arrivals-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+}
+
+.bkst-arrival-card {
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.bkst-arrival-card:hover {
+  transform: translateY(-4px);
+}
+
+.bkst-arrival-cover {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(61, 43, 31, 0.15);
+  margin-bottom: 14px;
+}
+
+.bkst-arrival-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3d2b1f;
+  margin-bottom: 4px;
+}
+
+.bkst-arrival-author {
+  font-size: 0.85rem;
+  color: #8a7060;
+  font-style: italic;
+}
+
+/* ===== NEWSLETTER ===== */
+.bkst-newsletter {
+  background: linear-gradient(135deg, #3d2b1f 0%, #5a3f2e 100%);
+  color: #faf3eb;
+  text-align: center;
+}
+
+.bkst-newsletter .bkst-section-title {
+  color: #faf3eb;
+}
+
+.bkst-newsletter .bkst-section-subtitle {
+  color: rgba(250, 243, 235, 0.7);
+}
+
+.bkst-newsletter-form {
+  display: flex;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.bkst-newsletter-input {
+  flex: 1;
+  padding: 14px 20px;
+  border: 2px solid rgba(250, 243, 235, 0.2);
+  border-radius: 4px;
+  background: rgba(250, 243, 235, 0.1);
+  color: #faf3eb;
+  font-family: 'Source Serif 4', serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.bkst-newsletter-input::placeholder {
+  color: rgba(250, 243, 235, 0.5);
+}
+
+.bkst-newsletter-input:focus {
+  border-color: #c9815b;
+}
+
+/* ===== VISIT US ===== */
+.bkst-visit {
+  background: #faf3eb;
+}
+
+.bkst-visit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+.bkst-visit-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 36px;
+  text-align: center;
+  border: 1px solid rgba(61, 43, 31, 0.08);
+}
+
+.bkst-visit-icon {
+  font-size: 2.4rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.bkst-visit-card h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+  color: #3d2b1f;
+}
+
+.bkst-visit-card p {
+  font-size: 0.95rem;
+  color: #6b5548;
+  line-height: 1.8;
+}
+
+.bkst-hours-table {
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.bkst-hours-table td {
+  padding: 6px 0;
+  color: #6b5548;
+}
+
+.bkst-hours-table td:first-child {
+  font-weight: 600;
+  color: #3d2b1f;
+}
+
+/* ===== FOOTER ===== */
+.bkst-footer {
+  background: #3d2b1f;
+  color: rgba(250, 243, 235, 0.7);
+  padding: 60px 0 30px;
+}
+
+.bkst-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.bkst-footer-brand {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #faf3eb;
+  margin-bottom: 16px;
+}
+
+.bkst-footer-desc {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.bkst-footer h4 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.05rem;
+  color: #faf3eb;
+  margin-bottom: 16px;
+}
+
+.bkst-footer-links {
+  list-style: none;
+}
+
+.bkst-footer-links li {
+  margin-bottom: 10px;
+}
+
+.bkst-footer-links a {
+  font-size: 0.9rem;
+  color: rgba(250, 243, 235, 0.6);
+  transition: color 0.3s;
+}
+
+.bkst-footer-links a:hover {
+  color: #c9815b;
+}
+
+.bkst-footer-social {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.bkst-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(250, 243, 235, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: rgba(250, 243, 235, 0.7);
+  transition: all 0.3s ease;
+}
+
+.bkst-footer-social a:hover {
+  background: #c9815b;
+  border-color: #c9815b;
+  color: #fff;
+}
+
+.bkst-footer-bottom {
+  border-top: 1px solid rgba(250, 243, 235, 0.1);
+  padding-top: 24px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+/* ===== DIVIDER ===== */
+.bkst-divider {
+  width: 60px;
+  height: 3px;
+  background: #c9815b;
+  margin: 0 auto 20px;
+  border-radius: 2px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .bkst-hero-title {
+    font-size: 2.6rem;
+  }
+
+  .bkst-picks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bkst-arrivals-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .bkst-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .bkst-nav-links {
+    display: none;
+  }
+
+  .bkst-mobile-toggle {
+    display: flex;
+  }
+
+  .bkst-hero-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 40px;
+  }
+
+  .bkst-hero-desc {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .bkst-hero-buttons {
+    justify-content: center;
+  }
+
+  .bkst-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .bkst-section-title {
+    font-size: 1.9rem;
+  }
+
+  .bkst-genres-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bkst-bookclub-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-about-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-arrivals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bkst-visit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-event-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .bkst-newsletter-form {
+    flex-direction: column;
+  }
+
+  .bkst-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-section {
+    padding: 60px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .bkst-picks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-genres-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-arrivals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bkst-hero-title {
+    font-size: 1.8rem;
+  }
+
+  .bkst-about-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bkst-hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>
+
+<div class="bkst-wrapper">
+
+  <!-- NAVBAR -->
+  <nav class="bkst-navbar">
+    <div class="bkst-navbar-inner">
+      <a href="#" class="bkst-logo">
+        <span class="bkst-logo-icon">&#128214;</span>
+        Chapter & Verse
+      </a>
+      <ul class="bkst-nav-links">
+        <li><a href="#bkst-picks">Staff Picks</a></li>
+        <li><a href="#bkst-genres">Genres</a></li>
+        <li><a href="#bkst-events">Events</a></li>
+        <li><a href="#bkst-bookclub">Book Club</a></li>
+        <li><a href="#bkst-about">About</a></li>
+        <li><a href="#bkst-visit">Visit</a></li>
+      </ul>
+      <button class="bkst-mobile-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="bkst-hero">
+    <div class="bkst-hero-inner">
+      <div class="bkst-hero-content">
+        <p class="bkst-hero-tagline">Independent Bookstore Since 1987</p>
+        <h1 class="bkst-hero-title">Discover Your Next Great Read</h1>
+        <p class="bkst-hero-desc">Step into a world of wonder. From timeless classics to the latest bestsellers, our curated shelves and passionate booksellers are here to guide your literary journey.</p>
+        <div class="bkst-hero-buttons">
+          <a href="#bkst-picks" class="bkst-btn bkst-btn-primary">Browse Collection</a>
+          <a href="#bkst-events" class="bkst-btn bkst-btn-outline">Upcoming Events</a>
+        </div>
+      </div>
+      <div class="bkst-hero-image">
+        <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Cozy bookstore interior" class="bkst-hero-img-main">
+        <div class="bkst-hero-decor"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAFF PICKS -->
+  <section class="bkst-section bkst-picks" id="bkst-picks">
+    <div class="bkst-container">
+      <div class="bkst-divider"></div>
+      <h2 class="bkst-section-title">Staff Picks</h2>
+      <p class="bkst-section-subtitle">"A reader lives a thousand lives before he dies." &mdash; Handpicked favorites from our team.</p>
+      <div class="bkst-picks-grid">
+
+        <div class="bkst-book-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Book cover" class="bkst-book-cover">
+          <div class="bkst-book-info">
+            <span class="bkst-staff-badge">Sarah's Pick</span>
+            <h3 class="bkst-book-title">The Midnight Library</h3>
+            <p class="bkst-book-author">by Matt Haig</p>
+            <p class="bkst-book-desc">Between life and death there is a library with infinite books, each telling the story of a life you could have lived.</p>
+            <span class="bkst-book-price">AED 68</span>
+          </div>
+        </div>
+
+        <div class="bkst-book-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Book cover" class="bkst-book-cover">
+          <div class="bkst-book-info">
+            <span class="bkst-staff-badge">James's Pick</span>
+            <h3 class="bkst-book-title">Klara and the Sun</h3>
+            <p class="bkst-book-author">by Kazuo Ishiguro</p>
+            <p class="bkst-book-desc">A luminous tale told from the perspective of an Artificial Friend who observes the world with wonder and empathy.</p>
+            <span class="bkst-book-price">AED 72</span>
+          </div>
+        </div>
+
+        <div class="bkst-book-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Book cover" class="bkst-book-cover">
+          <div class="bkst-book-info">
+            <span class="bkst-staff-badge">Mira's Pick</span>
+            <h3 class="bkst-book-title">Cloud Cuckoo Land</h3>
+            <p class="bkst-book-author">by Anthony Doerr</p>
+            <p class="bkst-book-desc">An epic spanning centuries, woven around a lost ancient text and the dreamers who refuse to let stories die.</p>
+            <span class="bkst-book-price">AED 78</span>
+          </div>
+        </div>
+
+        <div class="bkst-book-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Book cover" class="bkst-book-cover">
+          <div class="bkst-book-info">
+            <span class="bkst-staff-badge">Alex's Pick</span>
+            <h3 class="bkst-book-title">Piranesi</h3>
+            <p class="bkst-book-author">by Susanna Clarke</p>
+            <p class="bkst-book-desc">A haunting and deeply original mystery set in a labyrinth of endless halls, statues, and an ocean without shores.</p>
+            <span class="bkst-book-price">AED 62</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- BROWSE BY GENRE -->
+  <section class="bkst-section bkst-genres" id="bkst-genres">
+    <div class="bkst-container">
+      <div class="bkst-divider"></div>
+      <h2 class="bkst-section-title">Browse by Genre</h2>
+      <p class="bkst-section-subtitle">Explore our carefully curated collection across every literary landscape.</p>
+      <div class="bkst-genres-grid">
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Fiction">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Fiction</span>
+            <span class="bkst-genre-count">2,400+ titles</span>
+          </div>
+        </div>
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Non-Fiction">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Non-Fiction</span>
+            <span class="bkst-genre-count">1,800+ titles</span>
+          </div>
+        </div>
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Children's">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Children's</span>
+            <span class="bkst-genre-count">1,200+ titles</span>
+          </div>
+        </div>
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sci-Fi">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Sci-Fi</span>
+            <span class="bkst-genre-count">950+ titles</span>
+          </div>
+        </div>
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Mystery">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Mystery</span>
+            <span class="bkst-genre-count">1,100+ titles</span>
+          </div>
+        </div>
+
+        <div class="bkst-genre-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Biography">
+          <div class="bkst-genre-overlay">
+            <span class="bkst-genre-name">Biography</span>
+            <span class="bkst-genre-count">780+ titles</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTHOR EVENTS -->
+  <section class="bkst-section bkst-events" id="bkst-events">
+    <div class="bkst-container">
+      <div class="bkst-divider"></div>
+      <h2 class="bkst-section-title">Author Events Calendar</h2>
+      <p class="bkst-section-subtitle">Meet the minds behind the stories. Readings, signings, and conversations.</p>
+      <div class="bkst-events-list">
+
+        <div class="bkst-event-card">
+          <div class="bkst-event-date">
+            <span class="bkst-event-month">Mar</span>
+            <span class="bkst-event-day">15</span>
+          </div>
+          <div class="bkst-event-details">
+            <h3>An Evening with Elif Shafak</h3>
+            <p>Join us for a reading and discussion of her latest novel, exploring themes of memory, exile, and belonging.</p>
+            <span class="bkst-event-time">7:00 PM &mdash; 9:00 PM &middot; Main Hall &middot; Free Entry</span>
+          </div>
+        </div>
+
+        <div class="bkst-event-card">
+          <div class="bkst-event-date">
+            <span class="bkst-event-month">Mar</span>
+            <span class="bkst-event-day">22</span>
+          </div>
+          <div class="bkst-event-details">
+            <h3>Children's Story Hour: Spring Edition</h3>
+            <p>Bring the little ones for an enchanting afternoon of storytelling, crafts, and hot chocolate.</p>
+            <span class="bkst-event-time">2:00 PM &mdash; 3:30 PM &middot; Kids Corner &middot; Ages 4-10</span>
+          </div>
+        </div>
+
+        <div class="bkst-event-card">
+          <div class="bkst-event-date">
+            <span class="bkst-event-month">Apr</span>
+            <span class="bkst-event-day">05</span>
+          </div>
+          <div class="bkst-event-details">
+            <h3>Poetry Open Mic Night</h3>
+            <p>Share your verse or simply listen. A warm evening celebrating the spoken word with local poets.</p>
+            <span class="bkst-event-time">6:30 PM &mdash; 8:30 PM &middot; Cafe Lounge &middot; Sign-up Required</span>
+          </div>
+        </div>
+
+        <div class="bkst-event-card">
+          <div class="bkst-event-date">
+            <span class="bkst-event-month">Apr</span>
+            <span class="bkst-event-day">18</span>
+          </div>
+          <div class="bkst-event-details">
+            <h3>Book Signing: Omar El Akkad</h3>
+            <p>The award-winning author discusses his writing process and signs copies of his critically acclaimed works.</p>
+            <span class="bkst-event-time">5:00 PM &mdash; 7:00 PM &middot; Main Hall &middot; Books Available for Purchase</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOK CLUB -->
+  <section class="bkst-section bkst-bookclub" id="bkst-bookclub">
+    <div class="bkst-container">
+      <div class="bkst-bookclub-inner">
+        <div class="bkst-bookclub-text">
+          <div class="bkst-divider" style="margin: 0 0 20px;"></div>
+          <h3>Join Our Book Club</h3>
+          <p>Every month, we gather to discuss a carefully chosen book over tea and pastries. Whether you're a voracious reader or just getting started, you'll find kindred spirits here.</p>
+          <p>This month's read: <strong><em>"Lessons in Chemistry"</em></strong> by Bonnie Garmus</p>
+          <ul class="bkst-bookclub-features">
+            <li>Monthly curated reading selections</li>
+            <li>Intimate group discussions every last Saturday</li>
+            <li>15% member discount on all featured titles</li>
+            <li>Complimentary tea and refreshments</li>
+            <li>Guest author appearances quarterly</li>
+          </ul>
+          <a href="#" class="bkst-btn bkst-btn-copper">Become a Member</a>
+        </div>
+        <div>
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Book club gathering" class="bkst-bookclub-img">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT OUR STORE -->
+  <section class="bkst-section bkst-about" id="bkst-about">
+    <div class="bkst-container">
+      <div class="bkst-about-inner">
+        <div>
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Our bookstore" class="bkst-about-img">
+        </div>
+        <div class="bkst-about-text">
+          <div class="bkst-divider" style="margin: 0 0 20px;"></div>
+          <h3>Our Story</h3>
+          <p>Chapter & Verse was born from a simple belief: that a good bookshop is more than a place to buy books. It's a sanctuary for curious minds, a meeting place for dreamers, and a home for stories that change lives.</p>
+          <p>Founded in 1987, we've spent over three decades building not just a collection, but a community. Our booksellers don't just recommend titles &mdash; they match readers with the books they didn't know they needed.</p>
+          <p>From our hand-lettered shelf recommendations to our resident cat, Hemingway, every corner of our store is designed to make you linger a little longer.</p>
+          <div class="bkst-about-stats">
+            <div class="bkst-stat-item">
+              <span class="bkst-stat-number">37</span>
+              <span class="bkst-stat-label">Years Open</span>
+            </div>
+            <div class="bkst-stat-item">
+              <span class="bkst-stat-number">25K+</span>
+              <span class="bkst-stat-label">Titles in Stock</span>
+            </div>
+            <div class="bkst-stat-item">
+              <span class="bkst-stat-number">400+</span>
+              <span class="bkst-stat-label">Author Events</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEW ARRIVALS -->
+  <section class="bkst-section bkst-arrivals" id="bkst-arrivals">
+    <div class="bkst-container">
+      <div class="bkst-divider"></div>
+      <h2 class="bkst-section-title">New Arrivals</h2>
+      <p class="bkst-section-subtitle">Fresh off the press and waiting for you on our shelves.</p>
+      <div class="bkst-arrivals-grid">
+
+        <div class="bkst-arrival-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="New arrival" class="bkst-arrival-cover">
+          <h4 class="bkst-arrival-title">The Great Alone</h4>
+          <p class="bkst-arrival-author">Kristin Hannah</p>
+        </div>
+
+        <div class="bkst-arrival-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="New arrival" class="bkst-arrival-cover">
+          <h4 class="bkst-arrival-title">Intermezzo</h4>
+          <p class="bkst-arrival-author">Sally Rooney</p>
+        </div>
+
+        <div class="bkst-arrival-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="New arrival" class="bkst-arrival-cover">
+          <h4 class="bkst-arrival-title">North Woods</h4>
+          <p class="bkst-arrival-author">Daniel Mason</p>
+        </div>
+
+        <div class="bkst-arrival-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="New arrival" class="bkst-arrival-cover">
+          <h4 class="bkst-arrival-title">Holly</h4>
+          <p class="bkst-arrival-author">Stephen King</p>
+        </div>
+
+        <div class="bkst-arrival-card">
+          <img src="https://images.pexels.com/photos/273034/pexels-photo-273034.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="New arrival" class="bkst-arrival-cover">
+          <h4 class="bkst-arrival-title">The Covenant of Water</h4>
+          <p class="bkst-arrival-author">Abraham Verghese</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="bkst-section bkst-newsletter" id="bkst-newsletter">
+    <div class="bkst-container">
+      <div class="bkst-divider" style="background: #c9815b;"></div>
+      <h2 class="bkst-section-title">The Weekly Bookmark</h2>
+      <p class="bkst-section-subtitle">Get reading recommendations, event updates, and exclusive offers delivered to your inbox every Friday.</p>
+      <form class="bkst-newsletter-form" onsubmit="return false;">
+        <input type="email" class="bkst-newsletter-input" placeholder="Your email address" aria-label="Email address">
+        <button type="submit" class="bkst-btn bkst-btn-copper">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- VISIT US -->
+  <section class="bkst-section bkst-visit" id="bkst-visit">
+    <div class="bkst-container">
+      <div class="bkst-divider"></div>
+      <h2 class="bkst-section-title">Visit Us</h2>
+      <p class="bkst-section-subtitle">We'd love to welcome you through our doors.</p>
+      <div class="bkst-visit-grid">
+
+        <div class="bkst-visit-card">
+          <span class="bkst-visit-icon">&#128205;</span>
+          <h3>Location</h3>
+          <p>Chapter & Verse Bookshop<br>42 Heritage Lane<br>Meydan District<br>Dubai, UAE</p>
+        </div>
+
+        <div class="bkst-visit-card">
+          <span class="bkst-visit-icon">&#128336;</span>
+          <h3>Store Hours</h3>
+          <table class="bkst-hours-table">
+            <tr><td>Monday &mdash; Friday</td><td>9:00 AM &mdash; 9:00 PM</td></tr>
+            <tr><td>Saturday</td><td>10:00 AM &mdash; 10:00 PM</td></tr>
+            <tr><td>Sunday</td><td>10:00 AM &mdash; 8:00 PM</td></tr>
+          </table>
+        </div>
+
+        <div class="bkst-visit-card">
+          <span class="bkst-visit-icon">&#9742;</span>
+          <h3>Get in Touch</h3>
+          <p>Phone: +971 4 555 0142<br>Email: hello@chapterverse.ae<br><br>In-store cafe open daily<br>Free parking available</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bkst-footer">
+    <div class="bkst-container">
+      <div class="bkst-footer-grid">
+
+        <div>
+          <p class="bkst-footer-brand">&#128214; Chapter & Verse</p>
+          <p class="bkst-footer-desc">An independent bookshop dedicated to connecting readers with stories that matter. Serving the Dubai community since 1987.</p>
+          <div class="bkst-footer-social">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Instagram">in</a>
+            <a href="#" aria-label="Twitter">tw</a>
+            <a href="#" aria-label="Goodreads">gr</a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Explore</h4>
+          <ul class="bkst-footer-links">
+            <li><a href="#bkst-picks">Staff Picks</a></li>
+            <li><a href="#bkst-genres">Browse Genres</a></li>
+            <li><a href="#bkst-arrivals">New Arrivals</a></li>
+            <li><a href="#">Bestsellers</a></li>
+            <li><a href="#">Gift Cards</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Community</h4>
+          <ul class="bkst-footer-links">
+            <li><a href="#bkst-bookclub">Book Club</a></li>
+            <li><a href="#bkst-events">Events Calendar</a></li>
+            <li><a href="#">Reading Groups</a></li>
+            <li><a href="#">Schools Program</a></li>
+            <li><a href="#">Volunteer</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Information</h4>
+          <ul class="bkst-footer-links">
+            <li><a href="#bkst-about">Our Story</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Shipping & Returns</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+
+      </div>
+      <div class="bkst-footer-bottom">
+        <p>&copy; 2026 Chapter & Verse Bookshop. All rights reserved. Made with love for readers everywhere.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

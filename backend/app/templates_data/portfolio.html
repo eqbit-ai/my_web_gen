@@ -1,0 +1,1045 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap');
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --bg-light: #111111;
+  --bg-card: #161616;
+  --accent: #00ff88;
+  --accent-dim: rgba(0, 255, 136, 0.1);
+  --accent-mid: rgba(0, 255, 136, 0.3);
+  --white: #ffffff;
+  --gray: #888888;
+  --gray-light: #aaaaaa;
+  --gray-dark: #333333;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+section {
+  padding: 100px 5%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ========== UTILITY ========== */
+.fade-in {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.section-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: inline-block;
+}
+.section-title {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.15;
+  margin-bottom: 24px;
+}
+.section-subtitle {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--gray-light);
+  line-height: 1.7;
+  max-width: 600px;
+}
+
+/* ========== HERO ========== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 8%;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-dim) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gray-dark), transparent);
+}
+.hero-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: heroFadeUp 0.8s ease 0.3s forwards;
+}
+.hero-name {
+  font-family: var(--font-heading);
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 0.95;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: heroFadeUp 0.8s ease 0.5s forwards;
+}
+.hero-name span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--accent);
+}
+.hero-tagline {
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  color: var(--gray-light);
+  max-width: 550px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: heroFadeUp 0.8s ease 0.7s forwards;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  opacity: 0;
+  animation: heroFadeUp 0.8s ease 0.9s forwards;
+}
+.hero-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 255, 136, 0.3);
+}
+.hero-scroll {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: bounce 2s infinite;
+}
+.hero-scroll .line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+}
+
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(10px); }
+}
+
+/* ========== ABOUT ========== */
+.about {
+  background: var(--bg);
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  margin-top: 48px;
+}
+.about-image {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 4/5;
+}
+.about-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(30%);
+  transition: filter 0.5s;
+}
+.about-image:hover img {
+  filter: grayscale(0%);
+}
+.about-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--accent-mid);
+  border-radius: 16px;
+  pointer-events: none;
+}
+.about-text p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--gray-light);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.about-stats {
+  display: flex;
+  gap: 48px;
+  margin-top: 36px;
+  padding-top: 36px;
+  border-top: 1px solid var(--gray-dark);
+}
+.about-stat-number {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.about-stat-label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+/* ========== SKILLS ========== */
+.skills {
+  background: var(--bg-light);
+}
+.skills-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-top: 48px;
+}
+.skill-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.skill-item label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--white);
+  margin-bottom: 10px;
+}
+.skill-item label span {
+  color: var(--accent);
+  font-weight: 700;
+}
+.skill-bar {
+  height: 6px;
+  background: var(--gray-dark);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.skill-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #00cc6a);
+  border-radius: 3px;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-content: flex-start;
+}
+.skill-tag {
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--gray-dark);
+  border-radius: 50px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--gray-light);
+  transition: all 0.3s;
+}
+.skill-tag:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ========== PORTFOLIO ========== */
+.portfolio {
+  background: var(--bg);
+}
+.portfolio-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 32px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid var(--gray-dark);
+  border-radius: 50px;
+  color: var(--gray-light);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.filter-btn:hover,
+.filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.portfolio-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  cursor: pointer;
+  transition: transform 0.4s;
+}
+.portfolio-card:hover {
+  transform: translateY(-6px);
+}
+.portfolio-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s;
+}
+.portfolio-card:hover img {
+  transform: scale(1.08);
+}
+.portfolio-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.2) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.portfolio-card:hover .portfolio-overlay {
+  opacity: 1;
+}
+.portfolio-overlay h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.portfolio-overlay span {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ========== TESTIMONIALS ========== */
+.testimonials {
+  background: var(--bg-light);
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 48px;
+}
+.testimonial-card {
+  background: var(--bg-card);
+  border: 1px solid var(--gray-dark);
+  border-radius: 16px;
+  padding: 36px;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.testimonial-card:hover {
+  border-color: var(--accent-mid);
+  transform: translateY(-4px);
+}
+.testimonial-stars {
+  color: var(--accent);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+.testimonial-text {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--gray-light);
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.testimonial-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-mid);
+}
+.testimonial-name {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  color: var(--white);
+  font-weight: 600;
+}
+.testimonial-role {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+/* ========== EXPERIENCE TIMELINE ========== */
+.experience {
+  background: var(--bg);
+}
+.timeline {
+  position: relative;
+  margin-top: 48px;
+  padding-left: 40px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--gray-dark));
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 48px;
+}
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -46px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+}
+.timeline-date {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.timeline-title {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.timeline-company {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--gray);
+  margin-bottom: 12px;
+}
+.timeline-desc {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--gray-light);
+  line-height: 1.7;
+  max-width: 560px;
+}
+
+/* ========== CONTACT ========== */
+.contact {
+  background: var(--bg-light);
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-top: 48px;
+}
+.contact-info p {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--gray-light);
+  line-height: 1.8;
+  margin-bottom: 32px;
+}
+.contact-detail {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.contact-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--accent-dim);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.contact-detail-text {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--white);
+}
+.contact-detail-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-bottom: 2px;
+}
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--gray-dark);
+  border-radius: 12px;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: var(--accent);
+}
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: var(--gray);
+}
+.contact-form textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+.contact-form button {
+  padding: 16px 36px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 50px;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  align-self: flex-start;
+}
+.contact-form button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 255, 136, 0.3);
+}
+
+/* ========== FOOTER ========== */
+.site-footer {
+  background: var(--bg);
+  border-top: 1px solid var(--gray-dark);
+  padding: 60px 5%;
+}
+.footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.footer-logo {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.footer-logo span {
+  color: var(--accent);
+}
+.footer-links {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+}
+.footer-links a {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--gray);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.footer-links a:hover {
+  color: var(--accent);
+}
+.footer-copy {
+  width: 100%;
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-dark);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--gray);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+  .skills-wrapper { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  section { padding: 60px 5%; }
+  .hero { padding: 0 5%; min-height: 90vh; }
+  .about-grid { grid-template-columns: 1fr; gap: 40px; }
+  .about-stats { gap: 32px; }
+  .portfolio-grid { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .contact-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .footer-links { justify-content: center; }
+  .hero-scroll { display: none; }
+}
+</style>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero">
+  <p class="hero-eyebrow">Creative Designer & Developer</p>
+  <h1 class="hero-name">
+    Alex
+    <span>Morgan</span>
+  </h1>
+  <p class="hero-tagline">I craft bold digital experiences that merge striking aesthetics with seamless functionality. Let's build something extraordinary.</p>
+  <a href="#contact" class="hero-cta">
+    Let's Talk
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+  <div class="hero-scroll">
+    <div class="line"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- ==================== ABOUT ==================== -->
+<section class="about" id="about">
+  <div class="fade-in">
+    <span class="section-label">About Me</span>
+    <h2 class="section-title">Designing at the intersection of art & technology</h2>
+  </div>
+  <div class="about-grid">
+    <div class="about-image fade-in">
+      <img src="https://images.pexels.com/photos/160107/pexels-photo-160107.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Portrait photo">
+    </div>
+    <div class="about-text fade-in">
+      <p>With over 8 years of experience in design and development, I specialize in creating visually stunning and technically robust digital products. From brand identities to full-stack web applications, every project is an opportunity to push creative boundaries.</p>
+      <p>I believe great design tells a story. My approach combines meticulous attention to detail with bold creative choices, ensuring every pixel serves a purpose and every interaction feels intentional.</p>
+      <p>When I'm not designing, you'll find me exploring generative art, experimenting with new creative tools, or contributing to open-source design systems.</p>
+      <div class="about-stats">
+        <div>
+          <div class="about-stat-number">8+</div>
+          <div class="about-stat-label">Years Experience</div>
+        </div>
+        <div>
+          <div class="about-stat-number">120+</div>
+          <div class="about-stat-label">Projects Delivered</div>
+        </div>
+        <div>
+          <div class="about-stat-number">40+</div>
+          <div class="about-stat-label">Happy Clients</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SKILLS ==================== -->
+<section class="skills" id="skills">
+  <div class="fade-in">
+    <span class="section-label">Skills</span>
+    <h2 class="section-title">Tools & expertise</h2>
+    <p class="section-subtitle">A versatile skill set spanning design, development, and creative strategy.</p>
+  </div>
+  <div class="skills-wrapper fade-in">
+    <div class="skill-bars">
+      <div class="skill-item">
+        <label>UI/UX Design <span>95%</span></label>
+        <div class="skill-bar"><div class="skill-bar-fill" data-width="95"></div></div>
+      </div>
+      <div class="skill-item">
+        <label>Brand Identity <span>90%</span></label>
+        <div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div>
+      </div>
+      <div class="skill-item">
+        <label>Frontend Development <span>88%</span></label>
+        <div class="skill-bar"><div class="skill-bar-fill" data-width="88"></div></div>
+      </div>
+      <div class="skill-item">
+        <label>Motion Design <span>82%</span></label>
+        <div class="skill-bar"><div class="skill-bar-fill" data-width="82"></div></div>
+      </div>
+      <div class="skill-item">
+        <label>3D & Illustration <span>75%</span></label>
+        <div class="skill-bar"><div class="skill-bar-fill" data-width="75"></div></div>
+      </div>
+    </div>
+    <div class="skill-tags">
+      <span class="skill-tag">Figma</span>
+      <span class="skill-tag">Adobe Creative Suite</span>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">Next.js</span>
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">Framer Motion</span>
+      <span class="skill-tag">Blender</span>
+      <span class="skill-tag">After Effects</span>
+      <span class="skill-tag">Webflow</span>
+      <span class="skill-tag">GSAP</span>
+      <span class="skill-tag">Tailwind CSS</span>
+      <span class="skill-tag">Node.js</span>
+      <span class="skill-tag">Design Systems</span>
+      <span class="skill-tag">Prototyping</span>
+      <span class="skill-tag">User Research</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PORTFOLIO ==================== -->
+<section class="portfolio" id="work">
+  <div class="fade-in">
+    <span class="section-label">Portfolio</span>
+    <h2 class="section-title">Selected work</h2>
+    <p class="section-subtitle">A curated collection of projects across branding, web design, and application development.</p>
+  </div>
+  <div class="portfolio-filters fade-in">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="web">Web Design</button>
+    <button class="filter-btn" data-filter="brand">Branding</button>
+    <button class="filter-btn" data-filter="app">App Design</button>
+  </div>
+  <div class="portfolio-grid">
+    <div class="portfolio-card fade-in" data-category="web">
+      <img src="https://images.pexels.com/photos/35606507/pexels-photo-35606507.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 1">
+      <div class="portfolio-overlay">
+        <h3>Nova Dashboard</h3>
+        <span>Web Design</span>
+      </div>
+    </div>
+    <div class="portfolio-card fade-in" data-category="brand">
+      <img src="https://images.pexels.com/photos/8489951/pexels-photo-8489951.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 2">
+      <div class="portfolio-overlay">
+        <h3>Lumen Brand Identity</h3>
+        <span>Branding</span>
+      </div>
+    </div>
+    <div class="portfolio-card fade-in" data-category="app">
+      <img src="https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 3">
+      <div class="portfolio-overlay">
+        <h3>Pulse Fitness App</h3>
+        <span>App Design</span>
+      </div>
+    </div>
+    <div class="portfolio-card fade-in" data-category="web">
+      <img src="https://images.pexels.com/photos/35606507/pexels-photo-35606507.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 4">
+      <div class="portfolio-overlay">
+        <h3>Vertex Studios</h3>
+        <span>Web Design</span>
+      </div>
+    </div>
+    <div class="portfolio-card fade-in" data-category="brand">
+      <img src="https://images.pexels.com/photos/89955/pexels-photo-89955.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 5">
+      <div class="portfolio-overlay">
+        <h3>Aether Cosmetics</h3>
+        <span>Branding</span>
+      </div>
+    </div>
+    <div class="portfolio-card fade-in" data-category="app">
+      <img src="https://images.pexels.com/photos/6475821/pexels-photo-6475821.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Project 6">
+      <div class="portfolio-overlay">
+        <h3>Cipher Finance</h3>
+        <span>App Design</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TESTIMONIALS ==================== -->
+<section class="testimonials" id="testimonials">
+  <div class="fade-in">
+    <span class="section-label">Testimonials</span>
+    <h2 class="section-title">What clients say</h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card fade-in">
+      <div class="testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+      <p class="testimonial-text">"Alex completely transformed our brand. The attention to detail and creative vision exceeded every expectation. Our conversions jumped 40% after launch."</p>
+      <div class="testimonial-author">
+        <img src="https://images.pexels.com/photos/1181538/pexels-photo-1181538.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Chen" class="testimonial-avatar">
+        <div>
+          <div class="testimonial-name">Sarah Chen</div>
+          <div class="testimonial-role">CEO, Lumen Labs</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card fade-in">
+      <div class="testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+      <p class="testimonial-text">"Working with Alex was a game-changer. They brought a level of creativity and technical skill that took our product from concept to an award-winning experience."</p>
+      <div class="testimonial-author">
+        <img src="https://images.pexels.com/photos/6850547/pexels-photo-6850547.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Marcus Wright" class="testimonial-avatar">
+        <div>
+          <div class="testimonial-name">Marcus Wright</div>
+          <div class="testimonial-role">Founder, Vertex Studios</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card fade-in">
+      <div class="testimonial-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+      <p class="testimonial-text">"Exceptional design sense paired with solid development skills. Alex delivered a complex web app on time and it looked absolutely stunning. Highly recommend."</p>
+      <div class="testimonial-author">
+        <img src="https://images.pexels.com/photos/5054208/pexels-photo-5054208.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elena Voss" class="testimonial-avatar">
+        <div>
+          <div class="testimonial-name">Elena Voss</div>
+          <div class="testimonial-role">Product Lead, Cipher Finance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== EXPERIENCE ==================== -->
+<section class="experience" id="experience">
+  <div class="fade-in">
+    <span class="section-label">Experience</span>
+    <h2 class="section-title">Career journey</h2>
+  </div>
+  <div class="timeline fade-in">
+    <div class="timeline-item">
+      <div class="timeline-date">2022 - Present</div>
+      <div class="timeline-title">Senior Creative Director</div>
+      <div class="timeline-company">Freelance / Studio Morgan</div>
+      <div class="timeline-desc">Leading end-to-end creative direction for startups and established brands. Specializing in brand systems, web experiences, and design strategy.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">2020 - 2022</div>
+      <div class="timeline-title">Lead Product Designer</div>
+      <div class="timeline-company">Vertex Studios</div>
+      <div class="timeline-desc">Led a team of 6 designers in creating SaaS products serving over 500K users. Established the company's design system from scratch.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">2018 - 2020</div>
+      <div class="timeline-title">UI/UX Designer</div>
+      <div class="timeline-company">Digital Forge Agency</div>
+      <div class="timeline-desc">Designed responsive web and mobile interfaces for clients across fintech, healthcare, and e-commerce. Won 3 Awwwards nominations.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">2016 - 2018</div>
+      <div class="timeline-title">Junior Designer</div>
+      <div class="timeline-company">Pixel & Code Studio</div>
+      <div class="timeline-desc">Started professional career crafting brand identities and marketing materials. Learned the foundations of design thinking and client collaboration.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CONTACT ==================== -->
+<section class="contact" id="contact">
+  <div class="fade-in">
+    <span class="section-label">Contact</span>
+    <h2 class="section-title">Let's create together</h2>
+  </div>
+  <div class="contact-grid">
+    <div class="contact-info fade-in">
+      <p>Have a project in mind or just want to chat? I'm always open to discussing new opportunities, creative ideas, or ways to bring your vision to life.</p>
+      <div class="contact-detail">
+        <div class="contact-icon">&#9993;</div>
+        <div>
+          <div class="contact-detail-label">Email</div>
+          <div class="contact-detail-text">alex@studiomorgan.com</div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-icon">&#9742;</div>
+        <div>
+          <div class="contact-detail-label">Phone</div>
+          <div class="contact-detail-text">+971 50 123 4567</div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="contact-icon">&#9679;</div>
+        <div>
+          <div class="contact-detail-label">Location</div>
+          <div class="contact-detail-text">Dubai, United Arab Emirates</div>
+        </div>
+      </div>
+    </div>
+    <form class="contact-form fade-in" onsubmit="event.preventDefault();">
+      <div class="form-row">
+        <input type="text" placeholder="Your Name" required>
+        <input type="email" placeholder="Your Email" required>
+      </div>
+      <input type="text" placeholder="Subject">
+      <textarea placeholder="Tell me about your project..." required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-logo">Alex<span>.</span></div>
+    <ul class="footer-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+  <div class="footer-copy">&copy; 2026 Alex Morgan. All rights reserved. Crafted with passion in Dubai.</div>
+</footer>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+(function() {
+  /* ---- Scroll Animations (IntersectionObserver) ---- */
+  const fadeEls = document.querySelectorAll('.fade-in');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  fadeEls.forEach(function(el) { observer.observe(el); });
+
+  /* ---- Skill Bar Animation ---- */
+  const skillBars = document.querySelectorAll('.skill-bar-fill');
+  const skillObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var width = entry.target.getAttribute('data-width');
+        entry.target.style.width = width + '%';
+        skillObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  skillBars.forEach(function(bar) { skillObserver.observe(bar); });
+
+  /* ---- Portfolio Filter ---- */
+  var filterBtns = document.querySelectorAll('.filter-btn');
+  var cards = document.querySelectorAll('.portfolio-card');
+
+  filterBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      filterBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var filter = btn.getAttribute('data-filter');
+
+      cards.forEach(function(card) {
+        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+          card.style.display = 'block';
+          card.style.animation = 'cardFadeIn 0.4s ease forwards';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  /* ---- Smooth Scroll for anchor links ---- */
+  document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+})();
+</script>
+
+<style>
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>

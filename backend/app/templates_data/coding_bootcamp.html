@@ -1,0 +1,1487 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --cb-dark: #0d1117;
+  --cb-blue: #58a6ff;
+  --cb-ice: #f0f6fc;
+  --cb-white: #ffffff;
+  --cb-gray: #8b949e;
+  --cb-border: #30363d;
+  --cb-card-bg: #161b22;
+  --cb-green: #3fb950;
+  --cb-purple: #bc8cff;
+  --cb-orange: #f0883e;
+  --cb-red: #f85149;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cb-template {
+  font-family: 'Inter', sans-serif;
+  color: var(--cb-dark);
+  overflow-x: hidden;
+}
+
+.cb-template h1,
+.cb-template h2,
+.cb-template h3,
+.cb-template h4 {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── NAV ── */
+.cb-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  padding: 0 2rem;
+  border-bottom: 1px solid var(--cb-border);
+}
+
+.cb-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.cb-logo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cb-white);
+  text-decoration: none;
+}
+
+.cb-logo span {
+  color: var(--cb-blue);
+}
+
+.cb-nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  align-items: center;
+}
+
+.cb-nav-links a {
+  color: var(--cb-gray);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.cb-nav-links a:hover {
+  color: var(--cb-blue);
+}
+
+.cb-nav-cta {
+  background: var(--cb-blue);
+  color: var(--cb-dark) !important;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600 !important;
+  transition: background 0.3s !important;
+}
+
+.cb-nav-cta:hover {
+  background: #79c0ff !important;
+}
+
+.cb-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--cb-white);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* ── HERO ── */
+.cb-hero {
+  background: var(--cb-dark);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 100px 2rem 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cb-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(88, 166, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.cb-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.cb-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  color: var(--cb-blue);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.cb-hero-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--cb-green);
+  border-radius: 50%;
+  animation: cb-pulse 2s infinite;
+}
+
+@keyframes cb-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.cb-hero h1 {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  color: var(--cb-white);
+  margin-bottom: 1.5rem;
+}
+
+.cb-hero h1 span {
+  color: var(--cb-blue);
+}
+
+.cb-hero-text {
+  color: var(--cb-gray);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  max-width: 500px;
+}
+
+.cb-hero-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cb-btn-primary {
+  background: var(--cb-blue);
+  color: var(--cb-dark);
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.cb-btn-primary:hover {
+  background: #79c0ff;
+  transform: translateY(-2px);
+}
+
+.cb-btn-secondary {
+  background: transparent;
+  color: var(--cb-white);
+  padding: 0.85rem 2rem;
+  border: 1px solid var(--cb-border);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.cb-btn-secondary:hover {
+  border-color: var(--cb-blue);
+  color: var(--cb-blue);
+}
+
+/* Code Snippet Decoration */
+.cb-code-block {
+  background: var(--cb-card-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.cb-code-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--cb-border);
+}
+
+.cb-code-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.cb-code-dot:nth-child(1) { background: var(--cb-red); }
+.cb-code-dot:nth-child(2) { background: var(--cb-orange); }
+.cb-code-dot:nth-child(3) { background: var(--cb-green); }
+
+.cb-code-titlebar span:last-child {
+  margin-left: auto;
+  color: var(--cb-gray);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.cb-code-content {
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--cb-gray);
+}
+
+.cb-code-content .cb-keyword { color: var(--cb-red); }
+.cb-code-content .cb-func { color: var(--cb-purple); }
+.cb-code-content .cb-string { color: #a5d6ff; }
+.cb-code-content .cb-comment { color: #484f58; font-style: italic; }
+.cb-code-content .cb-variable { color: var(--cb-orange); }
+.cb-code-content .cb-type { color: var(--cb-green); }
+
+.cb-code-line {
+  display: block;
+}
+
+.cb-line-num {
+  color: #484f58;
+  display: inline-block;
+  width: 2rem;
+  text-align: right;
+  margin-right: 1.5rem;
+  user-select: none;
+}
+
+/* ── SECTION COMMON ── */
+.cb-section {
+  padding: 100px 2rem;
+}
+
+.cb-section-dark {
+  background: var(--cb-dark);
+}
+
+.cb-section-light {
+  background: var(--cb-ice);
+}
+
+.cb-section-white {
+  background: var(--cb-white);
+}
+
+.cb-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cb-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cb-blue);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.cb-section-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.cb-section-title-light {
+  color: var(--cb-white);
+}
+
+.cb-section-subtitle {
+  color: var(--cb-gray);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+.cb-section-header {
+  margin-bottom: 3.5rem;
+}
+
+.cb-section-header-center {
+  text-align: center;
+}
+
+.cb-section-header-center .cb-section-subtitle {
+  margin: 0.5rem auto 0;
+}
+
+/* ── COURSES ── */
+.cb-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.cb-course-card {
+  background: var(--cb-card-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.cb-course-card:hover {
+  border-color: var(--cb-blue);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(88, 166, 255, 0.1);
+}
+
+.cb-course-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.cb-course-icon-blue { background: rgba(88, 166, 255, 0.15); color: var(--cb-blue); }
+.cb-course-icon-green { background: rgba(63, 185, 80, 0.15); color: var(--cb-green); }
+.cb-course-icon-purple { background: rgba(188, 140, 255, 0.15); color: var(--cb-purple); }
+.cb-course-icon-orange { background: rgba(240, 136, 62, 0.15); color: var(--cb-orange); }
+
+.cb-course-card h3 {
+  color: var(--cb-white);
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.cb-course-card p {
+  color: var(--cb-gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.cb-course-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cb-border);
+}
+
+.cb-course-duration, .cb-course-level {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cb-gray);
+}
+
+.cb-course-duration span, .cb-course-level span {
+  color: var(--cb-white);
+}
+
+/* ── CURRICULUM ── */
+.cb-curriculum-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.cb-curriculum-phase {
+  background: var(--cb-white);
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  padding: 2rem;
+  position: relative;
+}
+
+.cb-curriculum-phase::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+}
+
+.cb-curriculum-phase:nth-child(1)::before { background: var(--cb-blue); }
+.cb-curriculum-phase:nth-child(2)::before { background: var(--cb-green); }
+.cb-curriculum-phase:nth-child(3)::before { background: var(--cb-purple); }
+.cb-curriculum-phase:nth-child(4)::before { background: var(--cb-orange); }
+
+.cb-phase-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cb-blue);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.cb-curriculum-phase h3 {
+  font-size: 1.2rem;
+  color: var(--cb-dark);
+  margin-bottom: 0.5rem;
+}
+
+.cb-phase-weeks {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cb-gray);
+  margin-bottom: 1rem;
+}
+
+.cb-phase-topics {
+  list-style: none;
+}
+
+.cb-phase-topics li {
+  padding: 0.4rem 0;
+  color: #484f58;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cb-phase-topics li::before {
+  content: '>';
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cb-blue);
+  font-weight: 700;
+}
+
+/* ── OUTCOMES ── */
+.cb-outcomes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.cb-outcome-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--cb-card-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: 12px;
+}
+
+.cb-outcome-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--cb-blue);
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.cb-outcome-label {
+  color: var(--cb-gray);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ── TESTIMONIALS ── */
+.cb-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.cb-testimonial-card {
+  background: var(--cb-white);
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.cb-testimonial-stars {
+  color: var(--cb-orange);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  letter-spacing: 2px;
+}
+
+.cb-testimonial-card blockquote {
+  color: #484f58;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.cb-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cb-testimonial-author img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cb-testimonial-name {
+  font-weight: 600;
+  color: var(--cb-dark);
+  font-size: 0.9rem;
+}
+
+.cb-testimonial-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--cb-gray);
+  margin-top: 0.2rem;
+}
+
+/* ── INSTRUCTORS ── */
+.cb-instructors-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.cb-instructor-card {
+  text-align: center;
+}
+
+.cb-instructor-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 1.25rem;
+  border: 2px solid #e1e4e8;
+  transition: border-color 0.3s;
+}
+
+.cb-instructor-card:hover .cb-instructor-img {
+  border-color: var(--cb-blue);
+}
+
+.cb-instructor-card h4 {
+  font-size: 1.05rem;
+  color: var(--cb-dark);
+  margin-bottom: 0.3rem;
+}
+
+.cb-instructor-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cb-blue);
+  margin-bottom: 0.25rem;
+}
+
+.cb-instructor-company {
+  font-size: 0.85rem;
+  color: var(--cb-gray);
+}
+
+/* ── COHORTS ── */
+.cb-cohorts-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--cb-card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--cb-border);
+}
+
+.cb-cohorts-table thead {
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.cb-cohorts-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cb-blue);
+  text-align: left;
+  padding: 1rem 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.cb-cohorts-table td {
+  padding: 1.1rem 1.5rem;
+  color: var(--cb-gray);
+  font-size: 0.9rem;
+  border-top: 1px solid var(--cb-border);
+}
+
+.cb-cohorts-table tbody tr:hover {
+  background: rgba(88, 166, 255, 0.03);
+}
+
+.cb-cohorts-table td:first-child {
+  color: var(--cb-white);
+  font-weight: 600;
+}
+
+.cb-status-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.cb-status-open {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--cb-green);
+}
+
+.cb-status-filling {
+  background: rgba(240, 136, 62, 0.15);
+  color: var(--cb-orange);
+}
+
+.cb-status-waitlist {
+  background: rgba(188, 140, 255, 0.15);
+  color: var(--cb-purple);
+}
+
+/* ── TUITION ── */
+.cb-tuition-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.cb-tuition-card {
+  background: var(--cb-white);
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.cb-tuition-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+.cb-tuition-featured {
+  border-color: var(--cb-blue);
+  box-shadow: 0 0 0 1px var(--cb-blue);
+}
+
+.cb-tuition-featured-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cb-blue);
+  color: var(--cb-dark);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 1rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cb-tuition-card h3 {
+  font-size: 1.15rem;
+  color: var(--cb-dark);
+  margin-bottom: 0.5rem;
+}
+
+.cb-tuition-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--cb-dark);
+  margin-bottom: 0.25rem;
+}
+
+.cb-tuition-price-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cb-gray);
+  margin-bottom: 2rem;
+}
+
+.cb-tuition-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.cb-tuition-features li {
+  padding: 0.5rem 0;
+  color: #484f58;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cb-tuition-features li::before {
+  content: '\2713';
+  color: var(--cb-green);
+  font-weight: 700;
+}
+
+.cb-tuition-btn {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.cb-tuition-btn-primary {
+  background: var(--cb-blue);
+  color: var(--cb-dark);
+}
+
+.cb-tuition-btn-primary:hover {
+  background: #79c0ff;
+}
+
+.cb-tuition-btn-outline {
+  background: transparent;
+  color: var(--cb-dark);
+  border: 1px solid #e1e4e8;
+}
+
+.cb-tuition-btn-outline:hover {
+  border-color: var(--cb-blue);
+  color: var(--cb-blue);
+}
+
+/* ── CTA ── */
+.cb-cta {
+  background: var(--cb-dark);
+  padding: 100px 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cb-cta::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(88, 166, 255, 0.1) 0%, transparent 70%);
+}
+
+.cb-cta h2 {
+  font-size: 2.8rem;
+  color: var(--cb-white);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.cb-cta p {
+  color: var(--cb-gray);
+  font-size: 1.1rem;
+  max-width: 550px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+  position: relative;
+}
+
+.cb-cta .cb-btn-primary {
+  position: relative;
+  font-size: 1.05rem;
+  padding: 1rem 2.5rem;
+}
+
+.cb-cta-terminal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--cb-gray);
+  margin-top: 2rem;
+  position: relative;
+}
+
+.cb-cta-terminal span {
+  color: var(--cb-green);
+}
+
+/* ── FOOTER ── */
+.cb-footer {
+  background: var(--cb-dark);
+  border-top: 1px solid var(--cb-border);
+  padding: 60px 2rem 30px;
+}
+
+.cb-footer-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.cb-footer-brand p {
+  color: var(--cb-gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-top: 1rem;
+  max-width: 300px;
+}
+
+.cb-footer h4 {
+  color: var(--cb-white);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.25rem;
+}
+
+.cb-footer-links {
+  list-style: none;
+}
+
+.cb-footer-links li {
+  margin-bottom: 0.6rem;
+}
+
+.cb-footer-links a {
+  color: var(--cb-gray);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.cb-footer-links a:hover {
+  color: var(--cb-blue);
+}
+
+.cb-footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--cb-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cb-footer-bottom p {
+  color: #484f58;
+  font-size: 0.85rem;
+}
+
+.cb-footer-social {
+  display: flex;
+  gap: 1rem;
+}
+
+.cb-footer-social a {
+  color: var(--cb-gray);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.3s;
+}
+
+.cb-footer-social a:hover {
+  color: var(--cb-blue);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .cb-courses-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cb-outcomes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cb-instructors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cb-nav-links {
+    display: none;
+  }
+  .cb-mobile-toggle {
+    display: block;
+  }
+  .cb-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .cb-hero h1 {
+    font-size: 2.5rem;
+  }
+  .cb-section {
+    padding: 70px 1.5rem;
+  }
+  .cb-section-title {
+    font-size: 2rem;
+  }
+  .cb-courses-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-curriculum-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-outcomes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cb-testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-instructors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cb-tuition-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .cb-cohorts-table {
+    display: block;
+    overflow-x: auto;
+  }
+  .cb-cta h2 {
+    font-size: 2rem;
+  }
+  .cb-footer-bottom {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .cb-hero h1 {
+    font-size: 2rem;
+  }
+  .cb-hero-buttons {
+    flex-direction: column;
+  }
+  .cb-outcomes-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-instructors-grid {
+    grid-template-columns: 1fr;
+  }
+  .cb-footer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="cb-template">
+
+  <!-- NAV -->
+  <nav class="cb-nav">
+    <div class="cb-nav-inner">
+      <a href="#" class="cb-logo">&lt;<span>CodeForge</span>/&gt;</a>
+      <ul class="cb-nav-links">
+        <li><a href="#courses">Courses</a></li>
+        <li><a href="#curriculum">Curriculum</a></li>
+        <li><a href="#outcomes">Outcomes</a></li>
+        <li><a href="#instructors">Instructors</a></li>
+        <li><a href="#cohorts">Cohorts</a></li>
+        <li><a href="#tuition">Tuition</a></li>
+        <li><a href="#apply" class="cb-nav-cta">Apply Now</a></li>
+      </ul>
+      <button class="cb-mobile-toggle">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="cb-hero">
+    <div class="cb-hero-inner">
+      <div>
+        <div class="cb-hero-badge">Enrolling Now &mdash; Summer 2026</div>
+        <h1>Launch Your<br><span>Tech Career</span></h1>
+        <p class="cb-hero-text">Go from zero to job-ready developer in 16 weeks. Our immersive bootcamp gives you the skills, portfolio, and network to break into tech with confidence.</p>
+        <div class="cb-hero-buttons">
+          <a href="#apply" class="cb-btn-primary">Apply Now</a>
+          <a href="#curriculum" class="cb-btn-secondary">View Curriculum</a>
+        </div>
+      </div>
+      <div class="cb-code-block">
+        <div class="cb-code-titlebar">
+          <span class="cb-code-dot"></span>
+          <span class="cb-code-dot"></span>
+          <span class="cb-code-dot"></span>
+          <span>career.js</span>
+        </div>
+        <div class="cb-code-content">
+          <span class="cb-code-line"><span class="cb-line-num">1</span><span class="cb-comment">// Your journey starts here</span></span>
+          <span class="cb-code-line"><span class="cb-line-num">2</span><span class="cb-keyword">const</span> <span class="cb-variable">student</span> = {</span>
+          <span class="cb-code-line"><span class="cb-line-num">3</span>&nbsp;&nbsp;<span class="cb-variable">name</span>: <span class="cb-string">"You"</span>,</span>
+          <span class="cb-code-line"><span class="cb-line-num">4</span>&nbsp;&nbsp;<span class="cb-variable">motivation</span>: <span class="cb-string">"infinite"</span>,</span>
+          <span class="cb-code-line"><span class="cb-line-num">5</span>&nbsp;&nbsp;<span class="cb-variable">readyToCode</span>: <span class="cb-type">true</span></span>
+          <span class="cb-code-line"><span class="cb-line-num">6</span>};</span>
+          <span class="cb-code-line"><span class="cb-line-num">7</span></span>
+          <span class="cb-code-line"><span class="cb-line-num">8</span><span class="cb-keyword">async function</span> <span class="cb-func">launchCareer</span>(<span class="cb-variable">student</span>) {</span>
+          <span class="cb-code-line"><span class="cb-line-num">9</span>&nbsp;&nbsp;<span class="cb-keyword">const</span> <span class="cb-variable">skills</span> = <span class="cb-keyword">await</span> <span class="cb-func">bootcamp</span>.<span class="cb-func">learn</span>([</span>
+          <span class="cb-code-line"><span class="cb-line-num">10</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cb-string">"React"</span>, <span class="cb-string">"Node.js"</span>,</span>
+          <span class="cb-code-line"><span class="cb-line-num">11</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cb-string">"Python"</span>, <span class="cb-string">"SQL"</span></span>
+          <span class="cb-code-line"><span class="cb-line-num">12</span>&nbsp;&nbsp;]);</span>
+          <span class="cb-code-line"><span class="cb-line-num">13</span>&nbsp;&nbsp;<span class="cb-keyword">return</span> <span class="cb-func">dreamJob</span>(<span class="cb-variable">skills</span>);</span>
+          <span class="cb-code-line"><span class="cb-line-num">14</span>}</span>
+          <span class="cb-code-line"><span class="cb-line-num">15</span></span>
+          <span class="cb-code-line"><span class="cb-line-num">16</span><span class="cb-func">launchCareer</span>(<span class="cb-variable">student</span>); <span class="cb-comment">// Let's go!</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COURSES -->
+  <section id="courses" class="cb-section cb-section-dark">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Programs</p>
+        <h2 class="cb-section-title cb-section-title-light">Choose Your Track</h2>
+        <p class="cb-section-subtitle">Four intensive programs designed to take you from beginner to industry-ready professional.</p>
+      </div>
+      <div class="cb-courses-grid">
+        <div class="cb-course-card">
+          <div class="cb-course-icon cb-course-icon-blue">&lt;/&gt;</div>
+          <h3>Full-Stack Development</h3>
+          <p>Master front-end and back-end technologies. Build production-grade web applications with React, Node.js, and PostgreSQL.</p>
+          <div class="cb-course-meta">
+            <span class="cb-course-duration">Duration: <span>16 weeks</span></span>
+            <span class="cb-course-level">Level: <span>Beginner</span></span>
+          </div>
+        </div>
+        <div class="cb-course-card">
+          <div class="cb-course-icon cb-course-icon-green">&#x26A1;</div>
+          <h3>Data Science & AI</h3>
+          <p>Dive into machine learning, statistical analysis, and AI. Work with Python, TensorFlow, and real-world datasets.</p>
+          <div class="cb-course-meta">
+            <span class="cb-course-duration">Duration: <span>20 weeks</span></span>
+            <span class="cb-course-level">Level: <span>Intermediate</span></span>
+          </div>
+        </div>
+        <div class="cb-course-card">
+          <div class="cb-course-icon cb-course-icon-purple">&#x25CF;</div>
+          <h3>UX/UI Design</h3>
+          <p>Learn user-centered design, prototyping with Figma, design systems, and the full product design lifecycle.</p>
+          <div class="cb-course-meta">
+            <span class="cb-course-duration">Duration: <span>14 weeks</span></span>
+            <span class="cb-course-level">Level: <span>Beginner</span></span>
+          </div>
+        </div>
+        <div class="cb-course-card">
+          <div class="cb-course-icon cb-course-icon-orange">&#x25B2;</div>
+          <h3>Mobile Development</h3>
+          <p>Build native-quality mobile apps with React Native and Flutter. Ship to both iOS and Android from a single codebase.</p>
+          <div class="cb-course-meta">
+            <span class="cb-course-duration">Duration: <span>16 weeks</span></span>
+            <span class="cb-course-level">Level: <span>Beginner</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CURRICULUM -->
+  <section id="curriculum" class="cb-section cb-section-light">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Curriculum</p>
+        <h2 class="cb-section-title">How We Build Developers</h2>
+        <p class="cb-section-subtitle">Our full-stack curriculum is broken into four focused phases, each building on the last.</p>
+      </div>
+      <div class="cb-curriculum-grid">
+        <div class="cb-curriculum-phase">
+          <p class="cb-phase-number">Phase 01</p>
+          <h3>Foundations</h3>
+          <p class="cb-phase-weeks">Weeks 1 - 4</p>
+          <ul class="cb-phase-topics">
+            <li>HTML5, CSS3 & Responsive Design</li>
+            <li>JavaScript Fundamentals & ES6+</li>
+            <li>Git, GitHub & Version Control</li>
+            <li>Command Line & Developer Tools</li>
+          </ul>
+        </div>
+        <div class="cb-curriculum-phase">
+          <p class="cb-phase-number">Phase 02</p>
+          <h3>Front-End Mastery</h3>
+          <p class="cb-phase-weeks">Weeks 5 - 8</p>
+          <ul class="cb-phase-topics">
+            <li>React & Component Architecture</li>
+            <li>State Management & Hooks</li>
+            <li>API Integration & Async Patterns</li>
+            <li>Testing with Jest & React Testing Library</li>
+          </ul>
+        </div>
+        <div class="cb-curriculum-phase">
+          <p class="cb-phase-number">Phase 03</p>
+          <h3>Back-End & Databases</h3>
+          <p class="cb-phase-weeks">Weeks 9 - 12</p>
+          <ul class="cb-phase-topics">
+            <li>Node.js & Express Framework</li>
+            <li>RESTful API Design</li>
+            <li>PostgreSQL & Data Modeling</li>
+            <li>Authentication & Security</li>
+          </ul>
+        </div>
+        <div class="cb-curriculum-phase">
+          <p class="cb-phase-number">Phase 04</p>
+          <h3>Capstone & Career Prep</h3>
+          <p class="cb-phase-weeks">Weeks 13 - 16</p>
+          <ul class="cb-phase-topics">
+            <li>Full-Stack Capstone Project</li>
+            <li>CI/CD & Cloud Deployment</li>
+            <li>Technical Interview Prep</li>
+            <li>Portfolio & Resume Workshop</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OUTCOMES -->
+  <section id="outcomes" class="cb-section cb-section-dark">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Student Outcomes</p>
+        <h2 class="cb-section-title cb-section-title-light">Results That Speak for Themselves</h2>
+        <p class="cb-section-subtitle">Our graduates don't just learn to code -- they launch real careers in tech.</p>
+      </div>
+      <div class="cb-outcomes-grid">
+        <div class="cb-outcome-card">
+          <p class="cb-outcome-number">95%</p>
+          <p class="cb-outcome-label">Hired within 6 months of graduating</p>
+        </div>
+        <div class="cb-outcome-card">
+          <p class="cb-outcome-number">$85k</p>
+          <p class="cb-outcome-label">Average starting salary for graduates</p>
+        </div>
+        <div class="cb-outcome-card">
+          <p class="cb-outcome-number">2,400+</p>
+          <p class="cb-outcome-label">Alumni in the tech industry worldwide</p>
+        </div>
+        <div class="cb-outcome-card">
+          <p class="cb-outcome-number">4.9/5</p>
+          <p class="cb-outcome-label">Average student satisfaction rating</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="cb-section cb-section-white">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Alumni Stories</p>
+        <h2 class="cb-section-title">What Our Graduates Say</h2>
+        <p class="cb-section-subtitle">Real stories from real people who transformed their careers through CodeForge.</p>
+      </div>
+      <div class="cb-testimonials-grid">
+        <div class="cb-testimonial-card">
+          <p class="cb-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+          <blockquote>"I went from bartending to a full-stack developer role at a Series B startup in just 5 months. CodeForge gave me the skills and the confidence to make the leap."</blockquote>
+          <div class="cb-testimonial-author">
+            <img src="https://images.pexels.com/photos/270373/pexels-photo-270373.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Alumni">
+            <div>
+              <p class="cb-testimonial-name">Sarah Chen</p>
+              <p class="cb-testimonial-role">Full-Stack Dev @ Stripe</p>
+            </div>
+          </div>
+        </div>
+        <div class="cb-testimonial-card">
+          <p class="cb-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+          <blockquote>"The instructors aren't just teachers -- they're experienced engineers who know what companies actually look for. The career support was incredible."</blockquote>
+          <div class="cb-testimonial-author">
+            <img src="https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Alumni">
+            <div>
+              <p class="cb-testimonial-name">Marcus Johnson</p>
+              <p class="cb-testimonial-role">Software Engineer @ Google</p>
+            </div>
+          </div>
+        </div>
+        <div class="cb-testimonial-card">
+          <p class="cb-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+          <blockquote>"As a single mom, I needed a program that was intense but supportive. CodeForge delivered both. I tripled my income within a year of graduating."</blockquote>
+          <div class="cb-testimonial-author">
+            <img src="https://images.pexels.com/photos/5621963/pexels-photo-5621963.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Alumni">
+            <div>
+              <p class="cb-testimonial-name">Priya Patel</p>
+              <p class="cb-testimonial-role">Frontend Dev @ Shopify</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTRUCTORS -->
+  <section id="instructors" class="cb-section cb-section-light">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Meet the Team</p>
+        <h2 class="cb-section-title">Learn from Industry Veterans</h2>
+        <p class="cb-section-subtitle">Our instructors bring 10+ years of real-world engineering experience to the classroom.</p>
+      </div>
+      <div class="cb-instructors-grid">
+        <div class="cb-instructor-card">
+          <img class="cb-instructor-img" src="https://images.pexels.com/photos/8500309/pexels-photo-8500309.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Instructor">
+          <h4>Alex Rivera</h4>
+          <p class="cb-instructor-title">Lead Instructor, Full-Stack</p>
+          <p class="cb-instructor-company">Ex-Netflix, Ex-Meta</p>
+        </div>
+        <div class="cb-instructor-card">
+          <img class="cb-instructor-img" src="https://images.pexels.com/photos/574069/pexels-photo-574069.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Instructor">
+          <h4>Dr. Maya Okonkwo</h4>
+          <p class="cb-instructor-title">Lead Instructor, Data Science</p>
+          <p class="cb-instructor-company">Ex-DeepMind, PhD MIT</p>
+        </div>
+        <div class="cb-instructor-card">
+          <img class="cb-instructor-img" src="https://images.pexels.com/photos/340152/pexels-photo-340152.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Instructor">
+          <h4>Jordan Kim</h4>
+          <p class="cb-instructor-title">Lead Instructor, UX/UI</p>
+          <p class="cb-instructor-company">Ex-Apple, Ex-Figma</p>
+        </div>
+        <div class="cb-instructor-card">
+          <img class="cb-instructor-img" src="https://images.pexels.com/photos/270373/pexels-photo-270373.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Instructor">
+          <h4>Raj Mehta</h4>
+          <p class="cb-instructor-title">Lead Instructor, Mobile</p>
+          <p class="cb-instructor-company">Ex-Uber, Ex-Airbnb</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UPCOMING COHORTS -->
+  <section id="cohorts" class="cb-section cb-section-dark">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Upcoming Cohorts</p>
+        <h2 class="cb-section-title cb-section-title-light">Find Your Start Date</h2>
+        <p class="cb-section-subtitle">We run multiple cohorts throughout the year. Seats are limited to ensure personalized instruction.</p>
+      </div>
+      <table class="cb-cohorts-table">
+        <thead>
+          <tr>
+            <th>Program</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Format</th>
+            <th>Seats Left</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Full-Stack Development</td>
+            <td>June 16, 2026</td>
+            <td>October 2, 2026</td>
+            <td>Full-time, In-person</td>
+            <td>8 / 24</td>
+            <td><span class="cb-status-badge cb-status-filling">Filling Fast</span></td>
+          </tr>
+          <tr>
+            <td>Data Science & AI</td>
+            <td>July 7, 2026</td>
+            <td>November 20, 2026</td>
+            <td>Full-time, Hybrid</td>
+            <td>14 / 20</td>
+            <td><span class="cb-status-badge cb-status-open">Open</span></td>
+          </tr>
+          <tr>
+            <td>UX/UI Design</td>
+            <td>June 2, 2026</td>
+            <td>September 4, 2026</td>
+            <td>Full-time, In-person</td>
+            <td>3 / 20</td>
+            <td><span class="cb-status-badge cb-status-filling">Filling Fast</span></td>
+          </tr>
+          <tr>
+            <td>Mobile Development</td>
+            <td>August 11, 2026</td>
+            <td>November 27, 2026</td>
+            <td>Full-time, Remote</td>
+            <td>18 / 24</td>
+            <td><span class="cb-status-badge cb-status-open">Open</span></td>
+          </tr>
+          <tr>
+            <td>Full-Stack Development</td>
+            <td>September 14, 2026</td>
+            <td>January 8, 2027</td>
+            <td>Part-time, Remote</td>
+            <td>0 / 24</td>
+            <td><span class="cb-status-badge cb-status-waitlist">Waitlist</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TUITION -->
+  <section id="tuition" class="cb-section cb-section-white">
+    <div class="cb-container">
+      <div class="cb-section-header cb-section-header-center">
+        <p class="cb-section-label">// Tuition & Financing</p>
+        <h2 class="cb-section-title">Invest in Your Future</h2>
+        <p class="cb-section-subtitle">Flexible payment options so finances never stand between you and a tech career.</p>
+      </div>
+      <div class="cb-tuition-grid">
+        <div class="cb-tuition-card">
+          <h3>Upfront Payment</h3>
+          <p class="cb-tuition-price">$12,900</p>
+          <p class="cb-tuition-price-sub">One-time payment</p>
+          <ul class="cb-tuition-features">
+            <li>Save $2,100 vs. installments</li>
+            <li>Full curriculum access</li>
+            <li>Career coaching included</li>
+            <li>Alumni network access</li>
+          </ul>
+          <button class="cb-tuition-btn cb-tuition-btn-outline">Select Plan</button>
+        </div>
+        <div class="cb-tuition-card cb-tuition-featured">
+          <span class="cb-tuition-featured-badge">Most Popular</span>
+          <h3>Monthly Installments</h3>
+          <p class="cb-tuition-price">$950</p>
+          <p class="cb-tuition-price-sub">/month for 16 months</p>
+          <ul class="cb-tuition-features">
+            <li>No interest, no hidden fees</li>
+            <li>Full curriculum access</li>
+            <li>Career coaching included</li>
+            <li>Alumni network access</li>
+            <li>1-on-1 mentorship sessions</li>
+          </ul>
+          <button class="cb-tuition-btn cb-tuition-btn-primary">Select Plan</button>
+        </div>
+        <div class="cb-tuition-card">
+          <h3>Income Share Agreement</h3>
+          <p class="cb-tuition-price">$0</p>
+          <p class="cb-tuition-price-sub">upfront &mdash; pay after hired</p>
+          <ul class="cb-tuition-features">
+            <li>Pay 15% of salary for 24 months</li>
+            <li>Only pay if earning $50k+</li>
+            <li>Full curriculum access</li>
+            <li>Career coaching included</li>
+          </ul>
+          <button class="cb-tuition-btn cb-tuition-btn-outline">Learn More</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="apply" class="cb-cta">
+    <div class="cb-container">
+      <h2>Ready to <span style="color: var(--cb-blue);">git commit</span> to your future?</h2>
+      <p>Applications are reviewed on a rolling basis. No coding experience required -- just curiosity and determination.</p>
+      <a href="#" class="cb-btn-primary">Start Your Application</a>
+      <p class="cb-cta-terminal"><span>$</span> npx create-new-career --bootcamp codeforge</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="cb-footer">
+    <div class="cb-footer-grid">
+      <div class="cb-footer-brand">
+        <a href="#" class="cb-logo">&lt;<span>CodeForge</span>/&gt;</a>
+        <p>Transforming ambitious people into skilled developers since 2019. Campuses in San Francisco, New York, and fully remote options available.</p>
+      </div>
+      <div>
+        <h4>Programs</h4>
+        <ul class="cb-footer-links">
+          <li><a href="#">Full-Stack Development</a></li>
+          <li><a href="#">Data Science & AI</a></li>
+          <li><a href="#">UX/UI Design</a></li>
+          <li><a href="#">Mobile Development</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <ul class="cb-footer-links">
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Free Workshops</a></li>
+          <li><a href="#">Student Stories</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul class="cb-footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Hire Our Grads</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="cb-footer-bottom">
+      <p>&copy; 2026 CodeForge Bootcamp. All rights reserved.</p>
+      <div class="cb-footer-social">
+        <a href="#">GitHub</a>
+        <a href="#">Twitter</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">YouTube</a>
+      </div>
+    </div>
+  </footer>
+
+</div>

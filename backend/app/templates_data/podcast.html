@@ -1,0 +1,1494 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ==================== PODCAST TEMPLATE STYLES ==================== */
+
+.pod-wrapper {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #16161a;
+  color: #f2f0ff;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.pod-wrapper * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.pod-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.pod-section-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #7f5af0;
+  margin-bottom: 12px;
+}
+
+.pod-section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.pod-section-desc {
+  font-size: 1.05rem;
+  color: #a0a0b0;
+  max-width: 600px;
+  line-height: 1.7;
+}
+
+.pod-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: #7f5af0;
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.pod-btn:hover {
+  background: #6b47d6;
+  transform: translateY(-2px);
+}
+
+.pod-btn-outline {
+  background: transparent;
+  border: 2px solid #7f5af0;
+  color: #7f5af0;
+}
+
+.pod-btn-outline:hover {
+  background: #7f5af0;
+  color: #ffffff;
+}
+
+/* ==================== HERO ==================== */
+
+.pod-hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 120px 0 80px;
+  background: linear-gradient(160deg, #16161a 0%, #1e1e26 50%, #16161a 100%);
+  overflow: hidden;
+}
+
+.pod-hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(127,90,240,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pod-hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 60px;
+}
+
+.pod-hero-content {
+  flex: 1;
+  max-width: 560px;
+}
+
+.pod-hero-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(127,90,240,0.15);
+  border: 1px solid rgba(127,90,240,0.3);
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7f5af0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.pod-hero-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.08;
+  margin-bottom: 24px;
+}
+
+.pod-hero-title span {
+  color: #7f5af0;
+}
+
+.pod-hero-text {
+  font-size: 1.15rem;
+  color: #a0a0b0;
+  margin-bottom: 36px;
+  line-height: 1.7;
+}
+
+.pod-hero-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pod-hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 48px;
+}
+
+.pod-hero-stat-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #7f5af0;
+}
+
+.pod-hero-stat-label {
+  font-size: 0.85rem;
+  color: #a0a0b0;
+  margin-top: 4px;
+}
+
+/* Mic Graphic */
+.pod-hero-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.pod-mic-graphic {
+  width: 320px;
+  height: 420px;
+  position: relative;
+}
+
+.pod-mic-body {
+  width: 100px;
+  height: 200px;
+  background: linear-gradient(180deg, #7f5af0, #5b3cc4);
+  border-radius: 50px 50px 10px 10px;
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 60px rgba(127,90,240,0.35);
+}
+
+.pod-mic-body::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+}
+
+.pod-mic-body::after {
+  content: '';
+  position: absolute;
+  top: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 50%;
+}
+
+.pod-mic-grille {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pod-mic-grille-line {
+  width: 50px;
+  height: 2px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 1px;
+}
+
+.pod-mic-stand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 240px;
+  width: 6px;
+  height: 80px;
+  background: linear-gradient(180deg, #5b3cc4, #3d2a80);
+  border-radius: 3px;
+}
+
+.pod-mic-base {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 310px;
+  width: 120px;
+  height: 12px;
+  background: #3d2a80;
+  border-radius: 6px;
+}
+
+.pod-mic-ring {
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 260px;
+  border: 2px solid rgba(127,90,240,0.2);
+  border-radius: 80px;
+}
+
+.pod-mic-wave {
+  position: absolute;
+  border: 1px solid rgba(127,90,240,0.12);
+  border-radius: 50%;
+}
+
+.pod-mic-wave-1 {
+  width: 250px;
+  height: 250px;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: pod-wave-pulse 3s ease-in-out infinite;
+}
+
+.pod-mic-wave-2 {
+  width: 320px;
+  height: 320px;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: pod-wave-pulse 3s ease-in-out 1s infinite;
+}
+
+.pod-mic-wave-3 {
+  width: 390px;
+  height: 390px;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: pod-wave-pulse 3s ease-in-out 2s infinite;
+}
+
+@keyframes pod-wave-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* ==================== LATEST EPISODES ==================== */
+
+.pod-episodes {
+  padding: 120px 0;
+  background: #16161a;
+}
+
+.pod-episodes-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.pod-episodes-header .pod-section-desc {
+  margin: 0 auto;
+}
+
+.pod-episodes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pod-episode-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.pod-episode-card:hover {
+  border-color: rgba(127,90,240,0.3);
+  background: rgba(127,90,240,0.04);
+}
+
+.pod-episode-play {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  background: #7f5af0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.3s;
+}
+
+.pod-episode-play:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 30px rgba(127,90,240,0.4);
+}
+
+.pod-episode-play svg {
+  width: 24px;
+  height: 24px;
+  fill: #ffffff;
+  margin-left: 3px;
+}
+
+.pod-episode-thumb {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pod-episode-info {
+  flex: 1;
+}
+
+.pod-episode-num {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7f5af0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.pod-episode-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.pod-episode-excerpt {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+  line-height: 1.5;
+}
+
+.pod-episode-meta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.pod-episode-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #a0a0b0;
+}
+
+.pod-episode-meta-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: #7f5af0;
+  fill: none;
+}
+
+/* ==================== ABOUT ==================== */
+
+.pod-about {
+  padding: 120px 0;
+  background: linear-gradient(180deg, #16161a 0%, #1a1a22 100%);
+}
+
+.pod-about-inner {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+
+.pod-about-image {
+  flex: 1;
+  position: relative;
+}
+
+.pod-about-img {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+}
+
+.pod-about-img-accent {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  width: 120px;
+  height: 120px;
+  border: 3px solid #7f5af0;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.pod-about-content {
+  flex: 1;
+}
+
+.pod-about-content .pod-section-desc {
+  margin-bottom: 24px;
+}
+
+.pod-about-features {
+  list-style: none;
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pod-about-feature {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1rem;
+  color: #d0d0dd;
+}
+
+.pod-about-feature-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(127,90,240,0.12);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pod-about-feature-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: #7f5af0;
+  fill: none;
+}
+
+/* ==================== HOST ==================== */
+
+.pod-host {
+  padding: 120px 0;
+  background: #16161a;
+}
+
+.pod-host-inner {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+
+.pod-host-photo-wrap {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pod-host-photo {
+  width: 340px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+}
+
+.pod-host-photo-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  right: -16px;
+  width: 100px;
+  height: 100px;
+  background: #7f5af0;
+  border-radius: 20px;
+  z-index: -1;
+}
+
+.pod-host-content {
+  flex: 1;
+}
+
+.pod-host-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.pod-host-role {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #7f5af0;
+  margin-bottom: 20px;
+}
+
+.pod-host-bio {
+  font-size: 1.05rem;
+  color: #a0a0b0;
+  line-height: 1.8;
+  margin-bottom: 28px;
+}
+
+.pod-host-socials {
+  display: flex;
+  gap: 12px;
+}
+
+.pod-host-social {
+  width: 44px;
+  height: 44px;
+  background: rgba(127,90,240,0.1);
+  border: 1px solid rgba(127,90,240,0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.pod-host-social:hover {
+  background: #7f5af0;
+}
+
+.pod-host-social svg {
+  width: 18px;
+  height: 18px;
+  fill: #7f5af0;
+}
+
+.pod-host-social:hover svg {
+  fill: #ffffff;
+}
+
+/* ==================== GUEST SPOTLIGHT ==================== */
+
+.pod-guests {
+  padding: 120px 0;
+  background: linear-gradient(180deg, #16161a 0%, #1a1a22 100%);
+}
+
+.pod-guests-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.pod-guests-header .pod-section-desc {
+  margin: 0 auto;
+}
+
+.pod-guests-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.pod-guest-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.2s;
+}
+
+.pod-guest-card:hover {
+  border-color: rgba(127,90,240,0.3);
+  transform: translateY(-4px);
+}
+
+.pod-guest-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+  border: 3px solid #7f5af0;
+}
+
+.pod-guest-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.pod-guest-title {
+  font-size: 0.85rem;
+  color: #7f5af0;
+  margin-bottom: 14px;
+}
+
+.pod-guest-desc {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+  line-height: 1.6;
+}
+
+.pod-guest-ep {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7f5af0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ==================== SUBSCRIBE ==================== */
+
+.pod-subscribe {
+  padding: 120px 0;
+  background: #16161a;
+}
+
+.pod-subscribe-inner {
+  text-align: center;
+}
+
+.pod-subscribe-inner .pod-section-desc {
+  margin: 0 auto 48px;
+}
+
+.pod-subscribe-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pod-subscribe-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 36px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: border-color 0.3s, background 0.3s, transform 0.2s;
+  cursor: pointer;
+}
+
+.pod-subscribe-link:hover {
+  border-color: rgba(127,90,240,0.4);
+  background: rgba(127,90,240,0.06);
+  transform: translateY(-3px);
+}
+
+.pod-subscribe-link svg {
+  width: 36px;
+  height: 36px;
+}
+
+.pod-subscribe-link-text {
+  text-align: left;
+}
+
+.pod-subscribe-link-small {
+  font-size: 0.75rem;
+  color: #a0a0b0;
+  display: block;
+}
+
+.pod-subscribe-link-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ==================== REVIEWS ==================== */
+
+.pod-reviews {
+  padding: 120px 0;
+  background: linear-gradient(180deg, #16161a 0%, #1a1a22 100%);
+}
+
+.pod-reviews-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.pod-reviews-header .pod-section-desc {
+  margin: 0 auto;
+}
+
+.pod-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.pod-review-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px;
+  padding: 32px;
+  transition: border-color 0.3s;
+}
+
+.pod-review-card:hover {
+  border-color: rgba(127,90,240,0.25);
+}
+
+.pod-review-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.pod-review-star {
+  width: 18px;
+  height: 18px;
+  fill: #7f5af0;
+}
+
+.pod-review-text {
+  font-size: 0.95rem;
+  color: #c0c0d0;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.pod-review-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pod-review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pod-review-author-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.pod-review-author-handle {
+  font-size: 0.8rem;
+  color: #a0a0b0;
+}
+
+/* ==================== NEWSLETTER ==================== */
+
+.pod-newsletter {
+  padding: 120px 0;
+  background: #16161a;
+}
+
+.pod-newsletter-card {
+  background: linear-gradient(135deg, rgba(127,90,240,0.12) 0%, rgba(127,90,240,0.04) 100%);
+  border: 1px solid rgba(127,90,240,0.2);
+  border-radius: 28px;
+  padding: 72px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.pod-newsletter-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(127,90,240,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pod-newsletter-card .pod-section-desc {
+  margin: 0 auto 36px;
+}
+
+.pod-newsletter-form {
+  display: flex;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.pod-newsletter-input {
+  flex: 1;
+  padding: 16px 24px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50px;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.pod-newsletter-input::placeholder {
+  color: #666680;
+}
+
+.pod-newsletter-input:focus {
+  border-color: #7f5af0;
+}
+
+/* ==================== FOOTER ==================== */
+
+.pod-footer {
+  padding: 60px 0 40px;
+  background: #101014;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.pod-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.pod-footer-brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.pod-footer-brand-name span {
+  color: #7f5af0;
+}
+
+.pod-footer-brand-desc {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+  max-width: 280px;
+  line-height: 1.6;
+}
+
+.pod-footer-links-group h4 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.pod-footer-links-group ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pod-footer-links-group a {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.pod-footer-links-group a:hover {
+  color: #7f5af0;
+}
+
+.pod-footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pod-footer-copy {
+  font-size: 0.85rem;
+  color: #666680;
+}
+
+.pod-footer-socials {
+  display: flex;
+  gap: 12px;
+}
+
+.pod-footer-social-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.pod-footer-social-icon:hover {
+  background: #7f5af0;
+}
+
+.pod-footer-social-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: #a0a0b0;
+}
+
+.pod-footer-social-icon:hover svg {
+  fill: #ffffff;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 1024px) {
+  .pod-hero-title { font-size: 3rem; }
+  .pod-section-title { font-size: 2.2rem; }
+  .pod-about-inner, .pod-host-inner { gap: 50px; }
+  .pod-guests-grid, .pod-reviews-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .pod-hero-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  .pod-hero-title { font-size: 2.6rem; }
+  .pod-hero-actions { justify-content: center; }
+  .pod-hero-stats { justify-content: center; }
+  .pod-hero-visual { order: -1; }
+  .pod-mic-graphic { width: 240px; height: 340px; }
+  .pod-mic-body { width: 76px; height: 150px; }
+  .pod-mic-body::before { width: 44px; height: 44px; top: 24px; }
+  .pod-mic-stand { top: 190px; height: 60px; }
+  .pod-mic-base { top: 242px; width: 90px; }
+  .pod-mic-ring { width: 120px; height: 200px; top: 10px; }
+  .pod-mic-wave-1 { width: 180px; height: 180px; top: 40px; }
+  .pod-mic-wave-2 { width: 240px; height: 240px; top: 10px; }
+  .pod-mic-wave-3 { width: 300px; height: 300px; top: -20px; }
+  .pod-about-inner, .pod-host-inner { flex-direction: column; text-align: center; }
+  .pod-about-img-accent { display: none; }
+  .pod-host-photo { width: 240px; height: 280px; }
+  .pod-guests-grid, .pod-reviews-grid { grid-template-columns: 1fr; }
+  .pod-episode-card { flex-direction: column; text-align: center; }
+  .pod-episode-meta { justify-content: center; }
+  .pod-subscribe-links { flex-direction: column; align-items: center; }
+  .pod-subscribe-link { width: 100%; max-width: 340px; }
+  .pod-newsletter-card { padding: 48px 28px; }
+  .pod-newsletter-form { flex-direction: column; }
+  .pod-footer-inner { flex-direction: column; text-align: center; }
+  .pod-footer-bottom { flex-direction: column; gap: 16px; }
+  .pod-section-desc { margin-left: auto; margin-right: auto; }
+  .pod-about-features { align-items: center; }
+}
+
+@media (max-width: 480px) {
+  .pod-hero-title { font-size: 2rem; }
+  .pod-section-title { font-size: 1.8rem; }
+  .pod-hero-stats { flex-direction: column; gap: 20px; }
+  .pod-hero-actions { flex-direction: column; }
+}
+</style>
+
+<div class="pod-wrapper">
+
+  <!-- HERO -->
+  <section class="pod-hero">
+    <div class="pod-container">
+      <div class="pod-hero-inner">
+        <div class="pod-hero-content">
+          <div class="pod-hero-badge">New Episode Every Week</div>
+          <h1 class="pod-hero-title">The <span>Signal</span> Podcast</h1>
+          <p class="pod-hero-text">Deep conversations with the world's most innovative thinkers, creators, and leaders. Exploring ideas that shape our future, one episode at a time.</p>
+          <div class="pod-hero-actions">
+            <a href="#episodes" class="pod-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+              Latest Episode
+            </a>
+            <a href="#subscribe" class="pod-btn pod-btn-outline">Subscribe Now</a>
+          </div>
+          <div class="pod-hero-stats">
+            <div>
+              <div class="pod-hero-stat-num">250+</div>
+              <div class="pod-hero-stat-label">Episodes</div>
+            </div>
+            <div>
+              <div class="pod-hero-stat-num">2M+</div>
+              <div class="pod-hero-stat-label">Downloads</div>
+            </div>
+            <div>
+              <div class="pod-hero-stat-num">4.9</div>
+              <div class="pod-hero-stat-label">Rating</div>
+            </div>
+          </div>
+        </div>
+        <div class="pod-hero-visual">
+          <div class="pod-mic-graphic">
+            <div class="pod-mic-wave pod-mic-wave-1"></div>
+            <div class="pod-mic-wave pod-mic-wave-2"></div>
+            <div class="pod-mic-wave pod-mic-wave-3"></div>
+            <div class="pod-mic-ring"></div>
+            <div class="pod-mic-body">
+              <div class="pod-mic-grille">
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+                <div class="pod-mic-grille-line"></div>
+              </div>
+            </div>
+            <div class="pod-mic-stand"></div>
+            <div class="pod-mic-base"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LATEST EPISODES -->
+  <section class="pod-episodes" id="episodes">
+    <div class="pod-container">
+      <div class="pod-episodes-header">
+        <div class="pod-section-label">Latest Episodes</div>
+        <h2 class="pod-section-title">Fresh Off the Mic</h2>
+        <p class="pod-section-desc">Catch up on our most recent conversations. New episodes drop every Tuesday.</p>
+      </div>
+      <div class="pod-episodes-grid">
+
+        <div class="pod-episode-card">
+          <div class="pod-episode-play">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Episode thumbnail" class="pod-episode-thumb">
+          <div class="pod-episode-info">
+            <div class="pod-episode-num">Episode 253</div>
+            <h3 class="pod-episode-title">The Future of Creative AI with Dr. Maya Chen</h3>
+            <p class="pod-episode-excerpt">Exploring how artificial intelligence is transforming creative industries and what it means for human artistry.</p>
+          </div>
+          <div class="pod-episode-meta">
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+              58 min
+            </div>
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Mar 4, 2026
+            </div>
+          </div>
+        </div>
+
+        <div class="pod-episode-card">
+          <div class="pod-episode-play">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Episode thumbnail" class="pod-episode-thumb">
+          <div class="pod-episode-info">
+            <div class="pod-episode-num">Episode 252</div>
+            <h3 class="pod-episode-title">Building Resilient Startups in an Uncertain Economy</h3>
+            <p class="pod-episode-excerpt">Venture capitalist Sarah Kline shares her framework for building companies that thrive through market turbulence.</p>
+          </div>
+          <div class="pod-episode-meta">
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+              45 min
+            </div>
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Feb 25, 2026
+            </div>
+          </div>
+        </div>
+
+        <div class="pod-episode-card">
+          <div class="pod-episode-play">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Episode thumbnail" class="pod-episode-thumb">
+          <div class="pod-episode-info">
+            <div class="pod-episode-num">Episode 251</div>
+            <h3 class="pod-episode-title">The Neuroscience of Peak Performance</h3>
+            <p class="pod-episode-excerpt">Dr. James Hartwell reveals the brain science behind flow states and how to access them on demand.</p>
+          </div>
+          <div class="pod-episode-meta">
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+              62 min
+            </div>
+            <div class="pod-episode-meta-item">
+              <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Feb 18, 2026
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT THE SHOW -->
+  <section class="pod-about">
+    <div class="pod-container">
+      <div class="pod-about-inner">
+        <div class="pod-about-image">
+          <div class="pod-about-img-accent"></div>
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Studio setup" class="pod-about-img">
+        </div>
+        <div class="pod-about-content">
+          <div class="pod-section-label">About the Show</div>
+          <h2 class="pod-section-title">Stories That Move the Needle</h2>
+          <p class="pod-section-desc">The Signal is a weekly podcast that dives deep into the minds of the world's most fascinating people. From tech founders and scientists to artists and philosophers, we explore the ideas shaping tomorrow.</p>
+          <p class="pod-section-desc" style="margin-top:16px;">Every episode is crafted to leave you with actionable insights and a fresh perspective on what matters most.</p>
+          <ul class="pod-about-features">
+            <li class="pod-about-feature">
+              <div class="pod-about-feature-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              In-depth interviews averaging 60 minutes
+            </li>
+            <li class="pod-about-feature">
+              <div class="pod-about-feature-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+              </div>
+              Rigorously researched show notes
+            </li>
+            <li class="pod-about-feature">
+              <div class="pod-about-feature-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              World-class guests from 40+ countries
+            </li>
+            <li class="pod-about-feature">
+              <div class="pod-about-feature-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              </div>
+              Trusted by Fortune 500 leaders
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOST PROFILE -->
+  <section class="pod-host">
+    <div class="pod-container">
+      <div class="pod-host-inner">
+        <div class="pod-host-photo-wrap">
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Host photo" class="pod-host-photo">
+        </div>
+        <div class="pod-host-content">
+          <div class="pod-section-label">Your Host</div>
+          <h2 class="pod-host-name">Alex Rivera</h2>
+          <div class="pod-host-role">Journalist, Author & Podcast Host</div>
+          <p class="pod-host-bio">Alex Rivera is an award-winning journalist and bestselling author with over 15 years of experience covering technology, culture, and innovation. After a decade at leading publications, Alex launched The Signal to have the kind of conversations that mainstream media rarely allows — long-form, nuanced, and deeply human.</p>
+          <p class="pod-host-bio">When not behind the microphone, Alex speaks at global conferences, mentors emerging journalists, and works on the next book exploring the intersection of technology and human connection.</p>
+          <div class="pod-host-socials">
+            <div class="pod-host-social">
+              <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+            </div>
+            <div class="pod-host-social">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </div>
+            <div class="pod-host-social">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#7f5af0" stroke-width="2" fill="none"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUEST SPOTLIGHT -->
+  <section class="pod-guests">
+    <div class="pod-container">
+      <div class="pod-guests-header">
+        <div class="pod-section-label">Guest Spotlight</div>
+        <h2 class="pod-section-title">Brilliant Minds, Bold Conversations</h2>
+        <p class="pod-section-desc">Meet some of the extraordinary guests who have shared their stories on The Signal.</p>
+      </div>
+      <div class="pod-guests-grid">
+        <div class="pod-guest-card">
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Guest" class="pod-guest-photo">
+          <h3 class="pod-guest-name">Dr. Lena Park</h3>
+          <div class="pod-guest-title">Quantum Computing Researcher, MIT</div>
+          <p class="pod-guest-desc">Pioneer in quantum error correction who's making quantum computers practical for real-world applications.</p>
+          <div class="pod-guest-ep">Episode 248</div>
+        </div>
+        <div class="pod-guest-card">
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Guest" class="pod-guest-photo">
+          <h3 class="pod-guest-name">Marcus Webb</h3>
+          <div class="pod-guest-title">Founder & CEO, NovaTech</div>
+          <p class="pod-guest-desc">Built a billion-dollar climate tech company from his garage and is now revolutionizing carbon capture technology.</p>
+          <div class="pod-guest-ep">Episode 245</div>
+        </div>
+        <div class="pod-guest-card">
+          <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Guest" class="pod-guest-photo">
+          <h3 class="pod-guest-name">Sofia Alvarez</h3>
+          <div class="pod-guest-title">Bestselling Author & Essayist</div>
+          <p class="pod-guest-desc">Her latest book on digital minimalism has sparked a worldwide movement rethinking our relationship with technology.</p>
+          <div class="pod-guest-ep">Episode 240</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBSCRIBE -->
+  <section class="pod-subscribe" id="subscribe">
+    <div class="pod-container">
+      <div class="pod-subscribe-inner">
+        <div class="pod-section-label">Listen Anywhere</div>
+        <h2 class="pod-section-title">Subscribe to The Signal</h2>
+        <p class="pod-section-desc">Available on all major podcast platforms. Pick your favorite and never miss an episode.</p>
+        <div class="pod-subscribe-links">
+
+          <!-- Apple Podcasts -->
+          <a href="#" class="pod-subscribe-link">
+            <svg viewBox="0 0 50 50" fill="none">
+              <rect width="50" height="50" rx="12" fill="#8B5CF6"/>
+              <circle cx="25" cy="20" r="8" stroke="white" stroke-width="2.5" fill="none"/>
+              <ellipse cx="25" cy="22" rx="3" ry="3.5" fill="white"/>
+              <path d="M22 30 C22 26 28 26 28 30 L27 40 C27 41 23 41 23 40 Z" fill="white"/>
+            </svg>
+            <div class="pod-subscribe-link-text">
+              <span class="pod-subscribe-link-small">Listen on</span>
+              <span class="pod-subscribe-link-name">Apple Podcasts</span>
+            </div>
+          </a>
+
+          <!-- Spotify -->
+          <a href="#" class="pod-subscribe-link">
+            <svg viewBox="0 0 50 50" fill="none">
+              <rect width="50" height="50" rx="12" fill="#1DB954"/>
+              <circle cx="25" cy="25" r="14" fill="#1DB954"/>
+              <path d="M17 21c5.5-1.5 11.5-.5 16 2" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <path d="M18 26c4.5-1.2 9.5-.4 13.5 1.6" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <path d="M19.5 31c3.5-1 7.5-.3 10.5 1.2" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            </svg>
+            <div class="pod-subscribe-link-text">
+              <span class="pod-subscribe-link-small">Listen on</span>
+              <span class="pod-subscribe-link-name">Spotify</span>
+            </div>
+          </a>
+
+          <!-- Google Podcasts -->
+          <a href="#" class="pod-subscribe-link">
+            <svg viewBox="0 0 50 50" fill="none">
+              <rect width="50" height="50" rx="12" fill="#EA4335"/>
+              <circle cx="25" cy="14" r="3.5" fill="#FBBC05"/>
+              <rect x="21.5" y="14" width="7" height="10" rx="3.5" fill="#EA4335"/>
+              <circle cx="25" cy="36" r="3.5" fill="#34A853"/>
+              <rect x="21.5" y="26" width="7" height="10" rx="3.5" fill="#4285F4"/>
+              <circle cx="15" cy="25" r="3.5" fill="#EA4335"/>
+              <circle cx="35" cy="25" r="3.5" fill="#34A853"/>
+              <rect x="21.5" y="21.5" width="7" height="7" rx="3.5" fill="#4285F4"/>
+            </svg>
+            <div class="pod-subscribe-link-text">
+              <span class="pod-subscribe-link-small">Listen on</span>
+              <span class="pod-subscribe-link-name">Google Podcasts</span>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LISTENER REVIEWS -->
+  <section class="pod-reviews">
+    <div class="pod-container">
+      <div class="pod-reviews-header">
+        <div class="pod-section-label">Listener Love</div>
+        <h2 class="pod-section-title">What Our Listeners Say</h2>
+        <p class="pod-section-desc">Join a community of curious minds who tune in every week.</p>
+      </div>
+      <div class="pod-reviews-grid">
+
+        <div class="pod-review-card">
+          <div class="pod-review-stars">
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          </div>
+          <p class="pod-review-text">"The Signal is the highlight of my week. Every episode leaves me with new ideas and a completely shifted perspective. The quality of guests is unmatched."</p>
+          <div class="pod-review-author">
+            <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Reviewer" class="pod-review-avatar">
+            <div>
+              <div class="pod-review-author-name">Jordan Mitchell</div>
+              <div class="pod-review-author-handle">@jordanm_tech</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pod-review-card">
+          <div class="pod-review-stars">
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          </div>
+          <p class="pod-review-text">"I listen to a lot of podcasts but The Signal stands apart. Alex has this incredible ability to ask the exact question you're thinking. Absolutely essential listening."</p>
+          <div class="pod-review-author">
+            <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Reviewer" class="pod-review-avatar">
+            <div>
+              <div class="pod-review-author-name">Priya Sharma</div>
+              <div class="pod-review-author-handle">@priya_creates</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pod-review-card">
+          <div class="pod-review-stars">
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <svg class="pod-review-star" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          </div>
+          <p class="pod-review-text">"Started listening six months ago and I'm already through the entire back catalog. The episode on neuroscience and creativity literally changed how I approach my work."</p>
+          <div class="pod-review-author">
+            <img src="https://images.pexels.com/photos/16886371/pexels-photo-16886371.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Reviewer" class="pod-review-avatar">
+            <div>
+              <div class="pod-review-author-name">Daniel Okafor</div>
+              <div class="pod-review-author-handle">@dan_okafor</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="pod-newsletter">
+    <div class="pod-container">
+      <div class="pod-newsletter-card">
+        <div class="pod-section-label">Stay in the Loop</div>
+        <h2 class="pod-section-title">Get the Weekly Briefing</h2>
+        <p class="pod-section-desc">Episode summaries, bonus content, and behind-the-scenes stories delivered every Friday. Join 50,000+ subscribers.</p>
+        <form class="pod-newsletter-form" onsubmit="return false;">
+          <input type="email" class="pod-newsletter-input" placeholder="Enter your email address">
+          <button type="submit" class="pod-btn">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="pod-footer">
+    <div class="pod-container">
+      <div class="pod-footer-inner">
+        <div class="pod-footer-brand">
+          <div class="pod-footer-brand-name">The <span>Signal</span></div>
+          <p class="pod-footer-brand-desc">Deep conversations with the world's most innovative thinkers. New episodes every Tuesday.</p>
+        </div>
+        <div class="pod-footer-links-group">
+          <h4>Podcast</h4>
+          <ul>
+            <li><a href="#">All Episodes</a></li>
+            <li><a href="#">Show Notes</a></li>
+            <li><a href="#">Transcripts</a></li>
+            <li><a href="#">Guest Archive</a></li>
+          </ul>
+        </div>
+        <div class="pod-footer-links-group">
+          <h4>Connect</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Sponsorships</a></li>
+            <li><a href="#">Press Kit</a></li>
+          </ul>
+        </div>
+        <div class="pod-footer-links-group">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pod-footer-bottom">
+        <div class="pod-footer-copy">2026 The Signal Podcast. All rights reserved.</div>
+        <div class="pod-footer-socials">
+          <div class="pod-footer-social-icon">
+            <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+          </div>
+          <div class="pod-footer-social-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+          </div>
+          <div class="pod-footer-social-icon">
+            <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48" fill="#16161a"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>

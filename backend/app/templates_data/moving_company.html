@@ -1,0 +1,1861 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --mv-dark-navy: #1a1a2e;
+  --mv-orange: #f39c12;
+  --mv-orange-dark: #d68910;
+  --mv-light-warm: #fff9e6;
+  --mv-white: #ffffff;
+  --mv-gray-100: #f8f9fa;
+  --mv-gray-200: #e9ecef;
+  --mv-gray-300: #dee2e6;
+  --mv-gray-500: #6c757d;
+  --mv-gray-700: #495057;
+  --mv-gray-900: #212529;
+  --mv-navy-light: #16213e;
+  --mv-navy-medium: #0f3460;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.mv-template {
+  font-family: 'Open Sans', sans-serif;
+  color: var(--mv-gray-900);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.mv-template h1,
+.mv-template h2,
+.mv-template h3,
+.mv-template h4,
+.mv-template h5,
+.mv-template h6 {
+  font-family: 'Rubik', sans-serif;
+  line-height: 1.2;
+}
+
+.mv-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ===== NAVBAR ===== */
+.mv-navbar {
+  background: var(--mv-dark-navy);
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.mv-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.mv-logo-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--mv-orange);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.mv-logo-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: var(--mv-white);
+}
+
+.mv-logo-text {
+  font-family: 'Rubik', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mv-white);
+}
+
+.mv-logo-text span {
+  color: var(--mv-orange);
+}
+
+.mv-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  list-style: none;
+}
+
+.mv-nav-links a {
+  text-decoration: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.mv-nav-links a:hover {
+  color: var(--mv-orange);
+}
+
+.mv-nav-cta {
+  background: var(--mv-orange) !important;
+  color: var(--mv-white) !important;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  transition: background 0.3s !important;
+}
+
+.mv-nav-cta:hover {
+  background: var(--mv-orange-dark) !important;
+}
+
+.mv-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.mv-mobile-toggle span {
+  width: 28px;
+  height: 3px;
+  background: var(--mv-white);
+  border-radius: 3px;
+  transition: 0.3s;
+}
+
+/* ===== HERO ===== */
+.mv-hero {
+  background: linear-gradient(135deg, var(--mv-dark-navy) 0%, var(--mv-navy-light) 50%, var(--mv-navy-medium) 100%);
+  padding: 160px 20px 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mv-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(243,156,18,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.mv-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom right, transparent 49.5%, var(--mv-white) 50%);
+}
+
+.mv-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(243,156,18,0.15);
+  border: 1px solid rgba(243,156,18,0.3);
+  padding: 8px 18px;
+  border-radius: 50px;
+  color: var(--mv-orange);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.mv-hero h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--mv-white);
+  margin-bottom: 20px;
+  line-height: 1.1;
+}
+
+.mv-hero h1 span {
+  color: var(--mv-orange);
+  display: block;
+}
+
+.mv-hero-desc {
+  font-size: 1.15rem;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 35px;
+  max-width: 480px;
+  line-height: 1.8;
+}
+
+.mv-hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mv-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--mv-orange);
+  color: var(--mv-white);
+  padding: 16px 36px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(243,156,18,0.4);
+}
+
+.mv-btn-primary:hover {
+  background: var(--mv-orange-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(243,156,18,0.5);
+}
+
+.mv-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: var(--mv-white);
+  padding: 16px 36px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  border: 2px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+}
+
+.mv-btn-outline:hover {
+  border-color: var(--mv-orange);
+  color: var(--mv-orange);
+}
+
+.mv-hero-image {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.mv-hero-image img {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+}
+
+.mv-hero-stat-box {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  background: var(--mv-white);
+  padding: 18px 24px;
+  border-radius: 14px;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mv-hero-stat-num {
+  font-family: 'Rubik', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--mv-orange);
+}
+
+.mv-hero-stat-label {
+  font-size: 0.85rem;
+  color: var(--mv-gray-500);
+  line-height: 1.3;
+}
+
+.mv-hero-trust {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.mv-hero-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+}
+
+.mv-hero-trust-item svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--mv-orange);
+}
+
+/* ===== SECTION COMMON ===== */
+.mv-section {
+  padding: 100px 20px;
+}
+
+.mv-section-light {
+  background: var(--mv-light-warm);
+}
+
+.mv-section-white {
+  background: var(--mv-white);
+}
+
+.mv-section-dark {
+  background: var(--mv-dark-navy);
+}
+
+.mv-section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.mv-section-tag {
+  display: inline-block;
+  background: rgba(243,156,18,0.12);
+  color: var(--mv-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 6px 18px;
+  border-radius: 30px;
+  margin-bottom: 16px;
+}
+
+.mv-section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--mv-dark-navy);
+  margin-bottom: 16px;
+}
+
+.mv-section-dark .mv-section-header h2 {
+  color: var(--mv-white);
+}
+
+.mv-section-subtitle {
+  font-size: 1.1rem;
+  color: var(--mv-gray-500);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mv-section-dark .mv-section-subtitle {
+  color: rgba(255,255,255,0.6);
+}
+
+/* ===== SERVICES ===== */
+.mv-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-service-card {
+  background: var(--mv-white);
+  border-radius: 16px;
+  padding: 40px 30px;
+  text-align: center;
+  transition: all 0.4s ease;
+  border: 1px solid var(--mv-gray-200);
+  position: relative;
+  overflow: hidden;
+}
+
+.mv-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--mv-orange);
+  transform: scaleX(0);
+  transition: transform 0.4s;
+}
+
+.mv-service-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(26,26,46,0.1);
+  border-color: transparent;
+}
+
+.mv-service-card:hover::before {
+  transform: scaleX(1);
+}
+
+.mv-service-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, rgba(243,156,18,0.1), rgba(243,156,18,0.05));
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 32px;
+}
+
+.mv-service-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--mv-dark-navy);
+  margin-bottom: 12px;
+}
+
+.mv-service-card p {
+  font-size: 0.95rem;
+  color: var(--mv-gray-500);
+  line-height: 1.7;
+}
+
+.mv-service-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mv-orange);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-top: 18px;
+  transition: gap 0.3s;
+}
+
+.mv-service-link:hover {
+  gap: 12px;
+}
+
+/* ===== HOW IT WORKS ===== */
+.mv-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.mv-steps-grid::before {
+  content: '';
+  position: absolute;
+  top: 50px;
+  left: 15%;
+  right: 15%;
+  height: 3px;
+  background: linear-gradient(to right, var(--mv-orange), rgba(243,156,18,0.2));
+  z-index: 0;
+}
+
+.mv-step-card {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.mv-step-number {
+  width: 70px;
+  height: 70px;
+  background: var(--mv-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Rubik', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--mv-white);
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 25px rgba(243,156,18,0.35);
+  border: 5px solid var(--mv-white);
+}
+
+.mv-step-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--mv-dark-navy);
+  margin-bottom: 10px;
+}
+
+.mv-step-card p {
+  font-size: 0.9rem;
+  color: var(--mv-gray-500);
+  line-height: 1.6;
+  max-width: 220px;
+  margin: 0 auto;
+}
+
+/* ===== PRICING CALCULATOR ===== */
+.mv-calculator-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--mv-white);
+  border-radius: 20px;
+  padding: 50px;
+  box-shadow: 0 15px 50px rgba(26,26,46,0.08);
+  border: 1px solid var(--mv-gray-200);
+}
+
+.mv-calc-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+}
+
+.mv-calc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mv-calc-group.mv-full-width {
+  grid-column: 1 / -1;
+}
+
+.mv-calc-label {
+  font-family: 'Rubik', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mv-dark-navy);
+}
+
+.mv-calc-input,
+.mv-calc-select {
+  padding: 14px 18px;
+  border: 2px solid var(--mv-gray-200);
+  border-radius: 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.95rem;
+  color: var(--mv-gray-900);
+  transition: border-color 0.3s;
+  background: var(--mv-gray-100);
+}
+
+.mv-calc-input:focus,
+.mv-calc-select:focus {
+  outline: none;
+  border-color: var(--mv-orange);
+  background: var(--mv-white);
+}
+
+.mv-calc-result {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--mv-dark-navy), var(--mv-navy-light));
+  border-radius: 14px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.mv-calc-result-text {
+  color: rgba(255,255,255,0.8);
+  font-size: 1rem;
+}
+
+.mv-calc-result-text strong {
+  display: block;
+  font-family: 'Rubik', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--mv-orange);
+  margin-top: 5px;
+}
+
+.mv-calc-btn {
+  background: var(--mv-orange);
+  color: var(--mv-white);
+  padding: 16px 40px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.mv-calc-btn:hover {
+  background: var(--mv-orange-dark);
+  transform: translateY(-2px);
+}
+
+/* ===== WHY CHOOSE US ===== */
+.mv-why-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-why-image {
+  position: relative;
+}
+
+.mv-why-image img {
+  width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+.mv-why-experience-badge {
+  position: absolute;
+  bottom: -15px;
+  right: -15px;
+  background: var(--mv-orange);
+  color: var(--mv-white);
+  padding: 20px 28px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(243,156,18,0.4);
+}
+
+.mv-why-experience-badge strong {
+  display: block;
+  font-family: 'Rubik', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.mv-why-experience-badge span {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mv-why-content h2 {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: var(--mv-dark-navy);
+  margin-bottom: 20px;
+}
+
+.mv-why-desc {
+  font-size: 1.05rem;
+  color: var(--mv-gray-500);
+  margin-bottom: 35px;
+  line-height: 1.8;
+}
+
+.mv-why-features {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.mv-why-feature {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.mv-why-feature-icon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  background: rgba(243,156,18,0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.mv-why-feature h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mv-dark-navy);
+  margin-bottom: 4px;
+}
+
+.mv-why-feature p {
+  font-size: 0.9rem;
+  color: var(--mv-gray-500);
+  line-height: 1.6;
+}
+
+/* ===== SERVICE AREAS ===== */
+.mv-areas-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-areas-map img {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.mv-areas-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mv-area-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--mv-white);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--mv-gray-200);
+  transition: all 0.3s;
+}
+
+.mv-area-item:hover {
+  border-color: var(--mv-orange);
+  box-shadow: 0 5px 20px rgba(243,156,18,0.1);
+}
+
+.mv-area-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--mv-orange);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mv-area-item span {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--mv-dark-navy);
+}
+
+.mv-areas-note {
+  margin-top: 25px;
+  padding: 18px 24px;
+  background: rgba(243,156,18,0.08);
+  border-left: 4px solid var(--mv-orange);
+  border-radius: 0 10px 10px 0;
+  font-size: 0.9rem;
+  color: var(--mv-gray-700);
+  grid-column: 1 / -1;
+}
+
+/* ===== REVIEWS ===== */
+.mv-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mv-review-card {
+  background: var(--mv-white);
+  border-radius: 16px;
+  padding: 35px 30px;
+  border: 1px solid var(--mv-gray-200);
+  transition: all 0.3s;
+  position: relative;
+}
+
+.mv-review-card:hover {
+  box-shadow: 0 15px 40px rgba(26,26,46,0.08);
+  transform: translateY(-5px);
+}
+
+.mv-review-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.mv-review-star {
+  color: var(--mv-orange);
+  font-size: 1.1rem;
+}
+
+.mv-review-text {
+  font-size: 0.95rem;
+  color: var(--mv-gray-700);
+  line-height: 1.8;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+.mv-review-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mv-review-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mv-review-name {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--mv-dark-navy);
+}
+
+.mv-review-role {
+  font-size: 0.8rem;
+  color: var(--mv-gray-500);
+}
+
+.mv-review-quote-icon {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 3rem;
+  color: rgba(243,156,18,0.1);
+  font-family: 'Georgia', serif;
+  line-height: 1;
+}
+
+/* ===== CTA / QUOTE FORM ===== */
+.mv-cta-section {
+  background: linear-gradient(135deg, var(--mv-dark-navy) 0%, var(--mv-navy-medium) 100%);
+  padding: 100px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mv-cta-section::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(243,156,18,0.15), transparent 70%);
+  border-radius: 50%;
+}
+
+.mv-cta-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.mv-cta-content h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--mv-white);
+  margin-bottom: 18px;
+}
+
+.mv-cta-content h2 span {
+  color: var(--mv-orange);
+}
+
+.mv-cta-content p {
+  color: rgba(255,255,255,0.7);
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+.mv-cta-highlights {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mv-cta-highlights li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.95rem;
+}
+
+.mv-cta-check {
+  width: 24px;
+  height: 24px;
+  background: rgba(243,156,18,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--mv-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mv-quote-form {
+  background: var(--mv-white);
+  border-radius: 20px;
+  padding: 45px 40px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.mv-quote-form h3 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--mv-dark-navy);
+  margin-bottom: 8px;
+}
+
+.mv-quote-form-sub {
+  font-size: 0.9rem;
+  color: var(--mv-gray-500);
+  margin-bottom: 28px;
+}
+
+.mv-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mv-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mv-form-group.mv-full-width {
+  grid-column: 1 / -1;
+}
+
+.mv-form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--mv-dark-navy);
+}
+
+.mv-form-input,
+.mv-form-select,
+.mv-form-textarea {
+  padding: 12px 16px;
+  border: 2px solid var(--mv-gray-200);
+  border-radius: 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+  background: var(--mv-gray-100);
+}
+
+.mv-form-input:focus,
+.mv-form-select:focus,
+.mv-form-textarea:focus {
+  outline: none;
+  border-color: var(--mv-orange);
+  background: var(--mv-white);
+}
+
+.mv-form-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.mv-form-submit {
+  grid-column: 1 / -1;
+  background: var(--mv-orange);
+  color: var(--mv-white);
+  padding: 16px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.mv-form-submit:hover {
+  background: var(--mv-orange-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(243,156,18,0.4);
+}
+
+/* ===== FOOTER ===== */
+.mv-footer {
+  background: var(--mv-dark-navy);
+  padding: 80px 20px 0;
+}
+
+.mv-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 50px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.mv-footer-brand p {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9rem;
+  line-height: 1.8;
+  margin-top: 16px;
+  max-width: 320px;
+}
+
+.mv-footer-social {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.mv-footer-social a {
+  width: 42px;
+  height: 42px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+}
+
+.mv-footer-social a:hover {
+  background: var(--mv-orange);
+  color: var(--mv-white);
+}
+
+.mv-footer-col h4 {
+  font-family: 'Rubik', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mv-white);
+  margin-bottom: 20px;
+}
+
+.mv-footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mv-footer-col ul li a {
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.mv-footer-col ul li a:hover {
+  color: var(--mv-orange);
+}
+
+.mv-footer-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+}
+
+.mv-footer-contact-icon {
+  color: var(--mv-orange);
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.mv-footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 25px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mv-footer-bottom p {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.85rem;
+}
+
+.mv-footer-bottom-links {
+  display: flex;
+  gap: 24px;
+}
+
+.mv-footer-bottom-links a {
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.3s;
+}
+
+.mv-footer-bottom-links a:hover {
+  color: var(--mv-orange);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .mv-hero h1 {
+    font-size: 2.8rem;
+  }
+
+  .mv-services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mv-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+
+  .mv-steps-grid::before {
+    display: none;
+  }
+
+  .mv-why-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .mv-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .mv-nav-links {
+    display: none;
+  }
+
+  .mv-mobile-toggle {
+    display: flex;
+  }
+
+  .mv-hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 40px;
+  }
+
+  .mv-hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .mv-hero-desc {
+    margin: 0 auto 30px;
+  }
+
+  .mv-hero-actions {
+    justify-content: center;
+  }
+
+  .mv-hero-trust {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .mv-hero-image {
+    order: -1;
+  }
+
+  .mv-hero-stat-box {
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .mv-section {
+    padding: 70px 20px;
+  }
+
+  .mv-section-header h2 {
+    font-size: 2rem;
+  }
+
+  .mv-services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-steps-grid {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+  }
+
+  .mv-calc-form {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-calculator-wrapper {
+    padding: 30px 20px;
+  }
+
+  .mv-calc-result {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .mv-areas-content {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-areas-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-reviews-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-cta-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-cta-content h2 {
+    font-size: 2rem;
+  }
+
+  .mv-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-quote-form {
+    padding: 30px 24px;
+  }
+
+  .mv-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .mv-footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .mv-hero {
+    padding: 130px 15px 80px;
+  }
+
+  .mv-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .mv-hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mv-btn-primary,
+  .mv-btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mv-why-content h2 {
+    font-size: 1.8rem;
+  }
+}
+</style>
+
+<div class="mv-template">
+
+  <!-- NAVBAR -->
+  <nav class="mv-navbar">
+    <div class="mv-navbar-inner">
+      <a href="#" class="mv-logo">
+        <div class="mv-logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M18 18.5H6a1 1 0 0 1-1-1V10l-2 1V8.5L12 3l9 5.5V11l-2-1v7.5a1 1 0 0 1-1 1zM7 16.5h10V9.38l-5-3.06-5 3.06V16.5z"/><path d="M3 20h18v1.5H3z"/><rect x="9" y="12" width="2.5" height="4.5"/><rect x="12.5" y="12" width="2.5" height="4.5"/></svg>
+        </div>
+        <span class="mv-logo-text">Swift<span>Movers</span></span>
+      </a>
+      <ul class="mv-nav-links">
+        <li><a href="#mv-services">Services</a></li>
+        <li><a href="#mv-how">How It Works</a></li>
+        <li><a href="#mv-pricing">Pricing</a></li>
+        <li><a href="#mv-areas">Areas</a></li>
+        <li><a href="#mv-reviews">Reviews</a></li>
+        <li><a href="#mv-quote" class="mv-nav-cta">Free Quote</a></li>
+      </ul>
+      <button class="mv-mobile-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="mv-hero">
+    <div class="mv-hero-grid">
+      <div class="mv-hero-text">
+        <div class="mv-hero-badge">Trusted by 10,000+ Families</div>
+        <h1>Stress-Free Moving <span>Starts Here</span></h1>
+        <p class="mv-hero-desc">Professional, reliable moving services for homes and businesses. From packing to unpacking, we handle everything so you can focus on what matters most.</p>
+        <div class="mv-hero-actions">
+          <a href="#mv-quote" class="mv-btn-primary">Get Free Estimate &rarr;</a>
+          <a href="#mv-how" class="mv-btn-outline">How It Works</a>
+        </div>
+        <div class="mv-hero-trust">
+          <div class="mv-hero-trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z"/></svg>
+            4.9/5 Rating
+          </div>
+          <div class="mv-hero-trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            Fully Insured
+          </div>
+          <div class="mv-hero-trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+            On-Time Guarantee
+          </div>
+        </div>
+      </div>
+      <div class="mv-hero-image">
+        <img src="https://images.pexels.com/photos/7203701/pexels-photo-7203701.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Professional moving team loading a truck">
+        <div class="mv-hero-stat-box">
+          <div class="mv-hero-stat-num">15K+</div>
+          <div class="mv-hero-stat-label">Successful Moves<br>Completed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="mv-section mv-section-white" id="mv-services">
+    <div class="mv-container">
+      <div class="mv-section-header">
+        <div class="mv-section-tag">Our Services</div>
+        <h2>Moving Solutions for Every Need</h2>
+        <p class="mv-section-subtitle">Whether you're moving across town or across the globe, our comprehensive services ensure a smooth transition every step of the way.</p>
+      </div>
+      <div class="mv-services-grid">
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F3E0;</div>
+          <h3>Local Moving</h3>
+          <p>Affordable and efficient local moving services within the city. Same-day moves available with our experienced crew.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F6E3;</div>
+          <h3>Long-Distance</h3>
+          <p>State-to-state and cross-country moves handled with care. Real-time tracking and dedicated moving coordinators.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F3E2;</div>
+          <h3>Commercial Moving</h3>
+          <p>Minimize downtime with our efficient office and commercial relocation services. Weekend and after-hours scheduling.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F4E6;</div>
+          <h3>Packing Services</h3>
+          <p>Professional packing with premium materials. Fragile items, artwork, and electronics handled with special care.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F512;</div>
+          <h3>Storage Solutions</h3>
+          <p>Climate-controlled, secure storage units for short and long-term needs. Flexible plans with 24/7 access.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+        <div class="mv-service-card">
+          <div class="mv-service-icon">&#x1F30D;</div>
+          <h3>International Moving</h3>
+          <p>Global relocation expertise with customs handling, door-to-door service, and full documentation support.</p>
+          <a href="#mv-quote" class="mv-service-link">Learn More &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="mv-section mv-section-light" id="mv-how">
+    <div class="mv-container">
+      <div class="mv-section-header">
+        <div class="mv-section-tag">How It Works</div>
+        <h2>Four Simple Steps to Your New Home</h2>
+        <p class="mv-section-subtitle">We've streamlined the moving process so you can relax and let our professionals handle the heavy lifting.</p>
+      </div>
+      <div class="mv-steps-grid">
+        <div class="mv-step-card">
+          <div class="mv-step-number">1</div>
+          <h3>Request a Quote</h3>
+          <p>Fill out our quick form or call us. We'll provide a free, no-obligation estimate within 24 hours.</p>
+        </div>
+        <div class="mv-step-card">
+          <div class="mv-step-number">2</div>
+          <h3>We Pack It Up</h3>
+          <p>Our team arrives with all materials to carefully pack and protect every item in your home or office.</p>
+        </div>
+        <div class="mv-step-card">
+          <div class="mv-step-number">3</div>
+          <h3>We Move It</h3>
+          <p>Your belongings are safely transported with GPS tracking so you always know where they are.</p>
+        </div>
+        <div class="mv-step-card">
+          <div class="mv-step-number">4</div>
+          <h3>Unpack &amp; Settle</h3>
+          <p>We unload, place furniture, and help unpack. Welcome home &mdash; you're all set to enjoy your new space!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING CALCULATOR -->
+  <section class="mv-section mv-section-white" id="mv-pricing">
+    <div class="mv-container">
+      <div class="mv-section-header">
+        <div class="mv-section-tag">Pricing</div>
+        <h2>Estimate Your Moving Cost</h2>
+        <p class="mv-section-subtitle">Get an instant ballpark estimate for your move. Final pricing is based on a detailed in-home or virtual survey.</p>
+      </div>
+      <div class="mv-calculator-wrapper">
+        <div class="mv-calc-form">
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Moving From</label>
+            <input type="text" class="mv-calc-input" placeholder="City or ZIP code">
+          </div>
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Moving To</label>
+            <input type="text" class="mv-calc-input" placeholder="City or ZIP code">
+          </div>
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Home Size</label>
+            <select class="mv-calc-select">
+              <option>Studio / 1 Bedroom</option>
+              <option>2 Bedrooms</option>
+              <option>3 Bedrooms</option>
+              <option>4+ Bedrooms</option>
+              <option>Office / Commercial</option>
+            </select>
+          </div>
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Move Date</label>
+            <input type="date" class="mv-calc-input">
+          </div>
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Additional Services</label>
+            <select class="mv-calc-select">
+              <option>None</option>
+              <option>Packing &amp; Unpacking</option>
+              <option>Storage (1 month)</option>
+              <option>Packing + Storage</option>
+            </select>
+          </div>
+          <div class="mv-calc-group">
+            <label class="mv-calc-label">Special Items</label>
+            <select class="mv-calc-select">
+              <option>None</option>
+              <option>Piano / Heavy Items</option>
+              <option>Artwork / Antiques</option>
+              <option>Vehicles</option>
+            </select>
+          </div>
+          <div class="mv-calc-result">
+            <div class="mv-calc-result-text">
+              Estimated Cost
+              <strong>$1,200 - $2,400</strong>
+            </div>
+            <button class="mv-calc-btn">Get Exact Quote</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY CHOOSE US -->
+  <section class="mv-section mv-section-light">
+    <div class="mv-container">
+      <div class="mv-why-grid">
+        <div class="mv-why-image">
+          <img src="https://images.pexels.com/photos/7578991/pexels-photo-7578991.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Experienced moving team at work">
+          <div class="mv-why-experience-badge">
+            <strong>25+</strong>
+            <span>Years Experience</span>
+          </div>
+        </div>
+        <div class="mv-why-content">
+          <div class="mv-section-tag">Why Choose Us</div>
+          <h2>Moving You Forward With Care &amp; Confidence</h2>
+          <p class="mv-why-desc">We're not just movers, we're moving partners. Our commitment to excellence has earned us the trust of thousands of families and businesses.</p>
+          <div class="mv-why-features">
+            <div class="mv-why-feature">
+              <div class="mv-why-feature-icon">&#x1F6E1;</div>
+              <div>
+                <h4>Fully Licensed &amp; Insured</h4>
+                <p>Complete coverage for your peace of mind. Every item protected from pickup to delivery.</p>
+              </div>
+            </div>
+            <div class="mv-why-feature">
+              <div class="mv-why-feature-icon">&#x1F3C6;</div>
+              <div>
+                <h4>Trained Professionals</h4>
+                <p>Our crews undergo rigorous training. Background-checked, uniformed, and courteous.</p>
+              </div>
+            </div>
+            <div class="mv-why-feature">
+              <div class="mv-why-feature-icon">&#x23F0;</div>
+              <div>
+                <h4>On-Time Guarantee</h4>
+                <p>We respect your schedule. If we're late, your move is discounted. That's our promise.</p>
+              </div>
+            </div>
+            <div class="mv-why-feature">
+              <div class="mv-why-feature-icon">&#x1F4B0;</div>
+              <div>
+                <h4>No Hidden Fees</h4>
+                <p>Transparent pricing with detailed quotes. The price we quote is the price you pay.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE AREAS -->
+  <section class="mv-section mv-section-white" id="mv-areas">
+    <div class="mv-container">
+      <div class="mv-section-header">
+        <div class="mv-section-tag">Service Areas</div>
+        <h2>Where We Operate</h2>
+        <p class="mv-section-subtitle">Serving major metropolitan areas and everything in between. Don't see your area? Contact us - we likely cover it.</p>
+      </div>
+      <div class="mv-areas-content">
+        <div class="mv-areas-map">
+          <img src="https://images.pexels.com/photos/9115461/pexels-photo-9115461.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Service areas coverage map">
+        </div>
+        <div>
+          <div class="mv-areas-list">
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>Downtown &amp; City Center</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>North Metro Area</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>South Suburbs</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>East County</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>West Valley</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>Harbor District</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>University Quarter</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>Industrial Zone</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>Lakeside Community</span>
+            </div>
+            <div class="mv-area-item">
+              <div class="mv-area-dot"></div>
+              <span>Airport Corridor</span>
+            </div>
+          </div>
+          <div class="mv-areas-note">
+            We also serve long-distance and interstate routes. Call us for custom routes and international relocations.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="mv-section mv-section-light" id="mv-reviews">
+    <div class="mv-container">
+      <div class="mv-section-header">
+        <div class="mv-section-tag">Testimonials</div>
+        <h2>What Our Customers Say</h2>
+        <p class="mv-section-subtitle">Don't just take our word for it. Here's what families and businesses have to say about their experience with SwiftMovers.</p>
+      </div>
+      <div class="mv-reviews-grid">
+        <div class="mv-review-card">
+          <div class="mv-review-quote-icon">"</div>
+          <div class="mv-review-stars">
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+          </div>
+          <p class="mv-review-text">The team was incredibly professional and careful with our belongings. They arrived on time, worked efficiently, and nothing was damaged. Best moving experience we've ever had!</p>
+          <div class="mv-review-author">
+            <img src="https://images.pexels.com/photos/9594502/pexels-photo-9594502.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Mitchell" class="mv-review-avatar">
+            <div>
+              <div class="mv-review-name">Sarah Mitchell</div>
+              <div class="mv-review-role">Residential Move - 3BR Home</div>
+            </div>
+          </div>
+        </div>
+        <div class="mv-review-card">
+          <div class="mv-review-quote-icon">"</div>
+          <div class="mv-review-stars">
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+          </div>
+          <p class="mv-review-text">We relocated our entire office over a weekend and were fully operational by Monday morning. SwiftMovers planned everything perfectly. Highly recommended for commercial moves!</p>
+          <div class="mv-review-author">
+            <img src="https://images.pexels.com/photos/8293754/pexels-photo-8293754.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James Crawford" class="mv-review-avatar">
+            <div>
+              <div class="mv-review-name">James Crawford</div>
+              <div class="mv-review-role">Office Relocation - Tech Startup</div>
+            </div>
+          </div>
+        </div>
+        <div class="mv-review-card">
+          <div class="mv-review-quote-icon">"</div>
+          <div class="mv-review-stars">
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+            <span class="mv-review-star">&#9733;</span>
+          </div>
+          <p class="mv-review-text">Moving across the country was stressful until SwiftMovers took over. Their long-distance team was communicative, and tracking our shipment gave us total peace of mind.</p>
+          <div class="mv-review-author">
+            <img src="https://images.pexels.com/photos/7363099/pexels-photo-7363099.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Maria Gonzalez" class="mv-review-avatar">
+            <div>
+              <div class="mv-review-name">Maria Gonzalez</div>
+              <div class="mv-review-role">Cross-Country Move - Family of 5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / QUOTE FORM -->
+  <section class="mv-cta-section" id="mv-quote">
+    <div class="mv-cta-wrapper">
+      <div class="mv-cta-content">
+        <h2>Ready to Make Your <span>Move?</span></h2>
+        <p>Get a free, no-obligation quote in minutes. Our moving consultants will work with you to create a customized plan that fits your timeline and budget.</p>
+        <ul class="mv-cta-highlights">
+          <li>
+            <span class="mv-cta-check">&#10003;</span>
+            Free in-home or virtual survey
+          </li>
+          <li>
+            <span class="mv-cta-check">&#10003;</span>
+            Guaranteed price - no surprises
+          </li>
+          <li>
+            <span class="mv-cta-check">&#10003;</span>
+            Flexible scheduling including weekends
+          </li>
+          <li>
+            <span class="mv-cta-check">&#10003;</span>
+            Full-value protection included
+          </li>
+          <li>
+            <span class="mv-cta-check">&#10003;</span>
+            Dedicated move coordinator assigned
+          </li>
+        </ul>
+      </div>
+      <div class="mv-quote-form">
+        <h3>Get Your Free Quote</h3>
+        <p class="mv-quote-form-sub">Fill out the form below and we'll get back to you within 2 hours.</p>
+        <div class="mv-form-grid">
+          <div class="mv-form-group">
+            <label class="mv-form-label">First Name</label>
+            <input type="text" class="mv-form-input" placeholder="John">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Last Name</label>
+            <input type="text" class="mv-form-input" placeholder="Doe">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Email Address</label>
+            <input type="email" class="mv-form-input" placeholder="john@example.com">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Phone Number</label>
+            <input type="tel" class="mv-form-input" placeholder="(555) 123-4567">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Moving From</label>
+            <input type="text" class="mv-form-input" placeholder="Current address or city">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Moving To</label>
+            <input type="text" class="mv-form-input" placeholder="Destination address or city">
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Move Type</label>
+            <select class="mv-form-select">
+              <option>Residential</option>
+              <option>Commercial / Office</option>
+              <option>Long-Distance</option>
+              <option>International</option>
+            </select>
+          </div>
+          <div class="mv-form-group">
+            <label class="mv-form-label">Preferred Date</label>
+            <input type="date" class="mv-form-input">
+          </div>
+          <div class="mv-form-group mv-full-width">
+            <label class="mv-form-label">Additional Details</label>
+            <textarea class="mv-form-textarea" placeholder="Tell us about special items, access issues, or anything else we should know..."></textarea>
+          </div>
+          <button class="mv-form-submit">Request Free Quote &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="mv-footer">
+    <div class="mv-footer-grid">
+      <div class="mv-footer-brand">
+        <a href="#" class="mv-logo">
+          <div class="mv-logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M18 18.5H6a1 1 0 0 1-1-1V10l-2 1V8.5L12 3l9 5.5V11l-2-1v7.5a1 1 0 0 1-1 1zM7 16.5h10V9.38l-5-3.06-5 3.06V16.5z"/><path d="M3 20h18v1.5H3z"/><rect x="9" y="12" width="2.5" height="4.5"/><rect x="12.5" y="12" width="2.5" height="4.5"/></svg>
+          </div>
+          <span class="mv-logo-text">Swift<span>Movers</span></span>
+        </a>
+        <p>Professional moving services you can trust. Licensed, insured, and committed to making your relocation stress-free since 1999.</p>
+        <div class="mv-footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Twitter">t</a>
+          <a href="#" aria-label="Instagram">in</a>
+          <a href="#" aria-label="LinkedIn">li</a>
+        </div>
+      </div>
+      <div class="mv-footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#">Local Moving</a></li>
+          <li><a href="#">Long-Distance</a></li>
+          <li><a href="#">Commercial</a></li>
+          <li><a href="#">Packing</a></li>
+          <li><a href="#">Storage</a></li>
+          <li><a href="#">International</a></li>
+        </ul>
+      </div>
+      <div class="mv-footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">FAQs</a></li>
+          <li><a href="#">Partnerships</a></li>
+          <li><a href="#">Reviews</a></li>
+        </ul>
+      </div>
+      <div class="mv-footer-col">
+        <h4>Contact Us</h4>
+        <div class="mv-footer-contact-item">
+          <span class="mv-footer-contact-icon">&#x1F4CD;</span>
+          <span>123 Moving Lane, Suite 200<br>Metro City, ST 10001</span>
+        </div>
+        <div class="mv-footer-contact-item">
+          <span class="mv-footer-contact-icon">&#x1F4DE;</span>
+          <span>(555) 123-MOVE<br>(555) 123-6683</span>
+        </div>
+        <div class="mv-footer-contact-item">
+          <span class="mv-footer-contact-icon">&#x2709;</span>
+          <span>info@swiftmovers.com</span>
+        </div>
+        <div class="mv-footer-contact-item">
+          <span class="mv-footer-contact-icon">&#x1F551;</span>
+          <span>Mon-Sat: 7AM - 8PM<br>Sun: 9AM - 5PM</span>
+        </div>
+      </div>
+    </div>
+    <div class="mv-footer-bottom">
+      <p>&copy; 2026 SwiftMovers. All rights reserved. DOT# 123456 | MC# 789012</p>
+      <div class="mv-footer-bottom-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Sitemap</a>
+      </div>
+    </div>
+  </footer>
+
+</div>

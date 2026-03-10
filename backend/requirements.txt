@@ -1,0 +1,60 @@
+# FastAPI Backend
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+
+# Auth
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+pydantic[email]>=2.0.0
+
+# AI
+anthropic>=0.40.0
+openai>=1.60.0
+google-genai>=1.0.0
+
+# HTTP Client
+httpx>=0.27.0
+
+# Redis
+redis>=5.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Async file I/O
+aiofiles>=23.0.0
+
+# Production server
+gunicorn>=22.0.0
+
+# Logging
+python-json-logger>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Monitoring (optional)
+sentry-sdk[fastapi]>=2.0.0
+psutil>=5.9.0
+
+# Migrations
+alembic>=1.13.0
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0
+fakeredis>=2.20.0
+aiosqlite>=0.20.0
+pytest-cov>=4.1.0
+
+# Linting (dev)
+ruff>=0.4.0
+mypy>=1.9.0

@@ -1,0 +1,1270 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;700;900&display=swap');
+
+:root {
+  --primary: #1a1a2e;
+  --gold: #c9a96e;
+  --gold-light: #d4bb8a;
+  --bg: #faf8f5;
+  --text: #2c2c2c;
+  --text-light: #6b6b6b;
+  --white: #ffffff;
+  --dark-overlay: rgba(26, 26, 46, 0.7);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.restaurant-page {
+  font-family: 'Lato', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.restaurant-page h1,
+.restaurant-page h2,
+.restaurant-page h3,
+.restaurant-page h4 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.restaurant-page a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s ease;
+}
+
+.restaurant-page img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Navigation */
+.rest-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1.2rem 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.4s ease, padding 0.4s ease;
+  background: transparent;
+}
+
+.rest-nav.scrolled {
+  background: var(--primary);
+  padding: 0.8rem 5%;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.rest-nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  color: var(--white);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.rest-nav-logo span {
+  color: var(--gold);
+}
+
+.rest-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+}
+
+.rest-nav-links a {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.rest-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+
+.rest-nav-links a:hover::after {
+  width: 100%;
+}
+
+.rest-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.rest-hamburger span {
+  width: 28px;
+  height: 2px;
+  background: var(--white);
+  transition: all 0.3s ease;
+}
+
+/* Hero */
+.rest-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--white);
+  background: url('https://images.pexels.com/photos/18404554/pexels-photo-18404554.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+}
+
+.rest-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26,26,46,0.5) 0%, rgba(26,26,46,0.75) 100%);
+}
+
+.rest-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  padding: 0 2rem;
+}
+
+.rest-hero-tagline {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.rest-hero h1 {
+  font-size: 4.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  letter-spacing: 2px;
+}
+
+.rest-hero h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.rest-hero-desc {
+  font-size: 1.15rem;
+  font-weight: 300;
+  max-width: 550px;
+  margin: 0 auto 2.5rem;
+  opacity: 0.9;
+  line-height: 1.8;
+}
+
+.rest-btn {
+  display: inline-block;
+  padding: 1rem 3rem;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition: all 0.4s ease;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+}
+
+.rest-btn:hover {
+  background: var(--gold);
+  color: var(--primary);
+}
+
+.rest-btn-filled {
+  background: var(--gold);
+  color: var(--primary);
+}
+
+.rest-btn-filled:hover {
+  background: transparent;
+  color: var(--gold);
+}
+
+/* Section Styling */
+.rest-section {
+  padding: 7rem 5%;
+}
+
+.rest-section-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.rest-section-header .rest-overline {
+  font-size: 0.8rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.rest-section-header h2 {
+  font-size: 3rem;
+  color: var(--primary);
+  margin-bottom: 1.2rem;
+}
+
+.rest-section-header p {
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--text-light);
+  font-size: 1.05rem;
+}
+
+.rest-divider {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin: 1.5rem auto;
+}
+
+/* About / Story */
+.rest-about {
+  background: var(--white);
+}
+
+.rest-about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rest-about-image {
+  position: relative;
+}
+
+.rest-about-image img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+.rest-about-image::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: -20px;
+  bottom: -20px;
+  border: 2px solid var(--gold);
+  z-index: -1;
+}
+
+.rest-about-text h3 {
+  font-size: 2.2rem;
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+}
+
+.rest-about-text p {
+  color: var(--text-light);
+  margin-bottom: 1.2rem;
+  font-size: 1.05rem;
+}
+
+.rest-about-signature {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--gold);
+  margin-top: 1.5rem;
+}
+
+/* Menu */
+.rest-menu {
+  background: var(--bg);
+}
+
+.rest-menu-categories {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.rest-menu-cat-btn {
+  padding: 0.6rem 2rem;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--primary);
+  font-family: 'Lato', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 700;
+}
+
+.rest-menu-cat-btn.active,
+.rest-menu-cat-btn:hover {
+  background: var(--gold);
+  color: var(--white);
+}
+
+.rest-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rest-menu-card {
+  background: var(--white);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.rest-menu-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+
+.rest-menu-card-img {
+  height: 240px;
+  overflow: hidden;
+}
+
+.rest-menu-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.rest-menu-card:hover .rest-menu-card-img img {
+  transform: scale(1.08);
+}
+
+.rest-menu-card-body {
+  padding: 1.8rem;
+}
+
+.rest-menu-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.rest-menu-card-top h4 {
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.rest-menu-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--gold);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
+.rest-menu-card-body p {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+/* Chef's Special */
+.rest-special {
+  background: var(--primary);
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+.rest-special-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rest-special-text .rest-overline {
+  color: var(--gold);
+  font-size: 0.8rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.rest-special-text h2 {
+  font-size: 2.8rem;
+  color: var(--white);
+  margin-bottom: 1.5rem;
+}
+
+.rest-special-text h2 em {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.rest-special-text p {
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+.rest-special-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  margin: 1.5rem 0 2rem;
+}
+
+.rest-special-img img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+/* Testimonials */
+.rest-testimonials {
+  background: var(--white);
+}
+
+.rest-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rest-testimonial-card {
+  padding: 2.5rem;
+  background: var(--bg);
+  position: relative;
+  border-bottom: 3px solid var(--gold);
+}
+
+.rest-testimonial-quote {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: var(--gold);
+  opacity: 0.3;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.rest-testimonial-card p {
+  font-size: 1.05rem;
+  color: var(--text-light);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  line-height: 1.8;
+}
+
+.rest-testimonial-author {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.rest-testimonial-role {
+  color: var(--gold);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rest-stars {
+  color: var(--gold);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  letter-spacing: 3px;
+}
+
+/* Reservation CTA */
+.rest-reservation {
+  background: url('https://images.pexels.com/photos/15671273/pexels-photo-15671273.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+  position: relative;
+  text-align: center;
+  color: var(--white);
+}
+
+.rest-reservation::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--dark-overlay);
+}
+
+.rest-reservation-content {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.rest-reservation-content .rest-overline {
+  color: var(--gold);
+  font-size: 0.8rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.rest-reservation-content h2 {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.rest-reservation-content p {
+  font-size: 1.1rem;
+  opacity: 0.85;
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+}
+
+.rest-reservation-phone {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  display: block;
+  margin-top: 2rem;
+  letter-spacing: 2px;
+}
+
+/* Gallery */
+.rest-gallery {
+  background: var(--bg);
+}
+
+.rest-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 280px);
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.rest-gallery-item {
+  overflow: hidden;
+  position: relative;
+}
+
+.rest-gallery-item:nth-child(1) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.rest-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.rest-gallery-item:hover img {
+  transform: scale(1.06);
+}
+
+.rest-gallery-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(26,26,46,0);
+  transition: background 0.4s ease;
+}
+
+.rest-gallery-item:hover::after {
+  background: rgba(26,26,46,0.2);
+}
+
+/* Contact */
+.rest-contact {
+  background: var(--white);
+}
+
+.rest-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rest-contact-card {
+  text-align: center;
+  padding: 2.5rem;
+}
+
+.rest-contact-icon {
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: var(--gold);
+  font-size: 1.3rem;
+}
+
+.rest-contact-card h4 {
+  font-size: 1.3rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.rest-contact-card p {
+  color: var(--text-light);
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.rest-hours-table {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.rest-hours-table tr td {
+  padding: 0.4rem 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.rest-hours-table tr td:first-child {
+  font-weight: 700;
+  color: var(--primary);
+  text-align: left;
+}
+
+.rest-hours-table tr td:last-child {
+  text-align: right;
+}
+
+/* Footer */
+.rest-footer {
+  background: var(--primary);
+  color: rgba(255,255,255,0.6);
+  padding: 3rem 5%;
+  text-align: center;
+}
+
+.rest-footer-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--white);
+  margin-bottom: 1rem;
+  letter-spacing: 2px;
+}
+
+.rest-footer-logo span {
+  color: var(--gold);
+}
+
+.rest-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  list-style: none;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.rest-footer-links a {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rest-footer-links a:hover {
+  color: var(--gold);
+}
+
+.rest-footer-copy {
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
+
+/* Animations */
+.rest-fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.rest-fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rest-fade-in-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.rest-fade-in-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.rest-fade-in-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.rest-fade-in-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .rest-hero h1 {
+    font-size: 3.2rem;
+  }
+
+  .rest-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 240px);
+  }
+
+  .rest-gallery-item:nth-child(1) {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .rest-nav-links {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .rest-nav-links.open {
+    display: flex;
+  }
+
+  .rest-nav-links a {
+    font-size: 1.1rem;
+  }
+
+  .rest-hamburger {
+    display: flex;
+  }
+
+  .rest-hero h1 {
+    font-size: 2.5rem;
+  }
+
+  .rest-hero-desc {
+    font-size: 1rem;
+  }
+
+  .rest-section {
+    padding: 4rem 5%;
+  }
+
+  .rest-section-header h2 {
+    font-size: 2.2rem;
+  }
+
+  .rest-about-grid,
+  .rest-special-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .rest-about-image::after {
+    display: none;
+  }
+
+  .rest-about-image img,
+  .rest-special-img img {
+    height: 350px;
+  }
+
+  .rest-menu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rest-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rest-gallery-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, 200px);
+  }
+
+  .rest-gallery-item:nth-child(1) {
+    grid-column: span 2;
+  }
+
+  .rest-reservation-content h2 {
+    font-size: 2.2rem;
+  }
+
+  .rest-testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rest-special-text h2 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rest-hero {
+    min-height: 600px;
+  }
+
+  .rest-hero h1 {
+    font-size: 2rem;
+  }
+
+  .rest-gallery-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .rest-gallery-item:nth-child(1) {
+    grid-column: span 1;
+  }
+
+  .rest-gallery-item {
+    height: 220px;
+  }
+
+  .rest-menu-categories {
+    gap: 0.5rem;
+  }
+
+  .rest-menu-cat-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.7rem;
+  }
+}
+</style>
+
+<div class="restaurant-page">
+  <!-- Navigation -->
+  <nav class="rest-nav" id="restNav">
+    <div class="rest-nav-logo">Aurum <span>Dining</span></div>
+    <ul class="rest-nav-links" id="restNavLinks">
+      <li><a href="#rest-about" onclick="closeMenu()">Our Story</a></li>
+      <li><a href="#rest-menu" onclick="closeMenu()">Menu</a></li>
+      <li><a href="#rest-special" onclick="closeMenu()">Chef's Pick</a></li>
+      <li><a href="#rest-gallery" onclick="closeMenu()">Gallery</a></li>
+      <li><a href="#rest-contact" onclick="closeMenu()">Contact</a></li>
+      <li><a href="#rest-reservation" onclick="closeMenu()" class="rest-btn" style="padding:0.5rem 1.5rem;font-size:0.75rem;">Reserve</a></li>
+    </ul>
+    <div class="rest-hamburger" id="restHamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="rest-hero" id="rest-hero">
+    <div class="rest-hero-content">
+      <p class="rest-hero-tagline">Est. 2018 &mdash; Dubai</p>
+      <h1>The Art of<br><em>Fine Dining</em></h1>
+      <p class="rest-hero-desc">Where culinary mastery meets timeless elegance. Every dish is a celebration of flavor, crafted with passion and the finest ingredients from around the world.</p>
+      <a href="#rest-reservation" class="rest-btn">Reserve Your Table</a>
+    </div>
+  </section>
+
+  <!-- About / Story -->
+  <section class="rest-section rest-about" id="rest-about">
+    <div class="rest-about-grid">
+      <div class="rest-about-image rest-fade-in-left">
+        <img src="https://images.pexels.com/photos/691158/pexels-photo-691158.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Restaurant interior with warm lighting and elegant table settings">
+      </div>
+      <div class="rest-about-text rest-fade-in-right">
+        <span class="rest-overline" style="font-size:0.8rem;letter-spacing:5px;text-transform:uppercase;color:var(--gold);font-weight:700;display:block;margin-bottom:1rem;">Our Story</span>
+        <h3>A Legacy Built on Flavor</h3>
+        <p>Aurum Dining was born from a simple belief: that great food has the power to bring people together. Nestled in the heart of Dubai, our restaurant draws inspiration from Mediterranean and Middle Eastern culinary traditions, reimagined with modern technique and seasonal ingredients.</p>
+        <p>Our founder, Chef Alessandro Moran, spent two decades refining his craft in kitchens across Italy, Lebanon, and France before opening Aurum in 2018. Every detail, from the hand-selected ceramics to the curated wine list, is designed to create an unforgettable experience.</p>
+        <p class="rest-about-signature">&mdash; Chef Alessandro Moran</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu Highlights -->
+  <section class="rest-section rest-menu" id="rest-menu">
+    <div class="rest-section-header rest-fade-in">
+      <span class="rest-overline">The Menu</span>
+      <h2>Culinary Highlights</h2>
+      <div class="rest-divider"></div>
+      <p>A curated selection of our most celebrated dishes, each one telling a story of origin, season, and craft.</p>
+    </div>
+
+    <div class="rest-menu-categories rest-fade-in">
+      <button class="rest-menu-cat-btn active">All</button>
+      <button class="rest-menu-cat-btn">Starters</button>
+      <button class="rest-menu-cat-btn">Mains</button>
+      <button class="rest-menu-cat-btn">Desserts</button>
+    </div>
+
+    <div class="rest-menu-grid">
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/8511835/pexels-photo-8511835.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Seared duck breast with cherry reduction">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Seared Duck Breast</h4>
+            <span class="rest-menu-price">AED 185</span>
+          </div>
+          <p>Pan-seared duck with cherry gastrique, roasted beets, and pistachio crumble on a bed of wilted greens.</p>
+        </div>
+      </div>
+
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/2961968/pexels-photo-2961968.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wild mushroom risotto">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Wild Mushroom Risotto</h4>
+            <span class="rest-menu-price">AED 145</span>
+          </div>
+          <p>Arborio rice slow-cooked with porcini, chanterelle, and truffle oil, finished with aged Parmigiano-Reggiano.</p>
+        </div>
+      </div>
+
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/313715/pexels-photo-313715.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Grilled lamb chops">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Herb-Crusted Lamb Rack</h4>
+            <span class="rest-menu-price">AED 225</span>
+          </div>
+          <p>New Zealand lamb rack with rosemary crust, pomegranate molasses, and roasted root vegetables.</p>
+        </div>
+      </div>
+
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/34017081/pexels-photo-34017081.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Tuna tartare appetizer">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Yellowfin Tuna Tartare</h4>
+            <span class="rest-menu-price">AED 120</span>
+          </div>
+          <p>Hand-cut yellowfin tuna with avocado mousse, yuzu dressing, crispy wontons, and micro herbs.</p>
+        </div>
+      </div>
+
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/4699965/pexels-photo-4699965.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Chocolate fondant dessert">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Valrhona Chocolate Fondant</h4>
+            <span class="rest-menu-price">AED 85</span>
+          </div>
+          <p>Warm dark chocolate fondant with a molten center, vanilla bean ice cream, and gold leaf garnish.</p>
+        </div>
+      </div>
+
+      <div class="rest-menu-card rest-fade-in">
+        <div class="rest-menu-card-img">
+          <img src="https://images.pexels.com/photos/3640448/pexels-photo-3640448.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Burrata salad">
+        </div>
+        <div class="rest-menu-card-body">
+          <div class="rest-menu-card-top">
+            <h4>Burrata & Heirloom Tomato</h4>
+            <span class="rest-menu-price">AED 95</span>
+          </div>
+          <p>Fresh burrata with heirloom tomatoes, aged balsamic reduction, basil oil, and toasted pine nuts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chef's Special -->
+  <section class="rest-section rest-special" id="rest-special">
+    <div class="rest-special-grid">
+      <div class="rest-special-text rest-fade-in-left">
+        <span class="rest-overline">Chef's Selection</span>
+        <h2>The <em>Golden Hour</em> Tasting Menu</h2>
+        <p>An eight-course journey through the finest seasonal ingredients. Each dish is paired with wines curated by our sommelier, taking you from the sunlit coasts of the Mediterranean to the spice markets of the Levant.</p>
+        <p>Available Thursday through Saturday evenings. Limited to twelve guests per service for an intimate, unforgettable experience.</p>
+        <div class="rest-special-price">AED 650 per person</div>
+        <a href="#rest-reservation" class="rest-btn">Reserve This Experience</a>
+      </div>
+      <div class="rest-special-img rest-fade-in-right">
+        <img src="https://images.pexels.com/photos/35583855/pexels-photo-35583855.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant plated dish with artistic presentation">
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="rest-section rest-testimonials" id="rest-testimonials">
+    <div class="rest-section-header rest-fade-in">
+      <span class="rest-overline">Guest Voices</span>
+      <h2>What Our Guests Say</h2>
+      <div class="rest-divider"></div>
+    </div>
+
+    <div class="rest-testimonials-grid">
+      <div class="rest-testimonial-card rest-fade-in">
+        <div class="rest-testimonial-quote">&ldquo;</div>
+        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <p>An extraordinary evening from start to finish. The tasting menu was a masterpiece, and the service was impeccable. Aurum is without question the finest dining experience in Dubai.</p>
+        <div class="rest-testimonial-author">Sarah Al-Mansouri</div>
+        <div class="rest-testimonial-role">Food Critic, Gulf Times</div>
+      </div>
+
+      <div class="rest-testimonial-card rest-fade-in">
+        <div class="rest-testimonial-quote">&ldquo;</div>
+        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <p>We celebrated our anniversary here, and it was magical. Chef Alessandro personally visited our table and explained the inspiration behind each course. Truly a special place.</p>
+        <div class="rest-testimonial-author">James & Olivia Richardson</div>
+        <div class="rest-testimonial-role">Returning Guests</div>
+      </div>
+
+      <div class="rest-testimonial-card rest-fade-in">
+        <div class="rest-testimonial-quote">&ldquo;</div>
+        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <p>The lamb rack is the best I have ever had, anywhere in the world. The atmosphere, the attention to detail, everything about Aurum speaks of genuine passion for the craft.</p>
+        <div class="rest-testimonial-author">Ravi Patel</div>
+        <div class="rest-testimonial-role">Executive Chef, The Oberoi</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reservation CTA -->
+  <section class="rest-section rest-reservation" id="rest-reservation">
+    <div class="rest-reservation-content rest-fade-in">
+      <span class="rest-overline">Reservations</span>
+      <h2>Your Table Awaits</h2>
+      <p>Join us for an evening of exquisite cuisine and warm hospitality. We recommend booking at least 48 hours in advance for weekend dining.</p>
+      <a href="tel:+97145551234" class="rest-btn rest-btn-filled">Book Now</a>
+      <a href="tel:+97145551234" class="rest-reservation-phone">+971 4 555 1234</a>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="rest-section rest-gallery" id="rest-gallery">
+    <div class="rest-section-header rest-fade-in">
+      <span class="rest-overline">Gallery</span>
+      <h2>A Glimpse Inside</h2>
+      <div class="rest-divider"></div>
+    </div>
+
+    <div class="rest-gallery-grid">
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/8942305/pexels-photo-8942305.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant restaurant dining room with ambient lighting">
+      </div>
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/251610/pexels-photo-251610.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bartender crafting cocktails at the bar">
+      </div>
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/2323391/pexels-photo-2323391.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Beautifully plated gourmet dish">
+      </div>
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/35290622/pexels-photo-35290622.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Fresh ingredients and herbs on kitchen counter">
+      </div>
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/6877577/pexels-photo-6877577.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Intimate private dining room">
+      </div>
+      <div class="rest-gallery-item rest-fade-in">
+        <img src="https://images.pexels.com/photos/2664150/pexels-photo-2664150.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wine cellar with curated collection">
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="rest-section rest-contact" id="rest-contact">
+    <div class="rest-section-header rest-fade-in">
+      <span class="rest-overline">Find Us</span>
+      <h2>Visit Aurum</h2>
+      <div class="rest-divider"></div>
+    </div>
+
+    <div class="rest-contact-grid">
+      <div class="rest-contact-card rest-fade-in">
+        <div class="rest-contact-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <h4>Location</h4>
+        <p>Gate Village, DIFC<br>Dubai, United Arab Emirates<br>Building 7, Ground Floor</p>
+      </div>
+
+      <div class="rest-contact-card rest-fade-in">
+        <div class="rest-contact-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h4>Opening Hours</h4>
+        <table class="rest-hours-table">
+          <tr><td>Monday - Wednesday</td><td>6 PM - 11 PM</td></tr>
+          <tr><td>Thursday - Friday</td><td>6 PM - 12 AM</td></tr>
+          <tr><td>Saturday</td><td>12 PM - 12 AM</td></tr>
+          <tr><td>Sunday</td><td>12 PM - 11 PM</td></tr>
+        </table>
+      </div>
+
+      <div class="rest-contact-card rest-fade-in">
+        <div class="rest-contact-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <h4>Contact</h4>
+        <p>Phone: +971 4 555 1234<br>Email: hello@aurumdining.ae<br><br>For private events:<br>events@aurumdining.ae</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="rest-footer">
+    <div class="rest-footer-logo">Aurum <span>Dining</span></div>
+    <ul class="rest-footer-links">
+      <li><a href="#rest-about">Our Story</a></li>
+      <li><a href="#rest-menu">Menu</a></li>
+      <li><a href="#rest-gallery">Gallery</a></li>
+      <li><a href="#rest-contact">Contact</a></li>
+      <li><a href="#rest-reservation">Reservations</a></li>
+    </ul>
+    <p class="rest-footer-copy">&copy; 2026 Aurum Dining. All rights reserved.</p>
+  </footer>
+</div>
+
+<script>
+(function() {
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#rest-"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Navbar scroll effect
+  var nav = document.getElementById('restNav');
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 80) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  });
+
+  // Mobile menu toggle
+  window.toggleMenu = function() {
+    var links = document.getElementById('restNavLinks');
+    links.classList.toggle('open');
+  };
+
+  window.closeMenu = function() {
+    var links = document.getElementById('restNavLinks');
+    links.classList.remove('open');
+  };
+
+  // IntersectionObserver for fade-in animations
+  var animElements = document.querySelectorAll('.rest-fade-in, .rest-fade-in-left, .rest-fade-in-right');
+
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.15,
+      rootMargin: '0px 0px -40px 0px'
+    });
+
+    animElements.forEach(function(el) {
+      observer.observe(el);
+    });
+  } else {
+    // Fallback: just show everything
+    animElements.forEach(function(el) {
+      el.classList.add('visible');
+    });
+  }
+
+  // Staggered animation delay for grid items
+  document.querySelectorAll('.rest-menu-grid .rest-fade-in').forEach(function(card, i) {
+    card.style.transitionDelay = (i * 0.1) + 's';
+  });
+
+  document.querySelectorAll('.rest-gallery-grid .rest-fade-in').forEach(function(item, i) {
+    item.style.transitionDelay = (i * 0.08) + 's';
+  });
+
+  document.querySelectorAll('.rest-testimonials-grid .rest-fade-in').forEach(function(card, i) {
+    card.style.transitionDelay = (i * 0.12) + 's';
+  });
+
+  document.querySelectorAll('.rest-contact-grid .rest-fade-in').forEach(function(card, i) {
+    card.style.transitionDelay = (i * 0.1) + 's';
+  });
+})();
+</script>

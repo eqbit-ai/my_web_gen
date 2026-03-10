@@ -1,0 +1,66 @@
+{
+  "serviceName": "meydan-worker",
+  "cluster": "meydan-production",
+  "taskDefinition": "meydan-worker",
+  "desiredCount": 4,
+  "launchType": "FARGATE",
+  "platformVersion": "LATEST",
+
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": [
+        "<PRIVATE_SUBNET_1>",
+        "<PRIVATE_SUBNET_2>"
+      ],
+      "securityGroups": [
+        "<WORKER_SECURITY_GROUP>"
+      ],
+      "assignPublicIp": "DISABLED"
+    }
+  },
+
+  "deploymentConfiguration": {
+    "deploymentCircuitBreaker": {
+      "enable": true,
+      "rollback": true
+    },
+    "minimumHealthyPercent": 50,
+    "maximumPercent": 200
+  },
+
+  "_comment_autoscaling": "Auto-scaling based on Redis queue depth via custom CloudWatch metric",
+  "_autoscaling": {
+    "minCapacity": 2,
+    "maxCapacity": 20,
+    "policies": [
+      {
+        "policyName": "queue-depth-scaling",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingScalingPolicyConfiguration": {
+          "customizedMetricSpecification": {
+            "metricName": "RedisQueueDepth",
+            "namespace": "Meydan/Workers",
+            "statistic": "Average",
+            "unit": "Count"
+          },
+          "targetValue": 5.0,
+          "scaleInCooldown": 300,
+          "scaleOutCooldown": 60
+        }
+      },
+      {
+        "policyName": "cpu-target-tracking",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingScalingPolicyConfiguration": {
+          "predefinedMetricSpecification": {
+            "predefinedMetricType": "ECSServiceAverageCPUUtilization"
+          },
+          "targetValue": 70.0,
+          "scaleInCooldown": 300,
+          "scaleOutCooldown": 60
+        }
+      }
+    ],
+    "_comment": "RedisQueueDepth metric must be pushed by a custom CloudWatch agent or Lambda that polls Redis LLEN on the job queue"
+  }
+}

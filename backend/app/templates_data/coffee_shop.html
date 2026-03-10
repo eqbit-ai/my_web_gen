@@ -1,0 +1,1487 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito:wght@300;400;600;700&display=swap');
+
+/* ============ RESET & BASE ============ */
+.ach-wrap * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.ach-wrap {
+  font-family: 'Nunito', sans-serif;
+  color: #2c1810;
+  background-color: #fefcf9;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.ach-wrap h1,
+.ach-wrap h2,
+.ach-wrap h3,
+.ach-wrap h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ach-wrap a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.ach-wrap img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ach-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ach-section-title {
+  text-align: center;
+  font-size: 2.8rem;
+  color: #2c1810;
+  margin-bottom: 16px;
+}
+
+.ach-section-subtitle {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #8b6f5e;
+  max-width: 600px;
+  margin: 0 auto 48px;
+  font-weight: 300;
+}
+
+.ach-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  border-radius: 50px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.ach-btn-primary {
+  background-color: #d4915e;
+  color: #fefcf9;
+}
+
+.ach-btn-primary:hover {
+  background-color: #c07a48;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 145, 94, 0.35);
+}
+
+.ach-btn-outline {
+  background: transparent;
+  color: #fefcf9;
+  border: 2px solid #fefcf9;
+}
+
+.ach-btn-outline:hover {
+  background: #fefcf9;
+  color: #2c1810;
+}
+
+/* ============ NAVIGATION ============ */
+.ach-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 20px 0;
+  background: rgba(44, 24, 16, 0.9);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.ach-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ach-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fefcf9;
+  letter-spacing: 1px;
+}
+
+.ach-logo span {
+  color: #d4915e;
+}
+
+.ach-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+}
+
+.ach-nav-links a {
+  color: #f5ebe0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  transition: color 0.3s ease;
+  position: relative;
+}
+
+.ach-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #d4915e;
+  transition: width 0.3s ease;
+}
+
+.ach-nav-links a:hover {
+  color: #d4915e;
+}
+
+.ach-nav-links a:hover::after {
+  width: 100%;
+}
+
+/* ============ HERO ============ */
+.ach-hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(135deg, rgba(44, 24, 16, 0.88) 0%, rgba(44, 24, 16, 0.7) 100%),
+              url('https://images.pexels.com/photos/35821973/pexels-photo-35821973.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+  text-align: center;
+  padding: 120px 24px 80px;
+}
+
+.ach-hero-content {
+  max-width: 800px;
+}
+
+.ach-hero-badge {
+  display: inline-block;
+  padding: 8px 24px;
+  border: 1px solid rgba(212, 145, 94, 0.5);
+  border-radius: 50px;
+  color: #d4915e;
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.ach-hero h1 {
+  font-size: 4.5rem;
+  color: #fefcf9;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.ach-hero h1 span {
+  color: #d4915e;
+  font-style: italic;
+}
+
+.ach-hero-text {
+  font-size: 1.2rem;
+  color: #e0d5ca;
+  margin-bottom: 40px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.ach-hero-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ach-hero-scroll {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #d4915e;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ach-hero-scroll-line {
+  width: 1px;
+  height: 40px;
+  background: #d4915e;
+  animation: ach-scroll-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ach-scroll-pulse {
+  0%, 100% { height: 40px; opacity: 1; }
+  50% { height: 20px; opacity: 0.5; }
+}
+
+/* ============ ABOUT / OUR STORY ============ */
+.ach-about {
+  padding: 100px 0;
+  background: #f5ebe0;
+}
+
+.ach-about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.ach-about-img-wrap {
+  position: relative;
+}
+
+.ach-about-img-wrap img {
+  border-radius: 12px;
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+}
+
+.ach-about-img-accent {
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 200px;
+  height: 200px;
+  border: 3px solid #d4915e;
+  border-radius: 12px;
+  z-index: -1;
+}
+
+.ach-about-content h2 {
+  font-size: 2.6rem;
+  margin-bottom: 24px;
+  color: #2c1810;
+}
+
+.ach-about-content h2 span {
+  color: #d4915e;
+  font-style: italic;
+}
+
+.ach-about-content p {
+  color: #5a4438;
+  margin-bottom: 16px;
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+.ach-about-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 32px;
+}
+
+.ach-about-stat h3 {
+  font-size: 2.4rem;
+  color: #d4915e;
+}
+
+.ach-about-stat p {
+  font-size: 0.9rem;
+  color: #8b6f5e;
+  margin-bottom: 0;
+}
+
+/* ============ COFFEE MENU ============ */
+.ach-menu {
+  padding: 100px 0;
+  background: #fefcf9;
+}
+
+.ach-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ach-menu-card {
+  background: #f5ebe0;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ach-menu-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(44, 24, 16, 0.12);
+}
+
+.ach-menu-card-img {
+  height: 240px;
+  overflow: hidden;
+}
+
+.ach-menu-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.ach-menu-card:hover .ach-menu-card-img img {
+  transform: scale(1.05);
+}
+
+.ach-menu-card-body {
+  padding: 28px;
+}
+
+.ach-menu-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.ach-menu-card-body h3 {
+  font-size: 1.6rem;
+  color: #2c1810;
+}
+
+.ach-menu-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4915e;
+}
+
+.ach-menu-card-body p {
+  color: #8b6f5e;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.ach-menu-tag {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 4px 14px;
+  background: rgba(212, 145, 94, 0.15);
+  color: #d4915e;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ============ BREWING METHODS ============ */
+.ach-brewing {
+  padding: 100px 0;
+  background: linear-gradient(170deg, #2c1810 0%, #3d2216 100%);
+  color: #fefcf9;
+}
+
+.ach-brewing .ach-section-title {
+  color: #fefcf9;
+}
+
+.ach-brewing .ach-section-subtitle {
+  color: #c4a98a;
+}
+
+.ach-brewing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ach-brewing-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(212, 145, 94, 0.2);
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.ach-brewing-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #d4915e;
+  transform: translateY(-4px);
+}
+
+.ach-brewing-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4915e, #c07a48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.ach-brewing-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: #fefcf9;
+}
+
+.ach-brewing-card p {
+  color: #c4a98a;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.ach-brewing-detail {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(212, 145, 94, 0.2);
+  font-size: 0.85rem;
+  color: #d4915e;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ============ OUR BEANS ============ */
+.ach-beans {
+  padding: 100px 0;
+  background: #f5ebe0;
+}
+
+.ach-beans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ach-beans-card {
+  background: #fefcf9;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ach-beans-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(44, 24, 16, 0.1);
+}
+
+.ach-beans-card-img {
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ach-beans-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ach-beans-origin-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: #2c1810;
+  color: #fefcf9;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ach-beans-card-body {
+  padding: 28px;
+}
+
+.ach-beans-card-body h3 {
+  font-size: 1.4rem;
+  color: #2c1810;
+  margin-bottom: 8px;
+}
+
+.ach-beans-card-body p {
+  color: #8b6f5e;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+
+.ach-beans-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ach-beans-meta-item {
+  font-size: 0.8rem;
+  color: #5a4438;
+}
+
+.ach-beans-meta-item strong {
+  color: #d4915e;
+}
+
+/* ============ LOYALTY PROGRAM ============ */
+.ach-loyalty {
+  padding: 100px 0;
+  background: linear-gradient(135deg, #d4915e 0%, #c07a48 50%, #a8683a 100%);
+  color: #fefcf9;
+  text-align: center;
+}
+
+.ach-loyalty .ach-section-title {
+  color: #fefcf9;
+}
+
+.ach-loyalty .ach-section-subtitle {
+  color: rgba(254, 252, 249, 0.8);
+}
+
+.ach-loyalty-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.ach-loyalty-step {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 32px 20px;
+  backdrop-filter: blur(4px);
+  transition: background 0.3s ease;
+}
+
+.ach-loyalty-step:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ach-loyalty-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fefcf9;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.ach-loyalty-step h4 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.ach-loyalty-step p {
+  font-size: 0.9rem;
+  color: rgba(254, 252, 249, 0.75);
+  font-weight: 300;
+}
+
+.ach-loyalty .ach-btn {
+  background: #fefcf9;
+  color: #2c1810;
+}
+
+.ach-loyalty .ach-btn:hover {
+  background: #2c1810;
+  color: #fefcf9;
+}
+
+/* ============ TESTIMONIALS ============ */
+.ach-testimonials {
+  padding: 100px 0;
+  background: #fefcf9;
+}
+
+.ach-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ach-testimonial-card {
+  background: #f5ebe0;
+  border-radius: 16px;
+  padding: 36px;
+  position: relative;
+}
+
+.ach-testimonial-card::before {
+  content: '\201C';
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 5rem;
+  color: #d4915e;
+  position: absolute;
+  top: 12px;
+  left: 28px;
+  line-height: 1;
+  opacity: 0.4;
+}
+
+.ach-testimonial-text {
+  font-style: italic;
+  color: #5a4438;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+}
+
+.ach-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ach-testimonial-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ach-testimonial-name {
+  font-weight: 700;
+  color: #2c1810;
+  font-size: 0.95rem;
+}
+
+.ach-testimonial-role {
+  font-size: 0.8rem;
+  color: #8b6f5e;
+}
+
+.ach-stars {
+  color: #d4915e;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+/* ============ CONTACT / HOURS ============ */
+.ach-contact {
+  padding: 100px 0;
+  background: #f5ebe0;
+}
+
+.ach-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+}
+
+.ach-contact-info h2 {
+  font-size: 2.4rem;
+  color: #2c1810;
+  margin-bottom: 24px;
+}
+
+.ach-contact-info h2 span {
+  color: #d4915e;
+  font-style: italic;
+}
+
+.ach-contact-info p {
+  color: #5a4438;
+  line-height: 1.8;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+
+.ach-contact-detail {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.ach-contact-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: rgba(212, 145, 94, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4915e;
+  font-size: 1.1rem;
+}
+
+.ach-contact-detail-text h4 {
+  font-size: 1rem;
+  color: #2c1810;
+  margin-bottom: 4px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+}
+
+.ach-contact-detail-text p {
+  font-size: 0.9rem;
+  color: #8b6f5e;
+  margin-bottom: 0;
+}
+
+.ach-hours-card {
+  background: #fefcf9;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(44, 24, 16, 0.06);
+}
+
+.ach-hours-card h3 {
+  font-size: 1.8rem;
+  color: #2c1810;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.ach-hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(212, 145, 94, 0.15);
+  font-size: 0.95rem;
+}
+
+.ach-hours-row:last-child {
+  border-bottom: none;
+}
+
+.ach-hours-day {
+  color: #2c1810;
+  font-weight: 600;
+}
+
+.ach-hours-time {
+  color: #d4915e;
+  font-weight: 600;
+}
+
+.ach-hours-note {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(212, 145, 94, 0.1);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #5a4438;
+}
+
+/* ============ FOOTER ============ */
+.ach-footer {
+  background: #2c1810;
+  color: #c4a98a;
+  padding: 64px 0 0;
+}
+
+.ach-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(212, 145, 94, 0.15);
+}
+
+.ach-footer-brand .ach-logo {
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.ach-footer-brand p {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #a08870;
+  font-weight: 300;
+}
+
+.ach-footer-col h4 {
+  color: #fefcf9;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+}
+
+.ach-footer-col ul {
+  list-style: none;
+}
+
+.ach-footer-col ul li {
+  margin-bottom: 10px;
+}
+
+.ach-footer-col ul li a {
+  color: #a08870;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.ach-footer-col ul li a:hover {
+  color: #d4915e;
+}
+
+.ach-footer-social {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ach-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(212, 145, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d4915e;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.ach-footer-social a:hover {
+  background: #d4915e;
+  color: #fefcf9;
+  border-color: #d4915e;
+}
+
+.ach-footer-bottom {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 0.85rem;
+  color: #6b5544;
+}
+
+/* ============ DECORATIVE DIVIDER ============ */
+.ach-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.ach-divider-line {
+  width: 60px;
+  height: 1px;
+  background: #d4915e;
+}
+
+.ach-divider-dot {
+  width: 8px;
+  height: 8px;
+  background: #d4915e;
+  border-radius: 50%;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1024px) {
+  .ach-hero h1 {
+    font-size: 3.5rem;
+  }
+
+  .ach-about-grid,
+  .ach-contact-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .ach-about-img-accent {
+    display: none;
+  }
+
+  .ach-menu-grid,
+  .ach-brewing-grid,
+  .ach-beans-grid,
+  .ach-testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ach-loyalty-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ach-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ach-hero h1 {
+    font-size: 2.6rem;
+  }
+
+  .ach-hero-text {
+    font-size: 1rem;
+  }
+
+  .ach-section-title {
+    font-size: 2.2rem;
+  }
+
+  .ach-nav-links {
+    display: none;
+  }
+
+  .ach-menu-grid,
+  .ach-brewing-grid,
+  .ach-beans-grid,
+  .ach-testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ach-loyalty-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ach-about-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .ach-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .ach-hours-card {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ach-hero h1 {
+    font-size: 2rem;
+  }
+
+  .ach-hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ach-btn {
+    padding: 12px 28px;
+    font-size: 0.9rem;
+  }
+
+  .ach-container {
+    padding: 0 16px;
+  }
+}
+</style>
+
+<div class="ach-wrap">
+
+  <!-- Navigation -->
+  <nav class="ach-nav">
+    <div class="ach-nav-inner">
+      <div class="ach-logo">Artisan<span>.</span></div>
+      <ul class="ach-nav-links">
+        <li><a href="#ach-about">Our Story</a></li>
+        <li><a href="#ach-menu">Menu</a></li>
+        <li><a href="#ach-brewing">Brewing</a></li>
+        <li><a href="#ach-beans">Our Beans</a></li>
+        <li><a href="#ach-contact">Visit Us</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="ach-hero">
+    <div class="ach-hero-content">
+      <div class="ach-hero-badge">Est. 2018 &mdash; Craft Coffee Roasters</div>
+      <h1>Where Every Cup Tells a <span>Story</span></h1>
+      <p class="ach-hero-text">Hand-selected beans, expertly roasted, and brewed to perfection. Experience coffee the way it was meant to be enjoyed &mdash; with care, passion, and artistry.</p>
+      <div class="ach-hero-buttons">
+        <a href="#ach-menu" class="ach-btn ach-btn-primary">Explore Our Menu</a>
+        <a href="#ach-about" class="ach-btn ach-btn-outline">Our Story</a>
+      </div>
+    </div>
+    <div class="ach-hero-scroll">
+      <span>Scroll</span>
+      <div class="ach-hero-scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- About / Our Story -->
+  <section class="ach-about" id="ach-about">
+    <div class="ach-container">
+      <div class="ach-about-grid">
+        <div class="ach-about-img-wrap">
+          <img src="https://images.pexels.com/photos/1002740/pexels-photo-1002740.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Our coffee house interior" />
+          <div class="ach-about-img-accent"></div>
+        </div>
+        <div class="ach-about-content">
+          <div class="ach-divider" style="justify-content: flex-start; margin-bottom: 16px;">
+            <div class="ach-divider-line"></div>
+            <div class="ach-divider-dot"></div>
+          </div>
+          <h2>Our <span>Story</span></h2>
+          <p>What began as a small passion project in a corner of downtown has grown into a beloved gathering place for coffee lovers. We believe that great coffee is more than a beverage &mdash; it's an experience that connects people, sparks conversation, and brightens every day.</p>
+          <p>Every bean we source is hand-selected from sustainable farms around the world. We roast in small batches right here in our shop, ensuring every cup delivers the freshest, most vibrant flavors possible. From the first sip to the last, you'll taste the difference that genuine care makes.</p>
+          <div class="ach-about-stats">
+            <div class="ach-about-stat">
+              <h3>8+</h3>
+              <p>Years of Craft</p>
+            </div>
+            <div class="ach-about-stat">
+              <h3>12</h3>
+              <p>Bean Origins</p>
+            </div>
+            <div class="ach-about-stat">
+              <h3>50K+</h3>
+              <p>Cups Served</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coffee Menu -->
+  <section class="ach-menu" id="ach-menu">
+    <div class="ach-container">
+      <div class="ach-divider" style="margin-bottom: 16px;">
+        <div class="ach-divider-line"></div>
+        <div class="ach-divider-dot"></div>
+        <div class="ach-divider-line"></div>
+      </div>
+      <h2 class="ach-section-title">Our Coffee Menu</h2>
+      <p class="ach-section-subtitle">Each drink is handcrafted with care, using freshly roasted beans and premium ingredients.</p>
+
+      <div class="ach-menu-grid">
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/15408927/pexels-photo-15408927.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Espresso" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Classic Espresso</h3>
+              <span class="ach-menu-price">$4.50</span>
+            </div>
+            <p>A bold, concentrated shot of our signature dark roast. Rich crema, deep caramel notes, and a smooth chocolate finish.</p>
+            <span class="ach-menu-tag">House Favorite</span>
+          </div>
+        </div>
+
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Caramel Latte" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Caramel Latte</h3>
+              <span class="ach-menu-price">$6.00</span>
+            </div>
+            <p>Velvety steamed milk meets our house espresso, topped with handmade caramel drizzle and a whisper of vanilla.</p>
+            <span class="ach-menu-tag">Best Seller</span>
+          </div>
+        </div>
+
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/35821976/pexels-photo-35821976.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Cold Brew" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Cold Brew</h3>
+              <span class="ach-menu-price">$5.50</span>
+            </div>
+            <p>Steeped for 18 hours in cold water, our cold brew is impossibly smooth with notes of dark chocolate and toasted hazelnut.</p>
+            <span class="ach-menu-tag">Refreshing</span>
+          </div>
+        </div>
+
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/302895/pexels-photo-302895.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Cappuccino" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Cappuccino</h3>
+              <span class="ach-menu-price">$5.00</span>
+            </div>
+            <p>The perfect balance of espresso, steamed milk, and silky microfoam. Dusted with artisan cocoa powder.</p>
+            <span class="ach-menu-tag">Classic</span>
+          </div>
+        </div>
+
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/302893/pexels-photo-302893.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Mocha" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Artisan Mocha</h3>
+              <span class="ach-menu-price">$6.50</span>
+            </div>
+            <p>House-made Belgian chocolate ganache blended with our signature espresso and finished with whipped cream.</p>
+            <span class="ach-menu-tag">Indulgent</span>
+          </div>
+        </div>
+
+        <div class="ach-menu-card">
+          <div class="ach-menu-card-img">
+            <img src="https://images.pexels.com/photos/32536549/pexels-photo-32536549.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Matcha Latte" />
+          </div>
+          <div class="ach-menu-card-body">
+            <div class="ach-menu-card-top">
+              <h3>Matcha Latte</h3>
+              <span class="ach-menu-price">$6.00</span>
+            </div>
+            <p>Ceremonial-grade Japanese matcha whisked with creamy oat milk. Earthy, vibrant, and beautifully balanced.</p>
+            <span class="ach-menu-tag">Non-Coffee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brewing Methods -->
+  <section class="ach-brewing" id="ach-brewing">
+    <div class="ach-container">
+      <div class="ach-divider" style="margin-bottom: 16px;">
+        <div class="ach-divider-line" style="background: #d4915e;"></div>
+        <div class="ach-divider-dot" style="background: #d4915e;"></div>
+        <div class="ach-divider-line" style="background: #d4915e;"></div>
+      </div>
+      <h2 class="ach-section-title">Our Brewing Methods</h2>
+      <p class="ach-section-subtitle">Different methods, different stories. Each technique brings out unique characteristics in every bean.</p>
+
+      <div class="ach-brewing-grid">
+        <div class="ach-brewing-card">
+          <div class="ach-brewing-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fefcf9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+          </div>
+          <h3>Pour Over</h3>
+          <p>A meditative, hands-on approach that gives us complete control over every variable. The result is a clean, bright cup that highlights the unique terroir of each origin.</p>
+          <div class="ach-brewing-detail">Brew Time: 3-4 Minutes</div>
+        </div>
+
+        <div class="ach-brewing-card">
+          <div class="ach-brewing-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fefcf9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="12" y1="2" x2="12" y2="10"/></svg>
+          </div>
+          <h3>French Press</h3>
+          <p>Full immersion brewing for a rich, full-bodied cup. The metal mesh filter allows the natural oils to pass through, creating a lush, velvety texture.</p>
+          <div class="ach-brewing-detail">Brew Time: 4-5 Minutes</div>
+        </div>
+
+        <div class="ach-brewing-card">
+          <div class="ach-brewing-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fefcf9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M6 8h12l-1.5 12a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2L6 8z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>
+          </div>
+          <h3>Cold Brew</h3>
+          <p>Time does the work. Coarsely ground beans steeped in cold water for 18 hours yield an incredibly smooth, low-acid concentrate that's perfect over ice.</p>
+          <div class="ach-brewing-detail">Brew Time: 18 Hours</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Beans -->
+  <section class="ach-beans" id="ach-beans">
+    <div class="ach-container">
+      <div class="ach-divider" style="margin-bottom: 16px;">
+        <div class="ach-divider-line"></div>
+        <div class="ach-divider-dot"></div>
+        <div class="ach-divider-line"></div>
+      </div>
+      <h2 class="ach-section-title">Our Beans</h2>
+      <p class="ach-section-subtitle">We partner directly with farmers to bring you exceptional single-origin and blended coffees from around the world.</p>
+
+      <div class="ach-beans-grid">
+        <div class="ach-beans-card">
+          <div class="ach-beans-card-img">
+            <img src="https://images.pexels.com/photos/34083022/pexels-photo-34083022.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Ethiopian Yirgacheffe" />
+            <span class="ach-beans-origin-badge">Ethiopia</span>
+          </div>
+          <div class="ach-beans-card-body">
+            <h3>Yirgacheffe Natural</h3>
+            <p>Bright and fruity with blueberry, jasmine, and honey notes. A stunning example of Ethiopian natural processing at its finest.</p>
+            <div class="ach-beans-meta">
+              <span class="ach-beans-meta-item"><strong>Roast:</strong> Light</span>
+              <span class="ach-beans-meta-item"><strong>Altitude:</strong> 1,900m</span>
+              <span class="ach-beans-meta-item"><strong>Process:</strong> Natural</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ach-beans-card">
+          <div class="ach-beans-card-img">
+            <img src="https://images.pexels.com/photos/18404554/pexels-photo-18404554.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Colombian Supremo" />
+            <span class="ach-beans-origin-badge">Colombia</span>
+          </div>
+          <div class="ach-beans-card-body">
+            <h3>Huila Supremo</h3>
+            <p>Sweet and balanced with caramel, red apple, and a milk chocolate finish. Our go-to for espresso-based drinks.</p>
+            <div class="ach-beans-meta">
+              <span class="ach-beans-meta-item"><strong>Roast:</strong> Medium</span>
+              <span class="ach-beans-meta-item"><strong>Altitude:</strong> 1,700m</span>
+              <span class="ach-beans-meta-item"><strong>Process:</strong> Washed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ach-beans-card">
+          <div class="ach-beans-card-img">
+            <img src="https://images.pexels.com/photos/35821976/pexels-photo-35821976.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sumatra Mandheling" />
+            <span class="ach-beans-origin-badge">Sumatra</span>
+          </div>
+          <div class="ach-beans-card-body">
+            <h3>Mandheling Reserve</h3>
+            <p>Earthy, bold, and complex. Dark chocolate, cedar, and a hint of black pepper make this a favorite for French press brewing.</p>
+            <div class="ach-beans-meta">
+              <span class="ach-beans-meta-item"><strong>Roast:</strong> Dark</span>
+              <span class="ach-beans-meta-item"><strong>Altitude:</strong> 1,500m</span>
+              <span class="ach-beans-meta-item"><strong>Process:</strong> Wet-hulled</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loyalty Program -->
+  <section class="ach-loyalty" id="ach-loyalty">
+    <div class="ach-container">
+      <h2 class="ach-section-title">Loyalty Program</h2>
+      <p class="ach-section-subtitle">Join the Artisan Circle and earn rewards with every visit. Because loyalty should be savored.</p>
+
+      <div class="ach-loyalty-grid">
+        <div class="ach-loyalty-step">
+          <div class="ach-loyalty-number">01</div>
+          <h4>Sign Up Free</h4>
+          <p>Grab a loyalty card at the counter or register through our app. It only takes a moment.</p>
+        </div>
+        <div class="ach-loyalty-step">
+          <div class="ach-loyalty-number">02</div>
+          <h4>Earn Points</h4>
+          <p>Collect 1 point for every dollar spent. Bonus points on featured drinks and seasonal specials.</p>
+        </div>
+        <div class="ach-loyalty-step">
+          <div class="ach-loyalty-number">03</div>
+          <h4>Unlock Rewards</h4>
+          <p>Redeem your points for free drinks, pastries, exclusive merchandise, and tasting events.</p>
+        </div>
+        <div class="ach-loyalty-step">
+          <div class="ach-loyalty-number">04</div>
+          <h4>VIP Benefits</h4>
+          <p>Gold members get early access to new blends, birthday treats, and 10% off all beans.</p>
+        </div>
+      </div>
+
+      <a href="#" class="ach-btn">Join the Artisan Circle</a>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="ach-testimonials" id="ach-testimonials">
+    <div class="ach-container">
+      <div class="ach-divider" style="margin-bottom: 16px;">
+        <div class="ach-divider-line"></div>
+        <div class="ach-divider-dot"></div>
+        <div class="ach-divider-line"></div>
+      </div>
+      <h2 class="ach-section-title">What Our Guests Say</h2>
+      <p class="ach-section-subtitle">Don't just take our word for it. Here's what the community has to say about the Artisan experience.</p>
+
+      <div class="ach-testimonials-grid">
+        <div class="ach-testimonial-card">
+          <div class="ach-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="ach-testimonial-text">"The pour-over here changed the way I think about coffee. You can taste the care that goes into every single cup. This is my daily ritual now."</p>
+          <div class="ach-testimonial-author">
+            <img class="ach-testimonial-avatar" src="https://images.pexels.com/photos/133223/pexels-photo-133223.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah M." />
+            <div>
+              <div class="ach-testimonial-name">Sarah M.</div>
+              <div class="ach-testimonial-role">Regular since 2020</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ach-testimonial-card">
+          <div class="ach-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="ach-testimonial-text">"I've visited coffee shops across Europe and South America. Artisan stands shoulder to shoulder with the best of them. The Yirgacheffe is absolutely exceptional."</p>
+          <div class="ach-testimonial-author">
+            <img class="ach-testimonial-avatar" src="https://images.pexels.com/photos/1557694/pexels-photo-1557694.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James K." />
+            <div>
+              <div class="ach-testimonial-name">James K.</div>
+              <div class="ach-testimonial-role">Coffee Enthusiast</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ach-testimonial-card">
+          <div class="ach-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="ach-testimonial-text">"The ambiance is gorgeous, the staff genuinely cares, and the caramel latte is otherworldly. It's my go-to spot for working remotely. Couldn't ask for more."</p>
+          <div class="ach-testimonial-author">
+            <img class="ach-testimonial-avatar" src="https://images.pexels.com/photos/3678466/pexels-photo-3678466.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Amara O." />
+            <div>
+              <div class="ach-testimonial-name">Amara O.</div>
+              <div class="ach-testimonial-role">Freelance Designer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Hours -->
+  <section class="ach-contact" id="ach-contact">
+    <div class="ach-container">
+      <div class="ach-contact-grid">
+        <div class="ach-contact-info">
+          <div class="ach-divider" style="justify-content: flex-start; margin-bottom: 16px;">
+            <div class="ach-divider-line"></div>
+            <div class="ach-divider-dot"></div>
+          </div>
+          <h2>Come <span>Visit</span> Us</h2>
+          <p>We'd love to welcome you in person. Whether you're stopping by for your morning ritual or settling in for an afternoon of work, there's always a seat and a warm cup waiting for you.</p>
+
+          <div class="ach-contact-detail">
+            <div class="ach-contact-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="ach-contact-detail-text">
+              <h4>Location</h4>
+              <p>127 Roastery Lane, Arts District<br />Portland, OR 97209</p>
+            </div>
+          </div>
+
+          <div class="ach-contact-detail">
+            <div class="ach-contact-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="ach-contact-detail-text">
+              <h4>Phone</h4>
+              <p>(503) 555-0127</p>
+            </div>
+          </div>
+
+          <div class="ach-contact-detail">
+            <div class="ach-contact-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="ach-contact-detail-text">
+              <h4>Email</h4>
+              <p>hello@artisancoffee.com</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ach-hours-card">
+          <h3>Opening Hours</h3>
+          <div class="ach-hours-row">
+            <span class="ach-hours-day">Monday - Friday</span>
+            <span class="ach-hours-time">6:30 AM - 8:00 PM</span>
+          </div>
+          <div class="ach-hours-row">
+            <span class="ach-hours-day">Saturday</span>
+            <span class="ach-hours-time">7:00 AM - 9:00 PM</span>
+          </div>
+          <div class="ach-hours-row">
+            <span class="ach-hours-day">Sunday</span>
+            <span class="ach-hours-time">8:00 AM - 6:00 PM</span>
+          </div>
+          <div class="ach-hours-row">
+            <span class="ach-hours-day">Holidays</span>
+            <span class="ach-hours-time">9:00 AM - 4:00 PM</span>
+          </div>
+          <div class="ach-hours-note">
+            Kitchen closes 30 minutes before closing. Last coffee orders 15 minutes before close.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="ach-footer">
+    <div class="ach-container">
+      <div class="ach-footer-grid">
+        <div class="ach-footer-brand">
+          <div class="ach-logo">Artisan<span>.</span></div>
+          <p>Craft coffee roasters dedicated to sourcing, roasting, and serving the finest beans from around the world. Every cup is a journey.</p>
+          <div class="ach-footer-social">
+            <a href="#" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+            <a href="#" aria-label="Facebook">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </a>
+            <a href="#" aria-label="Twitter">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="ach-footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#ach-about">Our Story</a></li>
+            <li><a href="#ach-menu">Coffee Menu</a></li>
+            <li><a href="#ach-brewing">Brewing Methods</a></li>
+            <li><a href="#ach-beans">Our Beans</a></li>
+          </ul>
+        </div>
+
+        <div class="ach-footer-col">
+          <h4>Visit</h4>
+          <ul>
+            <li><a href="#ach-contact">Location & Hours</a></li>
+            <li><a href="#">Private Events</a></li>
+            <li><a href="#">Catering</a></li>
+            <li><a href="#">Gift Cards</a></li>
+          </ul>
+        </div>
+
+        <div class="ach-footer-col">
+          <h4>More</h4>
+          <ul>
+            <li><a href="#ach-loyalty">Loyalty Program</a></li>
+            <li><a href="#">Wholesale</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ach-footer-bottom">
+        &copy; 2026 Artisan Coffee House. All rights reserved. Crafted with passion and purpose.
+      </div>
+    </div>
+  </footer>
+
+</div>

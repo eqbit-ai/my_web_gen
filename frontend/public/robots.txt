@@ -1,0 +1,11 @@
+# Robots.txt for Meydan Free Zone AI Website Generator
+# https://generator.meydanfz.ae
+
+User-agent: *
+Allow: /
+Disallow: /generator
+Disallow: /static/js/*.map
+Disallow: /static/css/*.map
+
+# Sitemap
+Sitemap: https://generator.meydanfz.ae/sitemap.xml

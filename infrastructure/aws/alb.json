@@ -1,0 +1,107 @@
+{
+  "_comment": "Application Load Balancer configuration template for Meydan API",
+
+  "loadBalancer": {
+    "name": "meydan-alb",
+    "scheme": "internet-facing",
+    "type": "application",
+    "ipAddressType": "ipv4",
+    "subnets": [
+      "<PUBLIC_SUBNET_1>",
+      "<PUBLIC_SUBNET_2>"
+    ],
+    "securityGroups": [
+      "<ALB_SECURITY_GROUP>"
+    ],
+    "attributes": [
+      {
+        "_comment": "300s idle timeout for long SSE streams (website generation)",
+        "key": "idle_timeout.timeout_seconds",
+        "value": "300"
+      },
+      {
+        "key": "routing.http.drop_invalid_header_fields.enabled",
+        "value": "true"
+      },
+      {
+        "key": "routing.http2.enabled",
+        "value": "true"
+      }
+    ]
+  },
+
+  "targetGroup": {
+    "name": "meydan-api-tg",
+    "protocol": "HTTP",
+    "port": 8000,
+    "targetType": "ip",
+    "vpcId": "<VPC_ID>",
+    "healthCheck": {
+      "protocol": "HTTP",
+      "path": "/api/health",
+      "port": "8000",
+      "healthyThresholdCount": 2,
+      "unhealthyThresholdCount": 3,
+      "timeoutSeconds": 10,
+      "intervalSeconds": 30,
+      "matcher": {
+        "httpCode": "200"
+      }
+    },
+    "attributes": [
+      {
+        "_comment": "Enable sticky sessions for SSE connections",
+        "key": "stickiness.enabled",
+        "value": "true"
+      },
+      {
+        "key": "stickiness.type",
+        "value": "lb_cookie"
+      },
+      {
+        "_comment": "Sticky session duration: 1 hour (covers long generation sessions)",
+        "key": "stickiness.lb_cookie.duration_seconds",
+        "value": "3600"
+      },
+      {
+        "key": "deregistration_delay.timeout_seconds",
+        "value": "120"
+      }
+    ]
+  },
+
+  "listeners": [
+    {
+      "_comment": "HTTPS listener on port 443",
+      "protocol": "HTTPS",
+      "port": 443,
+      "sslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+      "certificates": [
+        {
+          "certificateArn": "<ACM_CERTIFICATE_ARN>"
+        }
+      ],
+      "defaultActions": [
+        {
+          "type": "forward",
+          "targetGroupArn": "<API_TARGET_GROUP_ARN>"
+        }
+      ]
+    },
+    {
+      "_comment": "HTTP listener redirects to HTTPS",
+      "protocol": "HTTP",
+      "port": 80,
+      "defaultActions": [
+        {
+          "type": "redirect",
+          "redirectConfig": {
+            "protocol": "HTTPS",
+            "port": "443",
+            "statusCode": "HTTP_301"
+          }
+        }
+      ]
+    }
+  ]
+}

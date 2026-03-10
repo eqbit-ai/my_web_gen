@@ -1,0 +1,1336 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   FITNESS GYM TEMPLATE — PREFIX: fitgym-
+   ============================================ */
+
+.fitgym-wrapper {
+  margin: 0;
+  padding: 0;
+  font-family: 'Source Sans 3', sans-serif;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.fitgym-wrapper * {
+  box-sizing: border-box;
+}
+
+/* ---------- TYPOGRAPHY ---------- */
+
+.fitgym-heading {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.fitgym-section-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 2.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: 3px;
+  color: #ffffff;
+}
+
+.fitgym-section-subtitle {
+  text-align: center;
+  color: #999999;
+  font-size: 1.1rem;
+  margin-bottom: 3.5rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.fitgym-red {
+  color: #ff4d4d;
+}
+
+/* ---------- NAVIGATION ---------- */
+
+.fitgym-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 77, 77, 0.15);
+  padding: 0 2rem;
+}
+
+.fitgym-nav-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.fitgym-logo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.fitgym-logo span {
+  color: #ff4d4d;
+}
+
+.fitgym-nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fitgym-nav-links a {
+  color: #cccccc;
+  text-decoration: none;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  transition: color 0.3s ease;
+}
+
+.fitgym-nav-links a:hover {
+  color: #ff4d4d;
+}
+
+.fitgym-nav-cta {
+  background: #ff4d4d;
+  color: #ffffff !important;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0;
+  font-weight: 600;
+  transition: background 0.3s ease !important;
+}
+
+.fitgym-nav-cta:hover {
+  background: #e63939 !important;
+}
+
+.fitgym-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fitgym-menu-toggle span {
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: #ffffff;
+  transition: 0.3s;
+}
+
+/* ---------- HERO SECTION ---------- */
+
+.fitgym-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.fitgym-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.pexels.com/photos/7174396/pexels-photo-7174396.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+}
+
+.fitgym-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.7) 50%, rgba(255, 77, 77, 0.15) 100%);
+}
+
+.fitgym-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  padding: 2rem;
+}
+
+.fitgym-hero-tag {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 1rem;
+  letter-spacing: 6px;
+  color: #ff4d4d;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.fitgym-hero-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 5.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.05;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: 4px;
+}
+
+.fitgym-hero-title .fitgym-red {
+  display: block;
+}
+
+.fitgym-hero-desc {
+  font-size: 1.2rem;
+  color: #cccccc;
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.fitgym-hero-buttons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.fitgym-btn-primary {
+  display: inline-block;
+  background: #ff4d4d;
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  padding: 1rem 2.5rem;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.fitgym-btn-primary:hover {
+  background: #e63939;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 77, 77, 0.35);
+}
+
+.fitgym-btn-outline {
+  display: inline-block;
+  background: transparent;
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  padding: 1rem 2.5rem;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.fitgym-btn-outline:hover {
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+/* ---------- STATS BAR ---------- */
+
+.fitgym-stats {
+  background: #1a1a1a;
+  padding: 3rem 2rem;
+  border-top: 3px solid #ff4d4d;
+}
+
+.fitgym-stats-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  text-align: center;
+}
+
+.fitgym-stat-number {
+  font-family: 'Oswald', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ff4d4d;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.fitgym-stat-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #999999;
+}
+
+/* ---------- CLASS SCHEDULE ---------- */
+
+.fitgym-section {
+  padding: 6rem 2rem;
+}
+
+.fitgym-classes {
+  background: #0a0a0a;
+}
+
+.fitgym-classes-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.fitgym-class-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.fitgym-class-card:hover {
+  border-color: #ff4d4d;
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.fitgym-class-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.fitgym-class-body {
+  padding: 1.5rem;
+}
+
+.fitgym-class-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 0.5rem;
+}
+
+.fitgym-class-time {
+  color: #ff4d4d;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.fitgym-class-desc {
+  color: #999999;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.fitgym-class-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #ff4d4d;
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  padding: 0.3rem 0.8rem;
+}
+
+/* ---------- TRAINERS ---------- */
+
+.fitgym-trainers {
+  background: #111111;
+}
+
+.fitgym-trainers-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.fitgym-trainer-card {
+  background: #1a1a1a;
+  text-align: center;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  transition: all 0.3s ease;
+}
+
+.fitgym-trainer-card:hover {
+  border-color: #ff4d4d;
+  transform: translateY(-5px);
+}
+
+.fitgym-trainer-img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(30%);
+  transition: filter 0.3s ease;
+}
+
+.fitgym-trainer-card:hover .fitgym-trainer-img {
+  filter: grayscale(0%);
+}
+
+.fitgym-trainer-info {
+  padding: 1.5rem;
+}
+
+.fitgym-trainer-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 0.3rem;
+}
+
+.fitgym-trainer-role {
+  color: #ff4d4d;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.fitgym-trainer-bio {
+  color: #999999;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ---------- MEMBERSHIP PLANS ---------- */
+
+.fitgym-pricing {
+  background: #0a0a0a;
+}
+
+.fitgym-pricing-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.fitgym-plan {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  padding: 3rem 2rem;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.fitgym-plan:hover {
+  border-color: #ff4d4d;
+  transform: translateY(-5px);
+}
+
+.fitgym-plan-featured {
+  border-color: #ff4d4d;
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.fitgym-plan-featured:hover {
+  transform: scale(1.05) translateY(-5px);
+}
+
+.fitgym-plan-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff4d4d;
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  padding: 0.4rem 1.5rem;
+}
+
+.fitgym-plan-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #999999;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+}
+
+.fitgym-plan-price {
+  font-family: 'Oswald', sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.fitgym-plan-price span {
+  font-size: 1.2rem;
+  color: #999999;
+  font-weight: 400;
+}
+
+.fitgym-plan-period {
+  color: #666666;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.fitgym-plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+  text-align: left;
+}
+
+.fitgym-plan-features li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #2a2a2a;
+  color: #cccccc;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.fitgym-plan-features li::before {
+  content: "\2713";
+  color: #ff4d4d;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.fitgym-plan-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 0.95rem;
+  border: 2px solid #ff4d4d;
+  background: transparent;
+  color: #ff4d4d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.fitgym-plan-btn:hover,
+.fitgym-plan-featured .fitgym-plan-btn {
+  background: #ff4d4d;
+  color: #ffffff;
+}
+
+/* ---------- TRANSFORMATION GALLERY ---------- */
+
+.fitgym-gallery {
+  background: #111111;
+}
+
+.fitgym-gallery-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.fitgym-gallery-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.fitgym-gallery-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+
+.fitgym-gallery-img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  display: block;
+}
+
+.fitgym-gallery-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  text-align: center;
+  background: rgba(10, 10, 10, 0.85);
+  color: #999999;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  padding: 0.4rem;
+}
+
+.fitgym-gallery-label-after {
+  left: auto;
+  right: 0;
+  background: rgba(255, 77, 77, 0.85);
+  color: #ffffff;
+}
+
+.fitgym-gallery-caption {
+  background: #1a1a1a;
+  padding: 1rem 1.2rem;
+  text-align: center;
+}
+
+.fitgym-gallery-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
+}
+
+.fitgym-gallery-result {
+  color: #ff4d4d;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ---------- FACILITIES ---------- */
+
+.fitgym-facilities {
+  background: #0a0a0a;
+}
+
+.fitgym-facilities-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.fitgym-facility {
+  position: relative;
+  overflow: hidden;
+  height: 280px;
+  cursor: pointer;
+}
+
+.fitgym-facility-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.fitgym-facility:hover .fitgym-facility-img {
+  transform: scale(1.1);
+}
+
+.fitgym-facility-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem 1.2rem 1.2rem;
+  background: linear-gradient(transparent, rgba(10, 10, 10, 0.95));
+}
+
+.fitgym-facility-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.3rem;
+}
+
+.fitgym-facility-desc {
+  color: #999999;
+  font-size: 0.8rem;
+}
+
+/* ---------- FREE TRIAL CTA ---------- */
+
+.fitgym-cta {
+  position: relative;
+  padding: 8rem 2rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.fitgym-cta-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.pexels.com/photos/669580/pexels-photo-669580.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+}
+
+.fitgym-cta-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.93) 0%, rgba(255, 77, 77, 0.2) 100%);
+}
+
+.fitgym-cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.fitgym-cta-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 3.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+
+.fitgym-cta-text {
+  color: #cccccc;
+  font-size: 1.1rem;
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+/* ---------- FOOTER ---------- */
+
+.fitgym-footer {
+  background: #0d0d0d;
+  border-top: 1px solid #1a1a1a;
+  padding: 4rem 2rem 2rem;
+}
+
+.fitgym-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+}
+
+.fitgym-footer-brand {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 1rem;
+}
+
+.fitgym-footer-brand span {
+  color: #ff4d4d;
+}
+
+.fitgym-footer-about {
+  color: #777777;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+.fitgym-footer-social {
+  display: flex;
+  gap: 1rem;
+}
+
+.fitgym-footer-social a {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333333;
+  color: #999999;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.fitgym-footer-social a:hover {
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+}
+
+.fitgym-footer-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
+}
+
+.fitgym-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fitgym-footer-links li {
+  margin-bottom: 0.7rem;
+}
+
+.fitgym-footer-links a {
+  color: #777777;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.fitgym-footer-links a:hover {
+  color: #ff4d4d;
+}
+
+.fitgym-footer-contact-item {
+  color: #777777;
+  font-size: 0.9rem;
+  margin-bottom: 0.7rem;
+  line-height: 1.6;
+}
+
+.fitgym-footer-contact-item strong {
+  color: #cccccc;
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
+}
+
+.fitgym-footer-bar {
+  max-width: 1200px;
+  margin: 3rem auto 0;
+  padding-top: 2rem;
+  border-top: 1px solid #1a1a1a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #555555;
+  font-size: 0.8rem;
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 1024px) {
+  .fitgym-hero-title {
+    font-size: 3.8rem;
+  }
+  .fitgym-classes-grid,
+  .fitgym-trainers-grid,
+  .fitgym-pricing-grid,
+  .fitgym-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fitgym-facilities-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fitgym-footer-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fitgym-stats-inner {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .fitgym-nav-links {
+    display: none;
+  }
+  .fitgym-menu-toggle {
+    display: flex;
+  }
+  .fitgym-hero-title {
+    font-size: 2.8rem;
+    letter-spacing: 2px;
+  }
+  .fitgym-hero-tag {
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+  }
+  .fitgym-section-title {
+    font-size: 2rem;
+  }
+  .fitgym-classes-grid,
+  .fitgym-trainers-grid,
+  .fitgym-pricing-grid,
+  .fitgym-gallery-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .fitgym-facilities-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .fitgym-plan-featured {
+    transform: none;
+  }
+  .fitgym-plan-featured:hover {
+    transform: translateY(-5px);
+  }
+  .fitgym-cta-title {
+    font-size: 2.2rem;
+  }
+  .fitgym-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .fitgym-footer-bar {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  .fitgym-section {
+    padding: 4rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fitgym-hero-title {
+    font-size: 2rem;
+  }
+  .fitgym-hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  .fitgym-btn-primary,
+  .fitgym-btn-outline {
+    width: 100%;
+    text-align: center;
+  }
+  .fitgym-stats-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fitgym-stat-number {
+    font-size: 2.2rem;
+  }
+  .fitgym-plan-price {
+    font-size: 3rem;
+  }
+}
+</style>
+
+<div class="fitgym-wrapper">
+
+  <!-- NAVIGATION -->
+  <nav class="fitgym-nav">
+    <div class="fitgym-nav-inner">
+      <a href="#" class="fitgym-logo">IRON<span>FORGE</span></a>
+      <ul class="fitgym-nav-links">
+        <li><a href="#fitgym-classes">Classes</a></li>
+        <li><a href="#fitgym-trainers">Trainers</a></li>
+        <li><a href="#fitgym-pricing">Pricing</a></li>
+        <li><a href="#fitgym-gallery">Results</a></li>
+        <li><a href="#fitgym-facilities">Facilities</a></li>
+        <li><a href="#fitgym-trial" class="fitgym-nav-cta">Free Trial</a></li>
+      </ul>
+      <button class="fitgym-menu-toggle" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="fitgym-hero">
+    <div class="fitgym-hero-bg"></div>
+    <div class="fitgym-hero-overlay"></div>
+    <div class="fitgym-hero-content">
+      <p class="fitgym-hero-tag">No excuses. No limits.</p>
+      <h1 class="fitgym-hero-title">
+        TRANSFORM<br><span class="fitgym-red">YOUR BODY</span>
+      </h1>
+      <p class="fitgym-hero-desc">
+        Push beyond your limits with world-class training, elite coaches, and a community
+        built on sweat and determination. Your transformation starts today.
+      </p>
+      <div class="fitgym-hero-buttons">
+        <a href="#fitgym-trial" class="fitgym-btn-primary">Start Free Trial</a>
+        <a href="#fitgym-classes" class="fitgym-btn-outline">View Classes</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <section class="fitgym-stats">
+    <div class="fitgym-stats-inner">
+      <div class="fitgym-stat">
+        <div class="fitgym-stat-number">15K+</div>
+        <div class="fitgym-stat-label">Active Members</div>
+      </div>
+      <div class="fitgym-stat">
+        <div class="fitgym-stat-number">50+</div>
+        <div class="fitgym-stat-label">Expert Trainers</div>
+      </div>
+      <div class="fitgym-stat">
+        <div class="fitgym-stat-number">120+</div>
+        <div class="fitgym-stat-label">Weekly Classes</div>
+      </div>
+      <div class="fitgym-stat">
+        <div class="fitgym-stat-number">98%</div>
+        <div class="fitgym-stat-label">Client Satisfaction</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLASS SCHEDULE -->
+  <section id="fitgym-classes" class="fitgym-section fitgym-classes">
+    <h2 class="fitgym-section-title">Class <span class="fitgym-red">Schedule</span></h2>
+    <p class="fitgym-section-subtitle">Push your limits with our high-intensity group sessions</p>
+    <div class="fitgym-classes-grid">
+      <div class="fitgym-class-card">
+        <span class="fitgym-class-badge">Popular</span>
+        <img src="https://images.pexels.com/photos/5327487/pexels-photo-5327487.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="HIIT Training" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">HIIT Inferno</h3>
+          <p class="fitgym-class-time">Mon / Wed / Fri &mdash; 6:00 AM</p>
+          <p class="fitgym-class-desc">High-intensity interval training designed to torch calories and build explosive power in 45 minutes.</p>
+        </div>
+      </div>
+      <div class="fitgym-class-card">
+        <img src="https://images.pexels.com/photos/4944977/pexels-photo-4944977.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Strength Training" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">Power Lifting</h3>
+          <p class="fitgym-class-time">Tue / Thu / Sat &mdash; 7:00 AM</p>
+          <p class="fitgym-class-desc">Focused barbell training with progressive overload programming for serious strength gains.</p>
+        </div>
+      </div>
+      <div class="fitgym-class-card">
+        <img src="https://images.pexels.com/photos/11674389/pexels-photo-11674389.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="CrossFit" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">CrossFit WOD</h3>
+          <p class="fitgym-class-time">Mon &ndash; Fri &mdash; 5:30 PM</p>
+          <p class="fitgym-class-desc">Functional fitness combining gymnastics, weightlifting, and cardio for total body conditioning.</p>
+        </div>
+      </div>
+      <div class="fitgym-class-card">
+        <span class="fitgym-class-badge">New</span>
+        <img src="https://images.pexels.com/photos/6922159/pexels-photo-6922159.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Boxing" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">Boxing Fundamentals</h3>
+          <p class="fitgym-class-time">Mon / Wed / Fri &mdash; 12:00 PM</p>
+          <p class="fitgym-class-desc">Learn technique, build endurance, and unleash your inner fighter with coached boxing sessions.</p>
+        </div>
+      </div>
+      <div class="fitgym-class-card">
+        <img src="https://images.pexels.com/photos/5750963/pexels-photo-5750963.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Yoga" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">Power Yoga</h3>
+          <p class="fitgym-class-time">Tue / Thu &mdash; 8:00 AM</p>
+          <p class="fitgym-class-desc">Dynamic yoga flows to improve flexibility, core strength, and mental focus for athletes.</p>
+        </div>
+      </div>
+      <div class="fitgym-class-card">
+        <img src="https://images.pexels.com/photos/4944970/pexels-photo-4944970.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Spin Class" class="fitgym-class-img">
+        <div class="fitgym-class-body">
+          <h3 class="fitgym-class-name">Spin Assault</h3>
+          <p class="fitgym-class-time">Mon &ndash; Sat &mdash; 6:30 PM</p>
+          <p class="fitgym-class-desc">Heart-pumping indoor cycling with rhythm-driven intervals and motivating beats.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINERS -->
+  <section id="fitgym-trainers" class="fitgym-section fitgym-trainers">
+    <h2 class="fitgym-section-title">Elite <span class="fitgym-red">Trainers</span></h2>
+    <p class="fitgym-section-subtitle">Certified professionals dedicated to your transformation</p>
+    <div class="fitgym-trainers-grid">
+      <div class="fitgym-trainer-card">
+        <img src="https://images.pexels.com/photos/2261477/pexels-photo-2261477.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Marcus Cole" class="fitgym-trainer-img">
+        <div class="fitgym-trainer-info">
+          <h3 class="fitgym-trainer-name">Marcus Cole</h3>
+          <p class="fitgym-trainer-role">Head Strength Coach</p>
+          <p class="fitgym-trainer-bio">Former competitive powerlifter with 12 years of coaching experience. Specializes in progressive overload and body recomposition.</p>
+        </div>
+      </div>
+      <div class="fitgym-trainer-card">
+        <img src="https://images.pexels.com/photos/14616296/pexels-photo-14616296.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Vega" class="fitgym-trainer-img">
+        <div class="fitgym-trainer-info">
+          <h3 class="fitgym-trainer-name">Sarah Vega</h3>
+          <p class="fitgym-trainer-role">HIIT & Conditioning</p>
+          <p class="fitgym-trainer-bio">Certified CrossFit Level 3 trainer and nutritionist. Known for her no-nonsense approach that delivers real, lasting results.</p>
+        </div>
+      </div>
+      <div class="fitgym-trainer-card">
+        <img src="https://images.pexels.com/photos/4853280/pexels-photo-4853280.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James Okafor" class="fitgym-trainer-img">
+        <div class="fitgym-trainer-info">
+          <h3 class="fitgym-trainer-name">James Okafor</h3>
+          <p class="fitgym-trainer-role">Boxing & MMA Coach</p>
+          <p class="fitgym-trainer-bio">Professional MMA background with championships in two weight classes. Transforms beginners into confident fighters.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEMBERSHIP PLANS -->
+  <section id="fitgym-pricing" class="fitgym-section fitgym-pricing">
+    <h2 class="fitgym-section-title">Membership <span class="fitgym-red">Plans</span></h2>
+    <p class="fitgym-section-subtitle">Invest in yourself with a plan that fits your goals</p>
+    <div class="fitgym-pricing-grid">
+      <div class="fitgym-plan">
+        <h3 class="fitgym-plan-name">Starter</h3>
+        <div class="fitgym-plan-price"><span>$</span>29<span>/mo</span></div>
+        <p class="fitgym-plan-period">Billed monthly</p>
+        <ul class="fitgym-plan-features">
+          <li>Gym floor access</li>
+          <li>Basic equipment usage</li>
+          <li>Locker room access</li>
+          <li>1 group class per week</li>
+          <li>Fitness assessment</li>
+        </ul>
+        <button class="fitgym-plan-btn">Get Started</button>
+      </div>
+      <div class="fitgym-plan fitgym-plan-featured">
+        <div class="fitgym-plan-badge">Most Popular</div>
+        <h3 class="fitgym-plan-name">Pro</h3>
+        <div class="fitgym-plan-price"><span>$</span>59<span>/mo</span></div>
+        <p class="fitgym-plan-period">Billed monthly</p>
+        <ul class="fitgym-plan-features">
+          <li>Full gym access 24/7</li>
+          <li>Unlimited group classes</li>
+          <li>Sauna & recovery zone</li>
+          <li>Monthly body scan</li>
+          <li>Nutrition plan included</li>
+          <li>Workout app access</li>
+        </ul>
+        <button class="fitgym-plan-btn">Get Started</button>
+      </div>
+      <div class="fitgym-plan">
+        <h3 class="fitgym-plan-name">Elite</h3>
+        <div class="fitgym-plan-price"><span>$</span>99<span>/mo</span></div>
+        <p class="fitgym-plan-period">Billed monthly</p>
+        <ul class="fitgym-plan-features">
+          <li>Everything in Pro</li>
+          <li>2 personal training sessions/week</li>
+          <li>Custom meal planning</li>
+          <li>Priority class booking</li>
+          <li>Recovery massage monthly</li>
+          <li>Guest passes (2/month)</li>
+        </ul>
+        <button class="fitgym-plan-btn">Get Started</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSFORMATION GALLERY -->
+  <section id="fitgym-gallery" class="fitgym-section fitgym-gallery">
+    <h2 class="fitgym-section-title">Real <span class="fitgym-red">Results</span></h2>
+    <p class="fitgym-section-subtitle">Our members' transformations speak louder than words</p>
+    <div class="fitgym-gallery-grid">
+      <div class="fitgym-gallery-item">
+        <div class="fitgym-gallery-images">
+          <img src="https://images.pexels.com/photos/374101/pexels-photo-374101.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Before" class="fitgym-gallery-img">
+          <img src="https://images.pexels.com/photos/6739958/pexels-photo-6739958.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="After" class="fitgym-gallery-img">
+        </div>
+        <span class="fitgym-gallery-label">Before</span>
+        <span class="fitgym-gallery-label fitgym-gallery-label-after">After</span>
+        <div class="fitgym-gallery-caption">
+          <p class="fitgym-gallery-name">David R.</p>
+          <p class="fitgym-gallery-result">Lost 35 lbs in 6 months</p>
+        </div>
+      </div>
+      <div class="fitgym-gallery-item">
+        <div class="fitgym-gallery-images">
+          <img src="https://images.pexels.com/photos/3837388/pexels-photo-3837388.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Before" class="fitgym-gallery-img">
+          <img src="https://images.pexels.com/photos/19023239/pexels-photo-19023239.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="After" class="fitgym-gallery-img">
+        </div>
+        <span class="fitgym-gallery-label">Before</span>
+        <span class="fitgym-gallery-label fitgym-gallery-label-after">After</span>
+        <div class="fitgym-gallery-caption">
+          <p class="fitgym-gallery-name">Emily S.</p>
+          <p class="fitgym-gallery-result">Gained 15 lbs muscle in 8 months</p>
+        </div>
+      </div>
+      <div class="fitgym-gallery-item">
+        <div class="fitgym-gallery-images">
+          <img src="https://images.pexels.com/photos/7991940/pexels-photo-7991940.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Before" class="fitgym-gallery-img">
+          <img src="https://images.pexels.com/photos/14502821/pexels-photo-14502821.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="After" class="fitgym-gallery-img">
+        </div>
+        <span class="fitgym-gallery-label">Before</span>
+        <span class="fitgym-gallery-label fitgym-gallery-label-after">After</span>
+        <div class="fitgym-gallery-caption">
+          <p class="fitgym-gallery-name">Mike T.</p>
+          <p class="fitgym-gallery-result">Complete body transformation in 1 year</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FACILITIES -->
+  <section id="fitgym-facilities" class="fitgym-section fitgym-facilities">
+    <h2 class="fitgym-section-title">Our <span class="fitgym-red">Facilities</span></h2>
+    <p class="fitgym-section-subtitle">State-of-the-art equipment in a premium training environment</p>
+    <div class="fitgym-facilities-grid">
+      <div class="fitgym-facility">
+        <img src="https://images.pexels.com/photos/4162589/pexels-photo-4162589.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Weight Room" class="fitgym-facility-img">
+        <div class="fitgym-facility-overlay">
+          <h3 class="fitgym-facility-name">Weight Room</h3>
+          <p class="fitgym-facility-desc">20,000 sq ft of free weights and machines</p>
+        </div>
+      </div>
+      <div class="fitgym-facility">
+        <img src="https://images.pexels.com/photos/2250432/pexels-photo-2250432.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Cardio Zone" class="fitgym-facility-img">
+        <div class="fitgym-facility-overlay">
+          <h3 class="fitgym-facility-name">Cardio Zone</h3>
+          <p class="fitgym-facility-desc">60+ premium cardio machines with entertainment</p>
+        </div>
+      </div>
+      <div class="fitgym-facility">
+        <img src="https://images.pexels.com/photos/8032740/pexels-photo-8032740.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Boxing Ring" class="fitgym-facility-img">
+        <div class="fitgym-facility-overlay">
+          <h3 class="fitgym-facility-name">Boxing Ring</h3>
+          <p class="fitgym-facility-desc">Full-size ring, heavy bags, and speed bags</p>
+        </div>
+      </div>
+      <div class="fitgym-facility">
+        <img src="https://images.pexels.com/photos/11421250/pexels-photo-11421250.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Recovery Center" class="fitgym-facility-img">
+        <div class="fitgym-facility-overlay">
+          <h3 class="fitgym-facility-name">Recovery Center</h3>
+          <p class="fitgym-facility-desc">Sauna, ice bath, and stretching studio</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FREE TRIAL CTA -->
+  <section id="fitgym-trial" class="fitgym-cta">
+    <div class="fitgym-cta-bg"></div>
+    <div class="fitgym-cta-overlay"></div>
+    <div class="fitgym-cta-content">
+      <h2 class="fitgym-cta-title">Your First Week Is <span class="fitgym-red">On Us</span></h2>
+      <p class="fitgym-cta-text">
+        No commitment, no contracts. Experience everything IronForge has to offer
+        with a free 7-day trial. Train with our coaches, join any class, and see
+        why thousands choose us for their fitness journey.
+      </p>
+      <a href="#" class="fitgym-btn-primary">Claim Your Free Trial</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="fitgym-footer">
+    <div class="fitgym-footer-inner">
+      <div>
+        <div class="fitgym-footer-brand">IRON<span>FORGE</span></div>
+        <p class="fitgym-footer-about">
+          Built on sweat, discipline, and results. IronForge is more than a gym — it's a
+          community of driven individuals committed to becoming the strongest version of themselves.
+        </p>
+        <div class="fitgym-footer-social">
+          <a href="#" aria-label="Facebook">FB</a>
+          <a href="#" aria-label="Instagram">IG</a>
+          <a href="#" aria-label="Twitter">TW</a>
+          <a href="#" aria-label="YouTube">YT</a>
+        </div>
+      </div>
+      <div>
+        <h4 class="fitgym-footer-heading">Quick Links</h4>
+        <ul class="fitgym-footer-links">
+          <li><a href="#fitgym-classes">Classes</a></li>
+          <li><a href="#fitgym-trainers">Trainers</a></li>
+          <li><a href="#fitgym-pricing">Membership</a></li>
+          <li><a href="#fitgym-gallery">Transformations</a></li>
+          <li><a href="#fitgym-facilities">Facilities</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="fitgym-footer-heading">Programs</h4>
+        <ul class="fitgym-footer-links">
+          <li><a href="#">Personal Training</a></li>
+          <li><a href="#">Group Fitness</a></li>
+          <li><a href="#">Nutrition Coaching</a></li>
+          <li><a href="#">Corporate Wellness</a></li>
+          <li><a href="#">Youth Athletics</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="fitgym-footer-heading">Contact</h4>
+        <div class="fitgym-footer-contact-item">
+          <strong>Address</strong>
+          750 Iron Street, Fitness District, Dubai
+        </div>
+        <div class="fitgym-footer-contact-item">
+          <strong>Phone</strong>
+          +971 4 555 0199
+        </div>
+        <div class="fitgym-footer-contact-item">
+          <strong>Email</strong>
+          info@ironforge.ae
+        </div>
+        <div class="fitgym-footer-contact-item">
+          <strong>Hours</strong>
+          Open 24/7
+        </div>
+      </div>
+    </div>
+    <div class="fitgym-footer-bar">
+      <span>&copy; 2026 IronForge Fitness. All rights reserved.</span>
+      <span>Privacy Policy &nbsp;|&nbsp; Terms of Service</span>
+    </div>
+  </footer>
+
+</div>

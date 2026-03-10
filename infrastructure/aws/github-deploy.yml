@@ -1,0 +1,145 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: me-south-1  # Bahrain (closest to UAE/Dubai)
+
+jobs:
+  # ===========================================================================
+  # Build and push Docker images to ECR
+  # ===========================================================================
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push API image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          docker build -t ${ECR_REGISTRY}/meydan-api:${IMAGE_TAG} \
+                        -t ${ECR_REGISTRY}/meydan-api:${ENVIRONMENT} \
+                        ./backend
+          docker push ${ECR_REGISTRY}/meydan-api:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY}/meydan-api:${ENVIRONMENT}
+
+      - name: Build and push Frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          docker build -t ${ECR_REGISTRY}/meydan-frontend:${IMAGE_TAG} \
+                        -t ${ECR_REGISTRY}/meydan-frontend:${ENVIRONMENT} \
+                        ./frontend
+          docker push ${ECR_REGISTRY}/meydan-frontend:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY}/meydan-frontend:${ENVIRONMENT}
+
+  # ===========================================================================
+  # Deploy to ECS
+  # ===========================================================================
+  deploy:
+    name: Deploy to ECS
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy API service
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          aws ecs update-service \
+            --cluster meydan-${ENVIRONMENT} \
+            --service meydan-api-${ENVIRONMENT} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Worker service
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          aws ecs update-service \
+            --cluster meydan-${ENVIRONMENT} \
+            --service meydan-worker-${ENVIRONMENT} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for API service stability
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          echo "Waiting for services to stabilize (timeout: 10 minutes)..."
+          aws ecs wait services-stable \
+            --cluster meydan-${ENVIRONMENT} \
+            --services meydan-api-${ENVIRONMENT} \
+            --region ${{ env.AWS_REGION }}
+          echo "API service is stable."
+
+      - name: Wait for Worker service stability
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          aws ecs wait services-stable \
+            --cluster meydan-${ENVIRONMENT} \
+            --services meydan-worker-${ENVIRONMENT} \
+            --region ${{ env.AWS_REGION }}
+          echo "Worker service is stable."
+
+      - name: Deployment summary
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${ENVIRONMENT} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ env.AWS_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cluster | meydan-${ENVIRONMENT} |" >> $GITHUB_STEP_SUMMARY

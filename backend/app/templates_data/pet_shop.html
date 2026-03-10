@@ -1,0 +1,1422 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+/* ===== PET SHOP GLOBAL ===== */
+.petshop-wrapper {
+  margin: 0;
+  padding: 0;
+  font-family: 'Nunito', sans-serif;
+  color: #1b3a4b;
+  background-color: #fff8f0;
+  overflow-x: hidden;
+}
+
+.petshop-wrapper * {
+  box-sizing: border-box;
+}
+
+.petshop-heading {
+  font-family: 'Fredoka One', cursive;
+  color: #1b3a4b;
+}
+
+.petshop-section {
+  padding: 80px 20px;
+}
+
+.petshop-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.petshop-section-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 16px;
+  color: #1b3a4b;
+}
+
+.petshop-section-subtitle {
+  text-align: center;
+  font-size: 1.15rem;
+  color: #5a7a8a;
+  margin-bottom: 50px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
+}
+
+.petshop-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  background: #ff8c42;
+  color: #ffffff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 140, 66, 0.3);
+}
+
+.petshop-btn:hover {
+  background: #e67a30;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 140, 66, 0.45);
+}
+
+.petshop-btn-outline {
+  background: transparent;
+  border: 2px solid #ff8c42;
+  color: #ff8c42;
+  box-shadow: none;
+}
+
+.petshop-btn-outline:hover {
+  background: #ff8c42;
+  color: #ffffff;
+}
+
+/* ===== NAVBAR ===== */
+.petshop-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 40px;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 20px rgba(27, 58, 75, 0.06);
+}
+
+.petshop-logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.7rem;
+  color: #1b3a4b;
+  text-decoration: none;
+}
+
+.petshop-logo-accent {
+  color: #ff8c42;
+}
+
+.petshop-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.petshop-nav-links a {
+  text-decoration: none;
+  color: #1b3a4b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+.petshop-nav-links a:hover {
+  color: #ff8c42;
+}
+
+.petshop-nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #1b3a4b;
+  cursor: pointer;
+}
+
+/* ===== HERO ===== */
+.petshop-hero {
+  background: linear-gradient(135deg, #1b3a4b 0%, #2a5a6e 100%);
+  padding: 100px 20px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.petshop-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 350px;
+  height: 350px;
+  background: rgba(255, 140, 66, 0.1);
+  border-radius: 50%;
+}
+
+.petshop-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -40px;
+  width: 280px;
+  height: 280px;
+  background: rgba(255, 140, 66, 0.08);
+  border-radius: 50%;
+}
+
+.petshop-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  position: relative;
+  z-index: 2;
+}
+
+.petshop-hero-text {
+  flex: 1;
+}
+
+.petshop-hero-badge {
+  display: inline-block;
+  background: rgba(255, 140, 66, 0.2);
+  color: #ff8c42;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
+}
+
+.petshop-hero-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 3.5rem;
+  color: #ffffff;
+  line-height: 1.15;
+  margin: 0 0 20px 0;
+}
+
+.petshop-hero-title-accent {
+  color: #ff8c42;
+}
+
+.petshop-hero-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.15rem;
+  line-height: 1.8;
+  margin-bottom: 36px;
+  max-width: 500px;
+}
+
+.petshop-hero-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.petshop-hero-btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.petshop-hero-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.petshop-hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.petshop-hero-image img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== PRODUCT CATEGORIES ===== */
+.petshop-categories {
+  background: #ffffff;
+}
+
+.petshop-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+.petshop-category-card {
+  background: #fff8f0;
+  border-radius: 24px;
+  padding: 30px 24px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.petshop-category-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(27, 58, 75, 0.1);
+  border-color: #ff8c42;
+}
+
+.petshop-category-icon {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.petshop-category-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  color: #1b3a4b;
+  margin-bottom: 8px;
+}
+
+.petshop-category-desc {
+  color: #5a7a8a;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.petshop-category-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: #ff8c42;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.petshop-category-link:hover {
+  color: #e67a30;
+}
+
+/* ===== GROOMING SERVICES ===== */
+.petshop-grooming {
+  background: #fff8f0;
+}
+
+.petshop-grooming-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.petshop-grooming-card {
+  background: #ffffff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(27, 58, 75, 0.07);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.petshop-grooming-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 40px rgba(27, 58, 75, 0.12);
+}
+
+.petshop-grooming-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.petshop-grooming-body {
+  padding: 28px 24px;
+}
+
+.petshop-grooming-popular {
+  display: inline-block;
+  background: #ff8c42;
+  color: #ffffff;
+  padding: 4px 14px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.petshop-grooming-name {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.35rem;
+  color: #1b3a4b;
+  margin-bottom: 10px;
+}
+
+.petshop-grooming-desc {
+  color: #5a7a8a;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.petshop-grooming-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.petshop-grooming-features li {
+  padding: 6px 0;
+  color: #1b3a4b;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.petshop-grooming-features li::before {
+  content: '\2714';
+  color: #ff8c42;
+  margin-right: 10px;
+  font-weight: 700;
+}
+
+.petshop-grooming-price {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.6rem;
+  color: #ff8c42;
+  margin-bottom: 18px;
+}
+
+.petshop-grooming-price span {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  color: #5a7a8a;
+  font-weight: 400;
+}
+
+/* ===== ADOPTION ===== */
+.petshop-adoption {
+  background: linear-gradient(135deg, #1b3a4b 0%, #2a5a6e 100%);
+  position: relative;
+}
+
+.petshop-adoption-inner {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.petshop-adoption-image {
+  flex: 1;
+}
+
+.petshop-adoption-image img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+}
+
+.petshop-adoption-text {
+  flex: 1;
+}
+
+.petshop-adoption-label {
+  display: inline-block;
+  background: rgba(255, 140, 66, 0.2);
+  color: #ff8c42;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+.petshop-adoption-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.5rem;
+  color: #ffffff;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.petshop-adoption-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  margin-bottom: 28px;
+}
+
+.petshop-adoption-stats {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.petshop-adoption-stat-number {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2rem;
+  color: #ff8c42;
+}
+
+.petshop-adoption-stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ===== BLOG / CARE TIPS ===== */
+.petshop-blog {
+  background: #ffffff;
+}
+
+.petshop-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.petshop-blog-card {
+  background: #fff8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.petshop-blog-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 35px rgba(27, 58, 75, 0.1);
+}
+
+.petshop-blog-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.petshop-blog-body {
+  padding: 24px;
+}
+
+.petshop-blog-tag {
+  display: inline-block;
+  background: rgba(255, 140, 66, 0.15);
+  color: #ff8c42;
+  padding: 4px 14px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.petshop-blog-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.2rem;
+  color: #1b3a4b;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.petshop-blog-excerpt {
+  color: #5a7a8a;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.petshop-blog-link {
+  color: #ff8c42;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.petshop-blog-link:hover {
+  color: #e67a30;
+}
+
+/* ===== REVIEWS ===== */
+.petshop-reviews {
+  background: #fff8f0;
+}
+
+.petshop-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.petshop-review-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 6px 25px rgba(27, 58, 75, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.petshop-review-card:hover {
+  transform: translateY(-4px);
+}
+
+.petshop-review-stars {
+  color: #ff8c42;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+.petshop-review-text {
+  color: #5a7a8a;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.petshop-review-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.petshop-review-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ff8c42;
+}
+
+.petshop-review-name {
+  font-weight: 700;
+  color: #1b3a4b;
+  font-size: 0.95rem;
+}
+
+.petshop-review-pet {
+  color: #5a7a8a;
+  font-size: 0.85rem;
+}
+
+/* ===== ABOUT ===== */
+.petshop-about {
+  background: #ffffff;
+}
+
+.petshop-about-inner {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.petshop-about-image {
+  flex: 1;
+}
+
+.petshop-about-image img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(27, 58, 75, 0.1);
+}
+
+.petshop-about-text {
+  flex: 1;
+}
+
+.petshop-about-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.4rem;
+  color: #1b3a4b;
+  margin-bottom: 16px;
+}
+
+.petshop-about-desc {
+  color: #5a7a8a;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.petshop-about-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.petshop-about-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #1b3a4b;
+  font-size: 0.95rem;
+}
+
+.petshop-about-feature-dot {
+  width: 10px;
+  height: 10px;
+  background: #ff8c42;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ===== CONTACT ===== */
+.petshop-contact {
+  background: #fff8f0;
+}
+
+.petshop-contact-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+}
+
+.petshop-contact-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2rem;
+  color: #1b3a4b;
+  margin-bottom: 14px;
+}
+
+.petshop-contact-desc {
+  color: #5a7a8a;
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+.petshop-contact-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.petshop-contact-info-icon {
+  width: 44px;
+  height: 44px;
+  background: #ff8c42;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.petshop-contact-info-label {
+  font-weight: 700;
+  color: #1b3a4b;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.petshop-contact-info-value {
+  color: #5a7a8a;
+  font-size: 0.9rem;
+}
+
+.petshop-contact-form {
+  background: #ffffff;
+  padding: 36px;
+  border-radius: 24px;
+  box-shadow: 0 8px 30px rgba(27, 58, 75, 0.07);
+}
+
+.petshop-form-group {
+  margin-bottom: 18px;
+}
+
+.petshop-form-label {
+  display: block;
+  font-weight: 700;
+  color: #1b3a4b;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.petshop-form-input,
+.petshop-form-textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #e8e0d8;
+  border-radius: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  color: #1b3a4b;
+  background: #fff8f0;
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+
+.petshop-form-input:focus,
+.petshop-form-textarea:focus {
+  border-color: #ff8c42;
+}
+
+.petshop-form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* ===== FOOTER ===== */
+.petshop-footer {
+  background: #1b3a4b;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 60px 20px 30px;
+}
+
+.petshop-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.petshop-footer-brand {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.petshop-footer-brand-accent {
+  color: #ff8c42;
+}
+
+.petshop-footer-desc {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.petshop-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.petshop-footer-social-link {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.petshop-footer-social-link:hover {
+  background: #ff8c42;
+  color: #ffffff;
+}
+
+.petshop-footer-heading {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem;
+  color: #ffffff;
+  margin-bottom: 18px;
+}
+
+.petshop-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.petshop-footer-links li {
+  margin-bottom: 10px;
+}
+
+.petshop-footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: color 0.3s ease;
+}
+
+.petshop-footer-links a:hover {
+  color: #ff8c42;
+}
+
+.petshop-footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.petshop-footer-bottom a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+}
+
+.petshop-footer-bottom a:hover {
+  color: #ff8c42;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .petshop-hero-title {
+    font-size: 2.8rem;
+  }
+
+  .petshop-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .petshop-grooming-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .petshop-footer-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .petshop-navbar {
+    padding: 14px 20px;
+  }
+
+  .petshop-nav-links {
+    display: none;
+  }
+
+  .petshop-nav-toggle {
+    display: block;
+  }
+
+  .petshop-hero-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .petshop-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .petshop-hero-desc {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .petshop-hero-buttons {
+    justify-content: center;
+  }
+
+  .petshop-hero-image img {
+    max-width: 350px;
+  }
+
+  .petshop-section-title {
+    font-size: 2rem;
+  }
+
+  .petshop-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .petshop-grooming-grid {
+    grid-template-columns: 1fr;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .petshop-adoption-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .petshop-adoption-stats {
+    justify-content: center;
+  }
+
+  .petshop-blog-grid {
+    grid-template-columns: 1fr;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .petshop-reviews-grid {
+    grid-template-columns: 1fr;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .petshop-about-inner {
+    flex-direction: column;
+  }
+
+  .petshop-contact-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .petshop-footer-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .petshop-footer-bottom {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .petshop-section {
+    padding: 50px 16px;
+  }
+
+  .petshop-hero {
+    padding: 60px 16px 50px;
+  }
+
+  .petshop-hero-title {
+    font-size: 1.8rem;
+  }
+
+  .petshop-categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .petshop-about-features {
+    grid-template-columns: 1fr;
+  }
+
+  .petshop-contact-form {
+    padding: 24px 20px;
+  }
+}
+</style>
+
+<div class="petshop-wrapper">
+  <!-- Navbar -->
+  <nav class="petshop-navbar">
+    <a href="#" class="petshop-logo">Paw<span class="petshop-logo-accent">Haven</span></a>
+    <ul class="petshop-nav-links">
+      <li><a href="#petshop-categories">Shop</a></li>
+      <li><a href="#petshop-grooming">Grooming</a></li>
+      <li><a href="#petshop-adoption">Adopt</a></li>
+      <li><a href="#petshop-blog">Care Tips</a></li>
+      <li><a href="#petshop-about">About</a></li>
+      <li><a href="#petshop-contact">Contact</a></li>
+      <li><a href="#petshop-categories" class="petshop-btn" style="padding: 10px 24px; font-size: 0.9rem;">Shop Now</a></li>
+    </ul>
+    <button class="petshop-nav-toggle">&#9776;</button>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="petshop-hero">
+    <div class="petshop-hero-inner">
+      <div class="petshop-hero-text">
+        <div class="petshop-hero-badge">Trusted by 10,000+ Pet Parents</div>
+        <h1 class="petshop-hero-title">
+          Everything Your<br>
+          Pet <span class="petshop-hero-title-accent">Needs</span>
+        </h1>
+        <p class="petshop-hero-desc">
+          Premium food, fun toys, expert grooming, and so much more. Because your furry friend deserves nothing but the best.
+        </p>
+        <div class="petshop-hero-buttons">
+          <a href="#petshop-categories" class="petshop-btn">Explore Products</a>
+          <a href="#petshop-grooming" class="petshop-btn petshop-hero-btn-secondary">Book Grooming</a>
+        </div>
+      </div>
+      <div class="petshop-hero-image">
+        <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Happy pet with owner" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Categories -->
+  <section class="petshop-section petshop-categories" id="petshop-categories">
+    <div class="petshop-container">
+      <h2 class="petshop-section-title">Shop by Category</h2>
+      <p class="petshop-section-subtitle">
+        Find everything your pet needs in one place. Quality products handpicked by pet experts.
+      </p>
+      <div class="petshop-categories-grid">
+        <div class="petshop-category-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pet Food" class="petshop-category-icon" />
+          <h3 class="petshop-category-name">Premium Food</h3>
+          <p class="petshop-category-desc">Nutritious meals and treats for dogs, cats, birds, and more.</p>
+          <a href="#" class="petshop-category-link">Browse Food &rarr;</a>
+        </div>
+        <div class="petshop-category-card">
+          <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pet Toys" class="petshop-category-icon" />
+          <h3 class="petshop-category-name">Fun Toys</h3>
+          <p class="petshop-category-desc">Interactive toys, chew toys, and puzzles to keep them entertained.</p>
+          <a href="#" class="petshop-category-link">Browse Toys &rarr;</a>
+        </div>
+        <div class="petshop-category-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pet Accessories" class="petshop-category-icon" />
+          <h3 class="petshop-category-name">Accessories</h3>
+          <p class="petshop-category-desc">Collars, leashes, beds, carriers, and stylish pet fashion.</p>
+          <a href="#" class="petshop-category-link">Browse Accessories &rarr;</a>
+        </div>
+        <div class="petshop-category-card">
+          <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pet Grooming" class="petshop-category-icon" />
+          <h3 class="petshop-category-name">Grooming</h3>
+          <p class="petshop-category-desc">Shampoos, brushes, nail clippers, and grooming kits.</p>
+          <a href="#" class="petshop-category-link">Browse Grooming &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grooming Services -->
+  <section class="petshop-section petshop-grooming" id="petshop-grooming">
+    <div class="petshop-container">
+      <h2 class="petshop-section-title">Grooming Services</h2>
+      <p class="petshop-section-subtitle">
+        Professional grooming that keeps your pet looking and feeling great. Choose the package that suits your buddy.
+      </p>
+      <div class="petshop-grooming-grid">
+        <div class="petshop-grooming-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Basic Grooming" class="petshop-grooming-img" />
+          <div class="petshop-grooming-body">
+            <h3 class="petshop-grooming-name">Fresh Start</h3>
+            <p class="petshop-grooming-desc">A quick refresh to keep your pet clean and comfortable.</p>
+            <ul class="petshop-grooming-features">
+              <li>Bath & blow dry</li>
+              <li>Brush & de-shed</li>
+              <li>Nail trimming</li>
+              <li>Ear cleaning</li>
+            </ul>
+            <div class="petshop-grooming-price">$35 <span>/ session</span></div>
+            <a href="#petshop-contact" class="petshop-btn" style="width: 100%; text-align: center;">Book Now</a>
+          </div>
+        </div>
+        <div class="petshop-grooming-card">
+          <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pamper Grooming" class="petshop-grooming-img" />
+          <div class="petshop-grooming-body">
+            <span class="petshop-grooming-popular">MOST POPULAR</span>
+            <h3 class="petshop-grooming-name">Pamper Package</h3>
+            <p class="petshop-grooming-desc">The full spa treatment your pet will love.</p>
+            <ul class="petshop-grooming-features">
+              <li>Everything in Fresh Start</li>
+              <li>Haircut & styling</li>
+              <li>Teeth brushing</li>
+              <li>Paw pad moisturizing</li>
+            </ul>
+            <div class="petshop-grooming-price">$65 <span>/ session</span></div>
+            <a href="#petshop-contact" class="petshop-btn" style="width: 100%; text-align: center;">Book Now</a>
+          </div>
+        </div>
+        <div class="petshop-grooming-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury Grooming" class="petshop-grooming-img" />
+          <div class="petshop-grooming-body">
+            <h3 class="petshop-grooming-name">Royal Treatment</h3>
+            <p class="petshop-grooming-desc">The ultimate luxury experience for your precious companion.</p>
+            <ul class="petshop-grooming-features">
+              <li>Everything in Pamper</li>
+              <li>De-matting treatment</li>
+              <li>Aromatherapy bath</li>
+              <li>Bandana or bow accessory</li>
+            </ul>
+            <div class="petshop-grooming-price">$95 <span>/ session</span></div>
+            <a href="#petshop-contact" class="petshop-btn" style="width: 100%; text-align: center;">Book Now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pet Adoption Spotlight -->
+  <section class="petshop-section petshop-adoption" id="petshop-adoption">
+    <div class="petshop-container">
+      <div class="petshop-adoption-inner">
+        <div class="petshop-adoption-image">
+          <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pets waiting for adoption" />
+        </div>
+        <div class="petshop-adoption-text">
+          <div class="petshop-adoption-label">Adopt, Don't Shop</div>
+          <h2 class="petshop-adoption-title">Give a Pet a Forever Home</h2>
+          <p class="petshop-adoption-desc">
+            Every pet deserves a loving family. We partner with local shelters to help animals find their forever homes. Come meet your new best friend today.
+          </p>
+          <div class="petshop-adoption-stats">
+            <div>
+              <div class="petshop-adoption-stat-number">500+</div>
+              <div class="petshop-adoption-stat-label">Pets Adopted</div>
+            </div>
+            <div>
+              <div class="petshop-adoption-stat-number">12</div>
+              <div class="petshop-adoption-stat-label">Shelter Partners</div>
+            </div>
+            <div>
+              <div class="petshop-adoption-stat-number">98%</div>
+              <div class="petshop-adoption-stat-label">Happy Families</div>
+            </div>
+          </div>
+          <a href="#petshop-contact" class="petshop-btn">Meet Our Pets</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Care Tips Blog -->
+  <section class="petshop-section petshop-blog" id="petshop-blog">
+    <div class="petshop-container">
+      <h2 class="petshop-section-title">Pet Care Tips</h2>
+      <p class="petshop-section-subtitle">
+        Expert advice and helpful guides to keep your pets happy, healthy, and thriving.
+      </p>
+      <div class="petshop-blog-grid">
+        <div class="petshop-blog-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Dog nutrition guide" class="petshop-blog-img" />
+          <div class="petshop-blog-body">
+            <span class="petshop-blog-tag">Nutrition</span>
+            <h3 class="petshop-blog-title">The Ultimate Guide to Dog Nutrition</h3>
+            <p class="petshop-blog-excerpt">Learn what ingredients to look for and how to choose the right food for your dog's breed, age, and activity level.</p>
+            <a href="#" class="petshop-blog-link">Read More &rarr;</a>
+          </div>
+        </div>
+        <div class="petshop-blog-card">
+          <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Cat grooming tips" class="petshop-blog-img" />
+          <div class="petshop-blog-body">
+            <span class="petshop-blog-tag">Grooming</span>
+            <h3 class="petshop-blog-title">5 At-Home Grooming Tips for Cats</h3>
+            <p class="petshop-blog-excerpt">Keep your feline friend looking fabulous with these simple grooming techniques you can do between professional visits.</p>
+            <a href="#" class="petshop-blog-link">Read More &rarr;</a>
+          </div>
+        </div>
+        <div class="petshop-blog-card">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Pet exercise ideas" class="petshop-blog-img" />
+          <div class="petshop-blog-body">
+            <span class="petshop-blog-tag">Wellness</span>
+            <h3 class="petshop-blog-title">Fun Exercise Ideas for Indoor Pets</h3>
+            <p class="petshop-blog-excerpt">Discover creative ways to keep your indoor pets active and mentally stimulated, even when the weather keeps you inside.</p>
+            <a href="#" class="petshop-blog-link">Read More &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Customer Reviews -->
+  <section class="petshop-section petshop-reviews" id="petshop-reviews">
+    <div class="petshop-container">
+      <h2 class="petshop-section-title">Happy Pets, Happy Parents</h2>
+      <p class="petshop-section-subtitle">
+        Don't just take our word for it. See what our community of pet lovers has to say.
+      </p>
+      <div class="petshop-reviews-grid">
+        <div class="petshop-review-card">
+          <div class="petshop-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="petshop-review-text">"My golden retriever absolutely loves the organic treats from PawHaven. The quality is incredible, and I love that they use all-natural ingredients."</p>
+          <div class="petshop-review-author">
+            <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah M." class="petshop-review-avatar" />
+            <div>
+              <div class="petshop-review-name">Sarah M.</div>
+              <div class="petshop-review-pet">Pet parent to Max (Golden Retriever)</div>
+            </div>
+          </div>
+        </div>
+        <div class="petshop-review-card">
+          <div class="petshop-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="petshop-review-text">"The grooming team is amazing! My cat usually hates baths, but they handled her with so much care and patience. She came back looking like a queen."</p>
+          <div class="petshop-review-author">
+            <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James T." class="petshop-review-avatar" />
+            <div>
+              <div class="petshop-review-name">James T.</div>
+              <div class="petshop-review-pet">Pet parent to Luna (Persian Cat)</div>
+            </div>
+          </div>
+        </div>
+        <div class="petshop-review-card">
+          <div class="petshop-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="petshop-review-text">"We adopted our puppy through PawHaven's shelter program. The process was so smooth and supportive. We couldn't be happier with our little Bella!"</p>
+          <div class="petshop-review-author">
+            <img src="https://images.pexels.com/photos/20522599/pexels-photo-20522599.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Emily R." class="petshop-review-avatar" />
+            <div>
+              <div class="petshop-review-name">Emily R.</div>
+              <div class="petshop-review-pet">Pet parent to Bella (Adopted Pup)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us -->
+  <section class="petshop-section petshop-about" id="petshop-about">
+    <div class="petshop-container">
+      <div class="petshop-about-inner">
+        <div class="petshop-about-image">
+          <img src="https://images.pexels.com/photos/31057632/pexels-photo-31057632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Our pet shop team" />
+        </div>
+        <div class="petshop-about-text">
+          <h2 class="petshop-about-title">Who We Are</h2>
+          <p class="petshop-about-desc">
+            PawHaven started in 2018 with a simple mission: to make pet care accessible, joyful, and high-quality. We are a team of passionate pet lovers dedicated to providing the best products, services, and adoption support for your furry, feathery, or scaly family members.
+          </p>
+          <p class="petshop-about-desc">
+            From handpicked premium products to professional grooming and community adoption events, every part of PawHaven is built around the love we share for animals.
+          </p>
+          <div class="petshop-about-features">
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              Vet-Approved Products
+            </div>
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              Certified Groomers
+            </div>
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              Free Delivery Over $50
+            </div>
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              Loyalty Rewards Program
+            </div>
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              Adoption Support
+            </div>
+            <div class="petshop-about-feature">
+              <span class="petshop-about-feature-dot"></span>
+              24/7 Pet Care Helpline
+            </div>
+          </div>
+          <a href="#petshop-contact" class="petshop-btn">Get in Touch</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="petshop-section petshop-contact" id="petshop-contact">
+    <div class="petshop-container">
+      <div class="petshop-contact-inner">
+        <div>
+          <h2 class="petshop-contact-title">Get in Touch</h2>
+          <p class="petshop-contact-desc">
+            Have questions about our products, services, or adoption program? We would love to hear from you. Reach out anytime!
+          </p>
+          <div class="petshop-contact-info-item">
+            <div class="petshop-contact-info-icon">&#9990;</div>
+            <div>
+              <div class="petshop-contact-info-label">Phone</div>
+              <div class="petshop-contact-info-value">+971 4 123 4567</div>
+            </div>
+          </div>
+          <div class="petshop-contact-info-item">
+            <div class="petshop-contact-info-icon">&#9993;</div>
+            <div>
+              <div class="petshop-contact-info-label">Email</div>
+              <div class="petshop-contact-info-value">hello@pawhaven.ae</div>
+            </div>
+          </div>
+          <div class="petshop-contact-info-item">
+            <div class="petshop-contact-info-icon">&#9872;</div>
+            <div>
+              <div class="petshop-contact-info-label">Address</div>
+              <div class="petshop-contact-info-value">Meydan Free Zone, Dubai, UAE</div>
+            </div>
+          </div>
+          <div class="petshop-contact-info-item">
+            <div class="petshop-contact-info-icon">&#9200;</div>
+            <div>
+              <div class="petshop-contact-info-label">Store Hours</div>
+              <div class="petshop-contact-info-value">Mon - Sat: 9AM - 9PM<br>Sunday: 10AM - 6PM</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <form class="petshop-contact-form">
+            <div class="petshop-form-group">
+              <label class="petshop-form-label">Your Name</label>
+              <input type="text" class="petshop-form-input" placeholder="Enter your name" />
+            </div>
+            <div class="petshop-form-group">
+              <label class="petshop-form-label">Email Address</label>
+              <input type="email" class="petshop-form-input" placeholder="Enter your email" />
+            </div>
+            <div class="petshop-form-group">
+              <label class="petshop-form-label">Phone Number</label>
+              <input type="tel" class="petshop-form-input" placeholder="Enter your phone number" />
+            </div>
+            <div class="petshop-form-group">
+              <label class="petshop-form-label">Message</label>
+              <textarea class="petshop-form-textarea" placeholder="Tell us how we can help you and your pet..."></textarea>
+            </div>
+            <button type="submit" class="petshop-btn" style="width: 100%; text-align: center;">Send Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="petshop-footer">
+    <div class="petshop-footer-inner">
+      <div>
+        <div class="petshop-footer-brand">Paw<span class="petshop-footer-brand-accent">Haven</span></div>
+        <p class="petshop-footer-desc">
+          Your one-stop destination for premium pet products, expert grooming, and adoption support. Because every pet deserves the best.
+        </p>
+        <div class="petshop-footer-social">
+          <a href="#" class="petshop-footer-social-link">f</a>
+          <a href="#" class="petshop-footer-social-link">in</a>
+          <a href="#" class="petshop-footer-social-link">tw</a>
+          <a href="#" class="petshop-footer-social-link">yt</a>
+        </div>
+      </div>
+      <div>
+        <h4 class="petshop-footer-heading">Quick Links</h4>
+        <ul class="petshop-footer-links">
+          <li><a href="#petshop-categories">Shop Products</a></li>
+          <li><a href="#petshop-grooming">Grooming Services</a></li>
+          <li><a href="#petshop-adoption">Pet Adoption</a></li>
+          <li><a href="#petshop-blog">Care Tips</a></li>
+          <li><a href="#petshop-about">About Us</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="petshop-footer-heading">Pet Categories</h4>
+        <ul class="petshop-footer-links">
+          <li><a href="#">Dogs</a></li>
+          <li><a href="#">Cats</a></li>
+          <li><a href="#">Birds</a></li>
+          <li><a href="#">Fish & Aquatics</a></li>
+          <li><a href="#">Small Animals</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="petshop-footer-heading">Support</h4>
+        <ul class="petshop-footer-links">
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Shipping Info</a></li>
+          <li><a href="#">Returns Policy</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#petshop-contact">Contact Us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="petshop-footer-bottom">
+      <span>&copy; 2026 PawHaven. All rights reserved.</span>
+      <span>
+        <a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Cookies</a>
+      </span>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,1259 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* === DENTAL CLINIC TEMPLATE === */
+.dnt-root {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  background: #f0f9ff;
+  overflow-x: hidden;
+}
+
+.dnt-root * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.dnt-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --- NAV --- */
+.dnt-nav {
+  background: #ffffff;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 8px rgba(14, 74, 110, 0.08);
+}
+
+.dnt-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.dnt-logo {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0e4a6e;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dnt-logo-icon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #0e4a6e, #4fc3f7);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.dnt-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+  align-items: center;
+}
+
+.dnt-nav-links a {
+  text-decoration: none;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.dnt-nav-links a:hover {
+  color: #0e4a6e;
+}
+
+.dnt-nav-cta {
+  background: #0e4a6e !important;
+  color: #ffffff !important;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600 !important;
+  transition: background 0.3s !important;
+}
+
+.dnt-nav-cta:hover {
+  background: #0c3d5c !important;
+}
+
+.dnt-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #0e4a6e;
+  cursor: pointer;
+}
+
+/* --- HERO --- */
+.dnt-hero {
+  background: linear-gradient(135deg, #0e4a6e 0%, #1a6fa0 60%, #4fc3f7 100%);
+  padding: 100px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dnt-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: #f0f9ff;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+
+.dnt-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.dnt-hero-badge {
+  display: inline-block;
+  background: rgba(79, 195, 247, 0.2);
+  color: #b3e5fc;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+.dnt-hero h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.dnt-hero h1 span {
+  color: #4fc3f7;
+}
+
+.dnt-hero-text {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 32px;
+  max-width: 500px;
+}
+
+.dnt-hero-btns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dnt-btn-primary {
+  background: #4fc3f7;
+  color: #0e4a6e;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dnt-btn-primary:hover {
+  background: #81d4fa;
+  transform: translateY(-2px);
+}
+
+.dnt-btn-outline {
+  background: transparent;
+  color: #ffffff;
+  padding: 14px 32px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dnt-btn-outline:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dnt-hero-img {
+  width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.dnt-hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.dnt-hero-stat {
+  text-align: center;
+}
+
+.dnt-hero-stat-num {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #4fc3f7;
+}
+
+.dnt-hero-stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+/* --- SECTION TITLES --- */
+.dnt-section-tag {
+  display: inline-block;
+  background: rgba(79, 195, 247, 0.15);
+  color: #0e4a6e;
+  padding: 6px 18px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.dnt-section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #0e4a6e;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.dnt-section-sub {
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 600px;
+}
+
+.dnt-section-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.dnt-section-header .dnt-section-sub {
+  margin: 0 auto;
+}
+
+/* --- SERVICES --- */
+.dnt-services {
+  padding: 100px 0;
+  background: #f0f9ff;
+}
+
+.dnt-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.dnt-service-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 28px;
+  text-align: center;
+  transition: all 0.3s;
+  border: 1px solid #e0f2fe;
+  position: relative;
+  overflow: hidden;
+}
+
+.dnt-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0e4a6e, #4fc3f7);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.dnt-service-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(14, 74, 110, 0.1);
+}
+
+.dnt-service-card:hover::before {
+  opacity: 1;
+}
+
+.dnt-service-icon {
+  width: 68px;
+  height: 68px;
+  background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 1.8rem;
+}
+
+.dnt-service-card h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0e4a6e;
+  margin-bottom: 12px;
+}
+
+.dnt-service-card p {
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+/* --- TEAM --- */
+.dnt-team {
+  padding: 100px 0;
+  background: #ffffff;
+}
+
+.dnt-team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.dnt-team-card {
+  background: #f0f9ff;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s;
+  border: 1px solid #e0f2fe;
+}
+
+.dnt-team-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(14, 74, 110, 0.1);
+}
+
+.dnt-team-photo {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.dnt-team-info {
+  padding: 24px;
+  text-align: center;
+}
+
+.dnt-team-info h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0e4a6e;
+  margin-bottom: 4px;
+}
+
+.dnt-team-role {
+  color: #4fc3f7;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.dnt-team-bio {
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* --- TECHNOLOGY --- */
+.dnt-tech {
+  padding: 100px 0;
+  background: #f0f9ff;
+}
+
+.dnt-tech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.dnt-tech-img {
+  width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(14, 74, 110, 0.1);
+}
+
+.dnt-tech-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 28px;
+}
+
+.dnt-tech-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid #e0f2fe;
+  transition: box-shadow 0.3s;
+}
+
+.dnt-tech-item:hover {
+  box-shadow: 0 8px 24px rgba(14, 74, 110, 0.08);
+}
+
+.dnt-tech-dot {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: linear-gradient(135deg, #0e4a6e, #4fc3f7);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.dnt-tech-item h4 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0e4a6e;
+  margin-bottom: 4px;
+}
+
+.dnt-tech-item p {
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* --- REVIEWS --- */
+.dnt-reviews {
+  padding: 100px 0;
+  background: #ffffff;
+}
+
+.dnt-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.dnt-review-card {
+  background: #f0f9ff;
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid #e0f2fe;
+  transition: all 0.3s;
+}
+
+.dnt-review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(14, 74, 110, 0.08);
+}
+
+.dnt-review-stars {
+  color: #fbbf24;
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+.dnt-review-text {
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.dnt-review-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dnt-review-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dnt-review-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #0e4a6e;
+  font-size: 0.95rem;
+}
+
+.dnt-review-date {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+/* --- INSURANCE --- */
+.dnt-insurance {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #0e4a6e, #1a6fa0);
+  position: relative;
+}
+
+.dnt-insurance .dnt-section-title {
+  color: #ffffff;
+}
+
+.dnt-insurance .dnt-section-sub {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dnt-insurance .dnt-section-tag {
+  background: rgba(79, 195, 247, 0.2);
+  color: #b3e5fc;
+}
+
+.dnt-insurance-logos {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.dnt-insurance-logo {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 20px 36px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+  backdrop-filter: blur(4px);
+}
+
+.dnt-insurance-logo:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+/* --- BOOKING CTA --- */
+.dnt-booking {
+  padding: 100px 0;
+  background: #f0f9ff;
+}
+
+.dnt-booking-box {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 64px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(14, 74, 110, 0.08);
+  border: 1px solid #e0f2fe;
+  position: relative;
+  overflow: hidden;
+}
+
+.dnt-booking-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #0e4a6e, #4fc3f7, #0e4a6e);
+}
+
+.dnt-booking-box h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #0e4a6e;
+  margin-bottom: 16px;
+}
+
+.dnt-booking-box p {
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 550px;
+  margin: 0 auto 36px;
+}
+
+.dnt-booking-btns {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.dnt-btn-large {
+  background: #0e4a6e;
+  color: #ffffff;
+  padding: 16px 40px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dnt-btn-large:hover {
+  background: #0c3d5c;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(14, 74, 110, 0.25);
+}
+
+.dnt-btn-large-outline {
+  background: transparent;
+  color: #0e4a6e;
+  padding: 16px 40px;
+  border: 2px solid #0e4a6e;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dnt-btn-large-outline:hover {
+  background: #0e4a6e;
+  color: #ffffff;
+}
+
+/* --- CONTACT --- */
+.dnt-contact {
+  padding: 100px 0;
+  background: #ffffff;
+}
+
+.dnt-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+
+.dnt-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dnt-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: #f0f9ff;
+  border-radius: 14px;
+  border: 1px solid #e0f2fe;
+}
+
+.dnt-contact-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: linear-gradient(135deg, #0e4a6e, #4fc3f7);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.2rem;
+}
+
+.dnt-contact-item h4 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #0e4a6e;
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.dnt-contact-item p {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dnt-map {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #e0f2fe;
+}
+
+.dnt-map iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* --- FOOTER --- */
+.dnt-footer {
+  background: #0a3654;
+  padding: 60px 0 0;
+  color: #cbd5e1;
+}
+
+.dnt-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dnt-footer-brand {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dnt-footer-desc {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  max-width: 320px;
+}
+
+.dnt-footer h4 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+.dnt-footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dnt-footer-links a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.dnt-footer-links a:hover {
+  color: #4fc3f7;
+}
+
+.dnt-footer-bottom {
+  padding: 24px 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+  .dnt-hero h1 {
+    font-size: 2.5rem;
+  }
+  .dnt-services-grid,
+  .dnt-team-grid,
+  .dnt-reviews-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dnt-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dnt-nav-links {
+    display: none;
+  }
+  .dnt-mobile-toggle {
+    display: block;
+  }
+  .dnt-hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .dnt-hero h1 {
+    font-size: 2.2rem;
+  }
+  .dnt-hero-text {
+    margin: 0 auto 32px;
+  }
+  .dnt-hero-btns {
+    justify-content: center;
+  }
+  .dnt-hero-stats {
+    justify-content: center;
+  }
+  .dnt-hero-img {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .dnt-services-grid,
+  .dnt-team-grid,
+  .dnt-reviews-grid {
+    grid-template-columns: 1fr;
+  }
+  .dnt-tech-grid {
+    grid-template-columns: 1fr;
+  }
+  .dnt-contact-grid {
+    grid-template-columns: 1fr;
+  }
+  .dnt-booking-box {
+    padding: 40px 24px;
+  }
+  .dnt-section-title {
+    font-size: 1.8rem;
+  }
+  .dnt-footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .dnt-insurance-logos {
+    gap: 12px;
+  }
+  .dnt-insurance-logo {
+    padding: 14px 24px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dnt-hero {
+    padding: 60px 0 60px;
+  }
+  .dnt-hero h1 {
+    font-size: 1.8rem;
+  }
+  .dnt-hero-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .dnt-booking-box h2 {
+    font-size: 1.6rem;
+  }
+}
+</style>
+
+<div class="dnt-root">
+
+  <!-- NAVIGATION -->
+  <nav class="dnt-nav">
+    <div class="dnt-nav-inner">
+      <a href="#" class="dnt-logo">
+        <div class="dnt-logo-icon">&#9769;</div>
+        BrightSmile Dental
+      </a>
+      <ul class="dnt-nav-links">
+        <li><a href="#dnt-services">Services</a></li>
+        <li><a href="#dnt-team">Our Team</a></li>
+        <li><a href="#dnt-tech">Technology</a></li>
+        <li><a href="#dnt-reviews">Reviews</a></li>
+        <li><a href="#dnt-contact">Contact</a></li>
+        <li><a href="#dnt-booking" class="dnt-nav-cta">Book Appointment</a></li>
+      </ul>
+      <button class="dnt-mobile-toggle">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="dnt-hero">
+    <div class="dnt-hero-grid">
+      <div>
+        <span class="dnt-hero-badge">Caring For Your Smile Since 2005</span>
+        <h1>Your Smile Deserves the <span>Best Care</span> Possible</h1>
+        <p class="dnt-hero-text">Experience gentle, state-of-the-art dental care in a warm and welcoming environment. Our team of experts is dedicated to giving you a smile you'll love.</p>
+        <div class="dnt-hero-btns">
+          <a href="#dnt-booking" class="dnt-btn-primary">Schedule a Visit</a>
+          <a href="#dnt-services" class="dnt-btn-outline">Our Services</a>
+        </div>
+        <div class="dnt-hero-stats">
+          <div class="dnt-hero-stat">
+            <div class="dnt-hero-stat-num">15K+</div>
+            <div class="dnt-hero-stat-label">Happy Patients</div>
+          </div>
+          <div class="dnt-hero-stat">
+            <div class="dnt-hero-stat-num">20+</div>
+            <div class="dnt-hero-stat-label">Years Experience</div>
+          </div>
+          <div class="dnt-hero-stat">
+            <div class="dnt-hero-stat-num">4.9</div>
+            <div class="dnt-hero-stat-label">Patient Rating</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <img src="https://images.pexels.com/photos/5355863/pexels-photo-5355863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bright smile dental care" class="dnt-hero-img">
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="dnt-services" id="dnt-services">
+    <div class="dnt-container">
+      <div class="dnt-section-header">
+        <span class="dnt-section-tag">What We Offer</span>
+        <h2 class="dnt-section-title">Comprehensive Dental Services</h2>
+        <p class="dnt-section-sub">From routine checkups to advanced cosmetic procedures, we provide everything your smile needs under one roof.</p>
+      </div>
+      <div class="dnt-services-grid">
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#128065;</div>
+          <h3>General Dentistry</h3>
+          <p>Routine exams, cleanings, fillings, and preventive care to keep your teeth healthy and strong for years to come.</p>
+        </div>
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#10024;</div>
+          <h3>Cosmetic Dentistry</h3>
+          <p>Veneers, bonding, and smile makeovers designed to enhance the natural beauty of your teeth and boost your confidence.</p>
+        </div>
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#128176;</div>
+          <h3>Orthodontics</h3>
+          <p>Traditional braces and clear aligner therapy including Invisalign to straighten teeth at any age comfortably.</p>
+        </div>
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#129463;</div>
+          <h3>Dental Implants</h3>
+          <p>Permanent tooth replacement solutions that look, feel, and function like natural teeth with long-lasting results.</p>
+        </div>
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#9728;</div>
+          <h3>Teeth Whitening</h3>
+          <p>Professional in-office and take-home whitening treatments to brighten your smile up to eight shades lighter.</p>
+        </div>
+        <div class="dnt-service-card">
+          <div class="dnt-service-icon">&#128118;</div>
+          <h3>Pediatric Dentistry</h3>
+          <p>Gentle, fun dental care for children in a friendly environment that helps them develop healthy oral habits early.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="dnt-team" id="dnt-team">
+    <div class="dnt-container">
+      <div class="dnt-section-header">
+        <span class="dnt-section-tag">Meet Our Experts</span>
+        <h2 class="dnt-section-title">Our Dedicated Dental Team</h2>
+        <p class="dnt-section-sub">Experienced professionals who combine clinical excellence with genuine compassion for every patient.</p>
+      </div>
+      <div class="dnt-team-grid">
+        <div class="dnt-team-card">
+          <img src="https://images.pexels.com/photos/6502338/pexels-photo-6502338.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Dr. Sarah Mitchell" class="dnt-team-photo">
+          <div class="dnt-team-info">
+            <h3>Dr. Sarah Mitchell</h3>
+            <div class="dnt-team-role">Lead Dentist & Founder</div>
+            <p class="dnt-team-bio">Board-certified with over 18 years of experience in general and cosmetic dentistry. Passionate about patient comfort.</p>
+          </div>
+        </div>
+        <div class="dnt-team-card">
+          <img src="https://images.pexels.com/photos/6627413/pexels-photo-6627413.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Dr. James Park" class="dnt-team-photo">
+          <div class="dnt-team-info">
+            <h3>Dr. James Park</h3>
+            <div class="dnt-team-role">Orthodontics Specialist</div>
+            <p class="dnt-team-bio">Certified Invisalign provider and orthodontics expert. Specializes in creating beautiful smiles for adults and teens.</p>
+          </div>
+        </div>
+        <div class="dnt-team-card">
+          <img src="https://images.pexels.com/photos/3762453/pexels-photo-3762453.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Dr. Emily Chen" class="dnt-team-photo">
+          <div class="dnt-team-info">
+            <h3>Dr. Emily Chen</h3>
+            <div class="dnt-team-role">Pediatric Dentist</div>
+            <p class="dnt-team-bio">Dedicated to making dental visits fun for kids. Expert in early intervention, sealants, and child-friendly care.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECHNOLOGY -->
+  <section class="dnt-tech" id="dnt-tech">
+    <div class="dnt-container">
+      <div class="dnt-tech-grid">
+        <div>
+          <img src="https://images.pexels.com/photos/3884101/pexels-photo-3884101.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Advanced dental technology" class="dnt-tech-img">
+        </div>
+        <div>
+          <span class="dnt-section-tag">Advanced Care</span>
+          <h2 class="dnt-section-title">Cutting-Edge Technology & Equipment</h2>
+          <p class="dnt-section-sub">We invest in the latest dental technology to ensure accurate diagnoses, comfortable treatments, and outstanding results.</p>
+          <ul class="dnt-tech-list">
+            <li class="dnt-tech-item">
+              <div class="dnt-tech-dot">&#9883;</div>
+              <div>
+                <h4>3D Digital X-Rays</h4>
+                <p>Low-radiation imaging that provides crystal-clear views for precise treatment planning.</p>
+              </div>
+            </li>
+            <li class="dnt-tech-item">
+              <div class="dnt-tech-dot">&#9881;</div>
+              <div>
+                <h4>CAD/CAM Same-Day Crowns</h4>
+                <p>Custom ceramic crowns designed and fabricated in a single visit using digital impressions.</p>
+              </div>
+            </li>
+            <li class="dnt-tech-item">
+              <div class="dnt-tech-dot">&#9878;</div>
+              <div>
+                <h4>Laser Dentistry</h4>
+                <p>Minimally invasive soft-tissue procedures with faster healing times and less discomfort.</p>
+              </div>
+            </li>
+            <li class="dnt-tech-item">
+              <div class="dnt-tech-dot">&#9874;</div>
+              <div>
+                <h4>Intraoral Cameras</h4>
+                <p>High-definition cameras that let you see exactly what your dentist sees in real time.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section class="dnt-reviews" id="dnt-reviews">
+    <div class="dnt-container">
+      <div class="dnt-section-header">
+        <span class="dnt-section-tag">Testimonials</span>
+        <h2 class="dnt-section-title">What Our Patients Say</h2>
+        <p class="dnt-section-sub">Real stories from real patients who trust us with their smiles every day.</p>
+      </div>
+      <div class="dnt-reviews-grid">
+        <div class="dnt-review-card">
+          <div class="dnt-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="dnt-review-text">"I used to dread going to the dentist until I found BrightSmile. Dr. Mitchell and her team are incredibly gentle and caring. My teeth have never looked better!"</p>
+          <div class="dnt-review-author">
+            <img src="https://images.pexels.com/photos/5355863/pexels-photo-5355863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Maria G." class="dnt-review-avatar">
+            <div>
+              <div class="dnt-review-name">Maria G.</div>
+              <div class="dnt-review-date">3 weeks ago</div>
+            </div>
+          </div>
+        </div>
+        <div class="dnt-review-card">
+          <div class="dnt-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="dnt-review-text">"Got my Invisalign treatment done here and the results are amazing. Dr. Park explained every step and the process was so much easier than I expected."</p>
+          <div class="dnt-review-author">
+            <img src="https://images.pexels.com/photos/6129502/pexels-photo-6129502.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Robert T." class="dnt-review-avatar">
+            <div>
+              <div class="dnt-review-name">Robert T.</div>
+              <div class="dnt-review-date">1 month ago</div>
+            </div>
+          </div>
+        </div>
+        <div class="dnt-review-card">
+          <div class="dnt-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="dnt-review-text">"My kids actually look forward to their dental visits now! Dr. Chen is wonderful with children. The whole office has such a warm, welcoming atmosphere."</p>
+          <div class="dnt-review-author">
+            <img src="https://images.pexels.com/photos/6502162/pexels-photo-6502162.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Lisa K." class="dnt-review-avatar">
+            <div>
+              <div class="dnt-review-name">Lisa K.</div>
+              <div class="dnt-review-date">2 months ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSURANCE -->
+  <section class="dnt-insurance" id="dnt-insurance">
+    <div class="dnt-container">
+      <div class="dnt-section-header">
+        <span class="dnt-section-tag">Coverage</span>
+        <h2 class="dnt-section-title">Insurance Plans We Accept</h2>
+        <p class="dnt-section-sub">We work with most major insurance providers and also offer flexible payment plans for uninsured patients.</p>
+      </div>
+      <div class="dnt-insurance-logos">
+        <div class="dnt-insurance-logo">Delta Dental</div>
+        <div class="dnt-insurance-logo">Cigna</div>
+        <div class="dnt-insurance-logo">Aetna</div>
+        <div class="dnt-insurance-logo">MetLife</div>
+        <div class="dnt-insurance-logo">Guardian</div>
+        <div class="dnt-insurance-logo">United Healthcare</div>
+        <div class="dnt-insurance-logo">Blue Cross</div>
+        <div class="dnt-insurance-logo">Humana</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING CTA -->
+  <section class="dnt-booking" id="dnt-booking">
+    <div class="dnt-container">
+      <div class="dnt-booking-box">
+        <span class="dnt-section-tag">Ready to Get Started?</span>
+        <h2>Book Your Appointment Today</h2>
+        <p>Whether it's a routine cleaning or a complete smile makeover, our team is ready to help. New patients welcome — no referral needed.</p>
+        <div class="dnt-booking-btns">
+          <a href="#" class="dnt-btn-large">Book Online Now</a>
+          <a href="tel:+15551234567" class="dnt-btn-large-outline">Call (555) 123-4567</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT / MAP -->
+  <section class="dnt-contact" id="dnt-contact">
+    <div class="dnt-container">
+      <div class="dnt-section-header">
+        <span class="dnt-section-tag">Get In Touch</span>
+        <h2 class="dnt-section-title">Visit Our Practice</h2>
+        <p class="dnt-section-sub">We're conveniently located and always happy to hear from you. Reach out anytime.</p>
+      </div>
+      <div class="dnt-contact-grid">
+        <div class="dnt-contact-info">
+          <div class="dnt-contact-item">
+            <div class="dnt-contact-icon">&#128205;</div>
+            <div>
+              <h4>Our Location</h4>
+              <p>1250 Dental Way, Suite 200<br>San Francisco, CA 94102</p>
+            </div>
+          </div>
+          <div class="dnt-contact-item">
+            <div class="dnt-contact-icon">&#128222;</div>
+            <div>
+              <h4>Phone Number</h4>
+              <p>(555) 123-4567<br>Emergency: (555) 123-4568</p>
+            </div>
+          </div>
+          <div class="dnt-contact-item">
+            <div class="dnt-contact-icon">&#9993;</div>
+            <div>
+              <h4>Email Address</h4>
+              <p>hello@brightsmile.com<br>appointments@brightsmile.com</p>
+            </div>
+          </div>
+          <div class="dnt-contact-item">
+            <div class="dnt-contact-icon">&#128336;</div>
+            <div>
+              <h4>Office Hours</h4>
+              <p>Mon - Fri: 8:00 AM - 6:00 PM<br>Saturday: 9:00 AM - 2:00 PM<br>Sunday: Closed</p>
+            </div>
+          </div>
+        </div>
+        <div class="dnt-map">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.8354345093747!2d-122.4194!3d37.7749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDQ2JzI5LjYiTiAxMjLCsDI1JzA5LjgiVw!5e0!3m2!1sen!2sus!4v1234567890" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="dnt-footer">
+    <div class="dnt-container">
+      <div class="dnt-footer-grid">
+        <div>
+          <div class="dnt-footer-brand">
+            <div class="dnt-logo-icon">&#9769;</div>
+            BrightSmile Dental
+          </div>
+          <p class="dnt-footer-desc">Providing exceptional dental care with a gentle touch. Your comfort and confidence are our top priorities. Proudly serving families since 2005.</p>
+        </div>
+        <div>
+          <h4>Services</h4>
+          <ul class="dnt-footer-links">
+            <li><a href="#">General Dentistry</a></li>
+            <li><a href="#">Cosmetic Dentistry</a></li>
+            <li><a href="#">Orthodontics</a></li>
+            <li><a href="#">Dental Implants</a></li>
+            <li><a href="#">Teeth Whitening</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="dnt-footer-links">
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Our Team</a></li>
+            <li><a href="#">Patient Forms</a></li>
+            <li><a href="#">Insurance</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Connect</h4>
+          <ul class="dnt-footer-links">
+            <li><a href="#">Facebook</a></li>
+            <li><a href="#">Instagram</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">YouTube</a></li>
+            <li><a href="#">LinkedIn</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="dnt-footer-bottom">
+        &copy; 2026 BrightSmile Dental Clinic. All rights reserved. | Privacy Policy | Terms of Service
+      </div>
+    </div>
+  </footer>
+
+</div>

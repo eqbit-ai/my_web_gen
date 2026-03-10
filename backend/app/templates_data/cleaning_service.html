@@ -1,0 +1,1577 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ========== CLEANING SERVICE RESET & BASE ========== */
+.cs-template * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.cs-template {
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  background: #f0faff;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.cs-template h1,
+.cs-template h2,
+.cs-template h3,
+.cs-template h4,
+.cs-template h5 {
+  font-family: 'Poppins', sans-serif;
+  color: #1e3a5f;
+  line-height: 1.3;
+}
+
+.cs-template img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.cs-template a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ========== CLEANING SERVICE NAVIGATION ========== */
+.cs-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  box-shadow: 0 2px 20px rgba(30, 58, 95, 0.08);
+  padding: 0 40px;
+}
+
+.cs-nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+.cs-nav-logo {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: #1e3a5f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-nav-logo span {
+  color: #00b4d8;
+}
+
+.cs-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.cs-nav-links a {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e3a5f;
+  transition: color 0.3s;
+}
+
+.cs-nav-links a:hover {
+  color: #00b4d8;
+}
+
+.cs-nav-cta {
+  background: #00b4d8;
+  color: #fff !important;
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.cs-nav-cta:hover {
+  background: #0096b7;
+  transform: translateY(-2px);
+}
+
+.cs-nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.cs-nav-toggle span {
+  width: 26px;
+  height: 3px;
+  background: #1e3a5f;
+  border-radius: 2px;
+  transition: 0.3s;
+}
+
+/* ========== CLEANING SERVICE HERO ========== */
+.cs-hero {
+  padding: 140px 40px 100px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d2240 50%, #1e3a5f 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+}
+
+.cs-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.cs-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 180, 216, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.cs-hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.cs-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 180, 216, 0.15);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  color: #00b4d8;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cs-hero h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 20px;
+  line-height: 1.15;
+}
+
+.cs-hero h1 span {
+  color: #00b4d8;
+  position: relative;
+}
+
+.cs-hero-text {
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 36px;
+  line-height: 1.8;
+  max-width: 520px;
+}
+
+.cs-hero-btns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cs-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #00b4d8;
+  color: #fff;
+  padding: 16px 36px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 180, 216, 0.3);
+}
+
+.cs-btn-primary:hover {
+  background: #0096b7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(0, 180, 216, 0.4);
+}
+
+.cs-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #fff;
+  padding: 16px 36px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.cs-btn-secondary:hover {
+  border-color: #00b4d8;
+  background: rgba(0, 180, 216, 0.1);
+}
+
+.cs-hero-image {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.cs-hero-image img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+.cs-hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 48px;
+}
+
+.cs-hero-stat {
+  text-align: left;
+}
+
+.cs-hero-stat-num {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00b4d8;
+}
+
+.cs-hero-stat-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+
+/* ========== CLEANING SERVICE SECTION COMMON ========== */
+.cs-section {
+  padding: 100px 40px;
+}
+
+.cs-section-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 60px;
+}
+
+.cs-section-label {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #00b4d8;
+  margin-bottom: 12px;
+}
+
+.cs-section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.cs-section-header p {
+  font-size: 1.05rem;
+  color: #5a6a7a;
+  line-height: 1.7;
+}
+
+/* ========== CLEANING SERVICE SERVICES ========== */
+.cs-services {
+  background: #ffffff;
+}
+
+.cs-services-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.cs-service-card {
+  background: #f0faff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid transparent;
+}
+
+.cs-service-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(30, 58, 95, 0.1);
+  border-color: rgba(0, 180, 216, 0.2);
+}
+
+.cs-service-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #00b4d8, #0096b7);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 1.8rem;
+}
+
+.cs-service-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.cs-service-card p {
+  font-size: 0.95rem;
+  color: #5a6a7a;
+  line-height: 1.7;
+}
+
+.cs-service-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  color: #00b4d8;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: gap 0.3s;
+}
+
+.cs-service-link:hover {
+  gap: 10px;
+}
+
+/* ========== CLEANING SERVICE PRICING ========== */
+.cs-pricing {
+  background: #f0faff;
+}
+
+.cs-pricing-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  align-items: start;
+}
+
+.cs-pricing-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 44px 36px;
+  box-shadow: 0 4px 24px rgba(30, 58, 95, 0.06);
+  border: 2px solid transparent;
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+
+.cs-pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.1);
+}
+
+.cs-pricing-card--popular {
+  border-color: #00b4d8;
+  transform: scale(1.05);
+  box-shadow: 0 12px 48px rgba(0, 180, 216, 0.15);
+}
+
+.cs-pricing-card--popular:hover {
+  transform: scale(1.05) translateY(-4px);
+}
+
+.cs-pricing-popular-tag {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #00b4d8, #0096b7);
+  color: #fff;
+  padding: 6px 24px;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cs-pricing-tier {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin-bottom: 8px;
+}
+
+.cs-pricing-price {
+  font-family: 'Poppins', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin-bottom: 4px;
+}
+
+.cs-pricing-price span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #5a6a7a;
+}
+
+.cs-pricing-desc {
+  font-size: 0.9rem;
+  color: #5a6a7a;
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #e8f4f8;
+}
+
+.cs-pricing-features {
+  list-style: none;
+  margin-bottom: 32px;
+}
+
+.cs-pricing-features li {
+  padding: 8px 0;
+  font-size: 0.93rem;
+  color: #4a5a6a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cs-pricing-features li::before {
+  content: '\2713';
+  color: #00b4d8;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.cs-pricing-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 14px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid #00b4d8;
+  color: #00b4d8;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.cs-pricing-btn:hover {
+  background: #00b4d8;
+  color: #fff;
+}
+
+.cs-pricing-btn--filled {
+  background: #00b4d8;
+  color: #fff;
+  border-color: #00b4d8;
+}
+
+.cs-pricing-btn--filled:hover {
+  background: #0096b7;
+  border-color: #0096b7;
+}
+
+/* ========== CLEANING SERVICE HOW IT WORKS ========== */
+.cs-how {
+  background: #ffffff;
+}
+
+.cs-how-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  position: relative;
+}
+
+.cs-how-grid::before {
+  content: '';
+  position: absolute;
+  top: 44px;
+  left: 12%;
+  right: 12%;
+  height: 3px;
+  background: linear-gradient(90deg, #00b4d8, rgba(0, 180, 216, 0.2));
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.cs-how-step {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.cs-how-num {
+  width: 88px;
+  height: 88px;
+  background: linear-gradient(135deg, #00b4d8, #0096b7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 180, 216, 0.3);
+  border: 5px solid #ffffff;
+}
+
+.cs-how-step h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.cs-how-step p {
+  font-size: 0.9rem;
+  color: #5a6a7a;
+  line-height: 1.6;
+  max-width: 220px;
+  margin: 0 auto;
+}
+
+/* ========== CLEANING SERVICE TRUST BADGES ========== */
+.cs-trust {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d2240 100%);
+  padding: 80px 40px;
+}
+
+.cs-trust-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  text-align: center;
+}
+
+.cs-trust-badge {
+  padding: 32px 20px;
+}
+
+.cs-trust-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(0, 180, 216, 0.15);
+  border: 2px solid rgba(0, 180, 216, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 1.8rem;
+}
+
+.cs-trust-badge h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.cs-trust-badge p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+/* ========== CLEANING SERVICE BEFORE/AFTER ========== */
+.cs-before-after {
+  background: #f0faff;
+}
+
+.cs-ba-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.cs-ba-card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(30, 58, 95, 0.06);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cs-ba-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.1);
+}
+
+.cs-ba-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.cs-ba-images img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.cs-ba-label {
+  position: absolute;
+  bottom: 8px;
+  background: rgba(30, 58, 95, 0.85);
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px;
+}
+
+.cs-ba-label--before {
+  left: 8px;
+}
+
+.cs-ba-label--after {
+  right: 8px;
+  background: rgba(0, 180, 216, 0.9);
+}
+
+.cs-ba-card-body {
+  padding: 24px;
+}
+
+.cs-ba-card-body h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.cs-ba-card-body p {
+  font-size: 0.88rem;
+  color: #5a6a7a;
+}
+
+/* ========== CLEANING SERVICE REVIEWS ========== */
+.cs-reviews {
+  background: #ffffff;
+}
+
+.cs-reviews-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.cs-review-card {
+  background: #f0faff;
+  border-radius: 16px;
+  padding: 36px 32px;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.cs-review-card:hover {
+  transform: translateY(-4px);
+}
+
+.cs-review-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  color: #f0b429;
+  font-size: 1.1rem;
+}
+
+.cs-review-text {
+  font-size: 0.95rem;
+  color: #4a5a6a;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+.cs-review-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cs-review-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cs-review-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1e3a5f;
+}
+
+.cs-review-role {
+  font-size: 0.82rem;
+  color: #5a6a7a;
+}
+
+/* ========== CLEANING SERVICE AREAS ========== */
+.cs-areas {
+  background: #f0faff;
+}
+
+.cs-areas-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.cs-areas-image {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.1);
+}
+
+.cs-areas-image img {
+  width: 100%;
+  height: 440px;
+  object-fit: cover;
+}
+
+.cs-areas-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cs-areas-info h2 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.cs-areas-info p {
+  font-size: 1rem;
+  color: #5a6a7a;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.cs-area-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 10px;
+  font-size: 0.93rem;
+  font-weight: 500;
+  color: #1e3a5f;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.05);
+}
+
+.cs-area-item::before {
+  content: '\2713';
+  color: #00b4d8;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ========== CLEANING SERVICE CTA ========== */
+.cs-cta {
+  background: linear-gradient(135deg, #00b4d8 0%, #0096b7 50%, #1e3a5f 100%);
+  padding: 100px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cs-cta::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.cs-cta-inner {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.cs-cta h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.cs-cta p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 40px;
+  line-height: 1.7;
+}
+
+.cs-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  color: #1e3a5f;
+  padding: 18px 44px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.cs-cta-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.cs-cta-phone {
+  margin-top: 24px;
+  font-size: 1.2rem;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+}
+
+.cs-cta-phone a {
+  color: #ffffff;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  padding-bottom: 2px;
+  transition: border-color 0.3s;
+}
+
+.cs-cta-phone a:hover {
+  border-color: #ffffff;
+}
+
+/* ========== CLEANING SERVICE FOOTER ========== */
+.cs-footer {
+  background: #0d2240;
+  padding: 80px 40px 40px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cs-footer-grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cs-footer-brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.cs-footer-brand span {
+  color: #00b4d8;
+}
+
+.cs-footer-about {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  max-width: 320px;
+}
+
+.cs-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.cs-footer-social a {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  transition: background 0.3s, color 0.3s;
+}
+
+.cs-footer-social a:hover {
+  background: #00b4d8;
+  color: #fff;
+}
+
+.cs-footer h4 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.cs-footer-links {
+  list-style: none;
+}
+
+.cs-footer-links li {
+  margin-bottom: 12px;
+}
+
+.cs-footer-links a {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.3s;
+}
+
+.cs-footer-links a:hover {
+  color: #00b4d8;
+}
+
+.cs-footer-bottom {
+  max-width: 1280px;
+  margin: 32px auto 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ========== CLEANING SERVICE RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .cs-hero h1 {
+    font-size: 2.8rem;
+  }
+
+  .cs-hero-inner {
+    gap: 40px;
+  }
+
+  .cs-services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cs-how-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+
+  .cs-how-grid::before {
+    display: none;
+  }
+
+  .cs-trust-inner {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cs-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cs-nav {
+    padding: 0 20px;
+  }
+
+  .cs-nav-links {
+    display: none;
+  }
+
+  .cs-nav-toggle {
+    display: flex;
+  }
+
+  .cs-hero {
+    padding: 120px 20px 80px;
+    min-height: auto;
+  }
+
+  .cs-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .cs-hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .cs-hero-image img {
+    height: 320px;
+  }
+
+  .cs-hero-stats {
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .cs-section {
+    padding: 70px 20px;
+  }
+
+  .cs-section-header h2 {
+    font-size: 2rem;
+  }
+
+  .cs-services-grid,
+  .cs-pricing-grid,
+  .cs-ba-grid,
+  .cs-reviews-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cs-pricing-card--popular {
+    transform: none;
+  }
+
+  .cs-pricing-card--popular:hover {
+    transform: translateY(-4px);
+  }
+
+  .cs-how-grid {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cs-trust-inner {
+    grid-template-columns: 1fr;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cs-areas-content {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .cs-areas-image img {
+    height: 300px;
+  }
+
+  .cs-areas-list {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-cta h2 {
+    font-size: 1.8rem;
+  }
+
+  .cs-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .cs-footer-bottom {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .cs-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .cs-hero-btns {
+    flex-direction: column;
+  }
+
+  .cs-btn-primary,
+  .cs-btn-secondary {
+    justify-content: center;
+  }
+
+  .cs-hero-stat-num {
+    font-size: 1.6rem;
+  }
+
+  .cs-section-header h2 {
+    font-size: 1.6rem;
+  }
+
+  .cs-pricing-price {
+    font-size: 2.4rem;
+  }
+}
+</style>
+
+<div class="cs-template">
+
+  <!-- Navigation -->
+  <nav class="cs-nav">
+    <div class="cs-nav-inner">
+      <div class="cs-nav-logo">Spark<span>Clean</span></div>
+      <ul class="cs-nav-links">
+        <li><a href="#cs-services">Services</a></li>
+        <li><a href="#cs-pricing">Pricing</a></li>
+        <li><a href="#cs-how">How It Works</a></li>
+        <li><a href="#cs-reviews">Reviews</a></li>
+        <li><a href="#cs-areas">Areas</a></li>
+        <li><a href="#cs-quote" class="cs-nav-cta">Get a Quote</a></li>
+      </ul>
+      <button class="cs-nav-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="cs-hero">
+    <div class="cs-hero-inner">
+      <div class="cs-hero-content">
+        <div class="cs-hero-badge">Trusted by 5,000+ Homes & Businesses</div>
+        <h1>Spotless Spaces, <span>Every Time</span></h1>
+        <p class="cs-hero-text">Professional cleaning services tailored to your needs. From cozy apartments to large commercial spaces, we deliver a sparkling clean you can see and feel.</p>
+        <div class="cs-hero-btns">
+          <a href="#cs-quote" class="cs-btn-primary">Get a Free Quote &#8594;</a>
+          <a href="#cs-services" class="cs-btn-secondary">Our Services</a>
+        </div>
+        <div class="cs-hero-stats">
+          <div class="cs-hero-stat">
+            <div class="cs-hero-stat-num">5,000+</div>
+            <div class="cs-hero-stat-label">Happy Customers</div>
+          </div>
+          <div class="cs-hero-stat">
+            <div class="cs-hero-stat-num">99.2%</div>
+            <div class="cs-hero-stat-label">Satisfaction Rate</div>
+          </div>
+          <div class="cs-hero-stat">
+            <div class="cs-hero-stat-num">12+</div>
+            <div class="cs-hero-stat-label">Years Experience</div>
+          </div>
+        </div>
+      </div>
+      <div class="cs-hero-image">
+        <img src="https://images.pexels.com/photos/4108711/pexels-photo-4108711.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Professional cleaning service">
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="cs-section cs-services" id="cs-services">
+    <div class="cs-section-header">
+      <div class="cs-section-label">What We Offer</div>
+      <h2>Professional Cleaning Services</h2>
+      <p>We provide a comprehensive range of cleaning solutions designed to meet every need, from routine maintenance to specialized deep cleaning.</p>
+    </div>
+    <div class="cs-services-grid">
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#127968;</div>
+        <h3>Residential Cleaning</h3>
+        <p>Regular house cleaning customized to your home's needs. We handle dusting, vacuuming, mopping, kitchen and bathroom sanitization, and more.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#127970;</div>
+        <h3>Commercial Cleaning</h3>
+        <p>Keep your business environment pristine with our tailored commercial cleaning plans. Flexible scheduling to minimize disruption to your operations.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#10024;</div>
+        <h3>Deep Cleaning</h3>
+        <p>Intensive top-to-bottom cleaning that reaches every corner. Ideal for seasonal refreshes, pre-event preparations, or a thorough reset of your space.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#128230;</div>
+        <h3>Move-In / Move-Out</h3>
+        <p>Starting fresh or leaving a lasting impression? Our move cleaning ensures every surface is spotless for the next chapter in your space.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#128187;</div>
+        <h3>Office Cleaning</h3>
+        <p>A clean office boosts productivity and morale. We provide daily, weekly, or bi-weekly office cleaning with attention to shared spaces and workstations.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+      <div class="cs-service-card">
+        <div class="cs-service-icon">&#127959;</div>
+        <h3>Post-Construction</h3>
+        <p>Remove dust, debris, and residue left behind by construction or renovation. We make your newly built or remodeled space move-in ready.</p>
+        <a href="#cs-quote" class="cs-service-link">Book Now &#8594;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="cs-section cs-pricing" id="cs-pricing">
+    <div class="cs-section-header">
+      <div class="cs-section-label">Simple Pricing</div>
+      <h2>Choose Your Clean Plan</h2>
+      <p>Transparent pricing with no hidden fees. Pick the package that fits your space and schedule, and leave the rest to us.</p>
+    </div>
+    <div class="cs-pricing-grid">
+      <div class="cs-pricing-card">
+        <div class="cs-pricing-tier">Basic Clean</div>
+        <div class="cs-pricing-price">$99 <span>/visit</span></div>
+        <div class="cs-pricing-desc">Perfect for regular upkeep of small to medium spaces</div>
+        <ul class="cs-pricing-features">
+          <li>Dusting all surfaces</li>
+          <li>Vacuuming & mopping floors</li>
+          <li>Kitchen wipe-down</li>
+          <li>Bathroom sanitization</li>
+          <li>Trash removal</li>
+          <li>Up to 1,500 sq ft</li>
+        </ul>
+        <a href="#cs-quote" class="cs-pricing-btn">Get Started</a>
+      </div>
+      <div class="cs-pricing-card cs-pricing-card--popular">
+        <div class="cs-pricing-popular-tag">Most Popular</div>
+        <div class="cs-pricing-tier">Deep Clean</div>
+        <div class="cs-pricing-price">$199 <span>/visit</span></div>
+        <div class="cs-pricing-desc">Comprehensive cleaning for a truly refreshed space</div>
+        <ul class="cs-pricing-features">
+          <li>Everything in Basic</li>
+          <li>Inside appliance cleaning</li>
+          <li>Baseboard & vent scrubbing</li>
+          <li>Window sill detailing</li>
+          <li>Cabinet exterior wiping</li>
+          <li>Up to 2,500 sq ft</li>
+          <li>Eco-friendly products</li>
+        </ul>
+        <a href="#cs-quote" class="cs-pricing-btn cs-pricing-btn--filled">Get Started</a>
+      </div>
+      <div class="cs-pricing-card">
+        <div class="cs-pricing-tier">Premium Clean</div>
+        <div class="cs-pricing-price">$349 <span>/visit</span></div>
+        <div class="cs-pricing-desc">The ultimate top-to-bottom transformation for your space</div>
+        <ul class="cs-pricing-features">
+          <li>Everything in Deep Clean</li>
+          <li>Inside oven & fridge</li>
+          <li>Interior window washing</li>
+          <li>Carpet spot treatment</li>
+          <li>Garage or patio sweep</li>
+          <li>Unlimited sq ft</li>
+          <li>Priority scheduling</li>
+        </ul>
+        <a href="#cs-quote" class="cs-pricing-btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="cs-section cs-how" id="cs-how">
+    <div class="cs-section-header">
+      <div class="cs-section-label">Easy Process</div>
+      <h2>How It Works</h2>
+      <p>Getting your space cleaned is simple. Just four easy steps and you're on your way to a spotless environment.</p>
+    </div>
+    <div class="cs-how-grid">
+      <div class="cs-how-step">
+        <div class="cs-how-num">1</div>
+        <h3>Request a Quote</h3>
+        <p>Fill out our quick form or call us with details about your space and cleaning needs.</p>
+      </div>
+      <div class="cs-how-step">
+        <div class="cs-how-num">2</div>
+        <h3>Get Your Plan</h3>
+        <p>We'll create a customized cleaning plan and provide a transparent, no-obligation estimate.</p>
+      </div>
+      <div class="cs-how-step">
+        <div class="cs-how-num">3</div>
+        <h3>We Clean</h3>
+        <p>Our trained professionals arrive on time with all supplies and get to work making your space shine.</p>
+      </div>
+      <div class="cs-how-step">
+        <div class="cs-how-num">4</div>
+        <h3>You Enjoy</h3>
+        <p>Walk into a sparkling clean space. If anything isn't perfect, we'll come back and make it right.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Badges -->
+  <section class="cs-trust">
+    <div class="cs-trust-inner">
+      <div class="cs-trust-badge">
+        <div class="cs-trust-icon">&#128737;</div>
+        <h4>Fully Insured</h4>
+        <p>Comprehensive liability coverage protects your property and our team on every job.</p>
+      </div>
+      <div class="cs-trust-badge">
+        <div class="cs-trust-icon">&#127807;</div>
+        <h4>Eco-Friendly</h4>
+        <p>We use environmentally responsible, non-toxic products safe for kids, pets, and the planet.</p>
+      </div>
+      <div class="cs-trust-badge">
+        <div class="cs-trust-icon">&#128100;</div>
+        <h4>Background-Checked</h4>
+        <p>Every team member passes rigorous background screening for your complete peace of mind.</p>
+      </div>
+      <div class="cs-trust-badge">
+        <div class="cs-trust-icon">&#11088;</div>
+        <h4>Satisfaction Guaranteed</h4>
+        <p>Not happy with our work? We'll re-clean at no extra charge within 24 hours. That's our promise.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Before / After Showcase -->
+  <section class="cs-section cs-before-after">
+    <div class="cs-section-header">
+      <div class="cs-section-label">See the Difference</div>
+      <h2>Before & After</h2>
+      <p>Real results from real jobs. See the transformations our team delivers every single day.</p>
+    </div>
+    <div class="cs-ba-grid">
+      <div class="cs-ba-card">
+        <div class="cs-ba-images">
+          <img src="https://images.pexels.com/photos/3016428/pexels-photo-3016428.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Kitchen before cleaning">
+          <img src="https://images.pexels.com/photos/35147241/pexels-photo-35147241.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Kitchen after cleaning">
+          <span class="cs-ba-label cs-ba-label--before">Before</span>
+          <span class="cs-ba-label cs-ba-label--after">After</span>
+        </div>
+        <div class="cs-ba-card-body">
+          <h4>Kitchen Deep Clean</h4>
+          <p>Grease-free counters, gleaming appliances, and sanitized surfaces throughout.</p>
+        </div>
+      </div>
+      <div class="cs-ba-card">
+        <div class="cs-ba-images">
+          <img src="https://images.pexels.com/photos/4108727/pexels-photo-4108727.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bathroom before cleaning">
+          <img src="https://images.pexels.com/photos/4239142/pexels-photo-4239142.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bathroom after cleaning">
+          <span class="cs-ba-label cs-ba-label--before">Before</span>
+          <span class="cs-ba-label cs-ba-label--after">After</span>
+        </div>
+        <div class="cs-ba-card-body">
+          <h4>Bathroom Restoration</h4>
+          <p>Sparkling tiles, mold-free grout, and a fresh scent that lasts for days.</p>
+        </div>
+      </div>
+      <div class="cs-ba-card">
+        <div class="cs-ba-images">
+          <img src="https://images.pexels.com/photos/7513165/pexels-photo-7513165.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Living room before cleaning">
+          <img src="https://images.pexels.com/photos/6195276/pexels-photo-6195276.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Living room after cleaning">
+          <span class="cs-ba-label cs-ba-label--before">Before</span>
+          <span class="cs-ba-label cs-ba-label--after">After</span>
+        </div>
+        <div class="cs-ba-card-body">
+          <h4>Living Room Refresh</h4>
+          <p>Dust-free furniture, spotless floors, and immaculate windows from edge to edge.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Customer Reviews -->
+  <section class="cs-section cs-reviews" id="cs-reviews">
+    <div class="cs-section-header">
+      <div class="cs-section-label">Testimonials</div>
+      <h2>What Our Customers Say</h2>
+      <p>Don't just take our word for it. Here's what people are saying about their SparkClean experience.</p>
+    </div>
+    <div class="cs-reviews-grid">
+      <div class="cs-review-card">
+        <div class="cs-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="cs-review-text">"I've tried several cleaning services, and SparkClean is by far the best. They're thorough, reliable, and my house has never looked better. The team is so respectful of our space."</p>
+        <div class="cs-review-author">
+          <img src="https://images.pexels.com/photos/4108711/pexels-photo-4108711.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah M." class="cs-review-avatar">
+          <div>
+            <div class="cs-review-name">Sarah Mitchell</div>
+            <div class="cs-review-role">Homeowner, Weekly Service</div>
+          </div>
+        </div>
+      </div>
+      <div class="cs-review-card">
+        <div class="cs-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="cs-review-text">"We hired SparkClean for our office and the difference is night and day. Our employees love coming to work in a clean environment. The bi-weekly plan is absolutely worth every penny."</p>
+        <div class="cs-review-author">
+          <img src="https://images.pexels.com/photos/35147280/pexels-photo-35147280.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James R." class="cs-review-avatar">
+          <div>
+            <div class="cs-review-name">James Rivera</div>
+            <div class="cs-review-role">Business Owner, Bi-Weekly Service</div>
+          </div>
+        </div>
+      </div>
+      <div class="cs-review-card">
+        <div class="cs-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="cs-review-text">"The move-out cleaning was incredible. We got our full security deposit back thanks to SparkClean. They even cleaned areas I didn't think about. Highly recommended for anyone moving!"</p>
+        <div class="cs-review-author">
+          <img src="https://images.pexels.com/photos/9462106/pexels-photo-9462106.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Priya K." class="cs-review-avatar">
+          <div>
+            <div class="cs-review-name">Priya Kapoor</div>
+            <div class="cs-review-role">Renter, Move-Out Clean</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Service Areas -->
+  <section class="cs-section cs-areas" id="cs-areas">
+    <div class="cs-areas-content">
+      <div class="cs-areas-image">
+        <img src="https://images.pexels.com/photos/6195129/pexels-photo-6195129.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Service area map">
+      </div>
+      <div class="cs-areas-info">
+        <div class="cs-section-label">Coverage</div>
+        <h2>Service Areas</h2>
+        <p>We proudly serve the greater metropolitan area and surrounding communities. If you're nearby, we can make your space shine.</p>
+        <div class="cs-areas-list">
+          <div class="cs-area-item">Downtown</div>
+          <div class="cs-area-item">Midtown</div>
+          <div class="cs-area-item">Westside</div>
+          <div class="cs-area-item">East Village</div>
+          <div class="cs-area-item">North Hills</div>
+          <div class="cs-area-item">Southpark</div>
+          <div class="cs-area-item">Lakewood</div>
+          <div class="cs-area-item">Riverside</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get a Quote CTA -->
+  <section class="cs-cta" id="cs-quote">
+    <div class="cs-cta-inner">
+      <h2>Ready for a Spotless Space?</h2>
+      <p>Get a free, no-obligation quote in minutes. Tell us about your space and we'll handle the rest. Your satisfaction is guaranteed on every visit.</p>
+      <a href="#" class="cs-cta-btn">Get Your Free Quote &#8594;</a>
+      <div class="cs-cta-phone">Or call us at <a href="tel:+18005551234">(800) 555-1234</a></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="cs-footer">
+    <div class="cs-footer-grid">
+      <div>
+        <div class="cs-footer-brand">Spark<span>Clean</span></div>
+        <p class="cs-footer-about">Professional cleaning services for homes and businesses. Trusted by thousands of customers for over 12 years. Insured, bonded, and committed to excellence.</p>
+        <div class="cs-footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">in</a>
+          <a href="#" aria-label="Twitter">tw</a>
+          <a href="#" aria-label="LinkedIn">li</a>
+        </div>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul class="cs-footer-links">
+          <li><a href="#">Residential Cleaning</a></li>
+          <li><a href="#">Commercial Cleaning</a></li>
+          <li><a href="#">Deep Cleaning</a></li>
+          <li><a href="#">Move-In/Out</a></li>
+          <li><a href="#">Post-Construction</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul class="cs-footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Our Team</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul class="cs-footer-links">
+          <li><a href="tel:+18005551234">(800) 555-1234</a></li>
+          <li><a href="mailto:hello@sparkclean.com">hello@sparkclean.com</a></li>
+          <li>123 Clean Street, Suite 200</li>
+          <li>Mon - Sat: 7AM - 8PM</li>
+          <li>Sunday: 9AM - 5PM</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cs-footer-bottom">
+      <div>&copy; 2026 SparkClean. All rights reserved.</div>
+      <div>
+        <a href="#">Privacy Policy</a> &nbsp;|&nbsp; <a href="#">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+</div>

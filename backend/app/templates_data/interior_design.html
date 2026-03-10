@@ -1,0 +1,1532 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Work+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ===== INTERIOR DESIGN STUDIO - GLOBAL RESET ===== */
+.intdes-wrapper * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.intdes-wrapper {
+  font-family: 'Work Sans', sans-serif;
+  color: #2d2d2d;
+  background-color: #f7f4ef;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.intdes-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.intdes-wrapper a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.intdes-wrapper h1,
+.intdes-wrapper h2,
+.intdes-wrapper h3,
+.intdes-wrapper h4 {
+  font-family: 'DM Serif Display', serif;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.intdes-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ===== NAVIGATION ===== */
+.intdes-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(247, 244, 239, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(166, 139, 107, 0.15);
+  padding: 18px 0;
+  transition: all 0.3s ease;
+}
+
+.intdes-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.intdes-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  color: #2d2d2d;
+  letter-spacing: 0.02em;
+}
+
+.intdes-logo span {
+  color: #a68b6b;
+}
+
+.intdes-nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+  align-items: center;
+}
+
+.intdes-nav-links a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2d2d2d;
+  transition: color 0.3s ease;
+  position: relative;
+}
+
+.intdes-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #a68b6b;
+  transition: width 0.3s ease;
+}
+
+.intdes-nav-links a:hover {
+  color: #a68b6b;
+}
+
+.intdes-nav-links a:hover::after {
+  width: 100%;
+}
+
+.intdes-nav-cta {
+  background: #2d2d2d;
+  color: #ffffff !important;
+  padding: 10px 24px;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.1em;
+  transition: background 0.3s ease !important;
+}
+
+.intdes-nav-cta::after {
+  display: none !important;
+}
+
+.intdes-nav-cta:hover {
+  background: #a68b6b !important;
+  color: #ffffff !important;
+}
+
+.intdes-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.intdes-menu-toggle span {
+  width: 24px;
+  height: 2px;
+  background: #2d2d2d;
+  transition: all 0.3s ease;
+}
+
+/* ===== HERO SECTION ===== */
+.intdes-hero {
+  margin-top: 70px;
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.intdes-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.intdes-hero-content {
+  padding: 40px 0;
+}
+
+.intdes-hero-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a68b6b;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.intdes-hero-label::before {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: #a68b6b;
+}
+
+.intdes-hero h1 {
+  font-size: 4rem;
+  color: #2d2d2d;
+  margin-bottom: 24px;
+  line-height: 1.08;
+}
+
+.intdes-hero h1 em {
+  font-style: italic;
+  color: #a68b6b;
+}
+
+.intdes-hero-desc {
+  font-size: 1.05rem;
+  color: #666;
+  font-weight: 300;
+  line-height: 1.8;
+  margin-bottom: 40px;
+  max-width: 440px;
+}
+
+.intdes-hero-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.intdes-btn-primary {
+  display: inline-block;
+  background: #2d2d2d;
+  color: #ffffff;
+  padding: 16px 40px;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.intdes-btn-primary:hover {
+  background: #a68b6b;
+}
+
+.intdes-btn-outline {
+  display: inline-block;
+  background: transparent;
+  color: #2d2d2d;
+  padding: 16px 40px;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1.5px solid #2d2d2d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.intdes-btn-outline:hover {
+  background: #2d2d2d;
+  color: #ffffff;
+}
+
+.intdes-hero-images {
+  position: relative;
+  height: 580px;
+}
+
+.intdes-hero-img-main {
+  width: 85%;
+  height: 480px;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.intdes-hero-img-accent {
+  width: 220px;
+  height: 260px;
+  object-fit: cover;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border: 8px solid #f7f4ef;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+
+.intdes-hero-stat {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  background: #ffffff;
+  padding: 24px 32px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.intdes-hero-stat-number {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.4rem;
+  color: #a68b6b;
+  line-height: 1;
+}
+
+.intdes-hero-stat-text {
+  font-size: 0.78rem;
+  color: #888;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ===== PORTFOLIO SECTION ===== */
+.intdes-portfolio {
+  padding: 120px 0;
+}
+
+.intdes-section-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.intdes-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a68b6b;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.intdes-section-title {
+  font-size: 2.8rem;
+  color: #2d2d2d;
+  margin-bottom: 16px;
+}
+
+.intdes-section-subtitle {
+  font-size: 1rem;
+  color: #888;
+  font-weight: 300;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.intdes-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.intdes-portfolio-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  group: true;
+}
+
+.intdes-portfolio-card img {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.intdes-portfolio-card:hover img {
+  transform: scale(1.05);
+}
+
+.intdes-portfolio-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 24px;
+  background: linear-gradient(transparent, rgba(45, 45, 45, 0.9));
+  transition: all 0.4s ease;
+}
+
+.intdes-portfolio-overlay h3 {
+  font-size: 1.3rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.intdes-portfolio-overlay span {
+  font-size: 0.8rem;
+  color: #a68b6b;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intdes-portfolio-card:nth-child(1) {
+  grid-row: span 2;
+}
+
+.intdes-portfolio-card:nth-child(1) img {
+  height: 100%;
+}
+
+/* ===== DESIGN PROCESS ===== */
+.intdes-process {
+  padding: 120px 0;
+  background: #ffffff;
+}
+
+.intdes-process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  margin-top: 64px;
+}
+
+.intdes-process-step {
+  text-align: center;
+  padding: 40px 24px;
+  position: relative;
+}
+
+.intdes-process-number {
+  font-family: 'DM Serif Display', serif;
+  font-size: 4rem;
+  color: rgba(166, 139, 107, 0.15);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.intdes-process-step h3 {
+  font-size: 1.25rem;
+  color: #2d2d2d;
+  margin-bottom: 12px;
+}
+
+.intdes-process-step p {
+  font-size: 0.9rem;
+  color: #888;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.intdes-process-step::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -20px;
+  width: 40px;
+  height: 1px;
+  background: rgba(166, 139, 107, 0.3);
+}
+
+.intdes-process-step:last-child::after {
+  display: none;
+}
+
+/* ===== SERVICES SECTION ===== */
+.intdes-services {
+  padding: 120px 0;
+}
+
+.intdes-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.intdes-service-card {
+  background: #ffffff;
+  padding: 48px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  border: 1px solid rgba(166, 139, 107, 0.1);
+}
+
+.intdes-service-card:hover {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+  border-color: #a68b6b;
+}
+
+.intdes-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #a68b6b;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.intdes-service-card:hover::before {
+  transform: scaleX(1);
+}
+
+.intdes-service-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(166, 139, 107, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.intdes-service-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: #a68b6b;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.intdes-service-card h3 {
+  font-size: 1.4rem;
+  color: #2d2d2d;
+  margin-bottom: 16px;
+}
+
+.intdes-service-card p {
+  font-size: 0.92rem;
+  color: #888;
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 24px;
+}
+
+.intdes-service-list {
+  list-style: none;
+  padding: 0;
+}
+
+.intdes-service-list li {
+  font-size: 0.85rem;
+  color: #666;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(166, 139, 107, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.intdes-service-list li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #a68b6b;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ===== BEFORE/AFTER SECTION ===== */
+.intdes-beforeafter {
+  padding: 120px 0;
+  background: #ffffff;
+}
+
+.intdes-ba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  margin-top: 64px;
+}
+
+.intdes-ba-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.intdes-ba-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  position: relative;
+}
+
+.intdes-ba-images img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.intdes-ba-label-before,
+.intdes-ba-label-after {
+  position: absolute;
+  bottom: 12px;
+  padding: 6px 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.intdes-ba-label-before {
+  left: 12px;
+  background: #2d2d2d;
+}
+
+.intdes-ba-label-after {
+  right: 12px;
+  background: #a68b6b;
+}
+
+.intdes-ba-info {
+  padding: 24px 0;
+}
+
+.intdes-ba-info h3 {
+  font-size: 1.3rem;
+  color: #2d2d2d;
+  margin-bottom: 8px;
+}
+
+.intdes-ba-info p {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+/* ===== AWARDS SECTION ===== */
+.intdes-awards {
+  padding: 100px 0;
+  background: #2d2d2d;
+}
+
+.intdes-awards .intdes-section-label {
+  color: #a68b6b;
+}
+
+.intdes-awards .intdes-section-title {
+  color: #ffffff;
+}
+
+.intdes-awards .intdes-section-subtitle {
+  color: rgba(255,255,255,0.5);
+}
+
+.intdes-awards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 64px;
+}
+
+.intdes-award-item {
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px solid rgba(166, 139, 107, 0.2);
+  transition: all 0.3s ease;
+}
+
+.intdes-award-item:hover {
+  border-color: #a68b6b;
+  background: rgba(166, 139, 107, 0.05);
+}
+
+.intdes-award-year {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #a68b6b;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.intdes-award-item h3 {
+  font-size: 1.1rem;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.intdes-award-item p {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 300;
+}
+
+/* ===== TESTIMONIALS ===== */
+.intdes-testimonials {
+  padding: 120px 0;
+}
+
+.intdes-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 64px;
+}
+
+.intdes-testimonial-card {
+  background: #ffffff;
+  padding: 40px 32px;
+  border: 1px solid rgba(166, 139, 107, 0.1);
+  position: relative;
+}
+
+.intdes-testimonial-card::before {
+  content: '\201C';
+  font-family: 'DM Serif Display', serif;
+  font-size: 5rem;
+  color: rgba(166, 139, 107, 0.15);
+  position: absolute;
+  top: 10px;
+  left: 24px;
+  line-height: 1;
+}
+
+.intdes-testimonial-card p {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.8;
+  font-weight: 300;
+  font-style: italic;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.intdes-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.intdes-testimonial-author img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.intdes-testimonial-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  color: #2d2d2d;
+}
+
+.intdes-testimonial-role {
+  font-size: 0.78rem;
+  color: #a68b6b;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+/* ===== CONSULTATION CTA ===== */
+.intdes-cta {
+  padding: 120px 0;
+  background: #2d2d2d;
+  position: relative;
+  overflow: hidden;
+}
+
+.intdes-cta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.intdes-cta-content h2 {
+  font-size: 2.8rem;
+  color: #ffffff;
+  margin-bottom: 20px;
+  line-height: 1.15;
+}
+
+.intdes-cta-content h2 em {
+  font-style: italic;
+  color: #a68b6b;
+}
+
+.intdes-cta-content p {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.6);
+  font-weight: 300;
+  line-height: 1.8;
+  margin-bottom: 40px;
+  max-width: 460px;
+}
+
+.intdes-cta-form {
+  background: rgba(255,255,255,0.05);
+  padding: 48px;
+  border: 1px solid rgba(166, 139, 107, 0.2);
+}
+
+.intdes-form-group {
+  margin-bottom: 20px;
+}
+
+.intdes-form-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 8px;
+}
+
+.intdes-form-group input,
+.intdes-form-group select,
+.intdes-form-group textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(166, 139, 107, 0.25);
+  color: #ffffff;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+
+.intdes-form-group input::placeholder,
+.intdes-form-group textarea::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.intdes-form-group input:focus,
+.intdes-form-group select:focus,
+.intdes-form-group textarea:focus {
+  border-color: #a68b6b;
+}
+
+.intdes-form-group textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.intdes-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.intdes-form-submit {
+  width: 100%;
+  padding: 16px;
+  background: #a68b6b;
+  color: #ffffff;
+  border: none;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 8px;
+}
+
+.intdes-form-submit:hover {
+  background: #917758;
+}
+
+/* ===== FOOTER ===== */
+.intdes-footer {
+  padding: 80px 0 40px;
+  background: #222222;
+}
+
+.intdes-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 60px;
+}
+
+.intdes-footer-brand .intdes-logo {
+  font-size: 1.4rem;
+  color: #ffffff;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.intdes-footer-brand p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 300px;
+}
+
+.intdes-footer-col h4 {
+  font-size: 0.78rem;
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a68b6b;
+  margin-bottom: 20px;
+}
+
+.intdes-footer-col ul {
+  list-style: none;
+  padding: 0;
+}
+
+.intdes-footer-col ul li {
+  margin-bottom: 10px;
+}
+
+.intdes-footer-col ul li a {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 300;
+  transition: color 0.3s ease;
+}
+
+.intdes-footer-col ul li a:hover {
+  color: #a68b6b;
+}
+
+.intdes-footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intdes-footer-bottom p {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.3);
+  font-weight: 300;
+}
+
+.intdes-footer-social {
+  display: flex;
+  gap: 16px;
+}
+
+.intdes-footer-social a {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.intdes-footer-social a:hover {
+  border-color: #a68b6b;
+  background: rgba(166, 139, 107, 0.1);
+}
+
+.intdes-footer-social a svg {
+  width: 18px;
+  height: 18px;
+  fill: rgba(255,255,255,0.4);
+  transition: fill 0.3s ease;
+}
+
+.intdes-footer-social a:hover svg {
+  fill: #a68b6b;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .intdes-hero h1 {
+    font-size: 3rem;
+  }
+
+  .intdes-hero-images {
+    height: 460px;
+  }
+
+  .intdes-portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intdes-portfolio-card:nth-child(1) {
+    grid-row: auto;
+  }
+
+  .intdes-portfolio-card:nth-child(1) img {
+    height: 380px;
+  }
+
+  .intdes-process-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intdes-process-step::after {
+    display: none;
+  }
+
+  .intdes-awards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intdes-cta-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .intdes-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .intdes-nav-links {
+    display: none;
+  }
+
+  .intdes-menu-toggle {
+    display: flex;
+  }
+
+  .intdes-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .intdes-hero h1 {
+    font-size: 2.6rem;
+  }
+
+  .intdes-hero-images {
+    height: 400px;
+  }
+
+  .intdes-hero-img-accent {
+    width: 160px;
+    height: 200px;
+  }
+
+  .intdes-section-title {
+    font-size: 2.2rem;
+  }
+
+  .intdes-portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-portfolio-card img {
+    height: 300px;
+  }
+
+  .intdes-services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-ba-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-awards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-cta-content h2 {
+    font-size: 2.2rem;
+  }
+
+  .intdes-cta-form {
+    padding: 32px 24px;
+  }
+
+  .intdes-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .intdes-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .intdes-footer-bottom {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .intdes-hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .intdes-hero h1 {
+    font-size: 2rem;
+  }
+
+  .intdes-hero-images {
+    height: 320px;
+  }
+
+  .intdes-hero-stat {
+    display: none;
+  }
+
+  .intdes-section-title {
+    font-size: 1.8rem;
+  }
+
+  .intdes-process-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="intdes-wrapper">
+
+  <!-- Navigation -->
+  <nav class="intdes-nav">
+    <div class="intdes-nav-inner">
+      <a href="#" class="intdes-logo">Studio <span>Atelier</span></a>
+      <ul class="intdes-nav-links">
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#process">Process</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#testimonials">Testimonials</a></li>
+        <li><a href="#consultation" class="intdes-nav-cta">Book Consultation</a></li>
+      </ul>
+      <button class="intdes-menu-toggle" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="intdes-hero">
+    <div class="intdes-hero-grid">
+      <div class="intdes-hero-content">
+        <div class="intdes-hero-label">Interior Design Studio</div>
+        <h1>Designing Spaces That <em>Inspire</em></h1>
+        <p class="intdes-hero-desc">We create thoughtfully curated interiors that blend elegance with functionality, transforming ordinary rooms into extraordinary living experiences.</p>
+        <div class="intdes-hero-actions">
+          <a href="#consultation" class="intdes-btn-primary">Start Your Project</a>
+          <a href="#portfolio" class="intdes-btn-outline">View Portfolio</a>
+        </div>
+      </div>
+      <div class="intdes-hero-images">
+        <img src="https://images.pexels.com/photos/20285350/pexels-photo-20285350.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant living room interior" class="intdes-hero-img-main">
+        <img src="https://images.pexels.com/photos/26571206/pexels-photo-26571206.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Modern interior detail" class="intdes-hero-img-accent">
+        <div class="intdes-hero-stat">
+          <div class="intdes-hero-stat-number">250+</div>
+          <div class="intdes-hero-stat-text">Projects Completed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio Section -->
+  <section class="intdes-portfolio" id="portfolio">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">Selected Works</span>
+        <h2 class="intdes-section-title">Our Portfolio</h2>
+        <p class="intdes-section-subtitle">A curated collection of our most distinguished residential and commercial interior projects.</p>
+      </div>
+      <div class="intdes-portfolio-grid">
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/26571202/pexels-photo-26571202.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Minimalist penthouse">
+          <div class="intdes-portfolio-overlay">
+            <h3>The Ivory Penthouse</h3>
+            <span>Residential - Dubai Marina</span>
+          </div>
+        </div>
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/35128596/pexels-photo-35128596.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Boutique hotel lobby">
+          <div class="intdes-portfolio-overlay">
+            <h3>Maison Lumiere Hotel</h3>
+            <span>Hospitality - Downtown</span>
+          </div>
+        </div>
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/161758/governor-s-mansion-montgomery-alabama-grand-staircase-161758.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Contemporary kitchen">
+          <div class="intdes-portfolio-overlay">
+            <h3>Sage & Stone Villa</h3>
+            <span>Residential - Palm Jumeirah</span>
+          </div>
+        </div>
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/20285350/pexels-photo-20285350.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Executive office suite">
+          <div class="intdes-portfolio-overlay">
+            <h3>Verity Office Tower</h3>
+            <span>Commercial - DIFC</span>
+          </div>
+        </div>
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/26571201/pexels-photo-26571201.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury bedroom">
+          <div class="intdes-portfolio-overlay">
+            <h3>The Ember Residence</h3>
+            <span>Residential - Emirates Hills</span>
+          </div>
+        </div>
+        <div class="intdes-portfolio-card">
+          <img src="https://images.pexels.com/photos/972841/pexels-photo-972841.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Fine dining restaurant">
+          <div class="intdes-portfolio-overlay">
+            <h3>Nara Restaurant</h3>
+            <span>Hospitality - City Walk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Design Process Section -->
+  <section class="intdes-process" id="process">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">How We Work</span>
+        <h2 class="intdes-section-title">Our Design Process</h2>
+        <p class="intdes-section-subtitle">A seamless journey from initial vision to final reveal, guided by collaboration and creativity.</p>
+      </div>
+      <div class="intdes-process-grid">
+        <div class="intdes-process-step">
+          <div class="intdes-process-number">01</div>
+          <h3>Discovery</h3>
+          <p>We begin with an in-depth consultation to understand your lifestyle, aesthetic preferences, and functional needs for the space.</p>
+        </div>
+        <div class="intdes-process-step">
+          <div class="intdes-process-number">02</div>
+          <h3>Concept</h3>
+          <p>Our team develops mood boards, material palettes, and spatial layouts that bring your vision to life in vivid detail.</p>
+        </div>
+        <div class="intdes-process-step">
+          <div class="intdes-process-number">03</div>
+          <h3>Development</h3>
+          <p>Detailed drawings, 3D renderings, and procurement plans are created to ensure every element is perfectly coordinated.</p>
+        </div>
+        <div class="intdes-process-step">
+          <div class="intdes-process-number">04</div>
+          <h3>Installation</h3>
+          <p>We manage every detail of the implementation, from contractor coordination to final styling and the grand reveal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="intdes-services" id="services">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">What We Offer</span>
+        <h2 class="intdes-section-title">Our Services</h2>
+        <p class="intdes-section-subtitle">Comprehensive design solutions tailored to every type of space and every kind of client.</p>
+      </div>
+      <div class="intdes-services-grid">
+        <div class="intdes-service-card">
+          <div class="intdes-service-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-linecap="round" stroke-linejoin="round"/><polyline points="9 22 9 12 15 12 15 22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Residential Design</h3>
+          <p>Transform your home into a sanctuary that reflects your personal style and enhances daily living with beauty and comfort.</p>
+          <ul class="intdes-service-list">
+            <li>Full home interior design</li>
+            <li>Kitchen and bath renovation</li>
+            <li>Custom furniture selection</li>
+            <li>Lighting design</li>
+            <li>Art curation and styling</li>
+          </ul>
+        </div>
+        <div class="intdes-service-card">
+          <div class="intdes-service-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Commercial Spaces</h3>
+          <p>Create inspiring work environments and branded commercial interiors that boost productivity and leave lasting impressions.</p>
+          <ul class="intdes-service-list">
+            <li>Office design and planning</li>
+            <li>Retail and showroom spaces</li>
+            <li>Restaurant and hospitality</li>
+            <li>Brand environment design</li>
+            <li>Workspace optimization</li>
+          </ul>
+        </div>
+        <div class="intdes-service-card">
+          <div class="intdes-service-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Property Staging</h3>
+          <p>Professionally stage your property to maximize appeal and market value, creating spaces that buyers can envision as home.</p>
+          <ul class="intdes-service-list">
+            <li>Vacant property staging</li>
+            <li>Occupied home refresh</li>
+            <li>Model unit design</li>
+            <li>Virtual staging services</li>
+            <li>Pre-sale consultation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Before/After Section -->
+  <section class="intdes-beforeafter" id="beforeafter">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">Transformations</span>
+        <h2 class="intdes-section-title">Before &amp; After</h2>
+        <p class="intdes-section-subtitle">Witness the remarkable transformations that thoughtful design can achieve.</p>
+      </div>
+      <div class="intdes-ba-grid">
+        <div class="intdes-ba-item">
+          <div class="intdes-ba-images">
+            <img src="https://images.pexels.com/photos/6934233/pexels-photo-6934233.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Living room before">
+            <img src="https://images.pexels.com/photos/159839/office-home-house-desk-159839.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Living room after">
+            <span class="intdes-ba-label-before">Before</span>
+            <span class="intdes-ba-label-after">After</span>
+          </div>
+          <div class="intdes-ba-info">
+            <h3>Marina Living Room Revival</h3>
+            <p>A dated living space transformed into a contemporary haven with warm neutrals, custom millwork, and curated art pieces.</p>
+          </div>
+        </div>
+        <div class="intdes-ba-item">
+          <div class="intdes-ba-images">
+            <img src="https://images.pexels.com/photos/5582872/pexels-photo-5582872.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Master bedroom before">
+            <img src="https://images.pexels.com/photos/20285350/pexels-photo-20285350.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Master bedroom after">
+            <span class="intdes-ba-label-before">Before</span>
+            <span class="intdes-ba-label-after">After</span>
+          </div>
+          <div class="intdes-ba-info">
+            <h3>Palm Suite Master Bedroom</h3>
+            <p>An uninspiring bedroom reimagined as a luxurious retreat with bespoke headboard, layered textiles, and ambient lighting.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Awards Section -->
+  <section class="intdes-awards" id="awards">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">Recognition</span>
+        <h2 class="intdes-section-title">Awards &amp; Accolades</h2>
+        <p class="intdes-section-subtitle">Our commitment to design excellence has been recognized by leading industry organizations worldwide.</p>
+      </div>
+      <div class="intdes-awards-grid">
+        <div class="intdes-award-item">
+          <div class="intdes-award-year">2025</div>
+          <h3>Best Residential Interior</h3>
+          <p>International Design Awards</p>
+        </div>
+        <div class="intdes-award-item">
+          <div class="intdes-award-year">2024</div>
+          <h3>Commercial Space of the Year</h3>
+          <p>Middle East Design Council</p>
+        </div>
+        <div class="intdes-award-item">
+          <div class="intdes-award-year">2024</div>
+          <h3>Luxury Design Excellence</h3>
+          <p>Architectural Digest ME</p>
+        </div>
+        <div class="intdes-award-item">
+          <div class="intdes-award-year">2023</div>
+          <h3>Emerging Studio Award</h3>
+          <p>Elle Decor International</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="intdes-testimonials" id="testimonials">
+    <div class="intdes-container">
+      <div class="intdes-section-header">
+        <span class="intdes-section-label">Client Stories</span>
+        <h2 class="intdes-section-title">What Our Clients Say</h2>
+        <p class="intdes-section-subtitle">The relationships we build are as important as the spaces we create.</p>
+      </div>
+      <div class="intdes-testimonials-grid">
+        <div class="intdes-testimonial-card">
+          <p>Studio Atelier transformed our entire villa into something beyond what we imagined. Every detail was considered, from the texture of the fabrics to the placement of each light fixture.</p>
+          <div class="intdes-testimonial-author">
+            <img src="https://images.pexels.com/photos/26571206/pexels-photo-26571206.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Al Maktoum">
+            <div>
+              <div class="intdes-testimonial-name">Sarah Al Maktoum</div>
+              <div class="intdes-testimonial-role">Villa Owner, Emirates Hills</div>
+            </div>
+          </div>
+        </div>
+        <div class="intdes-testimonial-card">
+          <p>Their commercial design for our office completely changed how our team works and collaborates. The space feels energizing yet calm, and our clients are always impressed.</p>
+          <div class="intdes-testimonial-author">
+            <img src="https://images.pexels.com/photos/26571202/pexels-photo-26571202.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James Whitfield">
+            <div>
+              <div class="intdes-testimonial-name">James Whitfield</div>
+              <div class="intdes-testimonial-role">CEO, Vertex Capital</div>
+            </div>
+          </div>
+        </div>
+        <div class="intdes-testimonial-card">
+          <p>The staging they did for our development sold units 40% faster than projected. They understand how to create aspirational spaces that connect emotionally with buyers.</p>
+          <div class="intdes-testimonial-author">
+            <img src="https://images.pexels.com/photos/35128596/pexels-photo-35128596.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Layla Hassan">
+            <div>
+              <div class="intdes-testimonial-name">Layla Hassan</div>
+              <div class="intdes-testimonial-role">Director, Azure Properties</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Consultation CTA Section -->
+  <section class="intdes-cta" id="consultation">
+    <div class="intdes-container">
+      <div class="intdes-cta-grid">
+        <div class="intdes-cta-content">
+          <h2>Let's Create Something <em>Beautiful</em> Together</h2>
+          <p>Every great space begins with a conversation. Tell us about your project and let our team craft a design vision that exceeds your expectations. Your complimentary consultation is just a message away.</p>
+          <div style="display: flex; gap: 40px; margin-top: 8px;">
+            <div>
+              <div style="font-family: 'DM Serif Display', serif; font-size: 2rem; color: #a68b6b;">15+</div>
+              <div style="font-size: 0.78rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em;">Years Experience</div>
+            </div>
+            <div>
+              <div style="font-family: 'DM Serif Display', serif; font-size: 2rem; color: #a68b6b;">98%</div>
+              <div style="font-size: 0.78rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em;">Client Satisfaction</div>
+            </div>
+            <div>
+              <div style="font-family: 'DM Serif Display', serif; font-size: 2rem; color: #a68b6b;">35+</div>
+              <div style="font-size: 0.78rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em;">Design Awards</div>
+            </div>
+          </div>
+        </div>
+        <div class="intdes-cta-form">
+          <div class="intdes-form-row">
+            <div class="intdes-form-group">
+              <label>First Name</label>
+              <input type="text" placeholder="Your first name">
+            </div>
+            <div class="intdes-form-group">
+              <label>Last Name</label>
+              <input type="text" placeholder="Your last name">
+            </div>
+          </div>
+          <div class="intdes-form-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="you@example.com">
+          </div>
+          <div class="intdes-form-group">
+            <label>Phone Number</label>
+            <input type="tel" placeholder="+971 50 000 0000">
+          </div>
+          <div class="intdes-form-group">
+            <label>Service Interested In</label>
+            <select>
+              <option value="">Select a service</option>
+              <option value="residential">Residential Design</option>
+              <option value="commercial">Commercial Spaces</option>
+              <option value="staging">Property Staging</option>
+              <option value="consultation">Design Consultation</option>
+            </select>
+          </div>
+          <div class="intdes-form-group">
+            <label>Tell Us About Your Project</label>
+            <textarea placeholder="Describe your space, style preferences, and timeline..."></textarea>
+          </div>
+          <button class="intdes-form-submit">Book Free Consultation</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="intdes-footer">
+    <div class="intdes-container">
+      <div class="intdes-footer-grid">
+        <div class="intdes-footer-brand">
+          <span class="intdes-logo">Studio <span>Atelier</span></span>
+          <p>Creating timeless interiors that celebrate the art of living. Based in Dubai, designing spaces across the UAE and beyond.</p>
+        </div>
+        <div class="intdes-footer-col">
+          <h4>Services</h4>
+          <ul>
+            <li><a href="#">Residential Design</a></li>
+            <li><a href="#">Commercial Spaces</a></li>
+            <li><a href="#">Property Staging</a></li>
+            <li><a href="#">Design Consultation</a></li>
+            <li><a href="#">Furniture Sourcing</a></li>
+          </ul>
+        </div>
+        <div class="intdes-footer-col">
+          <h4>Studio</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Our Team</a></li>
+            <li><a href="#">Portfolio</a></li>
+            <li><a href="#">Press &amp; Media</a></li>
+            <li><a href="#">Careers</a></li>
+          </ul>
+        </div>
+        <div class="intdes-footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="#">Meydan Free Zone, Dubai</a></li>
+            <li><a href="#">+971 4 000 0000</a></li>
+            <li><a href="#">hello@studioatelier.ae</a></li>
+            <li><a href="#">Sun - Thu: 9AM - 6PM</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="intdes-footer-bottom">
+        <p>&copy; 2026 Studio Atelier. All rights reserved.</p>
+        <div class="intdes-footer-social">
+          <a href="#" aria-label="Instagram">
+            <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <a href="#" aria-label="Pinterest">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.182-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.425 1.808-2.425.853 0 1.265.64 1.265 1.408 0 .858-.546 2.14-.828 3.33-.236.995.5 1.807 1.48 1.807 1.778 0 3.144-1.874 3.144-4.58 0-2.393-1.72-4.068-4.177-4.068-2.845 0-4.515 2.135-4.515 4.34 0 .859.331 1.781.745 2.282a.3.3 0 0 1 .069.288l-.278 1.133c-.044.183-.145.222-.335.134-1.249-.581-2.03-2.407-2.03-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.22-5.19 6.22-1.013 0-1.965-.527-2.291-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
+          </a>
+          <a href="#" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          <a href="#" aria-label="Behance">
+            <svg viewBox="0 0 24 24"><path d="M22 7h-7V5h7v2zm1.726 10c-.442 1.297-2.029 3-5.101 3-3.074 0-5.564-1.729-5.564-5.675 0-3.91 2.325-5.92 5.466-5.92 3.082 0 4.964 1.782 5.375 4.426.078.506.109 1.188.095 2.14H15.97c.13 3.211 3.483 3.312 4.588 2.029h3.168zm-7.686-4h4.965c-.105-1.547-1.136-2.219-2.477-2.219-1.466 0-2.277.768-2.488 2.219zM9 15.023H5V20h3.923c1.586 0 3.277-.46 3.277-2.592C12.2 15.463 10.403 15.023 9 15.023zM5 4h3.528c1.142 0 2.772.329 2.772 2.2 0 1.564-.872 2.248-2.272 2.4V8.63C10.734 8.823 11.6 9.675 11.6 11.283c0 2.065-1.635 2.717-3.516 2.717H2V4h3z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>

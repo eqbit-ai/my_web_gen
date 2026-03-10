@@ -1,0 +1,1702 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap');
+
+/* ========== TRAVEL AGENCY RESET & BASE ========== */
+.trvl-wrapper * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.trvl-wrapper {
+  font-family: 'Nunito Sans', sans-serif;
+  color: #333;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.trvl-wrapper h1,
+.trvl-wrapper h2,
+.trvl-wrapper h3,
+.trvl-wrapper h4,
+.trvl-wrapper h5 {
+  font-family: 'Josefin Sans', sans-serif;
+  line-height: 1.3;
+  color: #0c2340;
+}
+
+.trvl-wrapper a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.trvl-wrapper img {
+  max-width: 100%;
+  display: block;
+}
+
+.trvl-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.trvl-section-title {
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #0c2340;
+}
+
+.trvl-section-subtitle {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 50px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.trvl-btn {
+  display: inline-block;
+  padding: 14px 36px;
+  border-radius: 50px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  letter-spacing: 0.5px;
+}
+
+.trvl-btn-primary {
+  background: #00b894;
+  color: #fff;
+}
+
+.trvl-btn-primary:hover {
+  background: #00a381;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 184, 148, 0.35);
+}
+
+.trvl-btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+.trvl-btn-outline:hover {
+  background: #fff;
+  color: #0c2340;
+}
+
+/* ========== NAVIGATION ========== */
+.trvl-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 20px 0;
+}
+
+.trvl-nav .trvl-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trvl-nav-logo {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.trvl-nav-logo span {
+  color: #00b894;
+}
+
+.trvl-nav-links {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+}
+
+.trvl-nav-links a {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.trvl-nav-links a:hover {
+  color: #00b894;
+}
+
+.trvl-nav-cta .trvl-btn {
+  padding: 10px 28px;
+  font-size: 0.9rem;
+}
+
+/* ========== HERO SECTION ========== */
+.trvl-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(12, 35, 64, 0.85), rgba(12, 35, 64, 0.6)),
+    url('https://images.pexels.com/photos/34429712/pexels-photo-34429712.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+  text-align: center;
+  padding: 120px 20px 80px;
+}
+
+.trvl-hero-content {
+  max-width: 800px;
+}
+
+.trvl-hero-badge {
+  display: inline-block;
+  background: rgba(0, 184, 148, 0.2);
+  color: #00b894;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  border: 1px solid rgba(0, 184, 148, 0.3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.trvl-hero h1 {
+  font-size: 3.8rem;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 20px;
+  line-height: 1.15;
+}
+
+.trvl-hero h1 span {
+  color: #00b894;
+}
+
+.trvl-hero-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Hero Search Bar */
+.trvl-search-bar {
+  display: flex;
+  background: #fff;
+  border-radius: 60px;
+  padding: 8px;
+  max-width: 700px;
+  margin: 0 auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.trvl-search-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-right: 1px solid #eee;
+}
+
+.trvl-search-field:last-of-type {
+  border-right: none;
+}
+
+.trvl-search-field label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0c2340;
+  letter-spacing: 1px;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.trvl-search-field input,
+.trvl-search-field select {
+  border: none;
+  outline: none;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+  background: transparent;
+  width: 100%;
+}
+
+.trvl-search-btn {
+  background: #00b894;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 32px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+}
+
+.trvl-search-btn:hover {
+  background: #00a381;
+}
+
+.trvl-hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin-top: 50px;
+}
+
+.trvl-hero-stat {
+  text-align: center;
+}
+
+.trvl-hero-stat-number {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #00b894;
+}
+
+.trvl-hero-stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+/* ========== POPULAR DESTINATIONS ========== */
+.trvl-destinations {
+  padding: 100px 0;
+  background: #f0faf7;
+}
+
+.trvl-destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.trvl-dest-card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.trvl-dest-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+.trvl-dest-card-img {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+
+.trvl-dest-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.trvl-dest-card:hover .trvl-dest-card-img img {
+  transform: scale(1.08);
+}
+
+.trvl-dest-card-duration {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(12, 35, 64, 0.85);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.trvl-dest-card-body {
+  padding: 24px;
+}
+
+.trvl-dest-card-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #00b894;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.trvl-dest-card-location svg {
+  width: 14px;
+  height: 14px;
+}
+
+.trvl-dest-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.trvl-dest-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eef5f2;
+}
+
+.trvl-dest-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f0a500;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.trvl-dest-card-price {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #00b894;
+}
+
+.trvl-dest-card-price span {
+  font-size: 0.8rem;
+  color: #999;
+  font-weight: 400;
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+/* ========== TOUR PACKAGES ========== */
+.trvl-packages {
+  padding: 100px 0;
+  background: #fff;
+}
+
+.trvl-packages-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.trvl-package-card {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e8f0ed;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.trvl-package-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(0, 184, 148, 0.1);
+}
+
+.trvl-package-card-featured {
+  border: 2px solid #00b894;
+  position: relative;
+}
+
+.trvl-package-featured-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #00b894;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+.trvl-package-img {
+  height: 240px;
+  overflow: hidden;
+}
+
+.trvl-package-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trvl-package-body {
+  padding: 30px;
+}
+
+.trvl-package-body h3 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+.trvl-package-body p {
+  color: #777;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+.trvl-package-features {
+  list-style: none;
+  margin-bottom: 24px;
+}
+
+.trvl-package-features li {
+  padding: 6px 0;
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trvl-package-features li::before {
+  content: "\2713";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: #e8f7f3;
+  color: #00b894;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.trvl-package-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid #eef5f2;
+}
+
+.trvl-package-price {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0c2340;
+}
+
+.trvl-package-price span {
+  font-size: 0.85rem;
+  color: #999;
+  font-weight: 400;
+  font-family: 'Nunito Sans', sans-serif;
+  display: block;
+}
+
+.trvl-package-book {
+  padding: 10px 28px;
+  font-size: 0.9rem;
+}
+
+/* ========== WHY TRAVEL WITH US ========== */
+.trvl-why {
+  padding: 100px 0;
+  background: #0c2340;
+}
+
+.trvl-why .trvl-section-title {
+  color: #fff;
+}
+
+.trvl-why .trvl-section-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.trvl-why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+.trvl-why-card {
+  text-align: center;
+  padding: 40px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease;
+}
+
+.trvl-why-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.trvl-why-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(0, 184, 148, 0.15);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.trvl-why-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: #00b894;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trvl-why-card h3 {
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.trvl-why-card p {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+/* ========== TRAVELER STORIES ========== */
+.trvl-stories {
+  padding: 100px 0;
+  background: #f0faf7;
+}
+
+.trvl-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.trvl-story-card {
+  background: #fff;
+  padding: 36px;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.trvl-story-card::before {
+  content: "\201C";
+  font-size: 5rem;
+  font-family: 'Josefin Sans', sans-serif;
+  color: #00b894;
+  position: absolute;
+  top: 16px;
+  right: 30px;
+  opacity: 0.15;
+  line-height: 1;
+}
+
+.trvl-story-stars {
+  color: #f0a500;
+  font-size: 1rem;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+.trvl-story-text {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+.trvl-story-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.trvl-story-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.trvl-story-name {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #0c2340;
+}
+
+.trvl-story-trip {
+  font-size: 0.8rem;
+  color: #00b894;
+  font-weight: 600;
+}
+
+/* ========== TRAVEL BLOG ========== */
+.trvl-blog {
+  padding: 100px 0;
+  background: #fff;
+}
+
+.trvl-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.trvl-blog-card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.trvl-blog-card:hover {
+  transform: translateY(-5px);
+}
+
+.trvl-blog-card-img {
+  height: 200px;
+  overflow: hidden;
+}
+
+.trvl-blog-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.trvl-blog-card:hover .trvl-blog-card-img img {
+  transform: scale(1.05);
+}
+
+.trvl-blog-card-body {
+  padding: 24px;
+}
+
+.trvl-blog-card-tag {
+  display: inline-block;
+  background: #e8f7f3;
+  color: #00b894;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.trvl-blog-card-body h3 {
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+  transition: color 0.3s ease;
+}
+
+.trvl-blog-card:hover .trvl-blog-card-body h3 {
+  color: #00b894;
+}
+
+.trvl-blog-card-body p {
+  color: #777;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.trvl-blog-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.trvl-blog-card-read {
+  color: #00b894;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.8rem;
+}
+
+/* ========== NEWSLETTER ========== */
+.trvl-newsletter {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #0c2340, #153d6a);
+  position: relative;
+  overflow: hidden;
+}
+
+.trvl-newsletter::before {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: rgba(0, 184, 148, 0.08);
+  border-radius: 50%;
+  top: -200px;
+  right: -100px;
+}
+
+.trvl-newsletter-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.trvl-newsletter h2 {
+  color: #fff;
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.trvl-newsletter p {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1.05rem;
+  margin-bottom: 36px;
+}
+
+.trvl-newsletter-form {
+  display: flex;
+  max-width: 520px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.trvl-newsletter-form input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 14px 24px;
+  color: #fff;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 0.95rem;
+}
+
+.trvl-newsletter-form input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.trvl-newsletter-form button {
+  background: #00b894;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 32px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+}
+
+.trvl-newsletter-form button:hover {
+  background: #00a381;
+}
+
+/* ========== CONTACT ========== */
+.trvl-contact {
+  padding: 100px 0;
+  background: #f0faf7;
+}
+
+.trvl-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+.trvl-contact-info h3 {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+}
+
+.trvl-contact-info > p {
+  color: #666;
+  margin-bottom: 32px;
+  font-size: 1rem;
+}
+
+.trvl-contact-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.trvl-contact-detail-icon {
+  width: 48px;
+  height: 48px;
+  background: #e8f7f3;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trvl-contact-detail-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #00b894;
+  fill: none;
+  stroke-width: 2;
+}
+
+.trvl-contact-detail h4 {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.trvl-contact-detail p {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.trvl-contact-form {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+}
+
+.trvl-contact-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.trvl-contact-form input,
+.trvl-contact-form select,
+.trvl-contact-form textarea {
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid #e0ebe7;
+  border-radius: 12px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 0.95rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.3s ease;
+  background: #fafffe;
+}
+
+.trvl-contact-form input:focus,
+.trvl-contact-form select:focus,
+.trvl-contact-form textarea:focus {
+  border-color: #00b894;
+}
+
+.trvl-contact-form textarea {
+  min-height: 120px;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.trvl-contact-form .trvl-btn {
+  width: 100%;
+  text-align: center;
+}
+
+/* ========== FOOTER ========== */
+.trvl-footer {
+  background: #0c2340;
+  padding: 80px 0 0;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.trvl-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  padding-bottom: 60px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trvl-footer-about {
+  max-width: 300px;
+}
+
+.trvl-footer-logo {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.trvl-footer-logo span {
+  color: #00b894;
+}
+
+.trvl-footer-about p {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.trvl-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.trvl-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.trvl-footer-social a:hover {
+  background: #00b894;
+}
+
+.trvl-footer-social svg {
+  width: 18px;
+  height: 18px;
+  fill: #fff;
+}
+
+.trvl-footer h4 {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+}
+
+.trvl-footer-links {
+  list-style: none;
+}
+
+.trvl-footer-links li {
+  margin-bottom: 12px;
+}
+
+.trvl-footer-links a {
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.trvl-footer-links a:hover {
+  color: #00b894;
+}
+
+.trvl-footer-bottom {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .trvl-hero h1 {
+    font-size: 2.8rem;
+  }
+
+  .trvl-destinations-grid,
+  .trvl-packages-grid,
+  .trvl-stories-grid,
+  .trvl-blog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trvl-why-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trvl-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .trvl-nav-links {
+    display: none;
+  }
+
+  .trvl-hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .trvl-section-title {
+    font-size: 1.8rem;
+  }
+
+  .trvl-search-bar {
+    flex-direction: column;
+    border-radius: 20px;
+  }
+
+  .trvl-search-field {
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding: 10px 16px;
+  }
+
+  .trvl-search-btn {
+    border-radius: 12px;
+    margin: 8px;
+  }
+
+  .trvl-hero-stats {
+    gap: 30px;
+  }
+
+  .trvl-hero-stat-number {
+    font-size: 1.6rem;
+  }
+
+  .trvl-destinations-grid,
+  .trvl-packages-grid,
+  .trvl-stories-grid,
+  .trvl-blog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trvl-why-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trvl-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trvl-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trvl-newsletter-form {
+    flex-direction: column;
+    border-radius: 16px;
+  }
+
+  .trvl-newsletter-form button {
+    border-radius: 12px;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .trvl-hero {
+    padding: 100px 16px 60px;
+  }
+
+  .trvl-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .trvl-hero-text {
+    font-size: 1rem;
+  }
+
+  .trvl-hero-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .trvl-contact-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .trvl-contact-form {
+    padding: 24px;
+  }
+}
+</style>
+
+<div class="trvl-wrapper">
+
+  <!-- Navigation -->
+  <nav class="trvl-nav">
+    <div class="trvl-container">
+      <div class="trvl-nav-logo">Voyage<span>Trails</span></div>
+      <ul class="trvl-nav-links">
+        <li><a href="#destinations">Destinations</a></li>
+        <li><a href="#packages">Packages</a></li>
+        <li><a href="#stories">Stories</a></li>
+        <li><a href="#blog">Blog</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="trvl-nav-cta">
+        <a href="#contact" class="trvl-btn trvl-btn-primary">Book Now</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="trvl-hero">
+    <div class="trvl-hero-content">
+      <div class="trvl-hero-badge">Adventure Awaits</div>
+      <h1>Discover the World's Most <span>Breathtaking</span> Destinations</h1>
+      <p class="trvl-hero-text">From untouched mountain peaks to pristine tropical beaches, we craft journeys that turn travel dreams into lifelong memories.</p>
+
+      <div class="trvl-search-bar">
+        <div class="trvl-search-field">
+          <label>Where</label>
+          <input type="text" placeholder="Search destinations...">
+        </div>
+        <div class="trvl-search-field">
+          <label>When</label>
+          <input type="text" placeholder="Select dates">
+        </div>
+        <div class="trvl-search-field">
+          <label>Guests</label>
+          <select>
+            <option>2 travelers</option>
+            <option>3 travelers</option>
+            <option>4 travelers</option>
+            <option>5+ travelers</option>
+          </select>
+        </div>
+        <button class="trvl-search-btn">Explore</button>
+      </div>
+
+      <div class="trvl-hero-stats">
+        <div class="trvl-hero-stat">
+          <div class="trvl-hero-stat-number">500+</div>
+          <div class="trvl-hero-stat-label">Destinations</div>
+        </div>
+        <div class="trvl-hero-stat">
+          <div class="trvl-hero-stat-number">12K+</div>
+          <div class="trvl-hero-stat-label">Happy Travelers</div>
+        </div>
+        <div class="trvl-hero-stat">
+          <div class="trvl-hero-stat-number">98%</div>
+          <div class="trvl-hero-stat-label">Satisfaction Rate</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Popular Destinations -->
+  <section class="trvl-destinations" id="destinations">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Popular Destinations</h2>
+      <p class="trvl-section-subtitle">Explore our handpicked selection of the world's most incredible places to visit this season.</p>
+
+      <div class="trvl-destinations-grid">
+        <!-- Card 1 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/35746669/pexels-photo-35746669.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Santorini, Greece">
+            <span class="trvl-dest-card-duration">5 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Greece
+            </div>
+            <h3>Santorini Island Escape</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9733; 4.9</div>
+              <div class="trvl-dest-card-price">$1,299 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/15796414/pexels-photo-15796414.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bali, Indonesia">
+            <span class="trvl-dest-card-duration">7 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Indonesia
+            </div>
+            <h3>Bali Tropical Paradise</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9733; 4.8</div>
+              <div class="trvl-dest-card-price">$1,149 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/32710269/pexels-photo-32710269.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Kyoto, Japan">
+            <span class="trvl-dest-card-duration">6 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Japan
+            </div>
+            <h3>Kyoto Cultural Journey</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9733; 4.9</div>
+              <div class="trvl-dest-card-price">$1,499 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/33448109/pexels-photo-33448109.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Patagonia, Argentina">
+            <span class="trvl-dest-card-duration">10 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Argentina
+            </div>
+            <h3>Patagonia Wilderness Trek</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9734; 4.7</div>
+              <div class="trvl-dest-card-price">$2,199 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/635052/pexels-photo-635052.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Marrakech, Morocco">
+            <span class="trvl-dest-card-duration">4 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Morocco
+            </div>
+            <h3>Marrakech Desert Adventure</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9733; 4.8</div>
+              <div class="trvl-dest-card-price">$899 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="trvl-dest-card">
+          <div class="trvl-dest-card-img">
+            <img src="https://images.pexels.com/photos/30037393/pexels-photo-30037393.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Iceland">
+            <span class="trvl-dest-card-duration">8 Days</span>
+          </div>
+          <div class="trvl-dest-card-body">
+            <div class="trvl-dest-card-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Iceland
+            </div>
+            <h3>Iceland Northern Lights</h3>
+            <div class="trvl-dest-card-meta">
+              <div class="trvl-dest-card-rating">&#9733;&#9733;&#9733;&#9733;&#9733; 5.0</div>
+              <div class="trvl-dest-card-price">$1,799 <span>/ person</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tour Packages -->
+  <section class="trvl-packages" id="packages">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Featured Tour Packages</h2>
+      <p class="trvl-section-subtitle">All-inclusive packages designed for the ultimate travel experience. Just pack your bags and go.</p>
+
+      <div class="trvl-packages-grid">
+        <!-- Package 1 -->
+        <div class="trvl-package-card">
+          <div class="trvl-package-img">
+            <img src="https://images.pexels.com/photos/27786306/pexels-photo-27786306.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Explorer Package">
+          </div>
+          <div class="trvl-package-body">
+            <h3>Explorer Package</h3>
+            <p>Perfect for solo travelers and couples seeking authentic cultural experiences off the beaten path.</p>
+            <ul class="trvl-package-features">
+              <li>4-star hotel accommodation</li>
+              <li>Daily breakfast included</li>
+              <li>Guided city tours</li>
+              <li>Airport transfers</li>
+            </ul>
+            <div class="trvl-package-footer">
+              <div class="trvl-package-price">$899 <span>per person</span></div>
+              <a href="#contact" class="trvl-btn trvl-btn-primary trvl-package-book">Book</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Package 2 (Featured) -->
+        <div class="trvl-package-card trvl-package-card-featured">
+          <span class="trvl-package-featured-badge">Most Popular</span>
+          <div class="trvl-package-img">
+            <img src="https://images.pexels.com/photos/14749797/pexels-photo-14749797.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Adventurer Package">
+          </div>
+          <div class="trvl-package-body">
+            <h3>Adventurer Package</h3>
+            <p>Our best-selling package with thrilling activities and luxury stays for the ultimate adventure seeker.</p>
+            <ul class="trvl-package-features">
+              <li>5-star resort accommodation</li>
+              <li>All meals included</li>
+              <li>Adventure activities daily</li>
+              <li>Private guide & transport</li>
+              <li>Travel insurance included</li>
+            </ul>
+            <div class="trvl-package-footer">
+              <div class="trvl-package-price">$1,699 <span>per person</span></div>
+              <a href="#contact" class="trvl-btn trvl-btn-primary trvl-package-book">Book</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Package 3 -->
+        <div class="trvl-package-card">
+          <div class="trvl-package-img">
+            <img src="https://images.pexels.com/photos/18771876/pexels-photo-18771876.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury Package">
+          </div>
+          <div class="trvl-package-body">
+            <h3>Luxury Retreat</h3>
+            <p>Indulge in world-class luxury with private villas, spa treatments, and gourmet dining experiences.</p>
+            <ul class="trvl-package-features">
+              <li>Private villa accommodation</li>
+              <li>Personal chef & butler</li>
+              <li>Spa & wellness sessions</li>
+              <li>Yacht & helicopter tours</li>
+              <li>VIP concierge service</li>
+            </ul>
+            <div class="trvl-package-footer">
+              <div class="trvl-package-price">$3,499 <span>per person</span></div>
+              <a href="#contact" class="trvl-btn trvl-btn-primary trvl-package-book">Book</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Travel With Us -->
+  <section class="trvl-why">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Why Travel With Us</h2>
+      <p class="trvl-section-subtitle">We go above and beyond to create extraordinary travel experiences that last a lifetime.</p>
+
+      <div class="trvl-why-grid">
+        <div class="trvl-why-card">
+          <div class="trvl-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3>Curated Destinations</h3>
+          <p>Every destination is carefully selected and personally vetted by our team of travel experts who know the world inside out.</p>
+        </div>
+
+        <div class="trvl-why-card">
+          <div class="trvl-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>Expert Local Guides</h3>
+          <p>Our passionate local guides bring destinations alive with authentic stories, hidden gems, and insider knowledge.</p>
+        </div>
+
+        <div class="trvl-why-card">
+          <div class="trvl-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Best Price Guarantee</h3>
+          <p>We match any competitor's price and offer exclusive deals you will not find anywhere else. No hidden fees, ever.</p>
+        </div>
+
+        <div class="trvl-why-card">
+          <div class="trvl-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <h3>24/7 Support</h3>
+          <p>Travel worry-free knowing our dedicated support team is always just one call away, no matter your time zone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Traveler Stories -->
+  <section class="trvl-stories" id="stories">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Traveler Stories</h2>
+      <p class="trvl-section-subtitle">Real experiences from real travelers who explored the world with VoyageTrails.</p>
+
+      <div class="trvl-stories-grid">
+        <div class="trvl-story-card">
+          <div class="trvl-story-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="trvl-story-text">"Our trip to Bali was absolutely magical. Every detail was taken care of, from the stunning villa to the incredible temple visits. VoyageTrails made our honeymoon unforgettable."</p>
+          <div class="trvl-story-author">
+            <img src="https://images.pexels.com/photos/587838/pexels-photo-587838.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Mitchell" class="trvl-story-avatar">
+            <div>
+              <div class="trvl-story-name">Sarah Mitchell</div>
+              <div class="trvl-story-trip">Bali, Indonesia</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="trvl-story-card">
+          <div class="trvl-story-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="trvl-story-text">"The Patagonia trek exceeded all expectations. Our guide was incredibly knowledgeable and the landscapes were beyond breathtaking. Already planning our next trip!"</p>
+          <div class="trvl-story-author">
+            <img src="https://images.pexels.com/photos/25328674/pexels-photo-25328674.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James Rodriguez" class="trvl-story-avatar">
+            <div>
+              <div class="trvl-story-name">James Rodriguez</div>
+              <div class="trvl-story-trip">Patagonia, Argentina</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="trvl-story-card">
+          <div class="trvl-story-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="trvl-story-text">"Seeing the Northern Lights in Iceland was a dream come true. The itinerary was perfectly balanced between adventure and relaxation. Five stars all the way!"</p>
+          <div class="trvl-story-author">
+            <img src="https://images.pexels.com/photos/7780136/pexels-photo-7780136.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Emma Larsson" class="trvl-story-avatar">
+            <div>
+              <div class="trvl-story-name">Emma Larsson</div>
+              <div class="trvl-story-trip">Reykjavik, Iceland</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Travel Blog -->
+  <section class="trvl-blog" id="blog">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Travel Blog</h2>
+      <p class="trvl-section-subtitle">Tips, guides, and inspiration to fuel your next adventure around the globe.</p>
+
+      <div class="trvl-blog-grid">
+        <div class="trvl-blog-card">
+          <div class="trvl-blog-card-img">
+            <img src="https://images.pexels.com/photos/10305559/pexels-photo-10305559.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Blog Post 1">
+          </div>
+          <div class="trvl-blog-card-body">
+            <span class="trvl-blog-card-tag">Travel Tips</span>
+            <h3>10 Essential Packing Hacks Every Traveler Should Know</h3>
+            <p>Master the art of packing light without leaving behind the essentials for your next adventure.</p>
+            <div class="trvl-blog-card-footer">
+              <span>March 1, 2026</span>
+              <span class="trvl-blog-card-read">Read More</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="trvl-blog-card">
+          <div class="trvl-blog-card-img">
+            <img src="https://images.pexels.com/photos/18387847/pexels-photo-18387847.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Blog Post 2">
+          </div>
+          <div class="trvl-blog-card-body">
+            <span class="trvl-blog-card-tag">Destinations</span>
+            <h3>Hidden Gems of Southeast Asia You Need to Visit</h3>
+            <p>Skip the tourist traps and discover the secret spots that locals love across Southeast Asia.</p>
+            <div class="trvl-blog-card-footer">
+              <span>February 22, 2026</span>
+              <span class="trvl-blog-card-read">Read More</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="trvl-blog-card">
+          <div class="trvl-blog-card-img">
+            <img src="https://images.pexels.com/photos/33448093/pexels-photo-33448093.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Blog Post 3">
+          </div>
+          <div class="trvl-blog-card-body">
+            <span class="trvl-blog-card-tag">Adventure</span>
+            <h3>A Complete Guide to Trekking the Inca Trail</h3>
+            <p>Everything you need to know about this iconic trek, from permits and training to what to expect.</p>
+            <div class="trvl-blog-card-footer">
+              <span>February 15, 2026</span>
+              <span class="trvl-blog-card-read">Read More</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="trvl-newsletter">
+    <div class="trvl-container">
+      <div class="trvl-newsletter-inner">
+        <h2>Get Travel Deals & Inspiration</h2>
+        <p>Subscribe to our newsletter and receive exclusive offers, destination guides, and travel tips straight to your inbox.</p>
+        <form class="trvl-newsletter-form" onsubmit="return false;">
+          <input type="email" placeholder="Enter your email address">
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="trvl-contact" id="contact">
+    <div class="trvl-container">
+      <h2 class="trvl-section-title">Plan Your Adventure</h2>
+      <p class="trvl-section-subtitle">Ready to explore? Get in touch and let us craft the perfect journey for you.</p>
+
+      <div class="trvl-contact-grid">
+        <div class="trvl-contact-info">
+          <h3>Let's Start Your Journey</h3>
+          <p>Whether you have a dream destination in mind or need inspiration, our travel experts are here to help you every step of the way.</p>
+
+          <div class="trvl-contact-detail">
+            <div class="trvl-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <h4>Visit Our Office</h4>
+              <p>123 Adventure Lane, Meydan Free Zone<br>Dubai, United Arab Emirates</p>
+            </div>
+          </div>
+
+          <div class="trvl-contact-detail">
+            <div class="trvl-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div>
+              <h4>Call Us</h4>
+              <p>+971 4 123 4567<br>+971 50 987 6543</p>
+            </div>
+          </div>
+
+          <div class="trvl-contact-detail">
+            <div class="trvl-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div>
+              <h4>Email Us</h4>
+              <p>hello@voyagetrails.com<br>bookings@voyagetrails.com</p>
+            </div>
+          </div>
+        </div>
+
+        <form class="trvl-contact-form" onsubmit="return false;">
+          <div class="trvl-contact-form-row">
+            <input type="text" placeholder="First Name">
+            <input type="text" placeholder="Last Name">
+          </div>
+          <div class="trvl-contact-form-row">
+            <input type="email" placeholder="Email Address">
+            <input type="tel" placeholder="Phone Number">
+          </div>
+          <div style="margin-bottom: 16px;">
+            <select>
+              <option value="" disabled selected>Select Destination</option>
+              <option>Greece - Santorini</option>
+              <option>Indonesia - Bali</option>
+              <option>Japan - Kyoto</option>
+              <option>Argentina - Patagonia</option>
+              <option>Morocco - Marrakech</option>
+              <option>Iceland - Northern Lights</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <textarea placeholder="Tell us about your dream trip..."></textarea>
+          <button type="submit" class="trvl-btn trvl-btn-primary">Send Inquiry</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="trvl-footer">
+    <div class="trvl-container">
+      <div class="trvl-footer-grid">
+        <div class="trvl-footer-about">
+          <div class="trvl-footer-logo">Voyage<span>Trails</span></div>
+          <p>Creating extraordinary travel experiences since 2010. We believe every journey should inspire, enrich, and transform the way you see the world.</p>
+          <div class="trvl-footer-social">
+            <a href="#">
+              <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="#fff" stroke-width="2"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" fill="#fff"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+            </a>
+            <a href="#">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 2a2 2 0 110 4 2 2 0 010-4z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Quick Links</h4>
+          <ul class="trvl-footer-links">
+            <li><a href="#destinations">Destinations</a></li>
+            <li><a href="#packages">Tour Packages</a></li>
+            <li><a href="#stories">Testimonials</a></li>
+            <li><a href="#blog">Travel Blog</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Top Destinations</h4>
+          <ul class="trvl-footer-links">
+            <li><a href="#">Santorini, Greece</a></li>
+            <li><a href="#">Bali, Indonesia</a></li>
+            <li><a href="#">Kyoto, Japan</a></li>
+            <li><a href="#">Patagonia, Argentina</a></li>
+            <li><a href="#">Iceland</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Support</h4>
+          <ul class="trvl-footer-links">
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Travel Insurance</a></li>
+            <li><a href="#">Booking Policy</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="trvl-footer-bottom">
+        <p>2026 VoyageTrails. All rights reserved. Crafted with passion for travel.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

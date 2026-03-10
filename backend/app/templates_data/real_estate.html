@@ -1,0 +1,1543 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --navy: #0a1628;
+  --navy-light: #132038;
+  --gold: #c5a55a;
+  --gold-light: #d4b96e;
+  --gold-dark: #a8893e;
+  --white: #ffffff;
+  --off-white: #f8f7f4;
+  --gray-100: #f1f0ed;
+  --gray-300: #d1d0cd;
+  --gray-500: #8a8984;
+  --gray-700: #4a4a48;
+  --text-dark: #1a1a1a;
+  --shadow-sm: 0 2px 8px rgba(10, 22, 40, 0.08);
+  --shadow-md: 0 4px 20px rgba(10, 22, 40, 0.12);
+  --shadow-lg: 0 8px 40px rgba(10, 22, 40, 0.16);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.re-template {
+  font-family: 'Montserrat', sans-serif;
+  color: var(--text-dark);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.re-template h1, .re-template h2, .re-template h3, .re-template h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.re-template img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.re-template a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.re-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ---- ANIMATIONS ---- */
+.re-fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.re-fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.re-fade-in-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.re-fade-in-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.re-fade-in-right {
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.re-fade-in-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---- NAVBAR ---- */
+.re-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 18px 0;
+  transition: var(--transition);
+  background: transparent;
+}
+.re-navbar.scrolled {
+  background: var(--navy);
+  padding: 12px 0;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+.re-navbar .re-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.re-nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 1px;
+}
+.re-nav-logo span {
+  color: var(--gold);
+}
+.re-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+.re-nav-links a {
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: var(--transition);
+  position: relative;
+}
+.re-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gold);
+  transition: var(--transition);
+}
+.re-nav-links a:hover {
+  color: var(--gold);
+}
+.re-nav-links a:hover::after {
+  width: 100%;
+}
+.re-nav-cta {
+  background: var(--gold) !important;
+  color: var(--navy) !important;
+  padding: 10px 24px;
+  border-radius: 2px;
+  font-weight: 600 !important;
+  letter-spacing: 1px;
+}
+.re-nav-cta::after {
+  display: none !important;
+}
+.re-nav-cta:hover {
+  background: var(--gold-light) !important;
+  color: var(--navy) !important;
+}
+.re-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+.re-hamburger span {
+  width: 26px;
+  height: 2px;
+  background: var(--white);
+  transition: var(--transition);
+}
+
+/* ---- HERO ---- */
+.re-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(10,22,40,0.85), rgba(10,22,40,0.6)),
+    url('https://images.pexels.com/photos/17174768/pexels-photo-17174768.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
+  text-align: center;
+  color: var(--white);
+}
+.re-hero-content {
+  max-width: 820px;
+  padding: 0 20px;
+}
+.re-hero-tagline {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+.re-hero h1 {
+  font-size: 64px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+.re-hero h1 span {
+  color: var(--gold);
+}
+.re-hero-sub {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 40px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Hero Search Bar */
+.re-hero-search {
+  background: var(--white);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 760px;
+  margin: 0 auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.re-search-field {
+  flex: 1;
+  padding: 14px 18px;
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  background: transparent;
+  min-width: 0;
+}
+.re-search-field::placeholder {
+  color: var(--gray-500);
+}
+.re-search-select {
+  padding: 14px 18px;
+  border: none;
+  border-left: 1px solid var(--gray-300);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  color: var(--gray-700);
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 140px;
+}
+.re-search-btn {
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  padding: 14px 32px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.re-search-btn:hover {
+  background: var(--gold-dark);
+}
+
+/* ---- SECTION COMMON ---- */
+.re-section {
+  padding: 100px 0;
+}
+.re-section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+.re-section-header .re-overline {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+  display: block;
+}
+.re-section-header h2 {
+  font-size: 44px;
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+.re-section-header p {
+  font-size: 16px;
+  color: var(--gray-500);
+  max-width: 560px;
+  margin: 0 auto;
+}
+.re-section-dark {
+  background: var(--navy);
+  color: var(--white);
+}
+.re-section-dark .re-section-header h2 {
+  color: var(--white);
+}
+.re-section-dark .re-section-header p {
+  color: rgba(255,255,255,0.6);
+}
+.re-section-alt {
+  background: var(--off-white);
+}
+
+/* ---- FEATURED PROPERTIES ---- */
+.re-properties-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+.re-property-card {
+  background: var(--white);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.re-property-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px);
+}
+.re-property-img {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+.re-property-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.re-property-card:hover .re-property-img img {
+  transform: scale(1.05);
+}
+.re-property-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--gold);
+  color: var(--navy);
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+.re-property-price {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--navy);
+  color: var(--white);
+  padding: 8px 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.re-property-info {
+  padding: 24px;
+}
+.re-property-title {
+  font-size: 22px;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.re-property-location {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.re-property-location svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--gold);
+}
+.re-property-details {
+  display: flex;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+.re-property-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+.re-property-detail svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--gold);
+  fill: none;
+  stroke-width: 2;
+}
+.re-property-cta {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+  padding: 12px;
+  background: var(--navy);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  transition: var(--transition);
+}
+.re-property-cta:hover {
+  background: var(--gold);
+  color: var(--navy);
+}
+.re-view-all {
+  display: block;
+  text-align: center;
+  margin-top: 50px;
+}
+.re-view-all a {
+  display: inline-block;
+  padding: 14px 40px;
+  border: 2px solid var(--gold);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+.re-view-all a:hover {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+/* ---- WHY CHOOSE US ---- */
+.re-why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+.re-why-card {
+  text-align: center;
+  padding: 40px 24px;
+  border-radius: 4px;
+  transition: var(--transition);
+  border: 1px solid var(--gray-100);
+  background: var(--white);
+}
+.re-why-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+.re-why-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  background: rgba(197,165,90,0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.re-why-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--gold);
+  fill: none;
+  stroke-width: 1.8;
+}
+.re-why-card h3 {
+  font-size: 22px;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+.re-why-card p {
+  font-size: 14px;
+  color: var(--gray-500);
+  line-height: 1.7;
+}
+
+/* ---- SERVICES ---- */
+.re-services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+.re-service-card {
+  position: relative;
+  height: 380px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.re-service-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.re-service-card:hover img {
+  transform: scale(1.08);
+}
+.re-service-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10,22,40,0.9) 0%, rgba(10,22,40,0.2) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px;
+  transition: var(--transition);
+}
+.re-service-card:hover .re-service-overlay {
+  background: linear-gradient(to top, rgba(10,22,40,0.95) 0%, rgba(10,22,40,0.4) 100%);
+}
+.re-service-overlay h3 {
+  font-size: 26px;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.re-service-overlay p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 16px;
+}
+.re-service-link {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+.re-service-link:hover {
+  gap: 14px;
+}
+
+/* ---- TESTIMONIALS ---- */
+.re-testimonials-slider {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+.re-testimonial-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 40px 32px;
+  transition: var(--transition);
+}
+.re-testimonial-card:hover {
+  border-color: var(--gold);
+  background: rgba(197,165,90,0.05);
+}
+.re-testimonial-stars {
+  color: var(--gold);
+  font-size: 16px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+.re-testimonial-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 24px;
+  font-style: italic;
+}
+.re-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.re-testimonial-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold);
+}
+.re-testimonial-name {
+  font-weight: 600;
+  color: var(--white);
+  font-size: 15px;
+}
+.re-testimonial-role {
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ---- STATS ---- */
+.re-stats {
+  background: linear-gradient(135deg, rgba(10,22,40,0.92), rgba(10,22,40,0.85)),
+    url('https://images.pexels.com/photos/32418264/pexels-photo-32418264.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat fixed;
+  padding: 80px 0;
+}
+.re-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  text-align: center;
+}
+.re-stat-item {
+  padding: 20px;
+}
+.re-stat-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.re-stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ---- TEAM ---- */
+.re-team-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+.re-agent-card {
+  text-align: center;
+  background: var(--white);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.re-agent-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+.re-agent-img {
+  height: 300px;
+  overflow: hidden;
+}
+.re-agent-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+.re-agent-card:hover .re-agent-img img {
+  transform: scale(1.05);
+}
+.re-agent-info {
+  padding: 24px;
+}
+.re-agent-info h3 {
+  font-size: 22px;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.re-agent-info p {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+.re-agent-socials {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.re-agent-socials a {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gray-300);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.re-agent-socials a:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.re-agent-socials svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--gray-700);
+}
+.re-agent-socials a:hover svg {
+  fill: var(--navy);
+}
+
+/* ---- CONTACT ---- */
+.re-contact-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+.re-contact-info h2 {
+  font-size: 40px;
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+.re-contact-info > p {
+  font-size: 15px;
+  color: var(--gray-500);
+  margin-bottom: 36px;
+  line-height: 1.7;
+}
+.re-contact-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.re-contact-detail-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(197,165,90,0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.re-contact-detail-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--gold);
+  fill: none;
+  stroke-width: 2;
+}
+.re-contact-detail h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.re-contact-detail p {
+  font-size: 14px;
+  color: var(--gray-500);
+}
+.re-contact-form {
+  background: var(--white);
+  padding: 40px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-md);
+}
+.re-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.re-form-group {
+  margin-bottom: 16px;
+}
+.re-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gray-700);
+  margin-bottom: 8px;
+}
+.re-form-group input,
+.re-form-group select,
+.re-form-group textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--gray-300);
+  border-radius: 2px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  color: var(--text-dark);
+  transition: var(--transition);
+  background: var(--white);
+}
+.re-form-group input:focus,
+.re-form-group select:focus,
+.re-form-group textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(197,165,90,0.15);
+}
+.re-form-group textarea {
+  height: 120px;
+  resize: vertical;
+}
+.re-form-submit {
+  width: 100%;
+  padding: 16px;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: var(--transition);
+}
+.re-form-submit:hover {
+  background: var(--gold-dark);
+}
+
+/* ---- FOOTER ---- */
+.re-footer {
+  background: var(--navy);
+  color: var(--white);
+  padding: 80px 0 0;
+}
+.re-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  padding-bottom: 60px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.re-footer-brand h3 {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+.re-footer-brand h3 span {
+  color: var(--gold);
+}
+.re-footer-brand p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.re-footer-socials {
+  display: flex;
+  gap: 12px;
+}
+.re-footer-socials a {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.re-footer-socials a:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.re-footer-socials svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--white);
+}
+.re-footer-socials a:hover svg {
+  fill: var(--navy);
+}
+.re-footer-col h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.re-footer-col ul {
+  list-style: none;
+}
+.re-footer-col ul li {
+  margin-bottom: 12px;
+}
+.re-footer-col ul a {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  transition: var(--transition);
+}
+.re-footer-col ul a:hover {
+  color: var(--gold);
+  padding-left: 4px;
+}
+.re-footer-bottom {
+  padding: 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 1024px) {
+  .re-hero h1 { font-size: 48px; }
+  .re-section-header h2 { font-size: 36px; }
+  .re-properties-grid { grid-template-columns: repeat(2, 1fr); }
+  .re-why-grid { grid-template-columns: repeat(2, 1fr); }
+  .re-services-grid { grid-template-columns: repeat(2, 1fr); }
+  .re-testimonials-slider { grid-template-columns: repeat(2, 1fr); }
+  .re-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+  .re-team-grid { grid-template-columns: repeat(2, 1fr); }
+  .re-footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .re-nav-links { display: none; }
+  .re-hamburger { display: flex; }
+  .re-nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: var(--navy);
+    padding: 20px;
+    gap: 16px;
+    box-shadow: var(--shadow-lg);
+  }
+  .re-hero { min-height: 600px; }
+  .re-hero h1 { font-size: 36px; }
+  .re-hero-sub { font-size: 16px; }
+  .re-hero-search { flex-direction: column; }
+  .re-search-select { border-left: none; border-top: 1px solid var(--gray-300); }
+  .re-search-btn { width: 100%; }
+  .re-properties-grid { grid-template-columns: 1fr; }
+  .re-why-grid { grid-template-columns: 1fr; }
+  .re-services-grid { grid-template-columns: 1fr; }
+  .re-testimonials-slider { grid-template-columns: 1fr; }
+  .re-stats-grid { grid-template-columns: 1fr 1fr; }
+  .re-team-grid { grid-template-columns: 1fr 1fr; }
+  .re-contact-wrapper { grid-template-columns: 1fr; }
+  .re-footer-grid { grid-template-columns: 1fr; }
+  .re-footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+  .re-section { padding: 60px 0; }
+  .re-stat-number { font-size: 42px; }
+}
+
+@media (max-width: 480px) {
+  .re-hero h1 { font-size: 28px; }
+  .re-section-header h2 { font-size: 28px; }
+  .re-form-row { grid-template-columns: 1fr; }
+  .re-team-grid { grid-template-columns: 1fr; }
+  .re-stats-grid { grid-template-columns: 1fr; }
+  .re-contact-form { padding: 24px; }
+}
+</style>
+
+<div class="re-template">
+
+  <!-- NAVBAR -->
+  <nav class="re-navbar">
+    <div class="re-container">
+      <a href="#" class="re-nav-logo">Prestige <span>Estates</span></a>
+      <ul class="re-nav-links" id="reNavLinks">
+        <li><a href="#properties">Properties</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#team">Team</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="#contact" class="re-nav-cta">Book Viewing</a></li>
+      </ul>
+      <button class="re-hamburger" id="reHamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="re-hero">
+    <div class="re-hero-content">
+      <p class="re-hero-tagline re-fade-in">Dubai's Premier Real Estate Agency</p>
+      <h1 class="re-fade-in">Find Your <span>Dream Home</span> in Dubai</h1>
+      <p class="re-hero-sub re-fade-in">Discover an exclusive collection of luxury properties across Dubai's most prestigious communities. Where elegance meets modern living.</p>
+      <div class="re-hero-search re-fade-in">
+        <input type="text" class="re-search-field" placeholder="Search by location, community, or property type...">
+        <select class="re-search-select">
+          <option>Buy</option>
+          <option>Rent</option>
+          <option>Off-Plan</option>
+        </select>
+        <select class="re-search-select">
+          <option>All Types</option>
+          <option>Villa</option>
+          <option>Apartment</option>
+          <option>Penthouse</option>
+          <option>Townhouse</option>
+        </select>
+        <button class="re-search-btn">Search</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PROPERTIES -->
+  <section class="re-section" id="properties">
+    <div class="re-container">
+      <div class="re-section-header re-fade-in">
+        <span class="re-overline">Exclusive Listings</span>
+        <h2>Featured Properties</h2>
+        <p>Hand-picked luxury residences in Dubai's most sought-after addresses</p>
+      </div>
+      <div class="re-properties-grid">
+
+        <div class="re-property-card re-fade-in">
+          <div class="re-property-img">
+            <img src="https://images.pexels.com/photos/26571206/pexels-photo-26571206.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Luxury Villa in Palm Jumeirah">
+            <span class="re-property-badge">Featured</span>
+            <span class="re-property-price">AED 25,000,000</span>
+          </div>
+          <div class="re-property-info">
+            <h3 class="re-property-title">Grand Villa, Palm Jumeirah</h3>
+            <p class="re-property-location">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+              Palm Jumeirah, Dubai
+            </p>
+            <div class="re-property-details">
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M3 12h2v7H3zm16 0h2v7h-2zM2 12h20M7 12V7a5 5 0 0110 0v5"/></svg> 6 Beds</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 011 1v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a1 1 0 011-1zM6 12V5a2 2 0 012-2h3a2 2 0 012 2v7"/></svg> 7 Baths</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg> 12,500 sqft</span>
+            </div>
+            <a href="#" class="re-property-cta">View Property</a>
+          </div>
+        </div>
+
+        <div class="re-property-card re-fade-in">
+          <div class="re-property-img">
+            <img src="https://images.pexels.com/photos/4030908/pexels-photo-4030908.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Penthouse Downtown Dubai">
+            <span class="re-property-badge">New</span>
+            <span class="re-property-price">AED 18,500,000</span>
+          </div>
+          <div class="re-property-info">
+            <h3 class="re-property-title">Sky Penthouse, Downtown</h3>
+            <p class="re-property-location">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+              Downtown Dubai, Burj Khalifa District
+            </p>
+            <div class="re-property-details">
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M3 12h2v7H3zm16 0h2v7h-2zM2 12h20M7 12V7a5 5 0 0110 0v5"/></svg> 4 Beds</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 011 1v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a1 1 0 011-1zM6 12V5a2 2 0 012-2h3a2 2 0 012 2v7"/></svg> 5 Baths</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg> 8,200 sqft</span>
+            </div>
+            <a href="#" class="re-property-cta">View Property</a>
+          </div>
+        </div>
+
+        <div class="re-property-card re-fade-in">
+          <div class="re-property-img">
+            <img src="https://images.pexels.com/photos/6782578/pexels-photo-6782578.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Modern Villa Emirates Hills">
+            <span class="re-property-badge">Exclusive</span>
+            <span class="re-property-price">AED 35,000,000</span>
+          </div>
+          <div class="re-property-info">
+            <h3 class="re-property-title">Estate Villa, Emirates Hills</h3>
+            <p class="re-property-location">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+              Emirates Hills, Dubai
+            </p>
+            <div class="re-property-details">
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M3 12h2v7H3zm16 0h2v7h-2zM2 12h20M7 12V7a5 5 0 0110 0v5"/></svg> 7 Beds</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 011 1v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a1 1 0 011-1zM6 12V5a2 2 0 012-2h3a2 2 0 012 2v7"/></svg> 8 Baths</span>
+              <span class="re-property-detail"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg> 18,000 sqft</span>
+            </div>
+            <a href="#" class="re-property-cta">View Property</a>
+          </div>
+        </div>
+
+      </div>
+      <div class="re-view-all re-fade-in">
+        <a href="#">View All Properties</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY CHOOSE US -->
+  <section class="re-section re-section-alt" id="about">
+    <div class="re-container">
+      <div class="re-section-header re-fade-in">
+        <span class="re-overline">Why Choose Us</span>
+        <h2>The Prestige Difference</h2>
+        <p>Unmatched expertise and personalized service in Dubai's luxury real estate market</p>
+      </div>
+      <div class="re-why-grid">
+        <div class="re-why-card re-fade-in">
+          <div class="re-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Trusted Advisors</h3>
+          <p>Over 15 years of experience guiding clients through Dubai's dynamic property market with integrity and transparency.</p>
+        </div>
+        <div class="re-why-card re-fade-in">
+          <div class="re-why-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <h3>Global Network</h3>
+          <p>Connected to an international network of high-net-worth buyers and investors across 40+ countries worldwide.</p>
+        </div>
+        <div class="re-why-card re-fade-in">
+          <div class="re-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3>Premium Portfolio</h3>
+          <p>Exclusive access to off-market listings and pre-launch developments in Dubai's most prestigious communities.</p>
+        </div>
+        <div class="re-why-card re-fade-in">
+          <div class="re-why-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <h3>White-Glove Service</h3>
+          <p>Dedicated relationship managers providing end-to-end support from property search to post-purchase concierge services.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="re-section" id="services">
+    <div class="re-container">
+      <div class="re-section-header re-fade-in">
+        <span class="re-overline">What We Offer</span>
+        <h2>Our Services</h2>
+        <p>Comprehensive real estate solutions tailored to your needs</p>
+      </div>
+      <div class="re-services-grid">
+        <div class="re-service-card re-fade-in">
+          <img src="https://images.pexels.com/photos/3655906/pexels-photo-3655906.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Property Sales">
+          <div class="re-service-overlay">
+            <h3>Property Sales</h3>
+            <p>Expert guidance in buying and selling luxury residential and commercial properties across Dubai.</p>
+            <a href="#" class="re-service-link">Learn More &rarr;</a>
+          </div>
+        </div>
+        <div class="re-service-card re-fade-in">
+          <img src="https://images.pexels.com/photos/5186796/pexels-photo-5186796.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Property Management">
+          <div class="re-service-overlay">
+            <h3>Property Management</h3>
+            <p>Full-service property management including tenant placement, maintenance, and financial reporting.</p>
+            <a href="#" class="re-service-link">Learn More &rarr;</a>
+          </div>
+        </div>
+        <div class="re-service-card re-fade-in">
+          <img src="https://images.pexels.com/photos/6934233/pexels-photo-6934233.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Investment Advisory">
+          <div class="re-service-overlay">
+            <h3>Investment Advisory</h3>
+            <p>Data-driven investment strategies and portfolio optimization for maximum returns in Dubai real estate.</p>
+            <a href="#" class="re-service-link">Learn More &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARKET STATS -->
+  <section class="re-stats">
+    <div class="re-container">
+      <div class="re-stats-grid">
+        <div class="re-stat-item re-fade-in">
+          <div class="re-stat-number" data-target="850">0</div>
+          <div class="re-stat-label">Properties Sold</div>
+        </div>
+        <div class="re-stat-item re-fade-in">
+          <div class="re-stat-number" data-target="12">0</div>
+          <div class="re-stat-label">Billion AED in Sales</div>
+        </div>
+        <div class="re-stat-item re-fade-in">
+          <div class="re-stat-number" data-target="2500">0</div>
+          <div class="re-stat-label">Happy Clients</div>
+        </div>
+        <div class="re-stat-item re-fade-in">
+          <div class="re-stat-number" data-target="15">0</div>
+          <div class="re-stat-label">Years of Excellence</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="re-section re-section-dark">
+    <div class="re-container">
+      <div class="re-section-header re-fade-in">
+        <span class="re-overline">Client Stories</span>
+        <h2>What Our Clients Say</h2>
+        <p>Hear from homeowners who found their perfect property with Prestige Estates</p>
+      </div>
+      <div class="re-testimonials-slider">
+        <div class="re-testimonial-card re-fade-in-left">
+          <div class="re-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="re-testimonial-text">"Prestige Estates made our dream of owning a villa on Palm Jumeirah a reality. Their team's knowledge of the market and dedication to finding the perfect property was truly exceptional."</p>
+          <div class="re-testimonial-author">
+            <img src="https://images.pexels.com/photos/8469937/pexels-photo-8469937.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James Mitchell" class="re-testimonial-avatar">
+            <div>
+              <div class="re-testimonial-name">James Mitchell</div>
+              <div class="re-testimonial-role">CEO, Mitchell Capital</div>
+            </div>
+          </div>
+        </div>
+        <div class="re-testimonial-card re-fade-in">
+          <div class="re-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="re-testimonial-text">"As an international investor, I needed a team that understood both the local market and global standards. Prestige Estates exceeded every expectation with their professionalism."</p>
+          <div class="re-testimonial-author">
+            <img src="https://images.pexels.com/photos/33669696/pexels-photo-33669696.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah Al-Rashid" class="re-testimonial-avatar">
+            <div>
+              <div class="re-testimonial-name">Sarah Al-Rashid</div>
+              <div class="re-testimonial-role">Private Investor</div>
+            </div>
+          </div>
+        </div>
+        <div class="re-testimonial-card re-fade-in-right">
+          <div class="re-testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="re-testimonial-text">"The white-glove service from Prestige Estates is second to none. From property search to interior design coordination, they handled everything seamlessly. Highly recommended."</p>
+          <div class="re-testimonial-author">
+            <img src="https://images.pexels.com/photos/20427358/pexels-photo-20427358.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="David Chen" class="re-testimonial-avatar">
+            <div>
+              <div class="re-testimonial-name">David Chen</div>
+              <div class="re-testimonial-role">Entrepreneur</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="re-section" id="team">
+    <div class="re-container">
+      <div class="re-section-header re-fade-in">
+        <span class="re-overline">Our Experts</span>
+        <h2>Meet the Team</h2>
+        <p>Experienced professionals dedicated to finding your perfect property</p>
+      </div>
+      <div class="re-team-grid">
+        <div class="re-agent-card re-fade-in">
+          <div class="re-agent-img">
+            <img src="https://images.pexels.com/photos/1669787/pexels-photo-1669787.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Ahmad Al-Mansoor">
+          </div>
+          <div class="re-agent-info">
+            <h3>Ahmad Al-Mansoor</h3>
+            <p>Managing Director</p>
+            <div class="re-agent-socials">
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+            </div>
+          </div>
+        </div>
+        <div class="re-agent-card re-fade-in">
+          <div class="re-agent-img">
+            <img src="https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elena Petrova">
+          </div>
+          <div class="re-agent-info">
+            <h3>Elena Petrova</h3>
+            <p>Senior Sales Director</p>
+            <div class="re-agent-socials">
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+            </div>
+          </div>
+        </div>
+        <div class="re-agent-card re-fade-in">
+          <div class="re-agent-img">
+            <img src="https://images.pexels.com/photos/19032474/pexels-photo-19032474.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Michael Torres">
+          </div>
+          <div class="re-agent-info">
+            <h3>Michael Torres</h3>
+            <p>Head of Investments</p>
+            <div class="re-agent-socials">
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+            </div>
+          </div>
+        </div>
+        <div class="re-agent-card re-fade-in">
+          <div class="re-agent-img">
+            <img src="https://images.pexels.com/photos/20142606/pexels-photo-20142606.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Fatima Al-Khatib">
+          </div>
+          <div class="re-agent-info">
+            <h3>Fatima Al-Khatib</h3>
+            <p>Luxury Rentals Manager</p>
+            <div class="re-agent-socials">
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+              <a href="#"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="re-section re-section-alt" id="contact">
+    <div class="re-container">
+      <div class="re-contact-wrapper">
+        <div class="re-contact-info re-fade-in-left">
+          <span class="re-overline" style="font-size:12px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px;">Get In Touch</span>
+          <h2>Let's Find Your Perfect Property</h2>
+          <p>Whether you're looking to buy, sell, or invest, our team of experts is ready to help you navigate Dubai's luxury real estate market.</p>
+          <div class="re-contact-detail">
+            <div class="re-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <h4>Visit Our Office</h4>
+              <p>Suite 2501, Burj Khalifa Tower<br>Downtown Dubai, UAE</p>
+            </div>
+          </div>
+          <div class="re-contact-detail">
+            <div class="re-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            </div>
+            <div>
+              <h4>Call Us</h4>
+              <p>+971 4 XXX XXXX<br>+971 50 XXX XXXX</p>
+            </div>
+          </div>
+          <div class="re-contact-detail">
+            <div class="re-contact-detail-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div>
+              <h4>Email Us</h4>
+              <p>info@prestigeestates.ae<br>sales@prestigeestates.ae</p>
+            </div>
+          </div>
+        </div>
+        <div class="re-contact-form re-fade-in-right">
+          <form>
+            <div class="re-form-row">
+              <div class="re-form-group">
+                <label>First Name</label>
+                <input type="text" placeholder="John">
+              </div>
+              <div class="re-form-group">
+                <label>Last Name</label>
+                <input type="text" placeholder="Smith">
+              </div>
+            </div>
+            <div class="re-form-row">
+              <div class="re-form-group">
+                <label>Email</label>
+                <input type="email" placeholder="john@example.com">
+              </div>
+              <div class="re-form-group">
+                <label>Phone</label>
+                <input type="tel" placeholder="+971 50 XXX XXXX">
+              </div>
+            </div>
+            <div class="re-form-group">
+              <label>I'm Interested In</label>
+              <select>
+                <option>Buying a Property</option>
+                <option>Selling a Property</option>
+                <option>Renting a Property</option>
+                <option>Investment Advisory</option>
+                <option>Property Management</option>
+              </select>
+            </div>
+            <div class="re-form-group">
+              <label>Message</label>
+              <textarea placeholder="Tell us about your requirements..."></textarea>
+            </div>
+            <button type="submit" class="re-form-submit">Send Enquiry</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="re-footer">
+    <div class="re-container">
+      <div class="re-footer-grid">
+        <div class="re-footer-brand">
+          <h3>Prestige <span>Estates</span></h3>
+          <p>Dubai's premier luxury real estate agency. We specialize in connecting discerning clients with exceptional properties across the UAE's most prestigious addresses.</p>
+          <div class="re-footer-socials">
+            <a href="#"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+            <a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            <a href="#"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg></a>
+            <a href="#"><svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+          </div>
+        </div>
+        <div class="re-footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#properties">Properties</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#team">Our Team</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="re-footer-col">
+          <h4>Communities</h4>
+          <ul>
+            <li><a href="#">Palm Jumeirah</a></li>
+            <li><a href="#">Downtown Dubai</a></li>
+            <li><a href="#">Emirates Hills</a></li>
+            <li><a href="#">Dubai Marina</a></li>
+            <li><a href="#">Jumeirah Bay Island</a></li>
+          </ul>
+        </div>
+        <div class="re-footer-col">
+          <h4>Services</h4>
+          <ul>
+            <li><a href="#">Buy Property</a></li>
+            <li><a href="#">Sell Property</a></li>
+            <li><a href="#">Rent Property</a></li>
+            <li><a href="#">Off-Plan Sales</a></li>
+            <li><a href="#">Property Management</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="re-footer-bottom">
+        <p>&copy; 2026 Prestige Estates. All rights reserved. RERA Licensed.</p>
+        <p>Privacy Policy &nbsp;|&nbsp; Terms of Service &nbsp;|&nbsp; Sitemap</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  // Navbar scroll effect
+  const navbar = document.querySelector('.re-navbar');
+  if (navbar) {
+    window.addEventListener('scroll', function() {
+      navbar.classList.toggle('scrolled', window.scrollY > 60);
+    });
+  }
+
+  // Mobile menu toggle
+  const hamburger = document.getElementById('reHamburger');
+  const navLinks = document.getElementById('reNavLinks');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', function() {
+      navLinks.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        navLinks.classList.remove('open');
+      });
+    });
+  }
+
+  // IntersectionObserver for fade-in animations
+  var animEls = document.querySelectorAll('.re-fade-in, .re-fade-in-left, .re-fade-in-right');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    animEls.forEach(function(el) { observer.observe(el); });
+  } else {
+    animEls.forEach(function(el) { el.classList.add('visible'); });
+  }
+
+  // Counter animation for stats
+  var statNumbers = document.querySelectorAll('.re-stat-number[data-target]');
+  if ('IntersectionObserver' in window && statNumbers.length) {
+    var statsObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          var target = parseInt(el.getAttribute('data-target'), 10);
+          var duration = 2000;
+          var start = 0;
+          var startTime = null;
+          function animate(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.floor(eased * target).toLocaleString() + (progress >= 1 ? '+' : '');
+            if (progress < 1) requestAnimationFrame(animate);
+          }
+          requestAnimationFrame(animate);
+          statsObserver.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    statNumbers.forEach(function(el) { statsObserver.observe(el); });
+  }
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('.re-template a[href^="#"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      var targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      var targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+})();
+</script>

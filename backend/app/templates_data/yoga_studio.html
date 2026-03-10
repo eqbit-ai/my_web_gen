@@ -1,0 +1,1789 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Nunito+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --yoga-dark: #2d3436;
+  --yoga-sage: #6c9a8b;
+  --yoga-mint: #f0f7f4;
+  --yoga-white: #ffffff;
+  --yoga-sage-light: #8fbdae;
+  --yoga-sage-dark: #567d70;
+  --yoga-warm: #d4a574;
+  --yoga-text-light: #636e72;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.yoga-template {
+  font-family: 'Nunito Sans', sans-serif;
+  color: var(--yoga-dark);
+  line-height: 1.7;
+  overflow-x: hidden;
+  background: var(--yoga-white);
+}
+
+.yoga-template h1,
+.yoga-template h2,
+.yoga-template h3,
+.yoga-template h4 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+/* ===== NAVIGATION ===== */
+.yoga-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 20px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.4s ease, padding 0.4s ease;
+  background: rgba(240, 247, 244, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.yoga-nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--yoga-dark);
+  text-decoration: none;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.yoga-nav-logo span {
+  color: var(--yoga-sage);
+}
+
+.yoga-nav-links {
+  display: flex;
+  gap: 35px;
+  list-style: none;
+  align-items: center;
+}
+
+.yoga-nav-links a {
+  text-decoration: none;
+  color: var(--yoga-dark);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+  position: relative;
+}
+
+.yoga-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--yoga-sage);
+  transition: width 0.3s ease;
+}
+
+.yoga-nav-links a:hover {
+  color: var(--yoga-sage);
+}
+
+.yoga-nav-links a:hover::after {
+  width: 100%;
+}
+
+.yoga-nav-cta {
+  background: var(--yoga-sage) !important;
+  color: var(--yoga-white) !important;
+  padding: 10px 28px;
+  border-radius: 30px;
+  font-size: 12px !important;
+  letter-spacing: 1.5px;
+}
+
+.yoga-nav-cta:hover {
+  background: var(--yoga-sage-dark) !important;
+}
+
+.yoga-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.yoga-mobile-toggle span {
+  width: 25px;
+  height: 2px;
+  background: var(--yoga-dark);
+  transition: 0.3s;
+}
+
+/* ===== HERO ===== */
+.yoga-hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(160deg, var(--yoga-mint) 0%, var(--yoga-white) 50%, #e8f4ef 100%);
+  padding: 140px 20px 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.yoga-hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 154, 139, 0.15);
+}
+
+.yoga-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -150px;
+  left: -150px;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 154, 139, 0.1);
+}
+
+.yoga-hero-content {
+  max-width: 800px;
+  position: relative;
+  z-index: 1;
+}
+
+.yoga-hero-tagline {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  margin-bottom: 30px;
+}
+
+.yoga-hero h1 {
+  font-size: 72px;
+  font-weight: 300;
+  color: var(--yoga-dark);
+  margin-bottom: 30px;
+  letter-spacing: -1px;
+}
+
+.yoga-hero h1 em {
+  font-style: italic;
+  color: var(--yoga-sage);
+}
+
+.yoga-hero-text {
+  font-size: 18px;
+  color: var(--yoga-text-light);
+  max-width: 550px;
+  margin: 0 auto 50px;
+  font-weight: 300;
+  line-height: 1.9;
+}
+
+.yoga-hero-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.yoga-btn-primary {
+  display: inline-block;
+  padding: 16px 45px;
+  background: var(--yoga-sage);
+  color: var(--yoga-white);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  border: 2px solid var(--yoga-sage);
+}
+
+.yoga-btn-primary:hover {
+  background: var(--yoga-sage-dark);
+  border-color: var(--yoga-sage-dark);
+}
+
+.yoga-btn-secondary {
+  display: inline-block;
+  padding: 16px 45px;
+  background: transparent;
+  color: var(--yoga-dark);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 50px;
+  border: 2px solid var(--yoga-dark);
+  transition: all 0.3s ease;
+}
+
+.yoga-btn-secondary:hover {
+  background: var(--yoga-dark);
+  color: var(--yoga-white);
+}
+
+.yoga-hero-scroll {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  text-decoration: none;
+}
+
+/* ===== SECTION COMMON ===== */
+.yoga-section {
+  padding: 120px 60px;
+}
+
+.yoga-section-header {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 80px;
+}
+
+.yoga-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  margin-bottom: 18px;
+  display: block;
+}
+
+.yoga-section-header h2 {
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--yoga-dark);
+  margin-bottom: 20px;
+}
+
+.yoga-section-header p {
+  font-size: 16px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.yoga-divider {
+  width: 50px;
+  height: 1px;
+  background: var(--yoga-sage);
+  margin: 20px auto;
+}
+
+/* ===== CLASS SCHEDULE ===== */
+.yoga-schedule {
+  background: var(--yoga-mint);
+}
+
+.yoga-schedule-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(6, 1fr);
+  gap: 1px;
+  background: rgba(108, 154, 139, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.yoga-schedule-header {
+  background: var(--yoga-sage);
+  color: var(--yoga-white);
+  padding: 18px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.yoga-schedule-time {
+  background: var(--yoga-white);
+  padding: 20px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--yoga-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.yoga-schedule-cell {
+  background: var(--yoga-white);
+  padding: 15px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  transition: background 0.3s ease;
+}
+
+.yoga-schedule-cell:hover {
+  background: rgba(108, 154, 139, 0.05);
+}
+
+.yoga-schedule-class {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--yoga-sage-dark);
+  margin-bottom: 3px;
+}
+
+.yoga-schedule-teacher {
+  font-size: 11px;
+  color: var(--yoga-text-light);
+}
+
+.yoga-schedule-empty {
+  color: rgba(108, 154, 139, 0.3);
+  font-size: 20px;
+}
+
+/* ===== CLASS TYPES ===== */
+.yoga-classes {
+  background: var(--yoga-white);
+}
+
+.yoga-classes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.yoga-class-card {
+  text-align: center;
+  padding: 50px 30px;
+  border-radius: 16px;
+  background: var(--yoga-mint);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.yoga-class-card:hover {
+  box-shadow: 0 20px 60px rgba(108, 154, 139, 0.15);
+}
+
+.yoga-class-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.yoga-class-card h3 {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--yoga-dark);
+  margin-bottom: 8px;
+}
+
+.yoga-class-level {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.yoga-class-card p {
+  font-size: 14px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.yoga-class-duration {
+  margin-top: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--yoga-sage-dark);
+}
+
+/* ===== INSTRUCTORS ===== */
+.yoga-instructors {
+  background: var(--yoga-mint);
+}
+
+.yoga-instructors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.yoga-instructor-card {
+  text-align: center;
+  background: var(--yoga-white);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: box-shadow 0.4s ease;
+}
+
+.yoga-instructor-card:hover {
+  box-shadow: 0 25px 60px rgba(108, 154, 139, 0.12);
+}
+
+.yoga-instructor-img {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+}
+
+.yoga-instructor-info {
+  padding: 35px 30px 40px;
+}
+
+.yoga-instructor-info h3 {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--yoga-dark);
+  margin-bottom: 5px;
+}
+
+.yoga-instructor-role {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  margin-bottom: 15px;
+  display: block;
+}
+
+.yoga-instructor-info p {
+  font-size: 14px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.8;
+}
+
+.yoga-instructor-socials {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.yoga-instructor-socials a {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 154, 139, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--yoga-sage);
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.yoga-instructor-socials a:hover {
+  background: var(--yoga-sage);
+  color: var(--yoga-white);
+  border-color: var(--yoga-sage);
+}
+
+/* ===== RETREATS ===== */
+.yoga-retreats {
+  background: var(--yoga-white);
+}
+
+.yoga-retreats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.yoga-retreat-card {
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--yoga-mint);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.4s ease;
+}
+
+.yoga-retreat-card:hover {
+  box-shadow: 0 25px 60px rgba(108, 154, 139, 0.12);
+}
+
+.yoga-retreat-img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+.yoga-retreat-content {
+  padding: 35px 35px 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.yoga-retreat-date {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yoga-sage);
+  margin-bottom: 12px;
+}
+
+.yoga-retreat-content h3 {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--yoga-dark);
+  margin-bottom: 12px;
+}
+
+.yoga-retreat-content p {
+  font-size: 14px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.8;
+  margin-bottom: 25px;
+  flex: 1;
+}
+
+.yoga-retreat-details {
+  display: flex;
+  gap: 25px;
+  font-size: 13px;
+  color: var(--yoga-sage-dark);
+  font-weight: 600;
+}
+
+/* ===== MEMBERSHIP ===== */
+.yoga-membership {
+  background: var(--yoga-dark);
+  color: var(--yoga-white);
+}
+
+.yoga-membership .yoga-section-label {
+  color: var(--yoga-sage-light);
+}
+
+.yoga-membership .yoga-section-header h2 {
+  color: var(--yoga-white);
+}
+
+.yoga-membership .yoga-section-header p {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.yoga-membership .yoga-divider {
+  background: var(--yoga-sage-light);
+}
+
+.yoga-membership-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1050px;
+  margin: 0 auto;
+}
+
+.yoga-plan-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 50px 35px;
+  text-align: center;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.yoga-plan-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.yoga-plan-featured {
+  background: var(--yoga-sage) !important;
+  border-color: var(--yoga-sage) !important;
+}
+
+.yoga-plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--yoga-warm);
+  color: var(--yoga-white);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 20px;
+  border-radius: 20px;
+}
+
+.yoga-plan-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 20px;
+}
+
+.yoga-plan-featured .yoga-plan-name {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.yoga-plan-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 56px;
+  font-weight: 300;
+  color: var(--yoga-white);
+  margin-bottom: 5px;
+}
+
+.yoga-plan-price span {
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.yoga-plan-period {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 35px;
+}
+
+.yoga-plan-featured .yoga-plan-period {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.yoga-plan-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.yoga-plan-features li {
+  padding: 10px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-weight: 300;
+}
+
+.yoga-plan-features li::before {
+  content: "\2713";
+  margin-right: 12px;
+  color: var(--yoga-sage-light);
+  font-weight: 700;
+}
+
+.yoga-plan-featured .yoga-plan-features li {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.yoga-plan-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 16px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: var(--yoga-white);
+  background: transparent;
+}
+
+.yoga-plan-btn:hover {
+  background: var(--yoga-white);
+  color: var(--yoga-dark);
+  border-color: var(--yoga-white);
+}
+
+.yoga-plan-featured .yoga-plan-btn {
+  background: var(--yoga-white);
+  color: var(--yoga-sage-dark);
+  border-color: var(--yoga-white);
+}
+
+.yoga-plan-featured .yoga-plan-btn:hover {
+  background: transparent;
+  color: var(--yoga-white);
+}
+
+/* ===== TESTIMONIALS ===== */
+.yoga-testimonials {
+  background: var(--yoga-mint);
+}
+
+.yoga-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.yoga-testimonial-card {
+  background: var(--yoga-white);
+  border-radius: 20px;
+  padding: 45px 35px;
+  position: relative;
+}
+
+.yoga-testimonial-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 60px;
+  color: var(--yoga-sage);
+  line-height: 1;
+  margin-bottom: 10px;
+  opacity: 0.4;
+}
+
+.yoga-testimonial-card p {
+  font-size: 15px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.9;
+  font-style: italic;
+  margin-bottom: 25px;
+}
+
+.yoga-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.yoga-testimonial-author img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.yoga-testimonial-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--yoga-dark);
+}
+
+.yoga-testimonial-detail {
+  font-size: 12px;
+  color: var(--yoga-text-light);
+}
+
+/* ===== GALLERY ===== */
+.yoga-gallery {
+  background: var(--yoga-white);
+}
+
+.yoga-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 250px);
+  gap: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.yoga-gallery-item {
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.yoga-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.yoga-gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+.yoga-gallery-item:nth-child(1) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.yoga-gallery-item:nth-child(4) {
+  grid-column: span 2;
+}
+
+/* ===== CONTACT ===== */
+.yoga-contact {
+  background: var(--yoga-mint);
+}
+
+.yoga-contact-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.yoga-contact-info h3 {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--yoga-dark);
+  margin-bottom: 20px;
+}
+
+.yoga-contact-info > p {
+  font-size: 15px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.yoga-contact-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.yoga-contact-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: var(--yoga-sage);
+  color: var(--yoga-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.yoga-contact-detail h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--yoga-dark);
+  margin-bottom: 3px;
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.yoga-contact-detail p {
+  font-size: 14px;
+  color: var(--yoga-text-light);
+  font-weight: 300;
+}
+
+.yoga-contact-form {
+  background: var(--yoga-white);
+  border-radius: 20px;
+  padding: 45px;
+}
+
+.yoga-form-group {
+  margin-bottom: 22px;
+}
+
+.yoga-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--yoga-dark);
+  margin-bottom: 8px;
+}
+
+.yoga-form-group input,
+.yoga-form-group select,
+.yoga-form-group textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid rgba(108, 154, 139, 0.2);
+  border-radius: 10px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 14px;
+  color: var(--yoga-dark);
+  background: var(--yoga-mint);
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+
+.yoga-form-group input:focus,
+.yoga-form-group select:focus,
+.yoga-form-group textarea:focus {
+  border-color: var(--yoga-sage);
+}
+
+.yoga-form-group textarea {
+  height: 120px;
+  resize: vertical;
+}
+
+.yoga-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.yoga-form-submit {
+  display: inline-block;
+  padding: 16px 50px;
+  background: var(--yoga-sage);
+  color: var(--yoga-white);
+  border: none;
+  border-radius: 50px;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  width: 100%;
+}
+
+.yoga-form-submit:hover {
+  background: var(--yoga-sage-dark);
+}
+
+/* ===== FOOTER ===== */
+.yoga-footer {
+  background: var(--yoga-dark);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 80px 60px 40px;
+}
+
+.yoga-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto 60px;
+}
+
+.yoga-footer-brand h3 {
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--yoga-white);
+  margin-bottom: 18px;
+  letter-spacing: 2px;
+}
+
+.yoga-footer-brand p {
+  font-size: 14px;
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 25px;
+}
+
+.yoga-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.yoga-footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.yoga-footer-social a:hover {
+  background: var(--yoga-sage);
+  border-color: var(--yoga-sage);
+  color: var(--yoga-white);
+}
+
+.yoga-footer-col h4 {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yoga-white);
+  margin-bottom: 25px;
+}
+
+.yoga-footer-col ul {
+  list-style: none;
+}
+
+.yoga-footer-col ul li {
+  margin-bottom: 12px;
+}
+
+.yoga-footer-col ul a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 300;
+  transition: color 0.3s ease;
+}
+
+.yoga-footer-col ul a:hover {
+  color: var(--yoga-sage-light);
+}
+
+.yoga-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-size: 13px;
+  font-weight: 300;
+}
+
+.yoga-footer-bottom a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.yoga-footer-bottom a:hover {
+  color: var(--yoga-sage-light);
+}
+
+.yoga-footer-legal {
+  display: flex;
+  gap: 25px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .yoga-hero h1 {
+    font-size: 52px;
+  }
+
+  .yoga-section {
+    padding: 80px 40px;
+  }
+
+  .yoga-classes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .yoga-schedule-grid {
+    overflow-x: auto;
+    display: block;
+  }
+
+  .yoga-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 220px);
+  }
+
+  .yoga-gallery-item:nth-child(1) {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+
+  .yoga-gallery-item:nth-child(4) {
+    grid-column: span 1;
+  }
+
+  .yoga-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .yoga-nav {
+    padding: 15px 25px;
+  }
+
+  .yoga-nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: var(--yoga-mint);
+    flex-direction: column;
+    padding: 30px;
+    gap: 20px;
+  }
+
+  .yoga-mobile-toggle {
+    display: flex;
+  }
+
+  .yoga-hero {
+    padding: 120px 20px 80px;
+    min-height: auto;
+  }
+
+  .yoga-hero h1 {
+    font-size: 40px;
+  }
+
+  .yoga-hero-text {
+    font-size: 16px;
+  }
+
+  .yoga-section {
+    padding: 70px 25px;
+  }
+
+  .yoga-section-header {
+    margin-bottom: 50px;
+  }
+
+  .yoga-section-header h2 {
+    font-size: 36px;
+  }
+
+  .yoga-classes-grid,
+  .yoga-instructors-grid,
+  .yoga-testimonials-grid,
+  .yoga-membership-grid {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  .yoga-retreats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .yoga-contact-wrapper {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .yoga-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .yoga-gallery-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .yoga-gallery-item:nth-child(1) {
+    grid-column: span 1;
+  }
+
+  .yoga-gallery-item {
+    height: 220px;
+  }
+
+  .yoga-footer {
+    padding: 60px 25px 30px;
+  }
+
+  .yoga-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .yoga-footer-bottom {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .yoga-hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .yoga-plan-price {
+    font-size: 46px;
+  }
+}
+
+@media (max-width: 480px) {
+  .yoga-hero h1 {
+    font-size: 32px;
+  }
+
+  .yoga-contact-form {
+    padding: 30px 20px;
+  }
+
+  .yoga-nav-logo {
+    font-size: 22px;
+  }
+}
+</style>
+
+<div class="yoga-template">
+  <!-- Navigation -->
+  <nav class="yoga-nav">
+    <a href="#" class="yoga-nav-logo">Serene<span>Yoga</span></a>
+    <ul class="yoga-nav-links">
+      <li><a href="#classes">Classes</a></li>
+      <li><a href="#instructors">Instructors</a></li>
+      <li><a href="#retreats">Retreats</a></li>
+      <li><a href="#membership">Membership</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="#" class="yoga-nav-cta">Book a Class</a></li>
+    </ul>
+    <button class="yoga-mobile-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="yoga-hero">
+    <div class="yoga-hero-content">
+      <p class="yoga-hero-tagline">Yoga &middot; Meditation &middot; Wellness</p>
+      <h1>Find Your <em>Inner Peace</em></h1>
+      <p class="yoga-hero-text">
+        Step onto the mat and discover a practice that nurtures body, mind, and spirit.
+        Our studio offers a sanctuary of calm in the heart of the city.
+      </p>
+      <div class="yoga-hero-buttons">
+        <a href="#membership" class="yoga-btn-primary">Start Your Journey</a>
+        <a href="#schedule" class="yoga-btn-secondary">View Schedule</a>
+      </div>
+    </div>
+    <a href="#schedule" class="yoga-hero-scroll">Scroll to explore</a>
+  </section>
+
+  <!-- Class Schedule -->
+  <section class="yoga-section yoga-schedule" id="schedule">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Weekly Schedule</span>
+      <h2>Find Your Flow</h2>
+      <div class="yoga-divider"></div>
+      <p>Join us throughout the week for classes suited to every level and intention.</p>
+    </div>
+    <div class="yoga-schedule-grid">
+      <!-- Header row -->
+      <div class="yoga-schedule-header">Time</div>
+      <div class="yoga-schedule-header">Mon</div>
+      <div class="yoga-schedule-header">Tue</div>
+      <div class="yoga-schedule-header">Wed</div>
+      <div class="yoga-schedule-header">Thu</div>
+      <div class="yoga-schedule-header">Fri</div>
+      <div class="yoga-schedule-header">Sat</div>
+      <!-- 7:00 AM -->
+      <div class="yoga-schedule-time">7:00 AM</div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Hatha</span>
+        <span class="yoga-schedule-teacher">Lena</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Meditation</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <!-- 9:30 AM -->
+      <div class="yoga-schedule-time">9:30 AM</div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Hatha</span>
+        <span class="yoga-schedule-teacher">Lena</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Yin</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Hatha</span>
+        <span class="yoga-schedule-teacher">Lena</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <!-- 12:00 PM -->
+      <div class="yoga-schedule-time">12:00 PM</div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Meditation</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Yin</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Hatha</span>
+        <span class="yoga-schedule-teacher">Lena</span>
+      </div>
+      <!-- 6:00 PM -->
+      <div class="yoga-schedule-time">6:00 PM</div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Yin</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Vinyasa</span>
+        <span class="yoga-schedule-teacher">Amara</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Meditation</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Hatha</span>
+        <span class="yoga-schedule-teacher">Lena</span>
+      </div>
+      <div class="yoga-schedule-cell">
+        <span class="yoga-schedule-class">Yin</span>
+        <span class="yoga-schedule-teacher">Daniel</span>
+      </div>
+      <div class="yoga-schedule-cell"><span class="yoga-schedule-empty">&mdash;</span></div>
+    </div>
+  </section>
+
+  <!-- Class Types -->
+  <section class="yoga-section yoga-classes" id="classes">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Our Practice</span>
+      <h2>Explore Our Classes</h2>
+      <div class="yoga-divider"></div>
+      <p>Whether you seek strength, stillness, or something in between, there is a practice here for you.</p>
+    </div>
+    <div class="yoga-classes-grid">
+      <div class="yoga-class-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Hatha Yoga">
+        <h3>Hatha</h3>
+        <span class="yoga-class-level">All Levels</span>
+        <p>A gentle, foundational practice focusing on breath, alignment, and mindful movement. Perfect for beginners and seasoned practitioners alike.</p>
+        <div class="yoga-class-duration">60 minutes</div>
+      </div>
+      <div class="yoga-class-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Vinyasa Flow">
+        <h3>Vinyasa</h3>
+        <span class="yoga-class-level">Intermediate</span>
+        <p>Dynamic, flowing sequences that synchronize breath with movement. Build heat, strength, and flexibility in a creative, ever-changing practice.</p>
+        <div class="yoga-class-duration">75 minutes</div>
+      </div>
+      <div class="yoga-class-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Yin Yoga">
+        <h3>Yin</h3>
+        <span class="yoga-class-level">All Levels</span>
+        <p>Slow, meditative practice with long-held floor poses. Release deep connective tissue tension and cultivate profound inner stillness.</p>
+        <div class="yoga-class-duration">75 minutes</div>
+      </div>
+      <div class="yoga-class-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Meditation">
+        <h3>Meditation</h3>
+        <span class="yoga-class-level">All Levels</span>
+        <p>Guided sessions exploring breathwork, visualization, and mindfulness. Learn techniques to carry calm and clarity into your daily life.</p>
+        <div class="yoga-class-duration">45 minutes</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Instructors -->
+  <section class="yoga-section yoga-instructors" id="instructors">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Our Teachers</span>
+      <h2>Meet Your Guides</h2>
+      <div class="yoga-divider"></div>
+      <p>Our certified instructors bring decades of combined experience, compassion, and deep devotion to the practice.</p>
+    </div>
+    <div class="yoga-instructors-grid">
+      <div class="yoga-instructor-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Amara Patel" class="yoga-instructor-img">
+        <div class="yoga-instructor-info">
+          <h3>Amara Patel</h3>
+          <span class="yoga-instructor-role">Vinyasa &amp; Power Yoga</span>
+          <p>With 15 years of practice and training in Rishikesh, Amara brings energy, grace, and deep anatomical knowledge to every flow.</p>
+          <div class="yoga-instructor-socials">
+            <a href="#">in</a>
+            <a href="#">ig</a>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-instructor-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Lena Sorensen" class="yoga-instructor-img">
+        <div class="yoga-instructor-info">
+          <h3>Lena Sorensen</h3>
+          <span class="yoga-instructor-role">Hatha &amp; Prenatal Yoga</span>
+          <p>Lena creates nurturing spaces where students feel safe to explore. Her gentle approach emphasizes alignment, breath, and self-compassion.</p>
+          <div class="yoga-instructor-socials">
+            <a href="#">in</a>
+            <a href="#">ig</a>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-instructor-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Daniel Reeves" class="yoga-instructor-img">
+        <div class="yoga-instructor-info">
+          <h3>Daniel Reeves</h3>
+          <span class="yoga-instructor-role">Yin &amp; Meditation</span>
+          <p>A former monk and meditation teacher, Daniel guides students inward with warmth and wisdom. His classes are a refuge of stillness.</p>
+          <div class="yoga-instructor-socials">
+            <a href="#">in</a>
+            <a href="#">ig</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Retreat Programs -->
+  <section class="yoga-section yoga-retreats" id="retreats">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Go Deeper</span>
+      <h2>Retreat Programs</h2>
+      <div class="yoga-divider"></div>
+      <p>Immerse yourself in transformative experiences designed to deepen your practice and reconnect with nature.</p>
+    </div>
+    <div class="yoga-retreats-grid">
+      <div class="yoga-retreat-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Mountain Retreat" class="yoga-retreat-img">
+        <div class="yoga-retreat-content">
+          <span class="yoga-retreat-date">June 15 &ndash; 22, 2026</span>
+          <h3>Mountain Silence Retreat</h3>
+          <p>Seven days in the mountains with twice-daily yoga, meditation workshops, nature hikes, and nourishing plant-based meals. A digital detox for the soul.</p>
+          <div class="yoga-retreat-details">
+            <span>7 Nights</span>
+            <span>All Inclusive</span>
+            <span>From $1,850</span>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-retreat-card">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Coastal Retreat" class="yoga-retreat-img">
+        <div class="yoga-retreat-content">
+          <span class="yoga-retreat-date">September 5 &ndash; 10, 2026</span>
+          <h3>Coastal Renewal Weekend</h3>
+          <p>Sunrise sessions on the shore, restorative yin by the sea, and evening meditation under the stars. A five-day journey of letting go and beginning again.</p>
+          <div class="yoga-retreat-details">
+            <span>5 Nights</span>
+            <span>Beachfront Villa</span>
+            <span>From $1,450</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Membership Plans -->
+  <section class="yoga-section yoga-membership" id="membership">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Join Us</span>
+      <h2>Membership Plans</h2>
+      <div class="yoga-divider"></div>
+      <p>Choose the path that fits your practice. All memberships include access to our meditation room and tea lounge.</p>
+    </div>
+    <div class="yoga-membership-grid">
+      <div class="yoga-plan-card">
+        <div class="yoga-plan-name">Drop In</div>
+        <div class="yoga-plan-price"><span>$</span>25</div>
+        <div class="yoga-plan-period">per class</div>
+        <ul class="yoga-plan-features">
+          <li>Single class access</li>
+          <li>All class styles</li>
+          <li>Mat &amp; props provided</li>
+          <li>Tea lounge access</li>
+          <li>No commitment required</li>
+        </ul>
+        <a href="#" class="yoga-plan-btn">Get Started</a>
+      </div>
+      <div class="yoga-plan-card yoga-plan-featured">
+        <div class="yoga-plan-badge">Most Popular</div>
+        <div class="yoga-plan-name">Unlimited</div>
+        <div class="yoga-plan-price"><span>$</span>129</div>
+        <div class="yoga-plan-period">per month</div>
+        <ul class="yoga-plan-features">
+          <li>Unlimited classes</li>
+          <li>All class styles &amp; levels</li>
+          <li>Meditation room access</li>
+          <li>10% off retreats</li>
+          <li>Guest pass each month</li>
+          <li>Priority booking</li>
+        </ul>
+        <a href="#" class="yoga-plan-btn">Join Now</a>
+      </div>
+      <div class="yoga-plan-card">
+        <div class="yoga-plan-name">8-Class Pack</div>
+        <div class="yoga-plan-price"><span>$</span>160</div>
+        <div class="yoga-plan-period">valid 2 months</div>
+        <ul class="yoga-plan-features">
+          <li>8 classes of your choice</li>
+          <li>All class styles</li>
+          <li>Mat &amp; props provided</li>
+          <li>Tea lounge access</li>
+          <li>Flexible scheduling</li>
+        </ul>
+        <a href="#" class="yoga-plan-btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="yoga-section yoga-testimonials">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Kind Words</span>
+      <h2>Student Testimonials</h2>
+      <div class="yoga-divider"></div>
+      <p>Hear from those who have made this studio a part of their wellness journey.</p>
+    </div>
+    <div class="yoga-testimonials-grid">
+      <div class="yoga-testimonial-card">
+        <div class="yoga-testimonial-quote">"</div>
+        <p>This studio changed my relationship with my body. The instructors truly see you and meet you where you are. I came for exercise and found peace.</p>
+        <div class="yoga-testimonial-author">
+          <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sarah M.">
+          <div>
+            <div class="yoga-testimonial-name">Sarah M.</div>
+            <div class="yoga-testimonial-detail">Member for 2 years</div>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-testimonial-card">
+        <div class="yoga-testimonial-quote">"</div>
+        <p>Daniel's meditation classes have been life-changing. I sleep better, I think clearer, and I feel a calm I haven't known in decades. Truly grateful.</p>
+        <div class="yoga-testimonial-author">
+          <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="James K.">
+          <div>
+            <div class="yoga-testimonial-name">James K.</div>
+            <div class="yoga-testimonial-detail">Member for 1 year</div>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-testimonial-card">
+        <div class="yoga-testimonial-quote">"</div>
+        <p>The space itself is so beautiful and calming. Every detail feels intentional. Amara's vinyasa flows are challenging yet deeply grounding. My happy place.</p>
+        <div class="yoga-testimonial-author">
+          <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Priya R.">
+          <div>
+            <div class="yoga-testimonial-name">Priya R.</div>
+            <div class="yoga-testimonial-detail">Member for 3 years</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Studio Gallery -->
+  <section class="yoga-section yoga-gallery">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Our Space</span>
+      <h2>Studio Gallery</h2>
+      <div class="yoga-divider"></div>
+      <p>A thoughtfully designed sanctuary bathed in natural light, created to inspire your practice.</p>
+    </div>
+    <div class="yoga-gallery-grid">
+      <div class="yoga-gallery-item">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Studio Main Hall">
+      </div>
+      <div class="yoga-gallery-item">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Meditation Room">
+      </div>
+      <div class="yoga-gallery-item">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Yoga Class">
+      </div>
+      <div class="yoga-gallery-item">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Tea Lounge">
+      </div>
+      <div class="yoga-gallery-item">
+        <img src="https://images.pexels.com/photos/5928330/pexels-photo-5928330.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Garden Area">
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="yoga-section yoga-contact" id="contact">
+    <div class="yoga-section-header">
+      <span class="yoga-section-label">Get in Touch</span>
+      <h2>Begin Your Practice</h2>
+      <div class="yoga-divider"></div>
+      <p>We would love to welcome you to the studio. Reach out with any questions or stop by for a visit.</p>
+    </div>
+    <div class="yoga-contact-wrapper">
+      <div class="yoga-contact-info">
+        <h3>Visit Our Studio</h3>
+        <p>Our doors are always open. Come experience a class, explore our spaces, or simply enjoy a cup of herbal tea in our lounge.</p>
+        <div class="yoga-contact-detail">
+          <div class="yoga-contact-icon">&#9737;</div>
+          <div>
+            <h4>Location</h4>
+            <p>42 Lotus Lane, Serenity District<br>Downtown, 10012</p>
+          </div>
+        </div>
+        <div class="yoga-contact-detail">
+          <div class="yoga-contact-icon">&#9743;</div>
+          <div>
+            <h4>Phone</h4>
+            <p>+1 (555) 234-5678</p>
+          </div>
+        </div>
+        <div class="yoga-contact-detail">
+          <div class="yoga-contact-icon">&#9993;</div>
+          <div>
+            <h4>Email</h4>
+            <p>hello@sereneyoga.com</p>
+          </div>
+        </div>
+        <div class="yoga-contact-detail">
+          <div class="yoga-contact-icon">&#9201;</div>
+          <div>
+            <h4>Studio Hours</h4>
+            <p>Mon &ndash; Fri: 6:30 AM &ndash; 9:00 PM<br>Sat &ndash; Sun: 7:00 AM &ndash; 6:00 PM</p>
+          </div>
+        </div>
+      </div>
+      <div class="yoga-contact-form">
+        <form>
+          <div class="yoga-form-row">
+            <div class="yoga-form-group">
+              <label for="yoga-name">Name</label>
+              <input type="text" id="yoga-name" placeholder="Your name">
+            </div>
+            <div class="yoga-form-group">
+              <label for="yoga-email">Email</label>
+              <input type="email" id="yoga-email" placeholder="your@email.com">
+            </div>
+          </div>
+          <div class="yoga-form-group">
+            <label for="yoga-interest">Interested In</label>
+            <select id="yoga-interest">
+              <option value="">Select an option</option>
+              <option value="classes">Group Classes</option>
+              <option value="private">Private Sessions</option>
+              <option value="membership">Membership</option>
+              <option value="retreats">Retreats</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="yoga-form-group">
+            <label for="yoga-message">Message</label>
+            <textarea id="yoga-message" placeholder="Tell us about your experience level and what you're looking for..."></textarea>
+          </div>
+          <button type="submit" class="yoga-form-submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="yoga-footer">
+    <div class="yoga-footer-grid">
+      <div class="yoga-footer-brand">
+        <h3>SereneYoga</h3>
+        <p>A sanctuary for body, mind, and spirit. We believe yoga is for every body, and our studio is a space where all are welcome to grow, heal, and find peace.</p>
+        <div class="yoga-footer-social">
+          <a href="#">fb</a>
+          <a href="#">ig</a>
+          <a href="#">yt</a>
+          <a href="#">tw</a>
+        </div>
+      </div>
+      <div class="yoga-footer-col">
+        <h4>Classes</h4>
+        <ul>
+          <li><a href="#">Hatha Yoga</a></li>
+          <li><a href="#">Vinyasa Flow</a></li>
+          <li><a href="#">Yin Yoga</a></li>
+          <li><a href="#">Meditation</a></li>
+          <li><a href="#">Private Sessions</a></li>
+        </ul>
+      </div>
+      <div class="yoga-footer-col">
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Instructors</a></li>
+          <li><a href="#">Schedule</a></li>
+          <li><a href="#">Retreats</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div class="yoga-footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Gift Cards</a></li>
+          <li><a href="#">Cancellation Policy</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="yoga-footer-bottom">
+      <p>&copy; 2026 SereneYoga. All rights reserved.</p>
+      <div class="yoga-footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+</div>

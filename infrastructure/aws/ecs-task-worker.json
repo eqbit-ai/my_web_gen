@@ -1,0 +1,57 @@
+{
+  "family": "meydan-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "meydan-worker",
+      "image": "<ACCOUNT_ID>.dkr.ecr.me-south-1.amazonaws.com/meydan-api:latest",
+      "essential": true,
+      "command": ["python", "-m", "app.worker"],
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "production"
+        },
+        {
+          "name": "WORKER_CONCURRENCY",
+          "value": "3"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/database-url"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/redis-url"
+        },
+        {
+          "name": "JWT_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/jwt-secret"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/openai-api-key"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/anthropic-api-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/meydan-worker",
+          "awslogs-region": "me-south-1",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ]
+}
