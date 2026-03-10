@@ -1031,56 +1031,102 @@ COMBINATION TIPS:
 
 _SECTION_ANIMATION_MAP: dict[str, list[str]] = {
     "hero": [
-        "parallax-bg", "hero-stagger", "gradient-mesh", "aurora-glow",
-        "btn-gradient-shift", "floating-shapes",
+        "parallax-bg",
+        "hero-stagger",
+        "gradient-mesh",
+        "aurora-glow",
+        "btn-gradient-shift",
+        "floating-shapes",
     ],
     "navigation": [
-        "navbar-slidedown", "nav-link-slide", "logo-reveal",
+        "navbar-slidedown",
+        "nav-link-slide",
+        "logo-reveal",
     ],
     "navbar": [
-        "navbar-slidedown", "nav-link-slide", "logo-reveal",
+        "navbar-slidedown",
+        "nav-link-slide",
+        "logo-reveal",
     ],
     "features": [
-        "stagger-reveal", "stagger-child", "card-lift", "fade-up",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "fade-up",
     ],
     "services": [
-        "stagger-reveal", "stagger-child", "card-lift", "fade-up",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "fade-up",
     ],
     "stats": [
-        "counter", "stagger-reveal", "stagger-child", "fade-up",
+        "counter",
+        "stagger-reveal",
+        "stagger-child",
+        "fade-up",
     ],
     "pricing": [
-        "stagger-reveal", "stagger-child", "card-lift", "btn-gradient-shift",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "btn-gradient-shift",
     ],
     "testimonials": [
-        "stagger-reveal", "stagger-child", "card-lift", "image-fade-zoom",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "image-fade-zoom",
     ],
     "team": [
-        "stagger-reveal", "stagger-child", "card-lift", "image-slide-up",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "image-slide-up",
     ],
     "gallery": [
-        "stagger-reveal", "stagger-child", "image-blur-in", "scale-in",
+        "stagger-reveal",
+        "stagger-child",
+        "image-blur-in",
+        "scale-in",
     ],
     "portfolio": [
-        "stagger-reveal", "stagger-child", "image-fade-zoom", "scale-in",
+        "stagger-reveal",
+        "stagger-child",
+        "image-fade-zoom",
+        "scale-in",
     ],
     "cta": [
-        "gradient-mesh", "btn-gradient-shift", "magnetic-btn", "aurora-glow",
+        "gradient-mesh",
+        "btn-gradient-shift",
+        "magnetic-btn",
+        "aurora-glow",
     ],
     "contact": [
-        "float-input", "fade-up", "gradient-mesh",
+        "float-input",
+        "fade-up",
+        "gradient-mesh",
     ],
     "footer": [
-        "fade-up", "nav-link-slide",
+        "fade-up",
+        "nav-link-slide",
     ],
     "about": [
-        "stagger-reveal", "stagger-child", "fade-up", "image-slide-up",
+        "stagger-reveal",
+        "stagger-child",
+        "fade-up",
+        "image-slide-up",
     ],
     "faq": [
-        "stagger-reveal", "stagger-child", "fade-up",
+        "stagger-reveal",
+        "stagger-child",
+        "fade-up",
     ],
     "blog": [
-        "stagger-reveal", "stagger-child", "card-lift", "img-shimmer",
+        "stagger-reveal",
+        "stagger-child",
+        "card-lift",
+        "img-shimmer",
     ],
 }
 
@@ -1088,6 +1134,7 @@ _SECTION_ANIMATION_MAP: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 # 5. Public helper functions
 # ---------------------------------------------------------------------------
+
 
 def get_animation_css() -> str:
     """Return the full animation CSS string."""
@@ -1119,7 +1166,4 @@ def get_animations_for_section(section_type: str) -> str:
         # Fallback: generic scroll animations
         animations = ["fade-up", "stagger-reveal", "stagger-child"]
 
-    return (
-        f"Recommended animations for '{section_type}' section: "
-        + ", ".join(f".{a}" for a in animations)
-    )
+    return f"Recommended animations for '{section_type}' section: " + ", ".join(f".{a}" for a in animations)

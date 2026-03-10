@@ -3,25 +3,26 @@ Section manipulation routes — reorder, delete, duplicate, regenerate sections.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.utils.auth import decode_access_token
-from app.utils.section_parser import (
-    parse_sections,
-    inject_section_ids,
-    extract_section_html,
-    replace_section_html,
-    reorder_sections,
-    remove_section,
-    duplicate_section,
-    insert_section_at,
-    update_section_style,
-    toggle_section_visibility,
-)
 from app.utils.design_system import design_system_to_prompt_context
 from app.utils.llm_clients import get_anthropic_client
-from app.utils.session_store import get_session as redis_get_session, save_session as redis_save_session
+from app.utils.section_parser import (
+    duplicate_section,
+    extract_section_html,
+    inject_section_ids,
+    insert_section_at,
+    parse_sections,
+    remove_section,
+    reorder_sections,
+    replace_section_html,
+    toggle_section_visibility,
+    update_section_style,
+)
+from app.utils.session_store import get_session as redis_get_session
+from app.utils.session_store import save_session as redis_save_session
 
 router = APIRouter()
 security = HTTPBearer()
@@ -61,8 +62,8 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     return token_data
 
 
-import re as _re
 import html as _html_mod
+import re as _re
 
 
 def _sanitize_text_input(text: str) -> str:
@@ -71,7 +72,7 @@ def _sanitize_text_input(text: str) -> str:
     Only allows plain text — no HTML, no scripts, no event handlers.
     """
     # Strip all HTML tags
-    stripped = _re.sub(r'<[^>]+>', '', text)
+    stripped = _re.sub(r"<[^>]+>", "", text)
     # Escape any remaining HTML entities to prevent injection
     stripped = _html_mod.escape(stripped)
     return stripped
@@ -116,29 +117,34 @@ def _validate_regen_html(html: str, section_id: str, section_type: str) -> str:
     Strips Font Awesome kit scripts that Claude sometimes adds.
     """
     import re as _re
+
     if not html or len(html) < 20:
         return html
 
     # Strip Font Awesome kit/CDN script and link tags
     html = _re.sub(
-        r'<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*',
-        '', html, flags=_re.IGNORECASE,
+        r"<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*",
+        "",
+        html,
+        flags=_re.IGNORECASE,
     )
     html = _re.sub(
-        r'<link[^>]*(?:fontawesome|font-awesome)[^>]*/?\s*>\s*',
-        '', html, flags=_re.IGNORECASE,
+        r"<link[^>]*(?:fontawesome|font-awesome)[^>]*/?\s*>\s*",
+        "",
+        html,
+        flags=_re.IGNORECASE,
     )
 
     # Check for data-section-id
     if f'data-section-id="{section_id}"' not in html:
         # Inject into the first opening tag
-        first_tag_end = html.index('>') if '>' in html else -1
+        first_tag_end = html.index(">") if ">" in html else -1
         if first_tag_end > 0:
             html = html[:first_tag_end] + f' data-section-id="{section_id}"' + html[first_tag_end:]
 
     # Check for data-section-type
-    if f'data-section-type=' not in html:
-        first_tag_end = html.index('>') if '>' in html else -1
+    if "data-section-type=" not in html:
+        first_tag_end = html.index(">") if ">" in html else -1
         if first_tag_end > 0:
             html = html[:first_tag_end] + f' data-section-type="{section_type}"' + html[first_tag_end:]
 
@@ -158,26 +164,28 @@ def _extract_section_css(css: str, section_id: str, section_html: str) -> str:
     for cn in class_names:
         for c in cn.split():
             # Skip Tailwind utility classes (they contain colons or are very short common utilities)
-            if ':' not in c and not c.startswith(('flex', 'grid', 'p-', 'm-', 'w-', 'h-', 'text-', 'bg-', 'border-', 'rounded')):
+            if ":" not in c and not c.startswith(
+                ("flex", "grid", "p-", "m-", "w-", "h-", "text-", "bg-", "border-", "rounded")
+            ):
                 classes.add(c)
 
     # Also look for the section ID directly
     relevant_rules = []
     # Split CSS into rule blocks (rough but effective)
-    blocks = _re.findall(r'([^{}]+\{[^{}]*\})', css)
+    blocks = _re.findall(r"([^{}]+\{[^{}]*\})", css)
     for block in blocks:
-        selector = block.split('{')[0].strip()
+        selector = block.split("{")[0].strip()
         # Check if selector references the section ID
         if section_id in selector:
             relevant_rules.append(block.strip())
             continue
         # Check if selector references any class from the section
         for cls in classes:
-            if f'.{cls}' in selector:
+            if f".{cls}" in selector:
                 relevant_rules.append(block.strip())
                 break
 
-    return '\n'.join(relevant_rules)
+    return "\n".join(relevant_rules)
 
 
 def _strip_section_css(css: str, section_id: str) -> str:
@@ -185,21 +193,22 @@ def _strip_section_css(css: str, section_id: str) -> str:
     if not css or not section_id:
         return css
     # Remove rules whose selectors contain the section ID
-    lines = css.split('\n')
+    lines = css.split("\n")
     result = []
     skip_depth = 0
     for line in lines:
         if skip_depth > 0:
-            skip_depth += line.count('{') - line.count('}')
+            skip_depth += line.count("{") - line.count("}")
             continue
-        if section_id in line and '{' in line:
-            skip_depth = 1 + line.count('{') - line.count('}')
+        if section_id in line and "{" in line:
+            skip_depth = 1 + line.count("{") - line.count("}")
             continue
         result.append(line)
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 # ── Multi-page helpers ──────────────────────────────────────────────────
+
 
 def _get_page_html(session: dict, page_slug: str = "index") -> str:
     """Get HTML for the specified page from session."""
@@ -221,6 +230,7 @@ def _set_page_html(session: dict, html: str, page_slug: str = "index"):
 
 
 # ── Schemas ─────────────────────────────────────────────────────────────
+
 
 class ReorderRequest(BaseModel):
     sessionId: str
@@ -315,6 +325,7 @@ class UpdateContactRequest(BaseModel):
 
 # ── Endpoints ───────────────────────────────────────────────────────────
 
+
 @router.get("/{session_id}")
 async def get_sections(session_id: str, page_slug: str = "index", user: dict = Depends(require_auth)):
     """Parse and return section list for the current session HTML."""
@@ -382,18 +393,23 @@ async def dup(req: DuplicateRequest, user: dict = Depends(require_auth)):
 @router.post("/regenerate")
 async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth)):
     """Regenerate a single section with AI — fresh content, same design system."""
-    import time
     import logging
+    import time
+
     _logger = logging.getLogger(__name__)
     t0 = time.time()
 
-    _logger.info(f"🟡 Section Regenerate Request → id=\"{req.sectionId}\", prompt=\"{(req.prompt or '')[:80]}\", pageSlug=\"{req.pageSlug}\"")
+    _logger.info(
+        f'🟡 Section Regenerate Request → id="{req.sectionId}", prompt="{(req.prompt or "")[:80]}", pageSlug="{req.pageSlug}"'
+    )
 
     session = await redis_get_session(req.sessionId)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    _logger.info(f"📄 Session → multipage={session.get('multipage')}, pages={list(session.get('pages', {}).keys())}, pageSlug={req.pageSlug}")
+    _logger.info(
+        f"📄 Session → multipage={session.get('multipage')}, pages={list(session.get('pages', {}).keys())}, pageSlug={req.pageSlug}"
+    )
     page_html = _get_page_html(session, req.pageSlug)
     existing_section = extract_section_html(page_html, req.sectionId)
     if not existing_section:
@@ -403,7 +419,7 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
     all_sections = parse_sections(page_html)
     section_meta = next((s for s in all_sections if s["id"] == req.sectionId), None)
     section_type = section_meta["type"] if section_meta else "section"
-    _logger.info(f"🧠 Understanding Intent → Editing \"{section_type}\" section ({len(existing_section):,} chars)")
+    _logger.info(f'🧠 Understanding Intent → Editing "{section_type}" section ({len(existing_section):,} chars)')
     _logger.info(f"📦 Page Context → {len(all_sections)} sections: {', '.join(s['type'] for s in all_sections)}")
 
     ds_context = ""
@@ -413,8 +429,22 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
     variant_context = ""
     if req.variantKey:
         from app.utils.components import get_variant_prompt
+
         vp = get_variant_prompt("", req.variantKey)
-        for comp_type in ["hero", "navbar", "features", "testimonials", "pricing", "cta", "contact", "footer", "faq", "stats", "gallery", "team"]:
+        for comp_type in [
+            "hero",
+            "navbar",
+            "features",
+            "testimonials",
+            "pricing",
+            "cta",
+            "contact",
+            "footer",
+            "faq",
+            "stats",
+            "gallery",
+            "team",
+        ]:
             if req.variantKey.startswith(comp_type):
                 vp = get_variant_prompt(comp_type, req.variantKey)
                 break
@@ -428,7 +458,8 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
 
     # Extract :root CSS variables for design consistency
     import re as _regen_re
-    root_match = _regen_re.search(r':root\s*\{([^}]+)\}', session["css"])
+
+    root_match = _regen_re.search(r":root\s*\{([^}]+)\}", session["css"])
     css_vars = (":root {" + root_match.group(1) + "}") if root_match else ""
 
     # Build the brand context from session plan if available
@@ -438,6 +469,7 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
         if isinstance(plan, str):
             try:
                 import json
+
                 plan = json.loads(plan)
             except Exception:
                 plan = {}
@@ -448,12 +480,29 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
     # Detect if this is a modal/popup request → use pre-built template
     is_modal_request = False
     modal_template = None
-    modal_keywords = ["modal", "popup", "pop-up", "learn more", "detail", "expand", "click to see", "more info", "read more"]
+    modal_keywords = [
+        "modal",
+        "popup",
+        "pop-up",
+        "learn more",
+        "detail",
+        "expand",
+        "click to see",
+        "more info",
+        "read more",
+    ]
     prompt_lower = (req.prompt or "").lower()
-    if any(kw in prompt_lower for kw in modal_keywords) and section_type in ("services", "features", "team", "pricing", "gallery"):
+    if any(kw in prompt_lower for kw in modal_keywords) and section_type in (
+        "services",
+        "features",
+        "team",
+        "pricing",
+        "gallery",
+    ):
         is_modal_request = True
-        _logger.info(f"🎯 Modal Request Detected → Using pre-built detail modal template")
+        _logger.info("🎯 Modal Request Detected → Using pre-built detail modal template")
         from app.utils.interactive_templates import get_detail_modal_prompt, get_detail_modal_template
+
         modal_template = get_detail_modal_template()
         # Override the system prompt to only add data attributes
         system_prompt = f"""You are an expert frontend developer. You are adding interactive detail modals to a website section.
@@ -490,7 +539,7 @@ SECTION-SPECIFIC CSS:
 {section_css if section_css else "(styles are inline Tailwind)"}
 
 PAGE CONTEXT:
-Sections on this page: {', '.join(s['type'] for s in all_sections)}
+Sections on this page: {", ".join(s["type"] for s in all_sections)}
 {brand_ctx}
 {ds_context}
 {variant_context}
@@ -538,35 +587,49 @@ CRITICAL — JS-DEPENDENT CLASS NAMES (do NOT rename these):
 
 USER REQUEST: {req.prompt}"""
 
-    _logger.info(f"🚀 Executing Step → Sending {section_type} section + edit request to Claude Sonnet ({len(system_prompt):,} chars prompt)")
+    _logger.info(
+        f"🚀 Executing Step → Sending {section_type} section + edit request to Claude Sonnet ({len(system_prompt):,} chars prompt)"
+    )
 
     response = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=16000,
         system=system_prompt,
-        messages=[{"role": "user", "content": req.prompt if req.prompt else f"Refresh this {section_type} section — keep the same layout and design but improve the content."}],
+        messages=[
+            {
+                "role": "user",
+                "content": req.prompt
+                if req.prompt
+                else f"Refresh this {section_type} section — keep the same layout and design but improve the content.",
+            }
+        ],
     )
 
     raw_text = response.content[0].text
     _logger.info(f"📝 Raw Response → {len(raw_text):,} chars, starts with: {raw_text[:120]!r}")
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(raw_text)
 
     # Fallback: if no code blocks found, try to extract HTML directly
     if not result.get("html"):
-        import re as _fb_re
         # Check if the response itself looks like HTML (starts with < tag)
         stripped = raw_text.strip()
-        if stripped.startswith("<") and ("data-section" in stripped or "<section" in stripped or "<div" in stripped or "<nav" in stripped):
+        if stripped.startswith("<") and (
+            "data-section" in stripped or "<section" in stripped or "<div" in stripped or "<nav" in stripped
+        ):
             _logger.info("🔄 Fallback → Response is raw HTML without code fences")
             result["html"] = stripped
         else:
-            _logger.error(f"❌ Regenerate Failed → Claude returned no HTML for {section_type} section. Raw (first 500): {raw_text[:500]!r}")
+            _logger.error(
+                f"❌ Regenerate Failed → Claude returned no HTML for {section_type} section. Raw (first 500): {raw_text[:500]!r}"
+            )
             raise HTTPException(status_code=500, detail="Failed to regenerate section")
 
     # Debug: write raw response to file for inspection
     import os as _dbg_os
+
     _dbg_dir = f"/tmp/meydan_debug/regen_{req.sectionId}"
     _dbg_os.makedirs(_dbg_dir, exist_ok=True)
     with open(f"{_dbg_dir}/raw_response.txt", "w") as f:
@@ -578,30 +641,35 @@ USER REQUEST: {req.prompt}"""
 
     # Extract <script> tags from HTML and move to JS result
     import re as _script_re
-    script_tags = _script_re.findall(r'<script[^>]*>(.*?)</script>', result.get("html", ""), _script_re.DOTALL)
+
+    script_tags = _script_re.findall(r"<script[^>]*>(.*?)</script>", result.get("html", ""), _script_re.DOTALL)
     if script_tags:
         extracted_js = "\n".join(s.strip() for s in script_tags if s.strip())
-        result["html"] = _script_re.sub(r'<script[^>]*>.*?</script>', '', result["html"], flags=_script_re.DOTALL).strip()
+        result["html"] = _script_re.sub(
+            r"<script[^>]*>.*?</script>", "", result["html"], flags=_script_re.DOTALL
+        ).strip()
         if extracted_js:
             result["js"] = (result.get("js") or "") + "\n" + extracted_js
-            _logger.info(f"🔧 Extracted {len(script_tags)} <script> tag(s) from HTML → JS ({len(extracted_js):,} chars)")
+            _logger.info(
+                f"🔧 Extracted {len(script_tags)} <script> tag(s) from HTML → JS ({len(extracted_js):,} chars)"
+            )
 
     # Ensure regenerated HTML is a single complete section element
     # Find the root element's closing tag to prevent unclosed tags from swallowing other sections
     html_content = result.get("html", "")
-    root_tag_match = _script_re.match(r'^<(section|div|nav|header|footer|aside|article)\b', html_content)
+    root_tag_match = _script_re.match(r"^<(section|div|nav|header|footer|aside|article)\b", html_content)
     if root_tag_match:
         root_tag = root_tag_match.group(1)
         # Count open/close tags to find where the root element ends
         depth = 0
-        tag_pattern = _script_re.compile(rf'<(/?)({root_tag})\b[^>]*/?>')
+        tag_pattern = _script_re.compile(rf"<(/?)({root_tag})\b[^>]*/?>")
         last_valid_end = len(html_content)
         for m in tag_pattern.finditer(html_content):
-            if m.group(1) == '/':
+            if m.group(1) == "/":
                 depth -= 1
             else:
                 # Skip self-closing tags
-                if not m.group(0).endswith('/>'):
+                if not m.group(0).endswith("/>"):
                     depth += 1
             if depth == 0:
                 last_valid_end = m.end()
@@ -610,7 +678,9 @@ USER REQUEST: {req.prompt}"""
             _logger.info(f"🔧 Trimmed HTML at root element close: {len(html_content):,} → {last_valid_end:,} chars")
             result["html"] = html_content[:last_valid_end]
 
-    _logger.info(f"📦 Claude Response → HTML={len(result.get('html', '')):,} chars, CSS={len(result.get('css', '')):,} chars, JS={len(result.get('js', '')):,} chars")
+    _logger.info(
+        f"📦 Claude Response → HTML={len(result.get('html', '')):,} chars, CSS={len(result.get('css', '')):,} chars, JS={len(result.get('js', '')):,} chars"
+    )
 
     # Validate regenerated HTML has required attributes
     result["html"] = _validate_regen_html(result["html"], req.sectionId, section_type)
@@ -621,6 +691,7 @@ USER REQUEST: {req.prompt}"""
         _logger.info(f"🖼️ Resolving Images → {img_count} image placeholders in regenerated section")
         try:
             from app.utils.image_resolver import resolve_image_placeholders
+
             result["html"] = await resolve_image_placeholders(result["html"])
         except Exception as e:
             _logger.warning(f"❌ Image Resolution Failed → {e}")
@@ -631,8 +702,13 @@ USER REQUEST: {req.prompt}"""
     original_count = len(all_sections)
     new_sections_check = parse_sections(new_html)
     if len(new_sections_check) < original_count - 1:
-        _logger.error(f"❌ Section Count Mismatch → was {original_count}, now {len(new_sections_check)} — rejecting regeneration")
-        raise HTTPException(status_code=500, detail=f"Regeneration broke page structure ({original_count} → {len(new_sections_check)} sections). Try again.")
+        _logger.error(
+            f"❌ Section Count Mismatch → was {original_count}, now {len(new_sections_check)} — rejecting regeneration"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Regeneration broke page structure ({original_count} → {len(new_sections_check)} sections). Try again.",
+        )
 
     # Merge CSS using marker-based replacement (prevents bloat)
     new_css = session["css"]
@@ -649,6 +725,7 @@ USER REQUEST: {req.prompt}"""
     session["css"] = new_css
     if result.get("js"):
         from app.routes.generator import validate_js
+
         try:
             validated_js = validate_js(result["js"])
         except Exception:
@@ -659,7 +736,9 @@ USER REQUEST: {req.prompt}"""
 
     sections = parse_sections(new_html)
     duration = int((time.time() - t0) * 1000)
-    _logger.info(f"✅ Section Regenerate Complete → {section_type} ({req.sectionId}) in {duration}ms ({len(existing_section):,} → {len(result['html']):,} chars)")
+    _logger.info(
+        f"✅ Section Regenerate Complete → {section_type} ({req.sectionId}) in {duration}ms ({len(existing_section):,} → {len(result['html']):,} chars)"
+    )
 
     return {
         "success": True,
@@ -804,9 +883,14 @@ async def update_nav(req: UpdateNavRequest, user: dict = Depends(require_auth)):
         ds_context = design_system_to_prompt_context(session["design_system"])
 
     import json
+
     nav_items_str = json.dumps(req.items, indent=2)
-    logo_instruction = f'Use this logo URL: {req.logoUrl}' if req.logoUrl else 'Keep any existing logo or use a text logo.'
-    sticky_instruction = 'Make the navbar sticky (fixed to top on scroll).' if req.sticky else 'Do NOT make the navbar sticky.'
+    logo_instruction = (
+        f"Use this logo URL: {req.logoUrl}" if req.logoUrl else "Keep any existing logo or use a text logo."
+    )
+    sticky_instruction = (
+        "Make the navbar sticky (fixed to top on scroll)." if req.sticky else "Do NOT make the navbar sticky."
+    )
 
     client = get_anthropic_client()
     system_prompt = f"""You are an expert web developer. Regenerate this navbar section with updated navigation items.
@@ -839,6 +923,7 @@ INSTRUCTIONS:
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     if not result.get("html"):
@@ -876,9 +961,12 @@ async def update_footer(req: UpdateFooterRequest, user: dict = Depends(require_a
         ds_context = design_system_to_prompt_context(session["design_system"])
 
     import json
+
     columns_str = json.dumps(req.columns, indent=2)
     social_str = json.dumps(req.socialLinks, indent=2)
-    logo_instruction = f'Use this logo URL: {req.logoUrl}' if req.logoUrl else 'Keep any existing logo or use a text logo.'
+    logo_instruction = (
+        f"Use this logo URL: {req.logoUrl}" if req.logoUrl else "Keep any existing logo or use a text logo."
+    )
 
     client = get_anthropic_client()
     system_prompt = f"""You are an expert web developer. Regenerate this footer section with updated content.
@@ -913,10 +1001,13 @@ INSTRUCTIONS:
         model="claude-sonnet-4-20250514",
         max_tokens=4000,
         system=system_prompt,
-        messages=[{"role": "user", "content": "Regenerate the footer with the updated columns, copyright, and social links."}],
+        messages=[
+            {"role": "user", "content": "Regenerate the footer with the updated columns, copyright, and social links."}
+        ],
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     if not result.get("html"):
@@ -965,7 +1056,7 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
     # Build SEO meta block
     seo_lines = []
     if site_meta.get("title"):
-        seo_lines.append(f'<title>{site_meta["title"]}</title>')
+        seo_lines.append(f"<title>{site_meta['title']}</title>")
     if site_meta.get("description"):
         seo_lines.append(f'<meta name="description" content="{site_meta["description"]}">')
     if site_meta.get("keywords"):
@@ -998,16 +1089,16 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
     if site_meta.get("whatsappNumber"):
         number = site_meta["whatsappNumber"].replace("+", "").replace(" ", "").replace("-", "")
         wa_block = (
-            '<!-- WHATSAPP_FLOAT -->\n'
+            "<!-- WHATSAPP_FLOAT -->\n"
             f'<a href="https://wa.me/{number}" target="_blank" rel="noopener noreferrer" '
             'style="position:fixed;bottom:24px;right:24px;z-index:9999;width:56px;height:56px;'
-            'background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;'
+            "background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;"
             'box-shadow:0 4px 12px rgba(0,0,0,0.15);text-decoration:none;" aria-label="Chat on WhatsApp">'
             '<svg width="28" height="28" viewBox="0 0 24 24" fill="white">'
             '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>'
             '<path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.553 4.103 1.519 5.832L0 24l6.335-1.652A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-1.875 0-3.615-.525-5.107-1.434l-.366-.217-3.795.99 1.013-3.7-.238-.378A9.71 9.71 0 012.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75z"/>'
-            '</svg></a>\n'
-            '<!-- END_WHATSAPP_FLOAT -->'
+            "</svg></a>\n"
+            "<!-- END_WHATSAPP_FLOAT -->"
         )
         wa_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->", re.DOTALL)
         if wa_pattern.search(html):
@@ -1047,6 +1138,7 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
         ds_context = design_system_to_prompt_context(session["design_system"])
 
     import json
+
     fields_str = json.dumps(req.fields, indent=2)
 
     client = get_anthropic_client()
@@ -1084,6 +1176,7 @@ INSTRUCTIONS:
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     if not result.get("html"):

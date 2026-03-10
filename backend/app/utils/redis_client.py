@@ -7,10 +7,11 @@ Jobs are stored as Redis hashes with the structure:
 Job statuses: pending -> processing -> completed | failed
 """
 
-import os
 import json
+import os
 import time
 import uuid
+
 import redis.asyncio as aioredis
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

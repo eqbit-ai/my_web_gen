@@ -2,49 +2,48 @@
 Meydan Free Zone - Website Generator Backend
 """
 
-import os
 import logging
+import os
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from dotenv import load_dotenv
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
 from starlette.types import ASGIApp, Receive, Scope, Send
-from starlette.requests import Request as StarletteRequest
-from dotenv import load_dotenv
 
 load_dotenv()
 
 from app.utils.logging_config import setup_logging
+
 setup_logging(os.getenv("LOG_LEVEL", "INFO"))
 
 logger = logging.getLogger(__name__)
 
-from app.routes import health
-from app.routes import auth as auth_routes
-from app.routes import generator as generator_routes
-from app.routes import projects as project_routes
-from app.routes import images as image_routes
-from app.routes import components as component_routes
-from app.routes import sections as section_routes
-from app.routes import jobs as job_routes
-from app.routes import templates as template_routes
-from app.routes import uploads as upload_routes
-from app.routes import admin as admin_routes
-from app.routes import metrics_route
 from app.database import init_db
-from app.utils.redis_client import get_redis, close_redis
-from app.utils.sentry_setup import init_sentry
-from app.utils import metrics as app_metrics
 from app.middleware.rate_limiter import RateLimitMiddleware
-from app.middleware.security import SecurityHeadersMiddleware
 from app.middleware.request_tracker import (
     RequestTrackerMiddleware,
     install_signal_handlers,
     wait_for_inflight_requests,
 )
+from app.middleware.security import SecurityHeadersMiddleware
+from app.routes import admin as admin_routes
+from app.routes import auth as auth_routes
+from app.routes import components as component_routes
+from app.routes import generator as generator_routes
+from app.routes import health, metrics_route
+from app.routes import images as image_routes
+from app.routes import jobs as job_routes
+from app.routes import projects as project_routes
+from app.routes import sections as section_routes
+from app.routes import templates as template_routes
+from app.routes import uploads as upload_routes
+from app.utils import metrics as app_metrics
+from app.utils.redis_client import close_redis, get_redis
+from app.utils.sentry_setup import init_sentry
 
 
 class RequestLoggingMiddleware:
@@ -121,7 +120,7 @@ app = FastAPI(
     title="Meydan Website Generator",
     description="AI Website Generator for Meydan Free Zone",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Allowed CORS origins (configurable via env var, comma-separated)
@@ -165,4 +164,5 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

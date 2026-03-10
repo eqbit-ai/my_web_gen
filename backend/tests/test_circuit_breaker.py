@@ -1,28 +1,26 @@
 """Tests for the circuit breaker module."""
 
 import asyncio
-import time
 
 import pytest
+
 from app.utils.circuit_breaker import (
-    _CircuitBreaker,
-    CircuitMetrics,
     CircuitOpenError,
     CircuitState,
-    _is_transient,
-    _circuits,
+    _CircuitBreaker,
     _get_circuit,
     get_circuit_status,
     reset_circuit,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helper: controllable async functions
 # ---------------------------------------------------------------------------
 
+
 class ControllableError(Exception):
     """Non-transient error for testing."""
+
     pass
 
 
@@ -37,6 +35,7 @@ async def fail():
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_circuit_starts_closed():

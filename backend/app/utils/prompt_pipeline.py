@@ -10,19 +10,17 @@ A small <style> block handles CSS variables, animations, and states.
 """
 
 import json
-import re
 import random
+import re
 
 from app.utils.patterns import (
-    get_patterns_for_plan,
-    get_style_additions_for_plan,
-    get_rotation_hints,
-    get_random_style_preset,
     format_style_hint,
-    record_used_patterns,
+    get_patterns_for_plan,
+    get_random_style_preset,
+    get_rotation_hints,
+    get_style_additions_for_plan,
 )
 from app.utils.patterns._base import HTML_CORE_PROMPT
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # COMPONENT PATTERN LIBRARY
@@ -586,6 +584,7 @@ Choose an appropriate industry, suggest a brand name, and create comprehensive c
 # DYNAMIC PROMPT BUILDERS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage: bool = False) -> str:
     """Build the planner prompt with rotation hints, style preset, fonts, design tokens, and niche guidance."""
     prompt = base_prompt or PLAN_SYSTEM_PROMPT
@@ -602,28 +601,30 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
     # Inject curated font pairing
     try:
         from app.utils.font_pairings import get_pairing_for_style, get_random_pairing
+
         style_hint = niche_key or ""
         pairing = get_pairing_for_style(style_hint) if style_hint else get_random_pairing()
         prompt += f"""
 
 FONT PAIRING (use these exact fonts):
-- Heading font: {pairing['heading']}
-- Body font: {pairing['body']}
-- Style: {pairing['style']}
-- Google import: {pairing['google_import']}
+- Heading font: {pairing["heading"]}
+- Body font: {pairing["body"]}
+- Style: {pairing["style"]}
+- Google import: {pairing["google_import"]}
 Include this @import in the <style> block. Use these fonts in the design_tokens."""
     except Exception:
         pass
 
     # Inject curated design tokens
     try:
-        from app.utils.design_tokens import get_tokens_for_niche, get_random_tokens, format_tokens_for_prompt
+        from app.utils.design_tokens import format_tokens_for_prompt, get_random_tokens, get_tokens_for_niche
+
         tokens = get_tokens_for_niche(niche_key) if niche_key else get_random_tokens()
         token_css = format_tokens_for_prompt(tokens)
         prompt += f"""
 
 DESIGN TOKEN REFERENCE (use as starting point, adapt to brand):
-Token set: "{tokens['name']}" ({tokens['style']})
+Token set: "{tokens["name"]}" ({tokens["style"]})
 {token_css}
 Adapt these colors/radius/shadows to fit the brand. You may adjust shades but keep the overall feel."""
     except Exception:
@@ -644,8 +645,8 @@ Adapt these colors/radius/shadows to fit the brand. You may adjust shades but ke
 
 def _build_niche_image_hint(niche_key: str) -> str:
     """Build niche-specific image query guidance for the planner."""
-    from app.utils.niches import NICHES
     from app.utils.image_packs import get_image_pack
+    from app.utils.niches import NICHES
 
     niche = NICHES.get(niche_key)
     if not niche:
@@ -695,6 +696,7 @@ def build_html_prompt(plan: dict) -> str:
     # Inject animation guidance
     try:
         from app.utils.animations import get_animation_prompt, get_animations_for_section
+
         prompt += "\n\n" + get_animation_prompt()
 
         # Add per-section animation recommendations
@@ -715,6 +717,7 @@ def build_html_prompt(plan: dict) -> str:
     # Inject section-level reference templates
     try:
         from app.utils.section_templates import get_references_for_plan
+
         refs = get_references_for_plan(plan)
         if refs:
             prompt += "\n\n" + refs
@@ -736,9 +739,9 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
         "design": plan.get("design", {}),
         # Combine shared navbar + page sections + shared footer
         "sections": (
-            [s for s in shared_sections if s.get("type") == "navbar"] +
-            page.get("sections", []) +
-            [s for s in shared_sections if s.get("type") == "footer"]
+            [s for s in shared_sections if s.get("type") == "navbar"]
+            + page.get("sections", [])
+            + [s for s in shared_sections if s.get("type") == "footer"]
         ),
     }
 
@@ -755,7 +758,9 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
         href = "/" if slug == "index" else f"/{slug}.html"
         nav_context += f'- "{p.get("title", slug)}" -> href="{href}"\n'
     nav_context += "- Navbar CTA button should link to the contact page or relevant conversion page.\n"
-    nav_context += "- Within a page, section anchor links (#services, #about) should still work for same-page navigation.\n"
+    nav_context += (
+        "- Within a page, section anchor links (#services, #about) should still work for same-page navigation.\n"
+    )
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
 
     return base_prompt + nav_context
@@ -765,11 +770,24 @@ def is_multipage_request(prompt: str) -> bool:
     """Detect if user wants a multi-page website."""
     prompt_lower = prompt.lower()
     multipage_signals = [
-        "multi-page", "multipage", "multiple pages", "separate pages",
-        "different pages", "subpages", "sub-pages", "about page",
-        "contact page", "services page", "pricing page", "menu page",
-        "portfolio page", "several pages", "individual pages",
-        "home page and", "homepage and", "pages for",
+        "multi-page",
+        "multipage",
+        "multiple pages",
+        "separate pages",
+        "different pages",
+        "subpages",
+        "sub-pages",
+        "about page",
+        "contact page",
+        "services page",
+        "pricing page",
+        "menu page",
+        "portfolio page",
+        "several pages",
+        "individual pages",
+        "home page and",
+        "homepage and",
+        "pages for",
     ]
     return any(signal in prompt_lower for signal in multipage_signals)
 
@@ -778,18 +796,32 @@ def is_multipage_request(prompt: str) -> bool:
 
 # Page types we recognise
 _PAGE_TYPES = {
-    "services": "services", "service": "services",
-    "about": "about", "about us": "about",
-    "contact": "contact", "contact us": "contact",
-    "pricing": "pricing", "plans": "pricing",
-    "portfolio": "portfolio", "work": "portfolio", "projects": "portfolio",
-    "team": "team", "our team": "team",
-    "blog": "blog", "news": "blog", "articles": "blog",
-    "faq": "faq", "faqs": "faq",
-    "gallery": "gallery", "photos": "gallery",
-    "careers": "careers", "jobs": "careers",
-    "testimonials": "testimonials", "reviews": "testimonials",
+    "services": "services",
+    "service": "services",
+    "about": "about",
+    "about us": "about",
+    "contact": "contact",
+    "contact us": "contact",
+    "pricing": "pricing",
+    "plans": "pricing",
+    "portfolio": "portfolio",
+    "work": "portfolio",
+    "projects": "portfolio",
+    "team": "team",
+    "our team": "team",
+    "blog": "blog",
+    "news": "blog",
+    "articles": "blog",
+    "faq": "faq",
+    "faqs": "faq",
+    "gallery": "gallery",
+    "photos": "gallery",
+    "careers": "careers",
+    "jobs": "careers",
+    "testimonials": "testimonials",
+    "reviews": "testimonials",
 }
+
 
 def detect_add_page_request(prompt: str) -> dict | None:
     """Detect if the user wants to add a new page (not a section).
@@ -2593,42 +2625,96 @@ NICHE_DESIGN_SEEDS = {
 # Map niche keys → design category
 _NICHE_CATEGORY_MAP = {
     # Tech
-    "ai_startup": "tech", "blockchain": "tech", "cloud_services": "tech",
-    "coding_bootcamp": "tech", "cybersecurity": "tech", "electronics_store": "tech",
-    "saas": "tech", "software": "tech", "tech_startup": "tech", "web_agency": "tech",
-    "gaming": "tech", "iot": "tech", "it_services": "tech",
+    "ai_startup": "tech",
+    "blockchain": "tech",
+    "cloud_services": "tech",
+    "coding_bootcamp": "tech",
+    "cybersecurity": "tech",
+    "electronics_store": "tech",
+    "saas": "tech",
+    "software": "tech",
+    "tech_startup": "tech",
+    "web_agency": "tech",
+    "gaming": "tech",
+    "iot": "tech",
+    "it_services": "tech",
     # Corporate
-    "accounting": "corporate", "consulting": "corporate", "construction": "corporate",
-    "coworking_space": "corporate", "insurance": "corporate", "law_firm": "corporate",
-    "logistics": "corporate", "moving_company": "corporate", "real_estate": "corporate",
-    "recruitment": "corporate", "marketing_agency": "corporate", "financial_advisor": "corporate",
+    "accounting": "corporate",
+    "consulting": "corporate",
+    "construction": "corporate",
+    "coworking_space": "corporate",
+    "insurance": "corporate",
+    "law_firm": "corporate",
+    "logistics": "corporate",
+    "moving_company": "corporate",
+    "real_estate": "corporate",
+    "recruitment": "corporate",
+    "marketing_agency": "corporate",
+    "financial_advisor": "corporate",
     # Luxury
-    "fashion_boutique": "luxury", "jewelry": "luxury", "luxury_hotel": "luxury",
-    "luxury_real_estate": "luxury", "spa": "luxury", "beauty_salon": "luxury",
-    "car_dealership": "luxury", "cruise": "luxury", "wine": "luxury",
+    "fashion_boutique": "luxury",
+    "jewelry": "luxury",
+    "luxury_hotel": "luxury",
+    "luxury_real_estate": "luxury",
+    "spa": "luxury",
+    "beauty_salon": "luxury",
+    "car_dealership": "luxury",
+    "cruise": "luxury",
+    "wine": "luxury",
     # Creative
-    "art_gallery": "creative", "dance_studio": "creative", "film_production": "creative",
-    "graphic_design": "creative", "interior_design": "creative", "music": "creative",
-    "photography": "creative", "tattoo": "creative", "theater": "creative",
-    "podcast": "creative", "video_production": "creative",
+    "art_gallery": "creative",
+    "dance_studio": "creative",
+    "film_production": "creative",
+    "graphic_design": "creative",
+    "interior_design": "creative",
+    "music": "creative",
+    "photography": "creative",
+    "tattoo": "creative",
+    "theater": "creative",
+    "podcast": "creative",
+    "video_production": "creative",
     # Food
-    "bakery": "food", "brewery": "food", "catering": "food", "coffee_shop": "food",
-    "food_truck": "food", "restaurant": "food", "meal_prep": "food",
+    "bakery": "food",
+    "brewery": "food",
+    "catering": "food",
+    "coffee_shop": "food",
+    "food_truck": "food",
+    "restaurant": "food",
+    "meal_prep": "food",
     # Health
-    "chiropractor": "health", "dentist": "health", "fitness": "health",
-    "gym": "health", "healthcare": "health", "mental_health": "health",
-    "nutrition": "health", "pharmacy": "health", "physiotherapy": "health",
-    "veterinary": "health", "yoga": "health", "wellness": "health",
+    "chiropractor": "health",
+    "dentist": "health",
+    "fitness": "health",
+    "gym": "health",
+    "healthcare": "health",
+    "mental_health": "health",
+    "nutrition": "health",
+    "pharmacy": "health",
+    "physiotherapy": "health",
+    "veterinary": "health",
+    "yoga": "health",
+    "wellness": "health",
     # Nature
-    "environmental": "nature", "gardening": "nature", "landscaping": "nature",
-    "organic_farm": "nature", "pet_care": "nature", "sustainability": "nature",
+    "environmental": "nature",
+    "gardening": "nature",
+    "landscaping": "nature",
+    "organic_farm": "nature",
+    "pet_care": "nature",
+    "sustainability": "nature",
     # Wedding
-    "wedding_planner": "wedding", "florist": "wedding", "bridal": "wedding",
+    "wedding_planner": "wedding",
+    "florist": "wedding",
+    "bridal": "wedding",
     "event_management": "wedding",
     # Education
-    "education": "education", "language_school": "education", "music_school": "education",
-    "tutoring": "education", "daycare": "education", "driving_school": "education",
-    "church": "education", "community_center": "education",
+    "education": "education",
+    "language_school": "education",
+    "music_school": "education",
+    "tutoring": "education",
+    "daycare": "education",
+    "driving_school": "education",
+    "church": "education",
+    "community_center": "education",
 }
 
 # Fallback pool for unmapped niches
@@ -2642,6 +2728,7 @@ _FALLBACK_SEEDS = [
 
 
 _last_used_seeds: dict[str, str] = {}  # category -> last seed used
+
 
 def get_design_seed(niche_key: str = None) -> str:
     """Pick a design seed that matches the detected niche category.
@@ -2668,23 +2755,24 @@ def get_design_seed(niche_key: str = None) -> str:
 # Utility functions
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def parse_json_response(text: str) -> dict:
     """Extract JSON from an LLM response."""
     text = text.strip()
-    if text.startswith('{'):
+    if text.startswith("{"):
         try:
             return json.loads(text)
         except json.JSONDecodeError:
             pass
 
-    match = re.search(r'```(?:json)?\s*\n(.*?)```', text, re.DOTALL)
+    match = re.search(r"```(?:json)?\s*\n(.*?)```", text, re.DOTALL)
     if match:
         try:
             return json.loads(match.group(1).strip())
         except json.JSONDecodeError:
             pass
 
-    match = re.search(r'\{[\s\S]*\}', text)
+    match = re.search(r"\{[\s\S]*\}", text)
     if match:
         try:
             return json.loads(match.group(0))
@@ -2709,9 +2797,9 @@ def parse_single_code_block(text: str, expected_lang: str = None) -> str:
     # Fallback: strip any leading/trailing code fence markers and return
     cleaned = text.strip()
     # Remove leading ```html or ```css or ```js etc.
-    cleaned = re.sub(r'^`{3,}\s*\w*\s*\n?', '', cleaned)
+    cleaned = re.sub(r"^`{3,}\s*\w*\s*\n?", "", cleaned)
     # Remove trailing ```
-    cleaned = re.sub(r'\n?`{3,}\s*$', '', cleaned)
+    cleaned = re.sub(r"\n?`{3,}\s*$", "", cleaned)
     return cleaned.strip() if not matches else ""
 
 
@@ -2759,10 +2847,10 @@ def parse_code_blocks(text: str) -> dict[str, str]:
 
 def summarize_html(html: str, max_lines: int = 200) -> str:
     """Create a summary of HTML structure for the JS stage."""
-    lines = html.split('\n')
+    lines = html.split("\n")
     if len(lines) <= max_lines:
         return html
-    return '\n'.join(lines[:120]) + '\n\n<!-- ... more sections ... -->\n\n' + '\n'.join(lines[-80:])
+    return "\n".join(lines[:120]) + "\n\n<!-- ... more sections ... -->\n\n" + "\n".join(lines[-80:])
 
 
 def extract_section_types(html: str) -> str:
@@ -2782,7 +2870,7 @@ def extract_sections_summary(plan: dict) -> str:
         items_count = len(s.get("content", {}).get("items", []))
         line = f"- {stype} (pattern: {pattern})"
         if headline:
-            line += f" — \"{headline}\""
+            line += f' — "{headline}"'
         if items_count:
             line += f" [{items_count} items]"
         summary.append(line)

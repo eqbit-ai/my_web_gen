@@ -10,8 +10,8 @@ import asyncio
 import logging
 import signal
 
-from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 logger = logging.getLogger("request_tracker")
 
@@ -45,6 +45,7 @@ def _get_shutdown_event() -> asyncio.Event:
 # Public helpers
 # ---------------------------------------------------------------------------
 
+
 def get_inflight_count() -> int:
     return _inflight_count
 
@@ -56,6 +57,7 @@ def is_shutting_down() -> bool:
 # ---------------------------------------------------------------------------
 # Signal handling
 # ---------------------------------------------------------------------------
+
 
 def _handle_shutdown_signal(signum: int, _frame: object) -> None:
     global _shutting_down
@@ -81,6 +83,7 @@ def install_signal_handlers() -> None:
 # ---------------------------------------------------------------------------
 # Drain helper
 # ---------------------------------------------------------------------------
+
 
 async def wait_for_inflight_requests() -> None:
     if _inflight_count == 0:
@@ -111,6 +114,7 @@ async def wait_for_inflight_requests() -> None:
 # ---------------------------------------------------------------------------
 # Middleware (pure ASGI)
 # ---------------------------------------------------------------------------
+
 
 class RequestTrackerMiddleware:
     def __init__(self, app: ASGIApp):

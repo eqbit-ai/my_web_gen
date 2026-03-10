@@ -7,12 +7,11 @@ form handler script that captures submissions via fetch API.
 
 import re
 
-
 # ---------------------------------------------------------------------------
 # Universal form handler JS
 # ---------------------------------------------------------------------------
 
-FORM_HANDLER_JS = '''
+FORM_HANDLER_JS = """
 // ── Universal Form Handler ──────────────────────────────────────────
 (function() {
     document.querySelectorAll('form[data-form-handler]').forEach(function(form) {
@@ -99,21 +98,23 @@ FORM_HANDLER_JS = '''
         });
     });
 })();
-'''
+"""
 
 
 # ---------------------------------------------------------------------------
 # 1. has_contact_form
 # ---------------------------------------------------------------------------
 
+
 def has_contact_form(html: str) -> bool:
     """Check if the HTML contains a form element (contact, newsletter, etc.)."""
-    return bool(re.search(r'<form\b', html, re.I))
+    return bool(re.search(r"<form\b", html, re.I))
 
 
 # ---------------------------------------------------------------------------
 # 2. inject_form_handler
 # ---------------------------------------------------------------------------
+
 
 def inject_form_handler(html: str, js: str) -> tuple[str, str]:
     """
@@ -134,7 +135,7 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
     # ── Add data-form-handler to forms without it ────────────────────
     def _add_form_handler_attr(m):
         tag = m.group(0)
-        if 'data-form-handler' in tag.lower():
+        if "data-form-handler" in tag.lower():
             return tag
 
         # Use existing action as the handler endpoint, or empty string
@@ -147,12 +148,12 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         # Insert data-form-handler before the closing >
         return tag[:-1] + f' data-form-handler="{endpoint}">'
 
-    fixed_html = re.sub(r'<form\b[^>]*>', _add_form_handler_attr, fixed_html, flags=re.I | re.S)
+    fixed_html = re.sub(r"<form\b[^>]*>", _add_form_handler_attr, fixed_html, flags=re.I | re.S)
 
     # ── Add name attributes to inputs missing them ───────────────────
     def _add_input_names(m):
         tag = m.group(0)
-        if re.search(r'\bname\s*=', tag, re.I):
+        if re.search(r"\bname\s*=", tag, re.I):
             return tag
 
         # Derive name from type, placeholder, or id
@@ -168,8 +169,8 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         # Try placeholder
         ph_match = re.search(r'placeholder\s*=\s*["\']([^"\']+)["\']', tag, re.I)
         if ph_match:
-            name = re.sub(r'[^a-zA-Z0-9]', '_', ph_match.group(1).lower().strip())
-            name = re.sub(r'_+', '_', name).strip('_')[:30]
+            name = re.sub(r"[^a-zA-Z0-9]", "_", ph_match.group(1).lower().strip())
+            name = re.sub(r"_+", "_", name).strip("_")[:30]
 
         # Try id
         if not name:
@@ -190,19 +191,19 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
 
         return tag[:-1] + f' name="{name}">'
 
-    fixed_html = re.sub(r'<input\b[^>]*>', _add_input_names, fixed_html, flags=re.I | re.S)
+    fixed_html = re.sub(r"<input\b[^>]*>", _add_input_names, fixed_html, flags=re.I | re.S)
 
     # ── Add name to textarea if missing ──────────────────────────────
     def _add_textarea_name(m):
         tag = m.group(0)
-        if re.search(r'\bname\s*=', tag, re.I):
+        if re.search(r"\bname\s*=", tag, re.I):
             return tag
 
         # Try placeholder or id
         ph_match = re.search(r'placeholder\s*=\s*["\']([^"\']+)["\']', tag, re.I)
         if ph_match:
-            name = re.sub(r'[^a-zA-Z0-9]', '_', ph_match.group(1).lower().strip())
-            name = re.sub(r'_+', '_', name).strip('_')[:30]
+            name = re.sub(r"[^a-zA-Z0-9]", "_", ph_match.group(1).lower().strip())
+            name = re.sub(r"_+", "_", name).strip("_")[:30]
         else:
             name = "message"
 
@@ -210,7 +211,7 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
 
     # Match opening <textarea> tag only
     fixed_html = re.sub(
-        r'<textarea\b[^>]*>',
+        r"<textarea\b[^>]*>",
         _add_textarea_name,
         fixed_html,
         flags=re.I | re.S,
@@ -218,7 +219,7 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
 
     # ── Append form handler JS ───────────────────────────────────────
     fixed_js = js
-    if 'data-form-handler' not in js:
+    if "data-form-handler" not in js:
         fixed_js = js + "\n\n" + FORM_HANDLER_JS
 
     return fixed_html, fixed_js

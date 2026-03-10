@@ -8,61 +8,66 @@ Generator routes — 3-stage AI website generation pipeline:
 CSS is inline Tailwind utilities. A <style> block handles variables/animations.
 """
 
-import re
-import json
-import uuid
 import asyncio
-import time
-import os
+import json
 import logging
-import traceback
+import os
+import re
+import time
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from app.utils.auth import decode_access_token
-from app.utils.llm_clients import get_openai_client, get_anthropic_client
-from app.utils.circuit_breaker import circuit_protected, CircuitOpenError
-from app.utils.input_sanitizer import sanitize_prompt
-from app.utils.content_moderation import moderate_prompt
 from app.utils.audit_log import log_event_bg
-from app.utils.section_parser import inject_section_ids, parse_sections, replace_section_html
+from app.utils.auth import decode_access_token
+from app.utils.circuit_breaker import CircuitOpenError, circuit_protected
+from app.utils.content_moderation import moderate_prompt
 from app.utils.image_resolver import resolve_image_placeholders
+from app.utils.input_sanitizer import sanitize_prompt
+from app.utils.llm_clients import get_anthropic_client, get_openai_client
+from app.utils.metrics import increment as metrics_increment
+from app.utils.metrics import observe as metrics_observe
+from app.utils.patterns import enforce_pattern_rotation, get_pattern_template, record_used_patterns
+from app.utils.plan_validator import validate_and_fix_plan
 from app.utils.prompt_pipeline import (
-    PLAN_SYSTEM_PROMPT,
-    PLAN_SHORT_PROMPT_ADDENDUM,
-    HTML_GEN_SYSTEM_PROMPT,
-    JS_GEN_SYSTEM_PROMPT,
-    ITERATION_SYSTEM_PROMPT,
+    ADD_PAGE_HTML_PROMPT,
+    APPEND_SECTION_PROMPT,
+    COMPONENT_EDIT_PROMPT,
     COMPONENT_PATTERNS,
     COMPONENT_ROUTER_PROMPT,
-    COMPONENT_EDIT_PROMPT,
+    ITERATION_SYSTEM_PROMPT,
+    JS_GEN_SYSTEM_PROMPT,
+    PLAN_SHORT_PROMPT_ADDENDUM,
+    PROMPT_ENHANCE_SYSTEM,
     STYLE_EDIT_PROMPT,
-    APPEND_SECTION_PROMPT,
-    parse_json_response,
-    parse_single_code_block,
-    parse_code_blocks,
-    summarize_html,
+    build_html_prompt,
+    build_page_html_prompt,
+    build_plan_prompt,
+    detect_add_page_request,
     extract_section_types,
     get_design_seed,
-    build_html_prompt,
-    build_plan_prompt,
-    build_page_html_prompt,
     is_multipage_request,
-    detect_add_page_request,
-    ADD_PAGE_HTML_PROMPT,
-    PROMPT_ENHANCE_SYSTEM,
+    parse_code_blocks,
+    parse_json_response,
+    parse_single_code_block,
+    summarize_html,
 )
-from app.utils.patterns import record_used_patterns, get_pattern_template, enforce_pattern_rotation
-from app.utils.plan_validator import validate_and_fix_plan
+from app.utils.section_parser import inject_section_ids, parse_sections, replace_section_html
+from app.utils.session_store import (
+    delete_session as redis_delete_session,
+)
 from app.utils.session_store import (
     get_session as redis_get_session,
+)
+from app.utils.session_store import (
     save_session as redis_save_session,
-    delete_session as redis_delete_session,
+)
+from app.utils.session_store import (
     session_exists as redis_session_exists,
 )
-from app.utils.metrics import increment as metrics_increment, observe as metrics_observe
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +83,7 @@ DEBUG_DIR = os.path.join(
 # ═══════════════════════════════════════════════════════════════════════
 # LOGGING HELPER
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def _fmt_duration(ms: int) -> str:
     """Format milliseconds as human-readable duration."""
@@ -114,50 +120,51 @@ def save_debug(session_id: str, stage: str, content: str):
 # OUTPUT VALIDATORS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def validate_html(html: str) -> str:
     """Validate HTML output meets minimum quality."""
     # Strip any code fence markers the LLM may have left
-    html = re.sub(r'^```\w*\s*\n?', '', html.strip())
-    html = re.sub(r'\n?```\s*$', '', html.strip())
+    html = re.sub(r"^```\w*\s*\n?", "", html.strip())
+    html = re.sub(r"\n?```\s*$", "", html.strip())
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
     if len(html) > 50000:
         raise ValueError(f"HTML too large ({len(html)} chars) — may be truncated or malformed")
-    if 'data-section-type' not in html:
+    if "data-section-type" not in html:
         raise ValueError("HTML missing data-section-type attributes")
 
     # Ensure every section with data-section-type is wrapped in a <section> tag
     # Fix cases where AI uses <div> instead of <section>
     html = re.sub(
         r'<div(\s+[^>]*data-section-type="[^"]*")',
-        r'<section\1',
+        r"<section\1",
         html,
     )
     html = re.sub(
-        r'</div>(\s*<!--\s*end\s+section)',
-        r'</section>\1',
+        r"</div>(\s*<!--\s*end\s+section)",
+        r"</section>\1",
         html,
     )
 
     # Strip Font Awesome kit/CDN script and link tags (AI adds placeholder kit URLs)
     html = re.sub(
-        r'<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*',
-        '',
+        r"<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*",
+        "",
         html,
         flags=re.IGNORECASE,
     )
     html = re.sub(
-        r'<link[^>]*(?:fontawesome|font-awesome)[^>]*/?\s*>\s*',
-        '',
+        r"<link[^>]*(?:fontawesome|font-awesome)[^>]*/?\s*>\s*",
+        "",
         html,
         flags=re.IGNORECASE,
     )
 
     # Strip X-Frame-Options meta tag (must be HTTP header, not meta)
     html = re.sub(
-        r'<meta[^>]*X-Frame-Options[^>]*/?>\s*',
-        '',
+        r"<meta[^>]*X-Frame-Options[^>]*/?>\s*",
+        "",
         html,
         flags=re.IGNORECASE,
     )
@@ -166,7 +173,13 @@ def validate_html(html: str) -> str:
     footer_match = re.search(r'<section([^>]*data-section-type="footer"[^>]*)>', html)
     if footer_match:
         attrs = footer_match.group(1)
-        if 'background' not in attrs and 'bg-[#' not in attrs and 'bg-gray-9' not in attrs and 'bg-black' not in attrs and 'bg-slate-9' not in attrs:
+        if (
+            "background" not in attrs
+            and "bg-[#" not in attrs
+            and "bg-gray-9" not in attrs
+            and "bg-black" not in attrs
+            and "bg-slate-9" not in attrs
+        ):
             # Add dark background inline style
             if 'style="' in attrs:
                 html = html.replace(
@@ -190,9 +203,9 @@ def validate_css(css: str) -> str:
     if len(css) > 40000:
         raise ValueError(f"CSS too large ({len(css)} chars)")
     # Strip any [data-aos] rules — AOS CSS is loaded via CDN, custom rules cause opacity:0 issues
-    css = re.sub(r'/\*[^*]*AOS[^*]*\*/\s*', '', css)
-    css = re.sub(r'\[data-aos\][^{]*\{[^}]*\}\s*', '', css)
-    css = re.sub(r'\[data-aos\][^{]*\.aos-animate[^{]*\{[^}]*\}\s*', '', css)
+    css = re.sub(r"/\*[^*]*AOS[^*]*\*/\s*", "", css)
+    css = re.sub(r"\[data-aos\][^{]*\{[^}]*\}\s*", "", css)
+    css = re.sub(r"\[data-aos\][^{]*\.aos-animate[^{]*\{[^}]*\}\s*", "", css)
     return css
 
 
@@ -200,7 +213,7 @@ def _replace_template_literal(match):
     """Convert a JS template literal to string concatenation."""
     content = match.group(1)
     # Split on ${...} expressions
-    parts = re.split(r'\$\{([^}]+)\}', content)
+    parts = re.split(r"\$\{([^}]+)\}", content)
     if len(parts) == 1:
         # No interpolations, just a plain string
         return "'" + parts[0].replace("'", "\\'") + "'"
@@ -222,8 +235,8 @@ def validate_js(js: str) -> str:
     if not js:
         return ""
     # Strip any leftover markdown code fences
-    js = re.sub(r'^```\w*\s*\n?', '', js.strip())
-    js = re.sub(r'\n?```\s*$', '', js.strip())
+    js = re.sub(r"^```\w*\s*\n?", "", js.strip())
+    js = re.sub(r"\n?```\s*$", "", js.strip())
     # NOTE: backtick replacement removed — JS is now injected via
     # doc.createElement('script') + appendChild, not embedded in a template literal,
     # so backticks in generated JS are safe and should be left as-is.
@@ -254,6 +267,7 @@ function safeSelect(sel) { try { return sel && sel !== '#' && sel.length > 1 ? d
 # AUTH
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     token_data = decode_access_token(credentials.credentials)
     if token_data is None:
@@ -265,12 +279,13 @@ def format_conversation_history(session: dict, max_entries: int = 5) -> str:
     prompts = session.get("prompts", [])
     if not prompts:
         return "No previous messages."
-    return "\n".join(f"Message {i+1}: {e}" for i, e in enumerate(prompts[-max_entries:]))
+    return "\n".join(f"Message {i + 1}: {e}" for i, e in enumerate(prompts[-max_entries:]))
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # CLAUDE STREAMING HELPER
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2) -> str:
     """Call Claude with streaming, circuit breaker protection, and retry on failure."""
@@ -279,8 +294,11 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
     async def _inner_call():
         collected = []
         async with client.messages.stream(
-            model=model, max_tokens=max_tokens, temperature=1,
-            system=system, messages=[{"role": "user", "content": user_msg}],
+            model=model,
+            max_tokens=max_tokens,
+            temperature=1,
+            system=system,
+            messages=[{"role": "user", "content": user_msg}],
         ) as stream:
             async for text in stream.text_stream:
                 collected.append(text)
@@ -309,13 +327,14 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
 # STAGE 0: Prompt Enhancement (GPT-4.1-mini → enriched brief)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def enhance_prompt(raw_prompt: str) -> str:
     """Expand a brief user prompt into a rich creative brief using GPT-4.1-mini.
 
     Fast (~2-3s) and cheap. Returns the enhanced prompt, or the original on failure.
     """
-    logger.info(f"🟡 Prompt Received → \"{raw_prompt[:120]}{'...' if len(raw_prompt) > 120 else ''}\"")
-    logger.info(f"🧠 Understanding Intent → Expanding brief user prompt into a rich creative brief")
+    logger.info(f'🟡 Prompt Received → "{raw_prompt[:120]}{"..." if len(raw_prompt) > 120 else ""}"')
+    logger.info("🧠 Understanding Intent → Expanding brief user prompt into a rich creative brief")
     logger.info(f"🚀 Executing Step → Sending to GPT-4.1-mini for enhancement ({len(raw_prompt)} chars input)")
     t0 = time.time()
     client = get_openai_client()
@@ -333,7 +352,9 @@ async def enhance_prompt(raw_prompt: str) -> str:
         enhanced = response.choices[0].message.content.strip()
         duration = int((time.time() - t0) * 1000)
         log_stage("Enhance", duration, len(enhanced), True, f"{len(raw_prompt)} → {len(enhanced)} chars")
-        logger.info(f"✅ Enhancement Complete → {len(raw_prompt)} chars expanded to {len(enhanced)} chars in {_fmt_duration(duration)}")
+        logger.info(
+            f"✅ Enhancement Complete → {len(raw_prompt)} chars expanded to {len(enhanced)} chars in {_fmt_duration(duration)}"
+        )
         return enhanced
     except Exception as e:
         duration = int((time.time() - t0) * 1000)
@@ -346,9 +367,10 @@ async def enhance_prompt(raw_prompt: str) -> str:
 # STAGE 1: Website Plan (GPT-4.1 → JSON)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None, multipage: bool = False) -> dict:
     """Analyze prompt → structured website plan with content + layout patterns."""
-    logger.info(f"🚀 Stage 1: PLAN → Analyzing prompt and generating website structure")
+    logger.info("🚀 Stage 1: PLAN → Analyzing prompt and generating website structure")
     logger.info(f"📦 Plan Input → prompt={len(prompt)} chars, niche={niche_key or 'auto-detect'}")
     t0 = time.time()
     client = get_openai_client()
@@ -356,13 +378,17 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
     # Auto-detect niche if not provided
     if not niche_key:
         from app.utils.niches import detect_niche
+
         niche_key = detect_niche(prompt)
         if niche_key:
-            logger.info(f"🧠 Niche Detected → \"{niche_key}\" — will use niche-specific design seeds and image queries")
+            logger.info(f'🧠 Niche Detected → "{niche_key}" — will use niche-specific design seeds and image queries')
 
     seed = get_design_seed(niche_key=niche_key)
     logger.info(f"🎨 Design Seed Selected → {seed[:100]}...")
-    system = build_plan_prompt(niche_key=niche_key, multipage=multipage) + f"\n\nDESIGN DIRECTION FOR THIS GENERATION:\n{seed}\n\nCRITICAL VARIETY RULES:\n- You MUST use the EXACT colors, hero pattern, and section patterns specified above.\n- Do NOT default to hero_split + card_grid + testimonial_cards — use the patterns listed in the seed.\n- Choose DIFFERENT data-aos animations per section (mix fade-up, fade-right, fade-left, zoom-in, flip-up).\n- Each website must feel visually distinct — different layout flow, different color mood, different section order."
+    system = (
+        build_plan_prompt(niche_key=niche_key, multipage=multipage)
+        + f"\n\nDESIGN DIRECTION FOR THIS GENERATION:\n{seed}\n\nCRITICAL VARIETY RULES:\n- You MUST use the EXACT colors, hero pattern, and section patterns specified above.\n- Do NOT default to hero_split + card_grid + testimonial_cards — use the patterns listed in the seed.\n- Choose DIFFERENT data-aos animations per section (mix fade-up, fade-right, fade-left, zoom-in, flip-up).\n- Each website must feel visually distinct — different layout flow, different color mood, different section order."
+    )
     logger.info(f"⚙️ Plan Prompt Built → {len(system):,} chars system prompt, sending to GPT-4.1...")
     if len(prompt.strip()) < 80:
         system += "\n\n" + PLAN_SHORT_PROMPT_ADDENDUM
@@ -387,7 +413,6 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 
     plan = {}
     raw = ""
-    last_error = None
     for attempt in range(1, 3):
         try:
             raw = await _call_openai_plan()
@@ -399,7 +424,6 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
         except CircuitOpenError:
             raise
         except Exception as e:
-            last_error = e
             if attempt < 2:
                 logger.warning(f"[RETRY] Plan attempt {attempt} failed: {e}")
                 await asyncio.sleep(1)
@@ -408,11 +432,15 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 
     if plan.get("brand"):
         brand_info = plan["brand"]
-        logger.info(f"📦 Plan Parsed → brand=\"{brand_info.get('name', '?')}\", industry=\"{brand_info.get('industry', '?')}\"")
+        logger.info(
+            f'📦 Plan Parsed → brand="{brand_info.get("name", "?")}", industry="{brand_info.get("industry", "?")}"'
+        )
     if plan.get("multipage") and plan.get("pages"):
         page_slugs = [p.get("slug", "?") for p in plan["pages"]]
         total_sections = sum(len(p.get("sections", [])) for p in plan["pages"])
-        logger.info(f"📦 Multi-Page Plan → {len(plan['pages'])} pages: {', '.join(page_slugs)}, {total_sections} total sections")
+        logger.info(
+            f"📦 Multi-Page Plan → {len(plan['pages'])} pages: {', '.join(page_slugs)}, {total_sections} total sections"
+        )
         shared = plan.get("shared_sections", [])
         if shared:
             logger.info(f"📦 Shared Sections → {', '.join(s.get('type', '?') for s in shared)}")
@@ -421,19 +449,30 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
         logger.info(f"📦 Sections Planned → {len(plan['sections'])} sections: {', '.join(section_summary)}")
     if plan.get("design"):
         d = plan["design"]
-        logger.info(f"🎨 Design Tokens → theme={d.get('theme')}, primary={d.get('primary_color')}, font={d.get('heading_font')}")
+        logger.info(
+            f"🎨 Design Tokens → theme={d.get('theme')}, primary={d.get('primary_color')}, font={d.get('heading_font')}"
+        )
 
     # Ensure minimum viable plan
     if not plan.get("brand"):
         plan["brand"] = {"name": "Website", "industry": "general", "tagline": ""}
     if not plan.get("design"):
         plan["design"] = {
-            "theme": "light", "primary_color": "#6366f1", "secondary_color": "#8b5cf6",
-            "accent_color": "#f59e0b", "background_color": "#ffffff", "surface_color": "#f8f9fa",
-            "text_color": "#1a1a2e", "text_muted": "#6b7280",
-            "heading_font": "Inter", "body_font": "Inter", "style": "modern",
-            "card_radius": "12px", "button_radius": "50px",
-            "shadow_style": "soft", "spacing": "normal"
+            "theme": "light",
+            "primary_color": "#6366f1",
+            "secondary_color": "#8b5cf6",
+            "accent_color": "#f59e0b",
+            "background_color": "#ffffff",
+            "surface_color": "#f8f9fa",
+            "text_color": "#1a1a2e",
+            "text_muted": "#6b7280",
+            "heading_font": "Inter",
+            "body_font": "Inter",
+            "style": "modern",
+            "card_radius": "12px",
+            "button_radius": "50px",
+            "shadow_style": "soft",
+            "spacing": "normal",
         }
     # Ensure new design tokens have defaults
     design = plan["design"]
@@ -456,11 +495,20 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
     # Validate and fix patterns for every section
     VALID_PATTERNS = set(COMPONENT_PATTERNS.keys()) | {"navbar"}
     TYPE_TO_PATTERN = {
-        "navbar": "navbar", "hero": "hero_split", "features": "card_grid",
-        "services": "card_grid", "stats": "stats_row", "testimonials": "testimonial_cards",
-        "pricing": "pricing_table", "faq": "faq_accordion", "cta": "cta_banner",
-        "team": "team_grid", "gallery": "gallery_grid", "about": "feature_split",
-        "contact": "contact_split", "footer": "footer_columns",
+        "navbar": "navbar",
+        "hero": "hero_split",
+        "features": "card_grid",
+        "services": "card_grid",
+        "stats": "stats_row",
+        "testimonials": "testimonial_cards",
+        "pricing": "pricing_table",
+        "faq": "faq_accordion",
+        "cta": "cta_banner",
+        "team": "team_grid",
+        "gallery": "gallery_grid",
+        "about": "feature_split",
+        "contact": "contact_split",
+        "footer": "footer_columns",
     }
     # Patterns that are obviously wrong for a section type
     PATTERN_BLOCKLIST = {
@@ -487,8 +535,29 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 
     def _fix_visual_rhythm(sections_list):
         """No more than 2 consecutive grid patterns."""
-        GRID_PATTERNS = {"card_grid", "icon_grid", "testimonial_cards", "testimonial_slider", "team_grid", "team_cards", "team_masonry", "gallery_grid", "feature_cards", "service_modal", "comparison_table"}
-        WIDE_ALTERNATIVES = ["feature_split", "feature_stacked", "feature_steps", "stats_row", "logo_cloud", "testimonial_split", "cta_split", "cta_centered"]
+        GRID_PATTERNS = {
+            "card_grid",
+            "icon_grid",
+            "testimonial_cards",
+            "testimonial_slider",
+            "team_grid",
+            "team_cards",
+            "team_masonry",
+            "gallery_grid",
+            "feature_cards",
+            "service_modal",
+            "comparison_table",
+        }
+        WIDE_ALTERNATIVES = [
+            "feature_split",
+            "feature_stacked",
+            "feature_steps",
+            "stats_row",
+            "logo_cloud",
+            "testimonial_split",
+            "cta_split",
+            "cta_centered",
+        ]
         consecutive_grids = 0
         for i in range(len(sections_list)):
             if sections_list[i].get("type") in ("navbar", "footer"):
@@ -500,7 +569,10 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
                 if consecutive_grids > 2:
                     old_pattern = curr_p
                     new_pattern = "feature_split"
-                    used_patterns = {sections_list[j].get("pattern", "") for j in range(max(0, i - 2), min(len(sections_list), i + 2))}
+                    used_patterns = {
+                        sections_list[j].get("pattern", "")
+                        for j in range(max(0, i - 2), min(len(sections_list), i + 2))
+                    }
                     for alt in WIDE_ALTERNATIVES:
                         if alt not in used_patterns:
                             new_pattern = alt
@@ -543,27 +615,27 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
             plan["pages"] = plan["pages"][:8]
 
         # ── Plan validation for multipage (hero images, item counts, content fields) ──
-        logger.info(f"⚙️ Running Plan Validator (multipage) → checking hero images, item counts, content fields...")
+        logger.info("⚙️ Running Plan Validator (multipage) → checking hero images, item counts, content fields...")
         plan, validation_fixes = validate_and_fix_plan(plan)
         for fix in validation_fixes:
             logger.info(f"  🔧 {fix}")
         if validation_fixes:
             logger.info(f"✅ Plan Validator Complete → {len(validation_fixes)} auto-fixes applied")
         else:
-            logger.info(f"✅ Plan Validator Complete → no fixes needed")
+            logger.info("✅ Plan Validator Complete → no fixes needed")
     else:
         _validate_section_patterns(plan.get("sections", []))
         _fix_visual_rhythm(plan.get("sections", []))
 
         # ── Plan validation + auto-fix (item counts, content fields, dedup) ──
-        logger.info(f"⚙️ Running Plan Validator → checking item counts, content fields, image dedup...")
+        logger.info("⚙️ Running Plan Validator → checking item counts, content fields, image dedup...")
         plan, validation_fixes = validate_and_fix_plan(plan)
         for fix in validation_fixes:
             logger.info(f"  🔧 {fix}")
         if validation_fixes:
             logger.info(f"✅ Plan Validator Complete → {len(validation_fixes)} auto-fixes applied")
         else:
-            logger.info(f"✅ Plan Validator Complete → no fixes needed, plan is clean")
+            logger.info("✅ Plan Validator Complete → no fixes needed, plan is clean")
 
         plan["sections"] = _dedup_sections(plan.get("sections", []))
 
@@ -584,18 +656,24 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
         n_sections = sum(len(p.get("sections", [])) for p in plan.get("pages", []))
         n_pages = len(plan.get("pages", []))
         brand = plan.get("brand", {}).get("name", "")
-        log_stage("Plan", duration, len(raw), bool(plan.get("pages")),
-                  f"{brand}, {n_pages} pages, {n_sections} total sections")
+        log_stage(
+            "Plan",
+            duration,
+            len(raw),
+            bool(plan.get("pages")),
+            f"{brand}, {n_pages} pages, {n_sections} total sections",
+        )
     else:
         n_sections = len(plan["sections"])
         brand = plan.get("brand", {}).get("name", "")
-        log_stage("Plan", duration, len(raw), bool(plan.get("sections")),
-                  f"{brand}, {n_sections} sections")
+        log_stage("Plan", duration, len(raw), bool(plan.get("sections")), f"{brand}, {n_sections} sections")
 
     if plan.get("multipage"):
-        logger.info(f"✅ Stage 1 Complete → \"{brand}\" with {n_pages} pages, {n_sections} total sections in {_fmt_duration(duration)}")
+        logger.info(
+            f'✅ Stage 1 Complete → "{brand}" with {n_pages} pages, {n_sections} total sections in {_fmt_duration(duration)}'
+        )
     else:
-        logger.info(f"✅ Stage 1 Complete → \"{brand}\" with {n_sections} sections in {_fmt_duration(duration)}")
+        logger.info(f'✅ Stage 1 Complete → "{brand}" with {n_sections} sections in {_fmt_duration(duration)}')
 
     save_debug(session_id, "plan", json.dumps(plan, indent=2))
     return plan
@@ -605,9 +683,10 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 # STAGE 2: HTML Generation (Claude → HTML only)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def stage_2_html(plan: dict, session_id: str = "", niche_key: str = None, reference_html: str = None) -> str:
     """Generate semantic HTML from the website plan using component patterns."""
-    logger.info(f"🚀 Stage 2: HTML → Generating page structure with Tailwind CSS")
+    logger.info("🚀 Stage 2: HTML → Generating page structure with Tailwind CSS")
     t0 = time.time()
     client = get_anthropic_client()
 
@@ -634,7 +713,10 @@ Adapt the reference's best qualities (spacing, typography hierarchy, visual poli
 """
 
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", 16000, system,
+        client,
+        "claude-sonnet-4-20250514",
+        16000,
+        system,
         "Generate the HTML markup for this website using the specified layout patterns. Return only the html code block.",
     )
 
@@ -642,17 +724,18 @@ Adapt the reference's best qualities (spacing, typography hierarchy, visual poli
     html = validate_html(html)
 
     html_duration = int((time.time() - t0) * 1000)
-    n_sections = html.count('data-section-type')
+    n_sections = html.count("data-section-type")
     log_stage("HTML", html_duration, len(html), True, f"{n_sections} sections")
     logger.info(f"✅ HTML Generated → {len(html):,} chars with {n_sections} sections in {_fmt_duration(html_duration)}")
 
     # Resolve {{IMG:query}} placeholders to real image URLs (niche-aware)
     img_count = html.count("{{IMG:")
-    logger.info(f"🖼️ Resolving Images → {img_count} {{IMG:}} placeholders found, fetching from Unsplash/Pexels (niche={niche_key or 'general'})")
+    logger.info(
+        f"🖼️ Resolving Images → {img_count} {{IMG:}} placeholders found, fetching from Unsplash/Pexels (niche={niche_key or 'general'})"
+    )
     html = await resolve_image_placeholders(html, niche_key=niche_key)
-    logger.info(f"✅ Images Resolved → all placeholders replaced with real URLs")
+    logger.info("✅ Images Resolved → all placeholders replaced with real URLs")
 
-    duration = int((time.time() - t0) * 1000)
     save_debug(session_id, "html", html)
     return html
 
@@ -665,10 +748,11 @@ def extract_style_block(html: str) -> tuple[str, str]:
     can inject it into <head> as before.
     """
     import re
-    match = re.search(r'<style[^>]*>(.*?)</style>', html, re.DOTALL)
+
+    match = re.search(r"<style[^>]*>(.*?)</style>", html, re.DOTALL)
     if match:
         css = match.group(1).strip()
-        html_clean = html[:match.start()] + html[match.end():]
+        html_clean = html[: match.start()] + html[match.end() :]
         html_clean = html_clean.strip()
         return css, html_clean
     return "", html
@@ -678,9 +762,10 @@ def extract_style_block(html: str) -> tuple[str, str]:
 # STAGE 3: JS Generation (Claude → JS only)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def stage_3_js(html: str, session_id: str = "") -> str:
     """Generate vanilla JavaScript interactions."""
-    logger.info(f"🚀 Stage 3: JS → Generating vanilla JavaScript interactions")
+    logger.info("🚀 Stage 3: JS → Generating vanilla JavaScript interactions")
     t0 = time.time()
     client = get_anthropic_client()
 
@@ -693,7 +778,10 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
     logger.info(f"⚙️ JS Prompt Built → {len(system):,} chars, sending to Claude Sonnet...")
 
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", 4000, system,
+        client,
+        "claude-sonnet-4-20250514",
+        4000,
+        system,
         "Generate the JavaScript for this website. Return only the js code block.",
     )
 
@@ -712,7 +800,10 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
 # MULTI-PAGE HTML GENERATION
 # ═══════════════════════════════════════════════════════════════════════
 
-async def generate_multipage_html(plan: dict, session_id: str, niche_key: str = None, reference_html: str = None) -> dict:
+
+async def generate_multipage_html(
+    plan: dict, session_id: str, niche_key: str = None, reference_html: str = None
+) -> dict:
     """Generate HTML for each page in a multi-page plan. Returns {slug: html_string}."""
     pages = plan.get("pages", [])
     shared_sections = plan.get("shared_sections", [])
@@ -744,7 +835,10 @@ IMPORTANT: Use this reference as INSPIRATION only — create a UNIQUE design mat
 
         client = get_anthropic_client()
         text = await _claude_stream(
-            client, "claude-sonnet-4-20250514", 16000, prompt,
+            client,
+            "claude-sonnet-4-20250514",
+            16000,
+            prompt,
             f"Generate the {title} page HTML. Follow ALL pattern templates exactly.",
         )
 
@@ -782,12 +876,13 @@ IMPORTANT: Use this reference as INSPIRATION only — create a UNIQUE design mat
 # COMPONENT-BASED EDITING
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
     """Use GPT-4.1-mini to detect which section(s) the user wants to edit.
     Returns list of section IDs, or ['__style__'], ['__append__:type'], or ['__full__'].
     """
-    logger.info(f"🟡 Edit Request Received → \"{prompt[:100]}{'...' if len(prompt) > 100 else ''}\"")
-    logger.info(f"🧠 Understanding Intent → Routing edit request to the correct section(s)")
+    logger.info(f'🟡 Edit Request Received → "{prompt[:100]}{"..." if len(prompt) > 100 else ""}"')
+    logger.info("🧠 Understanding Intent → Routing edit request to the correct section(s)")
     t0 = time.time()
     html = session["html"]
     sections = parse_sections(html)
@@ -821,7 +916,7 @@ async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
         conversation_context=conversation_context,
     )
 
-    logger.info(f"🚀 Executing Step → Sending to GPT-4.1-mini for intent classification...")
+    logger.info("🚀 Executing Step → Sending to GPT-4.1-mini for intent classification...")
     client = get_openai_client()
     try:
         response = await client.chat.completions.create(
@@ -841,12 +936,12 @@ async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
             duration = int((time.time() - t0) * 1000)
             # Explain the decision
             if "__full__" in result:
-                logger.info(f"⚙️ Decision Made → FULL PAGE REWRITE — request requires structural changes")
+                logger.info("⚙️ Decision Made → FULL PAGE REWRITE — request requires structural changes")
             elif any(t.startswith("__append__:") for t in result):
                 atype = [t.split(":")[1] for t in result if t.startswith("__append__:")][0]
-                logger.info(f"⚙️ Decision Made → APPEND NEW SECTION — adding \"{atype}\" section to existing page")
+                logger.info(f'⚙️ Decision Made → APPEND NEW SECTION — adding "{atype}" section to existing page')
             elif "__style__" in result:
-                logger.info(f"⚙️ Decision Made → STYLE EDIT — changing global CSS variables/colors/fonts")
+                logger.info("⚙️ Decision Made → STYLE EDIT — changing global CSS variables/colors/fonts")
             else:
                 logger.info(f"⚙️ Decision Made → SECTION EDIT — targeting {result} for modification")
             logger.info(f"✅ Router Complete → targets={result} in {_fmt_duration(duration)}")
@@ -859,17 +954,16 @@ async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
 
 def extract_css_vars(css: str) -> str:
     """Extract just the :root CSS variables block for context."""
-    match = re.search(r':root\s*\{([^}]+)\}', css)
+    match = re.search(r":root\s*\{([^}]+)\}", css)
     if match:
         return ":root {" + match.group(1) + "}"
     return ""
 
 
-async def edit_single_component(section_html: str, section_type: str,
-                                 css_vars: str, prompt: str) -> str:
+async def edit_single_component(section_html: str, section_type: str, css_vars: str, prompt: str) -> str:
     """Edit a single section using Claude. Returns updated section HTML."""
-    logger.info(f"🔧 Editing Section → type=\"{section_type}\" ({len(section_html):,} chars)")
-    logger.info(f"📝 Edit Request → \"{prompt[:80]}{'...' if len(prompt) > 80 else ''}\"")
+    logger.info(f'🔧 Editing Section → type="{section_type}" ({len(section_html):,} chars)')
+    logger.info(f'📝 Edit Request → "{prompt[:80]}{"..." if len(prompt) > 80 else ""}"')
     t0 = time.time()
     client = get_anthropic_client()
 
@@ -882,7 +976,10 @@ async def edit_single_component(section_html: str, section_type: str,
     logger.info(f"⚙️ Edit Prompt Built → {len(system):,} chars (section HTML + CSS vars + rules), sending to Claude...")
 
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", 8000, system,
+        client,
+        "claude-sonnet-4-20250514",
+        8000,
+        system,
         f"Edit this section: {prompt}",
     )
 
@@ -890,10 +987,14 @@ async def edit_single_component(section_html: str, section_type: str,
     duration = int((time.time() - t0) * 1000)
 
     if not updated or len(updated) < 20:
-        logger.error(f"❌ Edit Failed → {section_type} section in {_fmt_duration(duration)} — returning original unchanged")
+        logger.error(
+            f"❌ Edit Failed → {section_type} section in {_fmt_duration(duration)} — returning original unchanged"
+        )
         return section_html  # Return original on failure
 
-    logger.info(f"✅ Edit Complete → {section_type} section in {_fmt_duration(duration)} ({len(section_html):,} → {len(updated):,} chars)")
+    logger.info(
+        f"✅ Edit Complete → {section_type} section in {_fmt_duration(duration)} ({len(section_html):,} → {len(updated):,} chars)"
+    )
     return updated
 
 
@@ -909,7 +1010,10 @@ async def edit_style_block(css: str, section_types: str, prompt: str) -> str:
     )
 
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", 4000, system,
+        client,
+        "claude-sonnet-4-20250514",
+        4000,
+        system,
         f"Update the styles: {prompt}",
     )
 
@@ -940,18 +1044,18 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     js = session.get("js", "")
 
     if "__full__" in targets:
-        logger.info(f"🚀 Executing Step → Full page rewrite (all sections regenerated)")
+        logger.info("🚀 Executing Step → Full page rewrite (all sections regenerated)")
         return await _iterate_full_page(prompt, session)
 
     # Handle __append__:section_type
     append_targets = [t for t in targets if t.startswith("__append__:")]
     if append_targets:
         section_type = append_targets[0].split(":", 1)[1]
-        logger.info(f"🚀 Executing Step → Appending new \"{section_type}\" section (existing content preserved)")
+        logger.info(f'🚀 Executing Step → Appending new "{section_type}" section (existing content preserved)')
         return await _append_section(prompt, session, section_type)
 
     if "__style__" in targets:
-        logger.info(f"🚀 Executing Step → Editing global styles (CSS variables, colors, fonts)")
+        logger.info("🚀 Executing Step → Editing global styles (CSS variables, colors, fonts)")
         section_types = extract_section_types(html)
         updated_css = await edit_style_block(css, section_types, prompt)
         logger.info(f"✅ Style Edit Complete → CSS {len(css):,} → {len(updated_css):,} chars")
@@ -966,33 +1070,34 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     for target_id in targets:
         if target_id in section_map:
             s = section_map[target_id]
-            section_html = html[s["start"]:s["end"]]
+            section_html = html[s["start"] : s["end"]]
             edit_tasks.append((target_id, s["type"], section_html))
-            logger.info(f"📦 Section Loaded → id=\"{target_id}\" type=\"{s['type']}\" ({len(section_html):,} chars)")
+            logger.info(f'📦 Section Loaded → id="{target_id}" type="{s["type"]}" ({len(section_html):,} chars)')
 
     if not edit_tasks:
         logger.info(f"⚠️ No matching sections found for targets={targets} — falling back to full page rewrite")
         return await _iterate_full_page(prompt, session)
 
     # Run edits
-    logger.info(f"🚀 Executing Step → Editing {len(edit_tasks)} section(s) via Claude Sonnet{'  (parallel)' if len(edit_tasks) > 1 else ''}")
+    logger.info(
+        f"🚀 Executing Step → Editing {len(edit_tasks)} section(s) via Claude Sonnet{'  (parallel)' if len(edit_tasks) > 1 else ''}"
+    )
     updated_sections = {}
     if len(edit_tasks) == 1:
         tid, stype, shtml = edit_tasks[0]
         updated_sections[tid] = await edit_single_component(shtml, stype, css_vars, prompt)
     else:
-        results = await asyncio.gather(*[
-            edit_single_component(shtml, stype, css_vars, prompt)
-            for tid, stype, shtml in edit_tasks
-        ])
-        for (tid, _, _), result in zip(edit_tasks, results):
+        results = await asyncio.gather(
+            *[edit_single_component(shtml, stype, css_vars, prompt) for tid, stype, shtml in edit_tasks]
+        )
+        for (tid, _, _), result in zip(edit_tasks, results, strict=False):
             updated_sections[tid] = result
 
     # Reassemble
     updated_html = html
     for target_id, new_section_html in updated_sections.items():
         updated_html = replace_section_html(updated_html, target_id, new_section_html)
-        logger.info(f"✅ Section Replaced → id=\"{target_id}\" patched into full HTML")
+        logger.info(f'✅ Section Replaced → id="{target_id}" patched into full HTML')
 
     # Resolve any {{IMG:}} placeholders Claude may have added
     if "{{IMG:" in updated_html:
@@ -1012,18 +1117,27 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     storing it in ``session["pages"]`` and flipping the multipage flag.
     The existing homepage HTML is **never modified**.
     """
-    logger.info(f"📄 Add Page → slug=\"{page_slug}\" title=\"{page_title}\"")
+    logger.info(f'📄 Add Page → slug="{page_slug}" title="{page_title}"')
 
     ref_html = session["html"]
     ref_css = session["css"]
     js = session.get("js", "")
 
     # Extract image URLs from the homepage so the LLM can reuse them
-    img_urls = list(set(re.findall(
-        r'(?:src|background-image:\s*url\([\'"]?)([^\'"\)]+\.(?:jpg|jpeg|png|webp|gif|svg))',
-        ref_html, re.IGNORECASE,
-    )))
-    img_list = "\n".join(f"- {u}" for u in img_urls[:20]) if img_urls else "No existing images found — use relevant Unsplash/Pexels URLs."
+    img_urls = list(
+        set(
+            re.findall(
+                r'(?:src|background-image:\s*url\([\'"]?)([^\'"\)]+\.(?:jpg|jpeg|png|webp|gif|svg))',
+                ref_html,
+                re.IGNORECASE,
+            )
+        )
+    )
+    img_list = (
+        "\n".join(f"- {u}" for u in img_urls[:20])
+        if img_urls
+        else "No existing images found — use relevant Unsplash/Pexels URLs."
+    )
 
     system_prompt = ADD_PAGE_HTML_PROMPT.format(
         reference_html=ref_html[:12000],  # Trim to avoid token overflow
@@ -1036,7 +1150,10 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
 
     client = get_anthropic_client()
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", 8000, system_prompt,
+        client,
+        "claude-sonnet-4-20250514",
+        8000,
+        system_prompt,
         f"Generate the {page_title} page HTML. Return only the html code block.",
     )
 
@@ -1055,13 +1172,15 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     # Inject section IDs
     page_html_clean = inject_section_ids(page_html_clean)
 
-    logger.info(f"✅ Add Page Complete → slug=\"{page_slug}\" HTML={len(page_html_clean):,} CSS={len(merged_css):,} chars")
+    logger.info(
+        f'✅ Add Page Complete → slug="{page_slug}" HTML={len(page_html_clean):,} CSS={len(merged_css):,} chars'
+    )
     return {"html": page_html_clean, "css": merged_css, "js": js}
 
 
 async def _append_section(prompt: str, session: dict, section_type: str) -> dict[str, str]:
     """Generate a new section and insert it into the existing HTML."""
-    logger.info(f"🧩 Append Section → Generating new \"{section_type}\" section")
+    logger.info(f'🧩 Append Section → Generating new "{section_type}" section')
     html = session["html"]
     css = session["css"]
     js = session.get("js", "")
@@ -1100,8 +1219,10 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
     }
 
     pattern_name = _TYPE_TO_PATTERN.get(section_type, "card_grid")
-    pattern_template = get_pattern_template(pattern_name) or "Standard section with heading, subheading, and content items."
-    logger.info(f"⚙️ Pattern Selected → \"{pattern_name}\" template ({len(pattern_template)} chars)")
+    pattern_template = (
+        get_pattern_template(pattern_name) or "Standard section with heading, subheading, and content items."
+    )
+    logger.info(f'⚙️ Pattern Selected → "{pattern_name}" template ({len(pattern_template)} chars)')
 
     prompt_text = APPEND_SECTION_PROMPT.format(
         css_vars=css_vars,
@@ -1111,7 +1232,9 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
         pattern_template=pattern_template,
         prompt=prompt,
     )
-    logger.info(f"🚀 Executing Step → Sending to Claude Sonnet to generate {section_type} section ({len(prompt_text):,} chars prompt)")
+    logger.info(
+        f"🚀 Executing Step → Sending to Claude Sonnet to generate {section_type} section ({len(prompt_text):,} chars prompt)"
+    )
 
     client = get_anthropic_client()
     t0 = time.time()
@@ -1129,7 +1252,9 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
             new_section_html = raw
 
         duration = time.time() - t0
-        logger.info(f"✅ Section Generated → {section_type} ({len(new_section_html):,} chars) in {_fmt_duration(duration)}")
+        logger.info(
+            f"✅ Section Generated → {section_type} ({len(new_section_html):,} chars) in {_fmt_duration(duration)}"
+        )
 
         # Resolve image placeholders
         niche_key = brand.get("industry", "general")
@@ -1196,13 +1321,25 @@ def _insert_section(html: str, new_section_html: str, section_type: str, section
 
 async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
     """Legacy full-page rewrite for complex edits (add section, rearrange layout)."""
-    logger.info(f"🔄 Full Page Rewrite → regenerating entire page")
+    logger.info("🔄 Full Page Rewrite → regenerating entire page")
     client = get_anthropic_client()
 
     # Detect if this is a major redesign request — needs more tokens
-    redesign_keywords = ["redesign", "rebuild", "redo", "start over", "from scratch",
-                         "completely new", "whole website", "entire website", "full redesign",
-                         "new design", "new look", "makeover", "overhaul"]
+    redesign_keywords = [
+        "redesign",
+        "rebuild",
+        "redo",
+        "start over",
+        "from scratch",
+        "completely new",
+        "whole website",
+        "entire website",
+        "full redesign",
+        "new design",
+        "new look",
+        "makeover",
+        "overhaul",
+    ]
     prompt_lower = prompt.lower()
     is_redesign = any(kw in prompt_lower for kw in redesign_keywords)
     max_tokens = 30000 if is_redesign else 16000
@@ -1219,7 +1356,10 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
     logger.info(f"🚀 Executing Step → Sending full page + edit request to Claude Sonnet ({len(system):,} chars prompt)")
 
     text = await _claude_stream(
-        client, "claude-sonnet-4-20250514", max_tokens, system,
+        client,
+        "claude-sonnet-4-20250514",
+        max_tokens,
+        system,
         f"Apply these changes: {prompt}",
     )
     blocks = parse_code_blocks(text)
@@ -1229,7 +1369,9 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
         blocks["html"] = html_clean
         if css_extracted:
             blocks["css"] = css_extracted
-    logger.info(f"✅ Full Rewrite Complete → HTML={len(blocks.get('html', '')):,}, CSS={len(blocks.get('css', '')):,}, JS={len(blocks.get('js', '')):,} chars")
+    logger.info(
+        f"✅ Full Rewrite Complete → HTML={len(blocks.get('html', '')):,}, CSS={len(blocks.get('css', '')):,}, JS={len(blocks.get('js', '')):,} chars"
+    )
     return blocks
 
 
@@ -1279,6 +1421,7 @@ JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
 # SCHEMAS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class GenerateRequest(BaseModel):
     prompt: str
     sessionId: str | None = None
@@ -1302,6 +1445,7 @@ class EditElementRequest(BaseModel):
 # RESTORE SESSION (hydrate backend session from saved project)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class RestoreSessionRequest(BaseModel):
     html: str
     css: str
@@ -1321,17 +1465,20 @@ async def restore_session(req: RestoreSessionRequest, user: dict = Depends(requi
     html = inject_section_ids(req.html)
     sections_list = parse_sections(html)
 
-    await redis_save_session(session_id, {
-        "html": html,
-        "css": req.css,
-        "js": req.js,
-        "plan": {},
-        "prompts": [],
-        "versions": [],
-        "current_version": 1,
-        "user_id": user["user_id"],
-        "project_id": req.projectId,
-    })
+    await redis_save_session(
+        session_id,
+        {
+            "html": html,
+            "css": req.css,
+            "js": req.js,
+            "plan": {},
+            "prompts": [],
+            "versions": [],
+            "current_version": 1,
+            "user_id": user["user_id"],
+            "project_id": req.projectId,
+        },
+    )
 
     return {
         "sessionId": session_id,
@@ -1379,6 +1526,7 @@ async def sync_session(req: SyncSessionRequest, user: dict = Depends(require_aut
 # SSE STREAMING ENDPOINT
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @router.post("/generate-stream")
 async def generate_website_stream(req: GenerateRequest, user: dict = Depends(require_auth)):
     """SSE streaming — 4-stage pipeline with live updates. CSS+JS run in parallel."""
@@ -1407,7 +1555,9 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     )
 
     mode = "NEW GENERATION" if is_new else "EDIT"
-    logger.info(f"{'🆕' if is_new else '✏️'} [{mode}] session={session_id[:8]}... prompt=\"{req.prompt[:80]}{'...' if len(req.prompt) > 80 else ''}\"")
+    logger.info(
+        f'{"🆕" if is_new else "✏️"} [{mode}] session={session_id[:8]}... prompt="{req.prompt[:80]}{"..." if len(req.prompt) > 80 else ""}"'
+    )
 
     async def event_stream():
         def sse(event: str, data: dict):
@@ -1423,19 +1573,30 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
         try:
             if is_new:
                 # ── Stage 0: Prompt Enhancement ───────────────────────
-                yield sse("stage", {"stage": -1, "name": "enhance", "status": "running",
-                    "message": "Understanding your vision..."})
+                yield sse(
+                    "stage",
+                    {"stage": -1, "name": "enhance", "status": "running", "message": "Understanding your vision..."},
+                )
 
                 enhanced_prompt = await enhance_prompt(req.prompt)
 
-                yield sse("stage", {"stage": -1, "name": "enhance", "status": "done",
-                    "message": "Brief prepared", "enhanced_prompt": enhanced_prompt})
+                yield sse(
+                    "stage",
+                    {
+                        "stage": -1,
+                        "name": "enhance",
+                        "status": "done",
+                        "message": "Brief prepared",
+                        "enhanced_prompt": enhanced_prompt,
+                    },
+                )
 
                 # Save enhanced prompt for debugging
                 save_debug(session_id, "enhanced_prompt", enhanced_prompt)
 
                 # ── Detect niche for image quality ─────────────────────
                 from app.utils.niches import detect_niche
+
                 niche_key = detect_niche(enhanced_prompt)
                 logger.info(f"[NICHE] detected={niche_key or 'generic'}")
 
@@ -1444,6 +1605,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 if req.templateId:
                     try:
                         from app.routes.templates import _load_template_file
+
                         ref_html, ref_css = _load_template_file(req.templateId)
                         # Combine CSS + HTML as reference
                         reference_html = f"<style>{ref_css}</style>\n{ref_html}"
@@ -1455,10 +1617,19 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 multipage_requested = is_multipage_request(req.prompt)
 
                 # ── Stage 1: Plan ──────────────────────────────────────
-                yield sse("stage", {"stage": 0, "name": "plan", "status": "running",
-                    "message": "Analyzing your request and planning the website..."})
+                yield sse(
+                    "stage",
+                    {
+                        "stage": 0,
+                        "name": "plan",
+                        "status": "running",
+                        "message": "Analyzing your request and planning the website...",
+                    },
+                )
 
-                plan_task = asyncio.create_task(stage_1_plan(enhanced_prompt, session_id, niche_key=niche_key, multipage=multipage_requested))
+                plan_task = asyncio.create_task(
+                    stage_1_plan(enhanced_prompt, session_id, niche_key=niche_key, multipage=multipage_requested)
+                )
                 while not plan_task.done():
                     await asyncio.sleep(8)
                     if not plan_task.done():
@@ -1470,24 +1641,49 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 if is_multipage:
                     n_pages = len(plan.get("pages", []))
                     n_sections = sum(len(p.get("sections", [])) for p in plan.get("pages", []))
-                    yield sse("stage", {"stage": 0, "name": "plan", "status": "done",
-                        "message": f"Plan ready: {brand} ({n_pages} pages)" if brand else f"Plan ready ({n_pages} pages)",
-                        "detail": f"{n_pages} pages, {n_sections} total sections planned"})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 0,
+                            "name": "plan",
+                            "status": "done",
+                            "message": f"Plan ready: {brand} ({n_pages} pages)"
+                            if brand
+                            else f"Plan ready ({n_pages} pages)",
+                            "detail": f"{n_pages} pages, {n_sections} total sections planned",
+                        },
+                    )
                 else:
                     n_sections = len(plan.get("sections", []))
-                    yield sse("stage", {"stage": 0, "name": "plan", "status": "done",
-                        "message": f"Plan ready: {brand}" if brand else "Plan ready",
-                        "detail": f"{n_sections} sections planned"})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 0,
+                            "name": "plan",
+                            "status": "done",
+                            "message": f"Plan ready: {brand}" if brand else "Plan ready",
+                            "detail": f"{n_sections} sections planned",
+                        },
+                    )
 
                 # ── Stage 2: HTML + Image Resolution ──────────────────
                 pages_dict = None  # Will hold {slug: {html, css}} for multipage
 
                 if is_multipage:
                     # Multi-page: generate all pages in parallel
-                    yield sse("stage", {"stage": 1, "name": "html", "status": "running",
-                        "message": f"Building {n_pages} pages in parallel..."})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 1,
+                            "name": "html",
+                            "status": "running",
+                            "message": f"Building {n_pages} pages in parallel...",
+                        },
+                    )
 
-                    html_task = asyncio.create_task(generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html))
+                    html_task = asyncio.create_task(
+                        generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
+                    )
                     while not html_task.done():
                         await asyncio.sleep(8)
                         if not html_task.done():
@@ -1495,8 +1691,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     pages_html = html_task.result()  # {slug: html_string}
 
                     total_html_chars = sum(len(h) for h in pages_html.values())
-                    yield sse("stage", {"stage": 1, "name": "html", "status": "done",
-                        "message": f"{len(pages_html)} pages generated ({total_html_chars:,} chars total)"})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 1,
+                            "name": "html",
+                            "status": "done",
+                            "message": f"{len(pages_html)} pages generated ({total_html_chars:,} chars total)",
+                        },
+                    )
 
                     # Extract CSS from each page and build pages_dict
                     pages_dict = {}
@@ -1505,38 +1708,54 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         pages_dict[slug] = {"html": page_html_clean, "css": page_css}
 
                     # Use index page as the main html/css for backward compatibility
-                    index_data = pages_dict.get("index", list(pages_dict.values())[0] if pages_dict else {"html": "", "css": ""})
+                    index_data = pages_dict.get(
+                        "index", list(pages_dict.values())[0] if pages_dict else {"html": "", "css": ""}
+                    )
                     html = index_data["html"]
                     css = index_data["css"]
                     save_debug(session_id, "css", css)
 
-                    yield sse("stage", {"stage": 2, "name": "css", "status": "done",
-                        "message": f"CSS extracted from {len(pages_dict)} pages"})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 2,
+                            "name": "css",
+                            "status": "done",
+                            "message": f"CSS extracted from {len(pages_dict)} pages",
+                        },
+                    )
                 else:
                     # Single-page: existing flow
-                    yield sse("stage", {"stage": 1, "name": "html", "status": "running",
-                        "message": "Building the page structure..."})
+                    yield sse(
+                        "stage",
+                        {"stage": 1, "name": "html", "status": "running", "message": "Building the page structure..."},
+                    )
 
-                    html_task = asyncio.create_task(stage_2_html(plan, session_id, niche_key=niche_key, reference_html=reference_html))
+                    html_task = asyncio.create_task(
+                        stage_2_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
+                    )
                     while not html_task.done():
                         await asyncio.sleep(8)
                         if not html_task.done():
                             yield ": keepalive\n\n"
                     html = html_task.result()
 
-                    yield sse("stage", {"stage": 1, "name": "html", "status": "done",
-                        "message": f"HTML ready ({len(html):,} chars)"})
+                    yield sse(
+                        "stage",
+                        {"stage": 1, "name": "html", "status": "done", "message": f"HTML ready ({len(html):,} chars)"},
+                    )
 
                     # ── Extract CSS from HTML <style> block ──────────────
                     css, html = extract_style_block(html)
                     save_debug(session_id, "css", css)
 
-                    yield sse("stage", {"stage": 2, "name": "css", "status": "done",
-                        "message": f"CSS extracted ({len(css):,} chars)"})
+                    yield sse(
+                        "stage",
+                        {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
+                    )
 
                 # ── Stage 3: JS (shared across all pages) ───────────
-                yield sse("stage", {"stage": 2, "name": "js", "status": "running",
-                    "message": "Adding interactions..."})
+                yield sse("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
 
                 # For multipage, generate JS based on combined HTML context
                 if is_multipage and pages_dict:
@@ -1546,12 +1765,20 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 else:
                     js = await stage_3_js(html, session_id)
 
-                yield sse("stage", {"stage": 2, "name": "js", "status": "done",
-                    "message": f"JS ready ({len(js):,} chars)"})
+                yield sse(
+                    "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
+                )
 
                 # ── Stage 4: Quality checks + auto-fix ─────────────────
-                yield sse("stage", {"stage": 3, "name": "polish", "status": "running",
-                    "message": "Polishing, optimizing images & checking quality..."})
+                yield sse(
+                    "stage",
+                    {
+                        "stage": 3,
+                        "name": "polish",
+                        "status": "running",
+                        "message": "Polishing, optimizing images & checking quality...",
+                    },
+                )
 
                 quality_scores = {}
 
@@ -1560,18 +1787,21 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     """Apply responsive, image, form, SEO, and perf fixes. Returns (html, css)."""
                     try:
                         from app.utils.responsive_check import auto_fix_responsive
+
                         page_html, page_css = auto_fix_responsive(page_html, page_css)
                     except Exception as e:
                         logger.warning(f"[RESPONSIVE] check failed: {e}")
                     try:
                         from app.utils.image_optimizer import optimize_image_tags
+
                         page_html = optimize_image_tags(page_html)
                     except Exception as e:
                         logger.warning(f"[IMAGES] optimizer failed: {e}")
                     return page_html, page_css
 
                 try:
-                    from app.utils.responsive_check import check_responsive, auto_fix_responsive
+                    from app.utils.responsive_check import auto_fix_responsive, check_responsive
+
                     report = check_responsive(html, css)
                     html, css = auto_fix_responsive(html, css)
                     logger.info(f"[RESPONSIVE] score={report['score']}/100, {report['auto_fixed']} auto-fixed")
@@ -1581,13 +1811,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 # ── Image optimization ────────────────────────────────
                 try:
                     from app.utils.image_optimizer import optimize_image_tags
+
                     html = optimize_image_tags(html)
                 except Exception as e:
                     logger.warning(f"[IMAGES] optimizer failed: {e}")
 
                 # ── Form handler injection ────────────────────────────
                 try:
-                    from app.utils.form_handler import inject_form_handler, has_contact_form
+                    from app.utils.form_handler import has_contact_form, inject_form_handler
+
                     if has_contact_form(html):
                         html, js = inject_form_handler(html, js)
                         logger.info("[FORMS] contact form handler injected")
@@ -1596,25 +1828,31 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                 # ── SEO tag generation + injection ────────────────────
                 try:
-                    from app.utils.seo_checker import generate_seo_tags, inject_seo_into_html, check_seo
+                    from app.utils.seo_checker import check_seo, generate_seo_tags, inject_seo_into_html
+
                     seo_tags = generate_seo_tags(plan)
                     html = inject_seo_into_html(html, seo_tags)
 
                     seo_report = check_seo(html, plan)
                     quality_scores["seo_score"] = seo_report["score"]
-                    logger.info(f"[SEO] score={seo_report['score']}/100, {len(seo_report['passed'])} passed, {len(seo_report['issues'])} issues")
+                    logger.info(
+                        f"[SEO] score={seo_report['score']}/100, {len(seo_report['passed'])} passed, {len(seo_report['issues'])} issues"
+                    )
                 except Exception as e:
                     logger.warning(f"[SEO] check failed: {e}")
 
                 # ── Performance check + auto-fix ──────────────────────
                 try:
-                    from app.utils.lighthouse_check import check_performance, auto_fix_performance
+                    from app.utils.lighthouse_check import auto_fix_performance, check_performance
+
                     perf_report = check_performance(html, css, js)
                     html, css, js = auto_fix_performance(html, css, js)
 
                     quality_scores["performance_score"] = perf_report["score"]
                     quality_scores["issues_fixed"] = len(perf_report["auto_fixable"])
-                    logger.info(f"[PERF] score={perf_report['score']}/100, {len(perf_report['auto_fixable'])} auto-fixed")
+                    logger.info(
+                        f"[PERF] score={perf_report['score']}/100, {len(perf_report['auto_fixable'])} auto-fixed"
+                    )
                 except Exception as e:
                     logger.warning(f"[PERF] check failed: {e}")
 
@@ -1634,12 +1872,20 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 perf_score = quality_scores.get("performance_score", "—")
                 seo_score_val = quality_scores.get("seo_score", "—")
                 fixes = quality_scores.get("issues_fixed", 0)
-                yield sse("stage", {"stage": 3, "name": "polish", "status": "done",
-                    "message": f"Perf: {perf_score}/100 | SEO: {seo_score_val}/100 | {fixes} auto-fixes"})
+                yield sse(
+                    "stage",
+                    {
+                        "stage": 3,
+                        "name": "polish",
+                        "status": "done",
+                        "message": f"Perf: {perf_score}/100 | SEO: {seo_score_val}/100 | {fixes} auto-fixes",
+                    },
+                )
 
                 # ── Inject animation CSS + JS ─────────────────────────
                 try:
                     from app.utils.animations import get_animation_css, get_animation_js
+
                     anim_css = get_animation_css()
                     if anim_css and anim_css not in css:
                         css = css + "\n\n/* === Built-in Animations === */\n" + anim_css
@@ -1659,10 +1905,16 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                 total_ms = int((time.time() - pipeline_start) * 1000)
                 if is_multipage:
-                    logger.info(f"🏁 Pipeline Complete → Total {_fmt_duration(total_ms)} — {len(pages_dict)} pages, JS {len(js):,} chars")
+                    logger.info(
+                        f"🏁 Pipeline Complete → Total {_fmt_duration(total_ms)} — {len(pages_dict)} pages, JS {len(js):,} chars"
+                    )
                 else:
-                    logger.info(f"🏁 Pipeline Complete → Total {_fmt_duration(total_ms)} — HTML {len(html):,} + CSS {len(css):,} + JS {len(js):,} chars")
-                logger.info(f"📊 Quality Scores → Perf: {quality_scores.get('performance_score', '?')}/100, SEO: {quality_scores.get('seo_score', '?')}/100, Fixes: {quality_scores.get('issues_fixed', 0)}")
+                    logger.info(
+                        f"🏁 Pipeline Complete → Total {_fmt_duration(total_ms)} — HTML {len(html):,} + CSS {len(css):,} + JS {len(js):,} chars"
+                    )
+                logger.info(
+                    f"📊 Quality Scores → Perf: {quality_scores.get('performance_score', '?')}/100, SEO: {quality_scores.get('seo_score', '?')}/100, Fixes: {quality_scores.get('issues_fixed', 0)}"
+                )
 
             else:
                 # ── Iteration (component-based) ───────────────────────
@@ -1678,19 +1930,32 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 if add_page_info and add_page_info["slug"] not in existing_pages and add_page_info["slug"] != "index":
                     page_count = len(existing_pages) if existing_pages else 1  # 1 = current single page
                     if page_count >= 5:
-                        yield sse("error", {"message": "Maximum 5 pages reached. Remove a page before adding a new one."})
+                        yield sse(
+                            "error", {"message": "Maximum 5 pages reached. Remove a page before adding a new one."}
+                        )
                         return
 
                     page_slug = add_page_info["slug"]
                     page_title = add_page_info["title"]
 
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "running",
-                        "message": f"Adding {page_title} page..."})
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "done",
-                        "message": f"Target: new {page_title} page"})
+                    yield sse(
+                        "stage",
+                        {"stage": 0, "name": "route", "status": "running", "message": f"Adding {page_title} page..."},
+                    )
+                    yield sse(
+                        "stage",
+                        {"stage": 0, "name": "route", "status": "done", "message": f"Target: new {page_title} page"},
+                    )
 
-                    yield sse("stage", {"stage": 1, "name": "edit", "status": "running",
-                        "message": f"Generating {page_title} page (matching existing design)..."})
+                    yield sse(
+                        "stage",
+                        {
+                            "stage": 1,
+                            "name": "edit",
+                            "status": "running",
+                            "message": f"Generating {page_title} page (matching existing design)...",
+                        },
+                    )
 
                     new_page_code = await _add_new_page(req.prompt, session, page_slug, page_title)
 
@@ -1718,8 +1983,9 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     session["pages"] = pages_dict
                     session["_added_page"] = page_slug  # Signal for SSE payload
 
-                    yield sse("stage", {"stage": 1, "name": "edit", "status": "done",
-                        "message": f"{page_title} page created"})
+                    yield sse(
+                        "stage", {"stage": 1, "name": "edit", "status": "done", "message": f"{page_title} page created"}
+                    )
 
                 else:
                     # ── Normal edit flow (existing logic unchanged) ────
@@ -1735,8 +2001,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                             session["css"] = page_data.get("css", session["css"])
 
                     # Route to target component(s)
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "running",
-                        "message": "Identifying target sections..."})
+                    yield sse(
+                        "stage",
+                        {"stage": 0, "name": "route", "status": "running", "message": "Identifying target sections..."},
+                    )
 
                     targets = await route_edit_to_components(req.prompt, session)
 
@@ -1754,13 +2022,16 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         target_names = [sid_to_type.get(t, t) for t in targets]
                         target_desc = ", ".join(target_names)
 
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "done",
-                        "message": f"Target: {target_desc}"})
+                    yield sse(
+                        "stage", {"stage": 0, "name": "route", "status": "done", "message": f"Target: {target_desc}"}
+                    )
 
                     # Edit the component(s)
                     edit_action = "Adding" if append_targets else "Editing"
-                    yield sse("stage", {"stage": 1, "name": "edit", "status": "running",
-                        "message": f"{edit_action} {target_desc}..."})
+                    yield sse(
+                        "stage",
+                        {"stage": 1, "name": "edit", "status": "running", "message": f"{edit_action} {target_desc}..."},
+                    )
 
                     # Call iterate_website which handles routing internally too,
                     # but pass pre-routed targets to avoid double routing
@@ -1771,8 +2042,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         yield sse("error", {"message": "Failed to apply changes"})
                         return
 
-                    yield sse("stage", {"stage": 1, "name": "edit", "status": "done",
-                        "message": "Changes applied"})
+                    yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "Changes applied"})
 
             # ── Finalize ───────────────────────────────────────────
             code["html"] = inject_section_ids(code["html"])
@@ -1783,13 +2053,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             version_number = len(prev_versions) + 1
 
             if not is_new and existing:
-                prev_versions.append({
-                    "version": version_number - 1,
-                    "html": existing["html"],
-                    "css": existing["css"],
-                    "js": existing.get("js", ""),
-                    "prompt": existing.get("prompts", [""])[-1] if existing.get("prompts") else "",
-                })
+                prev_versions.append(
+                    {
+                        "version": version_number - 1,
+                        "html": existing["html"],
+                        "css": existing["css"],
+                        "js": existing.get("js", ""),
+                        "prompt": existing.get("prompts", [""])[-1] if existing.get("prompts") else "",
+                    }
+                )
 
             # Persist last_edited_targets for follow-up routing context
             last_targets = session.get("last_edited_targets", []) if not is_new else []
@@ -1807,10 +2079,11 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
             # Include multipage data in session
             added_page_slug = session.get("_added_page") if not is_new else None
-            is_multipage_gen = is_new and is_multipage if is_new else existing.get("multipage", False)
             if is_new and is_multipage and pages_dict:
                 session_data["multipage"] = True
-                session_data["pages"] = {slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()}
+                session_data["pages"] = {
+                    slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()
+                }
             elif added_page_slug:
                 # "Add page" operation — session["pages"] was already built in the iteration block
                 session_data["multipage"] = True
@@ -1824,7 +2097,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 session_data["multipage"] = existing.get("multipage", False)
                 session_data["pages"] = existing.get("pages") or {}
                 # Update the correct page slot with edited code
-                current_page = getattr(req, 'currentPage', 'index') or 'index'
+                current_page = getattr(req, "currentPage", "index") or "index"
                 session_data["pages"][current_page] = {"html": code["html"], "css": code["css"]}
                 # session["html"] should always reflect the index page
                 if current_page != "index":
@@ -1845,11 +2118,17 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             total_chars = len(code.get("html", "")) + len(code.get("css", "")) + len(code.get("js", ""))
             if is_new:
                 if is_multipage and pages_dict:
-                    logger.info(f"🎉 Generation Complete → session={session_id[:8]}, {len(pages_dict)} pages, {total_chars:,} total chars in {_fmt_duration(generation_ms)}")
+                    logger.info(
+                        f"🎉 Generation Complete → session={session_id[:8]}, {len(pages_dict)} pages, {total_chars:,} total chars in {_fmt_duration(generation_ms)}"
+                    )
                 else:
-                    logger.info(f"🎉 Generation Complete → session={session_id[:8]}, {len(sections_list)} sections, {total_chars:,} total chars in {_fmt_duration(generation_ms)}")
+                    logger.info(
+                        f"🎉 Generation Complete → session={session_id[:8]}, {len(sections_list)} sections, {total_chars:,} total chars in {_fmt_duration(generation_ms)}"
+                    )
             else:
-                logger.info(f"✅ Edit Complete → session={session_id[:8]}, v{version_number}, {total_chars:,} total chars in {_fmt_duration(generation_ms)}")
+                logger.info(
+                    f"✅ Edit Complete → session={session_id[:8]}, v{version_number}, {total_chars:,} total chars in {_fmt_duration(generation_ms)}"
+                )
 
             complete_payload = {
                 "success": True,
@@ -1866,7 +2145,9 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             # Include multipage data in response
             if is_new and is_multipage and pages_dict:
                 complete_payload["isMultipage"] = True
-                complete_payload["pages"] = {slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()}
+                complete_payload["pages"] = {
+                    slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()
+                }
             elif added_page_slug:
                 # New page was added — send full multipage state so frontend can switch to it
                 complete_payload["isMultipage"] = True
@@ -1881,21 +2162,21 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
         except CircuitOpenError:
             metrics_increment("generation_errors")
-            yield sse("error", {
-                "message": "AI service is temporarily unavailable. Please try again in a few minutes."
-            })
+            yield sse("error", {"message": "AI service is temporarily unavailable. Please try again in a few minutes."})
         except Exception as e:
             metrics_increment("generation_errors")
             logger.error(f"[STREAM ERROR] {e}", exc_info=True)
             yield sse("error", {"message": str(e)})
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    return StreamingResponse(
+        event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # SYNC ENDPOINT (fallback)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @router.post("/generate")
 async def generate_website(req: GenerateRequest, user: dict = Depends(require_auth)):
@@ -1931,6 +2212,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             pipeline_start = time.time()
 
             from app.utils.niches import detect_niche
+
             niche_key = detect_niche(req.prompt)
             multipage_requested = is_multipage_request(req.prompt)
             plan = await stage_1_plan(req.prompt, session_id, niche_key=niche_key, multipage=multipage_requested)
@@ -1944,7 +2226,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                     page_css, page_html_clean = extract_style_block(page_html)
                     pages_dict[slug] = {"html": page_html_clean, "css": page_css}
                 # Use index page as main for backward compat
-                index_data = pages_dict.get("index", list(pages_dict.values())[0] if pages_dict else {"html": "", "css": ""})
+                index_data = pages_dict.get(
+                    "index", list(pages_dict.values())[0] if pages_dict else {"html": "", "css": ""}
+                )
                 html = index_data["html"]
                 css = index_data["css"]
                 # Generate JS based on combined HTML
@@ -1958,6 +2242,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             # Responsive check + auto-fix
             try:
                 from app.utils.responsive_check import auto_fix_responsive
+
                 html, css = auto_fix_responsive(html, css)
             except Exception:
                 pass
@@ -1965,13 +2250,15 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             # Image optimization
             try:
                 from app.utils.image_optimizer import optimize_image_tags
+
                 html = optimize_image_tags(html)
             except Exception:
                 pass
 
             # Form handler injection
             try:
-                from app.utils.form_handler import inject_form_handler, has_contact_form
+                from app.utils.form_handler import has_contact_form, inject_form_handler
+
                 if has_contact_form(html):
                     html, js = inject_form_handler(html, js)
             except Exception:
@@ -1980,6 +2267,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             # SEO tag generation + injection
             try:
                 from app.utils.seo_checker import generate_seo_tags, inject_seo_into_html
+
                 seo_tags = generate_seo_tags(plan)
                 html = inject_seo_into_html(html, seo_tags)
             except Exception:
@@ -1988,6 +2276,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             # Performance auto-fix
             try:
                 from app.utils.lighthouse_check import auto_fix_performance
+
                 html, css, js = auto_fix_performance(html, css, js)
             except Exception:
                 pass
@@ -1995,6 +2284,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             # Inject animation CSS + JS
             try:
                 from app.utils.animations import get_animation_css, get_animation_js
+
                 anim_css = get_animation_css()
                 if anim_css and anim_css not in css:
                     css = css + "\n\n/* === Built-in Animations === */\n" + anim_css
@@ -2010,8 +2300,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 for slug in pages_dict:
                     if slug != "index":
                         try:
-                            from app.utils.responsive_check import auto_fix_responsive
                             from app.utils.image_optimizer import optimize_image_tags
+                            from app.utils.responsive_check import auto_fix_responsive
+
                             p_html, p_css = auto_fix_responsive(pages_dict[slug]["html"], pages_dict[slug]["css"])
                             p_html = optimize_image_tags(p_html)
                             pages_dict[slug] = {"html": p_html, "css": p_css}
@@ -2021,7 +2312,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             code = {"html": html, "css": css, "js": js}
 
             total_ms = int((time.time() - pipeline_start) * 1000)
-            logger.info(f"[DONE] Total {_fmt_duration(total_ms)} — HTML {len(html):,} + CSS {len(css):,} + JS {len(js):,} chars")
+            logger.info(
+                f"[DONE] Total {_fmt_duration(total_ms)} — HTML {len(html):,} + CSS {len(css):,} + JS {len(js):,} chars"
+            )
         else:
             session = await redis_get_session(session_id)
             if not session:
@@ -2047,10 +2340,13 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
         last_targets = session.get("last_edited_targets", []) if not is_new else []
         session_data = {
-            "html": code["html"], "css": code["css"], "js": code["js"],
+            "html": code["html"],
+            "css": code["css"],
+            "js": code["js"],
             "plan": plan if is_new else existing.get("plan"),
             "prompts": existing.get("prompts", []) + [req.prompt],
-            "versions": prev_versions, "current_version": version_number,
+            "versions": prev_versions,
+            "current_version": version_number,
             "user_id": user["user_id"],
             "last_edited_targets": last_targets,
         }
@@ -2079,8 +2375,10 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
         result = {
             "success": True,
             "website": {"html": code["html"], "css": code["css"], "js": code["js"]},
-            "sessionId": session_id, "isNewDesign": is_new,
-            "sections": sections_list, "version": version_number,
+            "sessionId": session_id,
+            "isNewDesign": is_new,
+            "sections": sections_list,
+            "version": version_number,
             "meta": {"title": brand_name, "description": meta_desc},
         }
         if is_new and is_multipage_gen and pages_dict:
@@ -2091,15 +2389,15 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
     except HTTPException:
         metrics_increment("generation_errors")
         raise
-    except CircuitOpenError:
+    except CircuitOpenError as e:
         metrics_increment("generation_errors")
         raise HTTPException(
             status_code=503,
             detail="AI service is temporarily unavailable. Please try again in a few minutes.",
-        )
+        ) from e
     except Exception as e:
         metrics_increment("generation_errors")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -2149,7 +2447,9 @@ JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
 
 @router.post("/edit-element")
 async def edit_element(req: EditElementRequest, user: dict = Depends(require_auth)):
-    logger.info(f"🖱️ [ELEMENT EDIT] path=\"{req.elementPath}\" prompt=\"{req.prompt[:80]}\" elementHTML={len(req.elementHtml):,} chars, pageHTML={len(req.currentHtml):,} chars, page={req.currentPage}")
+    logger.info(
+        f'🖱️ [ELEMENT EDIT] path="{req.elementPath}" prompt="{req.prompt[:80]}" elementHTML={len(req.elementHtml):,} chars, pageHTML={len(req.currentHtml):,} chars, page={req.currentPage}'
+    )
 
     # ── Sanitize prompt ─────────────────────────────────────────────
     req.prompt = sanitize_prompt(req.prompt)
@@ -2174,7 +2474,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         sections = parse_sections(full_html)
         target_section = None
         for s in sections:
-            section_html = full_html[s["start"]:s["end"]]
+            section_html = full_html[s["start"] : s["end"]]
             if req.elementHtml[:80] in section_html:
                 target_section = s
                 break
@@ -2182,19 +2482,21 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         if not target_section:
             # Fallback: try matching by element path keywords in section types
             for s in sections:
-                section_html = full_html[s["start"]:s["end"]]
+                section_html = full_html[s["start"] : s["end"]]
                 # Check if elementPath classes appear in this section
-                path_classes = re.findall(r'\.([a-zA-Z][\w-]*)', req.elementPath)
+                path_classes = re.findall(r"\.([a-zA-Z][\w-]*)", req.elementPath)
                 if any(cls in section_html for cls in path_classes):
                     target_section = s
                     break
 
         if target_section:
             # ── Section-scoped edit (fast + reliable) ────────────
-            section_html = full_html[target_section["start"]:target_section["end"]]
+            section_html = full_html[target_section["start"] : target_section["end"]]
             section_type = target_section["type"]
             section_id = target_section["id"]
-            logger.info(f"🖱️ [ELEMENT EDIT] Found element in section id=\"{section_id}\" type=\"{section_type}\" ({len(section_html):,} chars)")
+            logger.info(
+                f'🖱️ [ELEMENT EDIT] Found element in section id="{section_id}" type="{section_type}" ({len(section_html):,} chars)'
+            )
 
             system = ELEMENT_SECTION_EDIT_PROMPT.format(
                 css_vars=css_vars,
@@ -2207,8 +2509,9 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             logger.info(f"🖱️ [ELEMENT EDIT] Prompt: {len(system):,} chars (section-scoped), sending to Claude...")
 
             client = get_anthropic_client()
-            text = await _claude_stream(client, "claude-sonnet-4-20250514", 8000, system,
-                f"Edit the element at {req.elementPath}: {req.prompt}")
+            text = await _claude_stream(
+                client, "claude-sonnet-4-20250514", 8000, system, f"Edit the element at {req.elementPath}: {req.prompt}"
+            )
             logger.info(f"🖱️ [ELEMENT EDIT] Claude response: {len(text):,} chars")
 
             edited_section = parse_single_code_block(text, "html")
@@ -2224,11 +2527,13 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
 
         else:
             # ── Fallback: full-page edit (for elements outside sections, e.g. nav) ──
-            logger.info(f"🖱️ [ELEMENT EDIT] Element not found in any section — using full-page fallback")
+            logger.info("🖱️ [ELEMENT EDIT] Element not found in any section — using full-page fallback")
 
             system = ELEMENT_EDIT_PROMPT.format(
-                html=full_html, css=css,
-                element_path=req.elementPath, element_html=req.elementHtml,
+                html=full_html,
+                css=css,
+                element_path=req.elementPath,
+                element_html=req.elementHtml,
                 prompt=req.prompt,
             )
             logger.info(f"🖱️ [ELEMENT EDIT] Fallback prompt: {len(system):,} chars, sending to Claude...")
@@ -2247,19 +2552,23 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             result_css = code["css"] if code["css"] else css
 
             # Extract <style> from HTML if present
-            style_match = re.search(r'<style[^>]*>(.*?)</style>', result_html, re.DOTALL)
+            style_match = re.search(r"<style[^>]*>(.*?)</style>", result_html, re.DOTALL)
             if style_match:
                 result_css = style_match.group(1).strip()
-                result_html = re.sub(r'<style[^>]*>.*?</style>\s*', '', result_html, flags=re.DOTALL).strip()
+                result_html = re.sub(r"<style[^>]*>.*?</style>\s*", "", result_html, flags=re.DOTALL).strip()
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
         if s:
-            s.get("versions", []).append({
-                "version": s.get("current_version", 0),
-                "html": s["html"], "css": s["css"], "js": s.get("js", ""),
-                "prompt": f"[Element edit: {req.elementPath}] {req.prompt}",
-            })
+            s.get("versions", []).append(
+                {
+                    "version": s.get("current_version", 0),
+                    "html": s["html"],
+                    "css": s["css"],
+                    "js": s.get("js", ""),
+                    "prompt": f"[Element edit: {req.elementPath}] {req.prompt}",
+                }
+            )
             s["html"] = result_html
             s["css"] = result_css
             # Multi-page aware: also update the correct page slot
@@ -2281,19 +2590,20 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
 
     except HTTPException:
         raise
-    except CircuitOpenError:
+    except CircuitOpenError as e:
         raise HTTPException(
             status_code=503,
             detail="AI service is temporarily unavailable. Please try again in a few minutes.",
-        )
+        ) from e
     except Exception as e:
         logger.error(f"🖱️ [ELEMENT EDIT] Exception: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # SESSION ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @router.get("/session/{session_id}")
 async def get_session_endpoint(session_id: str, user: dict = Depends(require_auth)):
@@ -2301,8 +2611,11 @@ async def get_session_endpoint(session_id: str, user: dict = Depends(require_aut
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return {
-        "sessionId": session_id, "html": session["html"], "css": session["css"],
-        "js": session.get("js", ""), "prompts": session.get("prompts", []),
+        "sessionId": session_id,
+        "html": session["html"],
+        "css": session["css"],
+        "js": session.get("js", ""),
+        "prompts": session.get("prompts", []),
         "current_version": session.get("current_version", 1),
         "total_versions": len(session.get("versions", [])) + 1,
     }
@@ -2314,11 +2627,15 @@ async def get_session_versions(session_id: str, user: dict = Depends(require_aut
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     versions = session.get("versions", [])
-    all_versions = versions + [{
-        "version": session.get("current_version", len(versions) + 1),
-        "html": session["html"], "css": session["css"], "js": session.get("js", ""),
-        "prompt": session.get("prompts", [""])[-1] if session.get("prompts") else "",
-    }]
+    all_versions = versions + [
+        {
+            "version": session.get("current_version", len(versions) + 1),
+            "html": session["html"],
+            "css": session["css"],
+            "js": session.get("js", ""),
+            "prompt": session.get("prompts", [""])[-1] if session.get("prompts") else "",
+        }
+    ]
     return {
         "current_version": session.get("current_version", len(versions) + 1),
         "versions": [{"version": v["version"], "prompt": v.get("prompt", "")} for v in all_versions],
@@ -2334,19 +2651,29 @@ async def rollback_session(session_id: str, version: int, user: dict = Depends(r
     target = next((v for v in versions if v["version"] == version), None)
     if not target:
         raise HTTPException(status_code=404, detail="Version not found")
-    versions.append({
-        "version": session.get("current_version", 0),
-        "html": session["html"], "css": session["css"], "js": session.get("js", ""),
-        "prompt": f"[Before rollback to v{version}]",
-    })
+    versions.append(
+        {
+            "version": session.get("current_version", 0),
+            "html": session["html"],
+            "css": session["css"],
+            "js": session.get("js", ""),
+            "prompt": f"[Before rollback to v{version}]",
+        }
+    )
     session["html"] = target["html"]
     session["css"] = target["css"]
     session["js"] = target.get("js", "")
     session["current_version"] = version
     await redis_save_session(session_id, session)
-    return {"success": True, "version": version, "website": {
-        "html": target["html"], "css": target["css"], "js": target.get("js", ""),
-    }}
+    return {
+        "success": True,
+        "version": version,
+        "website": {
+            "html": target["html"],
+            "css": target["css"],
+            "js": target.get("js", ""),
+        },
+    }
 
 
 @router.delete("/session/{session_id}")

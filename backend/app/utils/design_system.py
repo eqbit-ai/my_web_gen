@@ -53,15 +53,29 @@ DEFAULT_DESIGN_SYSTEM = {
     "spacing": {
         "base": "4px",
         "scale": {
-            "1": "4px", "2": "8px", "3": "12px", "4": "16px",
-            "5": "20px", "6": "24px", "8": "32px", "10": "40px",
-            "12": "48px", "16": "64px", "20": "80px", "24": "96px",
+            "1": "4px",
+            "2": "8px",
+            "3": "12px",
+            "4": "16px",
+            "5": "20px",
+            "6": "24px",
+            "8": "32px",
+            "10": "40px",
+            "12": "48px",
+            "16": "64px",
+            "20": "80px",
+            "24": "96px",
         },
     },
     "borders": {
         "radius": {
-            "none": "0", "sm": "4px", "md": "8px",
-            "lg": "12px", "xl": "16px", "2xl": "24px", "full": "9999px",
+            "none": "0",
+            "sm": "4px",
+            "md": "8px",
+            "lg": "12px",
+            "xl": "16px",
+            "2xl": "24px",
+            "full": "9999px",
         },
         "width": {"thin": "1px", "medium": "2px", "thick": "4px"},
     },
@@ -76,8 +90,10 @@ DEFAULT_DESIGN_SYSTEM = {
         "columns": 12,
         "gutter": "24px",
         "breakpoints": {
-            "sm": "640px", "md": "768px",
-            "lg": "1024px", "xl": "1280px",
+            "sm": "640px",
+            "md": "768px",
+            "lg": "1024px",
+            "xl": "1280px",
         },
     },
 }
@@ -260,9 +276,9 @@ def design_system_to_prompt_context(ds: dict) -> str:
     layout = ds.get("layout", {})
 
     return f"""DESIGN SYSTEM (use CSS custom properties var(--color-primary) etc.):
-- Colors: primary {colors.get('primary')}, secondary {colors.get('secondary')}, accent {colors.get('accent')}, bg {colors.get('background')}, text {colors.get('text')}
-- Typography: Headings "{typo.get('heading_family', 'Inter')}", Body "{typo.get('body_family', 'Inter')}"
-- Border radius: sm {borders.get('radius', {}).get('sm', '4px')}, md {borders.get('radius', {}).get('md', '8px')}, lg {borders.get('radius', {}).get('lg', '12px')}
-- Layout: max-width {layout.get('max_width', '1280px')}, {layout.get('columns', 12)}-column grid
+- Colors: primary {colors.get("primary")}, secondary {colors.get("secondary")}, accent {colors.get("accent")}, bg {colors.get("background")}, text {colors.get("text")}
+- Typography: Headings "{typo.get("heading_family", "Inter")}", Body "{typo.get("body_family", "Inter")}"
+- Border radius: sm {borders.get("radius", {}).get("sm", "4px")}, md {borders.get("radius", {}).get("md", "8px")}, lg {borders.get("radius", {}).get("lg", "12px")}
+- Layout: max-width {layout.get("max_width", "1280px")}, {layout.get("columns", 12)}-column grid
 - IMPORTANT: Use var(--color-primary), var(--font-heading), var(--radius-md), var(--shadow-md) etc. CSS custom properties
 - Include the design system CSS variables at the top of your CSS"""

@@ -8,9 +8,9 @@ Validates the JSON plan from Stage 1 and auto-corrects common LLM mistakes:
 - Missing section IDs in plan
 """
 
+import copy
 import logging
 import random
-import copy
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,7 @@ REQUIRED_ITEM_FIELDS = {
 # VALIDATION + AUTO-FIX
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def validate_and_fix_plan(plan: dict) -> tuple[dict, list[str]]:
     """
     Validate plan and auto-fix issues. Returns (fixed_plan, list_of_fixes).
@@ -102,7 +103,7 @@ def validate_and_fix_plan(plan: dict) -> tuple[dict, list[str]]:
         if shared:
             all_section_lists.append((label, shared))
 
-    for source_label, sections in all_section_lists:
+    for _source_label, sections in all_section_lists:
         for section in sections:
             stype = section.get("type", "")
             pattern = section.get("pattern", "")
@@ -142,7 +143,9 @@ def validate_and_fix_plan(plan: dict) -> tuple[dict, list[str]]:
                 # Force non-tech businesses away from mockup heroes
                 if pattern in _MOCKUP_HEROES and not any(kw in industry for kw in _TECH_INDUSTRIES):
                     section["pattern"] = "hero_split"
-                    fixes.append(f"[PLAN FIX] {source_label}/hero: changed {pattern} → hero_split (not a tech/SaaS business)")
+                    fixes.append(
+                        f"[PLAN FIX] {source_label}/hero: changed {pattern} → hero_split (not a tech/SaaS business)"
+                    )
                     logger.info(f"🖼️ Plan Fix → {source_label} hero: {pattern} → hero_split (industry: {industry})")
 
                 # Force no-image heroes to hero_split
@@ -155,8 +158,12 @@ def validate_and_fix_plan(plan: dict) -> tuple[dict, list[str]]:
                     industry_word = industry if industry else "business"
                     page_context = source_label.replace("-", " ") if source_label != "main" else ""
                     content["image_query"] = f"{industry_word} {page_context} professional photography".strip()
-                    fixes.append(f"[PLAN FIX] {source_label}/hero: added missing image_query '{content['image_query']}'")
-                    logger.info(f"🖼️ Plan Fix → {source_label} hero missing image_query, added: '{content['image_query']}'")
+                    fixes.append(
+                        f"[PLAN FIX] {source_label}/hero: added missing image_query '{content['image_query']}'"
+                    )
+                    logger.info(
+                        f"🖼️ Plan Fix → {source_label} hero missing image_query, added: '{content['image_query']}'"
+                    )
 
     # 7. Assign section IDs in the plan itself
     _assign_plan_ids(plan)
@@ -189,9 +196,8 @@ def _fix_missing_fields(section: dict, stype: str, content: dict) -> list[str]:
                     content["links"] = []
                 fixes.append(f"[PLAN FIX] {stype}: added default links")
             elif field == "logo_text":
-                brand = section.get("content", {})
                 content["logo_text"] = "Brand"
-                fixes.append(f"[PLAN FIX] navbar: added missing logo_text")
+                fixes.append("[PLAN FIX] navbar: added missing logo_text")
 
     section["content"] = content
     return fixes
@@ -247,7 +253,6 @@ def _closest_allowed(current: int, allowed: list[int], default: int) -> int:
 
     # Find the nearest allowed count >= current, or the max allowed
     above = [a for a in allowed if a >= current]
-    below = [a for a in allowed if a <= current]
 
     if above:
         return min(above)

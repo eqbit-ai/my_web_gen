@@ -5,26 +5,23 @@ All endpoints require a valid JWT with is_admin=True in the payload.
 Gracefully handles missing tables (audit_logs, etc.) by returning empty results.
 """
 
-import os
-import sys
-import time
 import logging
 import platform
-from datetime import datetime, timedelta, timezone
+import sys
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, text, update
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-from typing import Optional
+from sqlalchemy import func, select, text, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db, engine
+from app.database import engine, get_db
 from app.models.user import User
 from app.utils.auth import decode_access_token
-from app.utils.redis_client import get_redis
 from app.utils.circuit_breaker import get_circuit_status, reset_circuit
 from app.utils.metrics import get_metrics
+from app.utils.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +32,7 @@ security = HTTPBearer()
 # ═══════════════════════════════════════════════════════════════════════
 # ADMIN AUTH DEPENDENCY
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def require_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -52,15 +50,16 @@ async def require_admin(
 # RESPONSE SCHEMAS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class AdminUserResponse(BaseModel):
     id: int
     email: str
     full_name: str
     company_name: str
     license_number: str
-    db_schema: Optional[str] = None
-    created_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
+    db_schema: str | None = None
+    created_at: datetime | None = None
+    last_login: datetime | None = None
     generation_count: int = 0
     is_active: bool = True
     is_admin: bool = False
@@ -77,6 +76,7 @@ class MessageResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════════════
 # HELPER: safe column access
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def _safe_getattr(obj, attr, default=None):
     """Get attribute from SQLAlchemy model, returning default if column doesn't exist."""
@@ -107,6 +107,7 @@ def _user_to_dict(user: User) -> dict:
 # DASHBOARD STATS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @router.get("/stats")
 async def admin_stats(
     admin=Depends(require_admin),
@@ -120,10 +121,8 @@ async def admin_stats(
     # Active users (last 7 days) — graceful if last_login column missing
     active_users = 0
     try:
-        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
-        result = await db.execute(
-            select(func.count(User.id)).where(User.last_login >= seven_days_ago)
-        )
+        seven_days_ago = datetime.now(UTC) - timedelta(days=7)
+        result = await db.execute(select(func.count(User.id)).where(User.last_login >= seven_days_ago))
         active_users = result.scalar() or 0
     except Exception:
         pass  # Column may not exist yet
@@ -163,6 +162,7 @@ async def admin_stats(
 # USER MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @router.get("/users")
 async def list_users(
     limit: int = Query(default=50, ge=1, le=200),
@@ -171,9 +171,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
 ):
     """List all users with pagination."""
-    result = await db.execute(
-        select(User).order_by(User.id.desc()).limit(limit).offset(offset)
-    )
+    result = await db.execute(select(User).order_by(User.id.desc()).limit(limit).offset(offset))
     users = result.scalars().all()
 
     # Total count for pagination
@@ -206,9 +204,7 @@ async def get_user_detail(
     projects_count = 0
     if user.db_schema:
         try:
-            result = await db.execute(
-                text(f'SELECT count(*) FROM "{user.db_schema}".projects')
-            )
+            result = await db.execute(text(f'SELECT count(*) FROM "{user.db_schema}".projects'))
             projects_count = result.scalar() or 0
         except Exception:
             pass  # Table may not exist
@@ -230,16 +226,14 @@ async def disable_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     try:
-        await db.execute(
-            update(User).where(User.id == user_id).values(is_active=False)
-        )
+        await db.execute(update(User).where(User.id == user_id).values(is_active=False))
         await db.commit()
     except Exception as e:
         await db.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to disable user — is_active column may not exist yet: {e}",
-        )
+        ) from e
 
     return {"message": f"User {user.email} has been disabled"}
 
@@ -257,16 +251,14 @@ async def enable_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     try:
-        await db.execute(
-            update(User).where(User.id == user_id).values(is_active=True)
-        )
+        await db.execute(update(User).where(User.id == user_id).values(is_active=True))
         await db.commit()
     except Exception as e:
         await db.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to enable user — is_active column may not exist yet: {e}",
-        )
+        ) from e
 
     return {"message": f"User {user.email} has been re-enabled"}
 
@@ -275,11 +267,12 @@ async def enable_user(
 # GENERATION ACTIVITY LOG
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @router.get("/generations")
 async def list_generations(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    user_id: Optional[int] = Query(default=None),
+    user_id: int | None = Query(default=None),
     admin=Depends(require_admin),
 ):
     """Recent generation activity from Redis job history."""
@@ -300,23 +293,25 @@ async def list_generations(
             # Filter by user_id if specified
             if user_id and data.get("user_id") != str(user_id):
                 continue
-            jobs.append({
-                "id": data.get("id", ""),
-                "type": data.get("type", ""),
-                "status": data.get("status", ""),
-                "user_id": data.get("user_id", ""),
-                "created_at": data.get("created_at", ""),
-                "updated_at": data.get("updated_at", ""),
-                "progress": data.get("progress", 0),
-                "progress_message": data.get("progress_message", ""),
-                "error": data.get("error", ""),
-            })
+            jobs.append(
+                {
+                    "id": data.get("id", ""),
+                    "type": data.get("type", ""),
+                    "status": data.get("status", ""),
+                    "user_id": data.get("user_id", ""),
+                    "created_at": data.get("created_at", ""),
+                    "updated_at": data.get("updated_at", ""),
+                    "progress": data.get("progress", 0),
+                    "progress_message": data.get("progress_message", ""),
+                    "error": data.get("error", ""),
+                }
+            )
 
         # Sort by created_at descending
         jobs.sort(key=lambda j: float(j.get("created_at") or 0), reverse=True)
 
         total = len(jobs)
-        jobs = jobs[offset: offset + limit]
+        jobs = jobs[offset : offset + limit]
 
         return {
             "generations": jobs,
@@ -339,6 +334,7 @@ async def list_generations(
 # CONTENT MODERATION
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @router.get("/moderation")
 async def moderation_queue(
     limit: int = Query(default=50, ge=1, le=200),
@@ -354,6 +350,7 @@ async def moderation_queue(
         for item_json, score in items:
             try:
                 import json
+
                 item = json.loads(item_json)
                 item["flagged_at"] = score
                 flagged.append(item)
@@ -403,6 +400,7 @@ async def moderation_action(
                 if item_id in item:
                     try:
                         import json
+
                         data = json.loads(item)
                         banned_user = data.get("user_id")
                         if banned_user:
@@ -414,12 +412,13 @@ async def moderation_action(
             return {"message": f"Item {item_id} removed, user banned"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Moderation action failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Moderation action failed: {e}") from e
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # SYSTEM INFO
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @router.get("/system")
 async def system_info(admin=Depends(require_admin)):
@@ -451,9 +450,7 @@ async def system_info(admin=Depends(require_admin)):
         r = await get_redis()
         redis_info = await r.info(section="memory")
         info["redis"] = {
-            "used_memory_mb": round(
-                int(redis_info.get("used_memory", 0)) / (1024 * 1024), 2
-            ),
+            "used_memory_mb": round(int(redis_info.get("used_memory", 0)) / (1024 * 1024), 2),
             "connected_clients": redis_info.get("connected_clients", "unknown"),
         }
         # Queue sizes
@@ -485,6 +482,7 @@ async def system_info(admin=Depends(require_admin)):
 # ═══════════════════════════════════════════════════════════════════════
 # CIRCUIT BREAKER MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @router.post("/circuit/{provider}/reset", response_model=MessageResponse)
 async def reset_circuit_breaker(

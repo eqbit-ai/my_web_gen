@@ -5,14 +5,13 @@ Pure Python — regex-based parsing, no external HTML parser dependencies.
 Generates meta tags, JSON-LD structured data, sitemap, and robots.txt.
 """
 
-import re
 import json
-from typing import Optional
-
+import re
 
 # ---------------------------------------------------------------------------
 # 1. check_seo
 # ---------------------------------------------------------------------------
+
 
 def check_seo(html: str, plan: dict = None) -> dict:
     """
@@ -28,86 +27,104 @@ def check_seo(html: str, plan: dict = None) -> dict:
     plan = plan or {}
 
     # ── Title tag ────────────────────────────────────────────────────
-    title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.I | re.S)
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
     if title_match:
         title_text = title_match.group(1).strip()
         title_len = len(title_text)
         if title_len < 10:
-            issues.append({
-                "type": "title_too_short",
-                "severity": "warning",
-                "message": f"Title tag too short ({title_len} chars, recommend 30-60)",
-            })
+            issues.append(
+                {
+                    "type": "title_too_short",
+                    "severity": "warning",
+                    "message": f"Title tag too short ({title_len} chars, recommend 30-60)",
+                }
+            )
         elif title_len > 70:
-            issues.append({
-                "type": "title_too_long",
-                "severity": "info",
-                "message": f"Title tag too long ({title_len} chars, recommend 30-60)",
-            })
+            issues.append(
+                {
+                    "type": "title_too_long",
+                    "severity": "info",
+                    "message": f"Title tag too long ({title_len} chars, recommend 30-60)",
+                }
+            )
         else:
             passed.append("title_length")
     else:
-        issues.append({
-            "type": "missing_title",
-            "severity": "critical",
-            "message": "No <title> tag found",
-        })
+        issues.append(
+            {
+                "type": "missing_title",
+                "severity": "critical",
+                "message": "No <title> tag found",
+            }
+        )
 
     # ── Meta description ─────────────────────────────────────────────
     desc_match = re.search(
         r'<meta[^>]+name\s*=\s*["\']description["\'][^>]+content\s*=\s*["\']([^"\']*)["\']',
-        html, re.I,
+        html,
+        re.I,
     )
     if not desc_match:
         # Try reversed attribute order
         desc_match = re.search(
             r'<meta[^>]+content\s*=\s*["\']([^"\']*)["\'][^>]+name\s*=\s*["\']description["\']',
-            html, re.I,
+            html,
+            re.I,
         )
 
     if desc_match:
         desc_text = desc_match.group(1).strip()
         desc_len = len(desc_text)
         if desc_len < 50:
-            issues.append({
-                "type": "description_too_short",
-                "severity": "warning",
-                "message": f"Meta description too short ({desc_len} chars, recommend 120-160)",
-            })
+            issues.append(
+                {
+                    "type": "description_too_short",
+                    "severity": "warning",
+                    "message": f"Meta description too short ({desc_len} chars, recommend 120-160)",
+                }
+            )
         elif desc_len > 170:
-            issues.append({
-                "type": "description_too_long",
-                "severity": "info",
-                "message": f"Meta description too long ({desc_len} chars, recommend 120-160)",
-            })
+            issues.append(
+                {
+                    "type": "description_too_long",
+                    "severity": "info",
+                    "message": f"Meta description too long ({desc_len} chars, recommend 120-160)",
+                }
+            )
         else:
             passed.append("meta_description_length")
     else:
-        issues.append({
-            "type": "missing_description",
-            "severity": "warning",
-            "message": "No meta description tag found",
-        })
+        issues.append(
+            {
+                "type": "missing_description",
+                "severity": "warning",
+                "message": "No meta description tag found",
+            }
+        )
 
     # ── H1 tag ───────────────────────────────────────────────────────
-    h1_tags = re.findall(r'<h1\b[^>]*>(.*?)</h1>', html, re.I | re.S)
+    h1_tags = re.findall(r"<h1\b[^>]*>(.*?)</h1>", html, re.I | re.S)
     if not h1_tags:
-        issues.append({
-            "type": "missing_h1",
-            "severity": "warning",
-            "message": "No <h1> tag found",
-        })
+        issues.append(
+            {
+                "type": "missing_h1",
+                "severity": "warning",
+                "message": "No <h1> tag found",
+            }
+        )
     elif len(h1_tags) > 1:
-        issues.append({
-            "type": "multiple_h1",
-            "severity": "info",
-            "message": f"{len(h1_tags)} <h1> tags found (best practice: exactly 1)",
-        })
+        issues.append(
+            {
+                "type": "multiple_h1",
+                "severity": "info",
+                "message": f"{len(h1_tags)} <h1> tags found (best practice: exactly 1)",
+            }
+        )
     else:
         passed.append("single_h1")
 
     # ── Heading hierarchy ────────────────────────────────────────────
-    headings = re.findall(r'<(h[1-6])\b', html, re.I)
+    headings = re.findall(r"<(h[1-6])\b", html, re.I)
     levels = [int(h[1]) for h in headings]
     hierarchy_ok = True
     for i in range(1, len(levels)):
@@ -117,31 +134,34 @@ def check_seo(html: str, plan: dict = None) -> dict:
     if hierarchy_ok and levels:
         passed.append("heading_hierarchy")
     elif levels:
-        issues.append({
-            "type": "heading_hierarchy_broken",
-            "severity": "info",
-            "message": "Heading hierarchy skips levels",
-        })
+        issues.append(
+            {
+                "type": "heading_hierarchy_broken",
+                "severity": "info",
+                "message": "Heading hierarchy skips levels",
+            }
+        )
 
     # ── Image alt texts ──────────────────────────────────────────────
-    img_tags = re.findall(r'<img\b[^>]*>', html, re.I | re.S)
-    imgs_no_alt = sum(1 for img in img_tags if not re.search(r'\balt\s*=', img, re.I))
-    imgs_empty_alt = sum(
-        1 for img in img_tags
-        if re.search(r'\balt\s*=\s*["\']["\']', img, re.I)
-    )
+    img_tags = re.findall(r"<img\b[^>]*>", html, re.I | re.S)
+    imgs_no_alt = sum(1 for img in img_tags if not re.search(r"\balt\s*=", img, re.I))
+    imgs_empty_alt = sum(1 for img in img_tags if re.search(r'\balt\s*=\s*["\']["\']', img, re.I))
     if imgs_no_alt > 0:
-        issues.append({
-            "type": "images_missing_alt",
-            "severity": "warning",
-            "message": f"{imgs_no_alt} image(s) missing alt attribute",
-        })
+        issues.append(
+            {
+                "type": "images_missing_alt",
+                "severity": "warning",
+                "message": f"{imgs_no_alt} image(s) missing alt attribute",
+            }
+        )
     elif imgs_empty_alt > len(img_tags) * 0.5 and len(img_tags) > 2:
-        issues.append({
-            "type": "images_empty_alt",
-            "severity": "info",
-            "message": f"{imgs_empty_alt}/{len(img_tags)} images have empty alt text",
-        })
+        issues.append(
+            {
+                "type": "images_empty_alt",
+                "severity": "info",
+                "message": f"{imgs_empty_alt}/{len(img_tags)} images have empty alt text",
+            }
+        )
     else:
         passed.append("image_alt_texts")
 
@@ -149,54 +169,64 @@ def check_seo(html: str, plan: dict = None) -> dict:
     if re.search(r'<script[^>]+type\s*=\s*["\']application/ld\+json["\']', html, re.I):
         passed.append("structured_data")
     else:
-        issues.append({
-            "type": "missing_structured_data",
-            "severity": "info",
-            "message": "No JSON-LD structured data found",
-        })
+        issues.append(
+            {
+                "type": "missing_structured_data",
+                "severity": "info",
+                "message": "No JSON-LD structured data found",
+            }
+        )
 
     # ── Open Graph tags ──────────────────────────────────────────────
     og_tags = re.findall(r'<meta[^>]+property\s*=\s*["\']og:', html, re.I)
     if len(og_tags) >= 3:
         passed.append("open_graph_tags")
     else:
-        issues.append({
-            "type": "missing_og_tags",
-            "severity": "info",
-            "message": f"Only {len(og_tags)} Open Graph tag(s) found (recommend og:title, og:description, og:image, og:type)",
-        })
+        issues.append(
+            {
+                "type": "missing_og_tags",
+                "severity": "info",
+                "message": f"Only {len(og_tags)} Open Graph tag(s) found (recommend og:title, og:description, og:image, og:type)",
+            }
+        )
 
     # ── Canonical URL ────────────────────────────────────────────────
     if re.search(r'<link[^>]+rel\s*=\s*["\']canonical["\']', html, re.I):
         passed.append("canonical_url")
     else:
-        issues.append({
-            "type": "missing_canonical",
-            "severity": "info",
-            "message": "No canonical URL tag found",
-        })
+        issues.append(
+            {
+                "type": "missing_canonical",
+                "severity": "info",
+                "message": "No canonical URL tag found",
+            }
+        )
 
     # ── Robots meta ──────────────────────────────────────────────────
     if re.search(r'<meta[^>]+name\s*=\s*["\']robots["\']', html, re.I):
         passed.append("robots_meta")
     else:
         # Not critical for generated sites — informational only
-        issues.append({
-            "type": "missing_robots_meta",
-            "severity": "info",
-            "message": "No robots meta tag found",
-        })
+        issues.append(
+            {
+                "type": "missing_robots_meta",
+                "severity": "info",
+                "message": "No robots meta tag found",
+            }
+        )
 
     # ── Internal link structure ──────────────────────────────────────
     internal_links = re.findall(r'<a\b[^>]+href\s*=\s*["\']#[^"\']*["\']', html, re.I)
     if len(internal_links) >= 2:
         passed.append("internal_links")
     else:
-        issues.append({
-            "type": "few_internal_links",
-            "severity": "info",
-            "message": f"Only {len(internal_links)} internal anchor link(s) found",
-        })
+        issues.append(
+            {
+                "type": "few_internal_links",
+                "severity": "info",
+                "message": f"Only {len(internal_links)} internal anchor link(s) found",
+            }
+        )
 
     # ── Score calculation ────────────────────────────────────────────
     severity_weights = {"critical": 15, "warning": 5, "info": 2}
@@ -213,6 +243,7 @@ def check_seo(html: str, plan: dict = None) -> dict:
 # ---------------------------------------------------------------------------
 # 2. generate_seo_tags
 # ---------------------------------------------------------------------------
+
 
 def generate_seo_tags(plan: dict) -> str:
     """
@@ -256,7 +287,7 @@ def generate_seo_tags(plan: dict) -> str:
     tags = []
 
     # Basic SEO
-    tags.append(f'<title>{_escape_html(title)}</title>')
+    tags.append(f"<title>{_escape_html(title)}</title>")
     tags.append(f'<meta name="description" content="{_escape_attr(description)}">')
     tags.append('<meta name="robots" content="index, follow">')
     tags.append(f'<meta name="theme-color" content="{_escape_attr(primary_color)}">')
@@ -282,9 +313,7 @@ def generate_seo_tags(plan: dict) -> str:
     if tagline:
         org_schema["description"] = tagline
 
-    tags.append(
-        f'<script type="application/ld+json">{json.dumps(org_schema, ensure_ascii=False)}</script>'
-    )
+    tags.append(f'<script type="application/ld+json">{json.dumps(org_schema, ensure_ascii=False)}</script>')
 
     return "\n    ".join(tags)
 
@@ -292,6 +321,7 @@ def generate_seo_tags(plan: dict) -> str:
 # ---------------------------------------------------------------------------
 # 3. inject_seo_into_html
 # ---------------------------------------------------------------------------
+
 
 def inject_seo_into_html(html: str, seo_tags: str) -> str:
     """
@@ -311,7 +341,7 @@ def inject_seo_into_html(html: str, seo_tags: str) -> str:
             continue
 
         # Skip if a similar tag already exists
-        if line.startswith("<title") and re.search(r'<title[^>]*>.+</title>', html, re.I | re.S):
+        if line.startswith("<title") and re.search(r"<title[^>]*>.+</title>", html, re.I | re.S):
             continue
         if 'name="description"' in line and re.search(r'<meta[^>]+name\s*=\s*["\']description["\']', html, re.I):
             continue
@@ -322,19 +352,23 @@ def inject_seo_into_html(html: str, seo_tags: str) -> str:
         if 'property="og:' in line:
             prop_match = re.search(r'property="(og:[^"]+)"', line)
             if prop_match and re.search(
-                rf'<meta[^>]+property\s*=\s*["\']' + re.escape(prop_match.group(1)) + r'["\']',
-                html, re.I,
+                r'<meta[^>]+property\s*=\s*["\']' + re.escape(prop_match.group(1)) + r'["\']',
+                html,
+                re.I,
             ):
                 continue
         if 'name="twitter:' in line:
             name_match = re.search(r'name="(twitter:[^"]+)"', line)
             if name_match and re.search(
-                rf'<meta[^>]+name\s*=\s*["\']' + re.escape(name_match.group(1)) + r'["\']',
-                html, re.I,
+                r'<meta[^>]+name\s*=\s*["\']' + re.escape(name_match.group(1)) + r'["\']',
+                html,
+                re.I,
             ):
                 continue
-        if 'application/ld+json' in line and re.search(
-            r'<script[^>]+type\s*=\s*["\']application/ld\+json["\']', html, re.I,
+        if "application/ld+json" in line and re.search(
+            r'<script[^>]+type\s*=\s*["\']application/ld\+json["\']',
+            html,
+            re.I,
         ):
             continue
 
@@ -346,13 +380,13 @@ def inject_seo_into_html(html: str, seo_tags: str) -> str:
     injection = "\n    " + "\n    ".join(to_inject)
 
     # Inject before </head>
-    head_close = re.search(r'</head>', html, re.I)
+    head_close = re.search(r"</head>", html, re.I)
     if head_close:
         pos = head_close.start()
         return html[:pos] + injection + "\n" + html[pos:]
 
     # Fallback: inject after <head>
-    head_open = re.search(r'<head[^>]*>', html, re.I)
+    head_open = re.search(r"<head[^>]*>", html, re.I)
     if head_open:
         pos = head_open.end()
         return html[:pos] + injection + html[pos:]
@@ -364,6 +398,7 @@ def inject_seo_into_html(html: str, seo_tags: str) -> str:
 # ---------------------------------------------------------------------------
 # 4. generate_sitemap / robots.txt
 # ---------------------------------------------------------------------------
+
 
 def generate_sitemap(pages: list[dict], domain: str = "") -> str:
     """
@@ -382,10 +417,10 @@ def generate_sitemap(pages: list[dict], domain: str = "") -> str:
         slug = page.get("slug", "/")
         url = f"{base}{slug}" if slug != "/" else base + "/"
         priority = "1.0" if slug == "/" else "0.8"
-        xml_lines.append(f"  <url>")
+        xml_lines.append("  <url>")
         xml_lines.append(f"    <loc>{_escape_xml(url)}</loc>")
         xml_lines.append(f"    <priority>{priority}</priority>")
-        xml_lines.append(f"  </url>")
+        xml_lines.append("  </url>")
 
     xml_lines.append("</urlset>")
     return "\n".join(xml_lines)
@@ -402,17 +437,13 @@ def generate_robots_txt(domain: str = "") -> str:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _escape_html(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _escape_attr(text: str) -> str:
-    return (
-        text.replace("&", "&amp;")
-        .replace('"', "&quot;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return text.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _escape_xml(text: str) -> str:

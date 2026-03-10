@@ -5,8 +5,6 @@ Each snippet uses Tailwind CSS utility classes and {{IMG:description}} placehold
 """
 
 import random
-from typing import Optional
-
 
 SECTION_REFERENCES = {
     # ─── HERO ──────────────────────────────────────────────────────────
@@ -15,7 +13,7 @@ SECTION_REFERENCES = {
             "name": "split_hero_with_image",
             "style": "modern",
             "description": "Split layout: text left, image right, gradient overlay, CTA buttons",
-            "html": '''<section data-section-type="hero" class="relative min-h-[90vh] flex items-center bg-[var(--bg)]">
+            "html": """<section data-section-type="hero" class="relative min-h-[90vh] flex items-center bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
     <div class="space-y-8">
       <span class="inline-block px-4 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full text-sm font-medium tracking-wide">Trusted by 500+ Companies</span>
@@ -39,13 +37,13 @@ SECTION_REFERENCES = {
       <img src="{{IMG:professional team collaborating on modern software dashboard}}" alt="Platform preview" class="relative rounded-2xl shadow-2xl w-full" />
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "full_background_hero",
             "style": "bold",
             "description": "Full-screen background image with centered text overlay and dark gradient",
-            "html": '''<section data-section-type="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+            "html": """<section data-section-type="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
   <div class="absolute inset-0">
     <img src="{{IMG:dramatic aerial cityscape at sunset with modern architecture}}" alt="Background" class="w-full h-full object-cover" />
     <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
@@ -61,13 +59,13 @@ SECTION_REFERENCES = {
   <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
     <i class="fa-solid fa-chevron-down text-white/60 text-2xl"></i>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "gradient_hero",
             "style": "vibrant",
             "description": "Gradient background with centered content, floating shapes, and stats bar",
-            "html": '''<section data-section-type="hero" class="relative min-h-[90vh] flex items-center overflow-hidden" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
+            "html": """<section data-section-type="hero" class="relative min-h-[90vh] flex items-center overflow-hidden" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
   <div class="absolute inset-0 overflow-hidden">
     <div class="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
     <div class="absolute bottom-20 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
@@ -89,13 +87,13 @@ SECTION_REFERENCES = {
       <div><p class="text-3xl font-bold text-white">4.9/5</p><p class="text-white/60 text-sm">User Rating</p></div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "video_style_hero",
             "style": "cinematic",
             "description": "Video-style hero with play button overlay and minimal text",
-            "html": '''<section data-section-type="hero" class="relative min-h-screen flex items-center bg-[#0a0a0a]">
+            "html": """<section data-section-type="hero" class="relative min-h-screen flex items-center bg-[#0a0a0a]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
     <div class="space-y-8">
       <div class="flex items-center gap-3">
@@ -118,13 +116,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "minimal_hero",
             "style": "clean",
             "description": "Ultra-clean minimal hero with large typography and single CTA",
-            "html": '''<section data-section-type="hero" class="min-h-[85vh] flex items-center bg-[var(--bg)]">
+            "html": """<section data-section-type="hero" class="min-h-[85vh] flex items-center bg-[var(--bg)]">
   <div class="max-w-5xl mx-auto px-6 space-y-10">
     <h1 class="text-6xl md:text-8xl font-bold text-[var(--text)] leading-[1.1] tracking-tight" style="font-family:var(--font-heading)">Design that<br/><span class="text-[var(--primary)]">speaks volumes.</span></h1>
     <p class="text-xl text-[var(--text-muted)] max-w-xl leading-relaxed">We help brands find their voice through thoughtful design, clear strategy, and meticulous execution.</p>
@@ -133,17 +131,16 @@ SECTION_REFERENCES = {
       <a href="#work" class="text-[var(--text-muted)] hover:text-[var(--text)] font-medium transition-colors flex items-center gap-2">Our Projects <i class="fa-solid fa-arrow-right"></i></a>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── FEATURES ──────────────────────────────────────────────────────
     "features": [
         {
             "name": "icon_grid_features",
             "style": "clean",
             "description": "3-column icon grid with hover effects and descriptive text",
-            "html": '''<section data-section-type="features" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="features" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <span class="text-[var(--primary)] font-semibold text-sm tracking-widest uppercase">What We Offer</span>
@@ -174,13 +171,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "card_grid_features",
             "style": "modern",
             "description": "Card-based feature grid with icons, borders, and number badges",
-            "html": '''<section data-section-type="features" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="features" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-6" style="font-family:var(--font-heading)">Powerful Features, Simple Interface</h2>
@@ -217,13 +214,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "alternating_rows_features",
             "style": "editorial",
             "description": "Alternating image-text rows with large visuals",
-            "html": '''<section data-section-type="features" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="features" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 space-y-24">
     <div class="grid lg:grid-cols-2 gap-16 items-center" data-aos="fade-up">
       <div class="space-y-6">
@@ -256,13 +253,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "bento_grid_features",
             "style": "trendy",
             "description": "Bento-style asymmetric grid with mixed card sizes",
-            "html": '''<section data-section-type="features" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="features" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-6" style="font-family:var(--font-heading)">Built for Modern Teams</h2>
@@ -294,17 +291,16 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── TESTIMONIALS ──────────────────────────────────────────────────
     "testimonials": [
         {
             "name": "carousel_single_testimonial",
             "style": "elegant",
             "description": "Single large testimonial with photo, name, and company",
-            "html": '''<section data-section-type="testimonials" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="testimonials" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-4xl mx-auto px-6 text-center">
     <span class="text-[var(--primary)] font-semibold text-sm tracking-widest uppercase">Testimonials</span>
     <h2 class="text-4xl font-bold text-[var(--text)] mt-4 mb-16" style="font-family:var(--font-heading)">What Our Clients Say</h2>
@@ -320,13 +316,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "grid_testimonial_cards",
             "style": "modern",
             "description": "3-column grid of testimonial cards with star ratings",
-            "html": '''<section data-section-type="testimonials" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="testimonials" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Trusted by Industry Leaders</h2>
@@ -359,13 +355,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "large_quote_testimonial",
             "style": "bold",
             "description": "Full-width large quote with background accent color",
-            "html": '''<section data-section-type="testimonials" class="py-24 bg-[var(--primary)]">
+            "html": """<section data-section-type="testimonials" class="py-24 bg-[var(--primary)]">
   <div class="max-w-5xl mx-auto px-6 text-center">
     <i class="fa-solid fa-quote-left text-white/20 text-7xl mb-8"></i>
     <blockquote class="text-3xl md:text-4xl text-white leading-relaxed font-medium">"This platform did not just improve our workflow. It completely redefined how our team thinks about collaboration and delivery."</blockquote>
@@ -377,17 +373,16 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── PRICING ───────────────────────────────────────────────────────
     "pricing": [
         {
             "name": "three_column_pricing",
             "style": "standard",
             "description": "Classic 3-column pricing cards with highlighted popular plan",
-            "html": '''<section data-section-type="pricing" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="pricing" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Simple, Transparent Pricing</h2>
@@ -435,13 +430,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "toggle_pricing",
             "style": "interactive",
             "description": "Pricing with monthly/annual toggle and savings badge",
-            "html": '''<section data-section-type="pricing" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="pricing" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Invest in Your Growth</h2>
@@ -490,13 +485,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "comparison_table_pricing",
             "style": "detailed",
             "description": "Feature comparison table with checkmarks across plans",
-            "html": '''<section data-section-type="pricing" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="pricing" class="py-24 bg-[var(--bg)]">
   <div class="max-w-5xl mx-auto px-6 lg:px-8">
     <div class="text-center mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Compare Plans</h2>
@@ -524,17 +519,16 @@ SECTION_REFERENCES = {
       </table>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── CTA ───────────────────────────────────────────────────────────
     "cta": [
         {
             "name": "centered_cta",
             "style": "clean",
             "description": "Centered CTA with heading, subtext, and button",
-            "html": '''<section data-section-type="cta" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="cta" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-3xl mx-auto px-6 text-center space-y-8">
     <h2 class="text-4xl font-bold text-[var(--text)]" style="font-family:var(--font-heading)">Ready to Transform Your Workflow?</h2>
     <p class="text-lg text-[var(--text-muted)] max-w-xl mx-auto">Join over 10,000 teams who have already made the switch. Start your free 14-day trial today — no credit card required.</p>
@@ -544,13 +538,13 @@ SECTION_REFERENCES = {
     </div>
     <p class="text-sm text-[var(--text-muted)]">Free for 14 days. No credit card needed. Cancel anytime.</p>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "split_cta_with_image",
             "style": "modern",
             "description": "Split CTA with text on one side and image on the other",
-            "html": '''<section data-section-type="cta" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="cta" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid lg:grid-cols-2 gap-12 items-center bg-[var(--bg-surface)] rounded-2xl overflow-hidden">
       <div class="p-12 space-y-6">
@@ -566,29 +560,28 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "gradient_banner_cta",
             "style": "vibrant",
             "description": "Full-width gradient banner with bold CTA",
-            "html": '''<section data-section-type="cta" class="py-20" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
+            "html": """<section data-section-type="cta" class="py-20" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">
   <div class="max-w-5xl mx-auto px-6 text-center space-y-8">
     <h2 class="text-4xl md:text-5xl font-bold text-white" style="font-family:var(--font-heading)">Let Us Build Your Future Together</h2>
     <p class="text-xl text-white/80 max-w-2xl mx-auto">Schedule a free consultation with our team and discover how we can accelerate your digital transformation.</p>
     <a href="#contact" class="inline-block px-12 py-4 bg-white text-[var(--primary)] rounded-[var(--radius-btn)] font-bold text-lg hover:shadow-2xl transition-all">Book a Free Call</a>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── FOOTER ────────────────────────────────────────────────────────
     "footer": [
         {
             "name": "four_column_footer",
             "style": "standard",
             "description": "4-column footer with links, newsletter, and social icons",
-            "html": '''<footer data-section-type="footer" class="bg-[var(--text)] text-white pt-16 pb-8">
+            "html": """<footer data-section-type="footer" class="bg-[var(--text)] text-white pt-16 pb-8">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
       <div>
@@ -635,13 +628,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</footer>''',
+</footer>""",
         },
         {
             "name": "minimal_footer",
             "style": "clean",
             "description": "Minimal single-row footer with logo, links, and copyright",
-            "html": '''<footer data-section-type="footer" class="py-8 bg-[var(--bg)] border-t border-[var(--text)]/10">
+            "html": """<footer data-section-type="footer" class="py-8 bg-[var(--bg)] border-t border-[var(--text)]/10">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
     <span class="text-lg font-bold text-[var(--text)]">BrandName</span>
     <nav class="flex flex-wrap gap-6 text-sm text-[var(--text-muted)]">
@@ -652,13 +645,13 @@ SECTION_REFERENCES = {
     </nav>
     <p class="text-sm text-[var(--text-muted)]">2025 BrandName</p>
   </div>
-</footer>''',
+</footer>""",
         },
         {
             "name": "mega_footer",
             "style": "comprehensive",
             "description": "Large footer with multiple link columns, contact info, and badges",
-            "html": '''<footer data-section-type="footer" class="bg-gray-900 text-white pt-20 pb-8">
+            "html": """<footer data-section-type="footer" class="bg-gray-900 text-white pt-20 pb-8">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-10 mb-16">
       <div class="lg:col-span-2">
@@ -713,17 +706,16 @@ SECTION_REFERENCES = {
       <p>Made with <i class="fa-solid fa-heart text-red-500 text-xs"></i> in Dubai</p>
     </div>
   </div>
-</footer>''',
+</footer>""",
         },
     ],
-
     # ─── NAVBAR ────────────────────────────────────────────────────────
     "navbar": [
         {
             "name": "transparent_navbar",
             "style": "overlay",
             "description": "Transparent navbar that overlays the hero section",
-            "html": '''<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-sm border-b border-white/10">
+            "html": """<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-sm border-b border-white/10">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-20">
     <a href="#" class="text-xl font-bold text-[var(--text)]">BrandName</a>
     <div class="hidden md:flex items-center gap-8">
@@ -738,13 +730,13 @@ SECTION_REFERENCES = {
     </div>
     <button class="md:hidden text-[var(--text)]" aria-label="Menu"><i class="fa-solid fa-bars text-xl"></i></button>
   </div>
-</nav>''',
+</nav>""",
         },
         {
             "name": "solid_navbar",
             "style": "professional",
             "description": "Solid background navbar with shadow",
-            "html": '''<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-[var(--bg)] shadow-sm border-b border-[var(--text)]/5">
+            "html": """<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-[var(--bg)] shadow-sm border-b border-[var(--text)]/5">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
     <a href="#" class="flex items-center gap-2">
       <div class="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center text-white font-bold text-sm">B</div>
@@ -760,13 +752,13 @@ SECTION_REFERENCES = {
     <a href="#contact" class="hidden md:inline-block px-6 py-2.5 bg-[var(--primary)] text-white rounded-[var(--radius-btn)] text-sm font-semibold hover:opacity-90 transition-all">Book a Demo</a>
     <button class="md:hidden text-[var(--text)]" aria-label="Menu"><i class="fa-solid fa-bars text-xl"></i></button>
   </div>
-</nav>''',
+</nav>""",
         },
         {
             "name": "centered_logo_navbar",
             "style": "elegant",
             "description": "Centered logo with links split on both sides",
-            "html": '''<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--text)]/5">
+            "html": """<nav data-section-type="navbar" class="fixed top-0 left-0 right-0 z-50 bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--text)]/5">
   <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-20">
     <div class="hidden md:flex items-center gap-8">
       <a href="#about" class="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors tracking-wide">About</a>
@@ -781,17 +773,16 @@ SECTION_REFERENCES = {
     </div>
     <button class="md:hidden text-[var(--text)]" aria-label="Menu"><i class="fa-solid fa-bars text-xl"></i></button>
   </div>
-</nav>''',
+</nav>""",
         },
     ],
-
     # ─── STATS ─────────────────────────────────────────────────────────
     "stats": [
         {
             "name": "inline_counters",
             "style": "clean",
             "description": "Horizontal row of stat counters with labels",
-            "html": '''<section data-section-type="stats" class="py-16 bg-[var(--bg-surface)] border-y border-[var(--text)]/5">
+            "html": """<section data-section-type="stats" class="py-16 bg-[var(--bg-surface)] border-y border-[var(--text)]/5">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
       <div data-aos="fade-up" data-aos-delay="100">
@@ -812,13 +803,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "card_counters",
             "style": "modern",
             "description": "Stats displayed in individual cards with icons",
-            "html": '''<section data-section-type="stats" class="py-20 bg-[var(--bg)]">
+            "html": """<section data-section-type="stats" class="py-20 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="p-8 bg-[var(--bg-surface)] rounded-[var(--radius)] text-center border border-[var(--text)]/5" data-aos="fade-up" data-aos-delay="100">
@@ -843,17 +834,16 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── TEAM ──────────────────────────────────────────────────────────
     "team": [
         {
             "name": "grid_team_cards",
             "style": "professional",
             "description": "Grid of team member cards with photos and social links",
-            "html": '''<section data-section-type="team" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="team" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Meet Our Leadership</h2>
@@ -896,13 +886,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "horizontal_scroll_team",
             "style": "modern",
             "description": "Horizontal scrollable team cards with compact layout",
-            "html": '''<section data-section-type="team" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="team" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="flex justify-between items-end mb-12">
       <div>
@@ -941,17 +931,16 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── GALLERY ───────────────────────────────────────────────────────
     "gallery": [
         {
             "name": "masonry_gallery",
             "style": "creative",
             "description": "Masonry-style image gallery with varying heights",
-            "html": '''<section data-section-type="gallery" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="gallery" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Our Portfolio</h2>
@@ -984,13 +973,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "lightbox_grid_gallery",
             "style": "structured",
             "description": "Uniform grid gallery with category filters",
-            "html": '''<section data-section-type="gallery" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="gallery" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center mb-12">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Featured Work</h2>
@@ -1028,17 +1017,16 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── CONTACT ───────────────────────────────────────────────────────
     "contact": [
         {
             "name": "split_form_map_contact",
             "style": "practical",
             "description": "Split layout with contact form on one side and info/map on the other",
-            "html": '''<section data-section-type="contact" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="contact" class="py-24 bg-[var(--bg)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="grid lg:grid-cols-2 gap-16">
       <div>
@@ -1085,13 +1073,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "centered_form_contact",
             "style": "minimal",
             "description": "Centered compact contact form with clean layout",
-            "html": '''<section data-section-type="contact" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="contact" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-2xl mx-auto px-6">
     <div class="text-center mb-12">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Contact Us</h2>
@@ -1107,17 +1095,16 @@ SECTION_REFERENCES = {
       <button type="submit" class="w-full py-3.5 bg-[var(--primary)] text-white rounded-[var(--radius-btn)] font-semibold hover:opacity-90 transition-all">Send Message</button>
     </form>
   </div>
-</section>''',
+</section>""",
         },
     ],
-
     # ─── FAQ ───────────────────────────────────────────────────────────
     "faq": [
         {
             "name": "accordion_faq",
             "style": "standard",
             "description": "Expandable accordion-style FAQ section",
-            "html": '''<section data-section-type="faq" class="py-24 bg-[var(--bg)]">
+            "html": """<section data-section-type="faq" class="py-24 bg-[var(--bg)]">
   <div class="max-w-3xl mx-auto px-6">
     <div class="text-center mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Frequently Asked Questions</h2>
@@ -1154,13 +1141,13 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
         {
             "name": "two_column_faq",
             "style": "spacious",
             "description": "Two-column FAQ layout for more questions",
-            "html": '''<section data-section-type="faq" class="py-24 bg-[var(--bg-surface)]">
+            "html": """<section data-section-type="faq" class="py-24 bg-[var(--bg-surface)]">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-[var(--text)] mb-4" style="font-family:var(--font-heading)">Common Questions</h2>
@@ -1193,7 +1180,7 @@ SECTION_REFERENCES = {
       </div>
     </div>
   </div>
-</section>''',
+</section>""",
         },
     ],
 }
@@ -1202,7 +1189,7 @@ SECTION_REFERENCES = {
 # ─── Helper Functions ──────────────────────────────────────────────────
 
 
-def get_section_reference(section_type: str, variant: int = None) -> Optional[dict]:
+def get_section_reference(section_type: str, variant: int = None) -> dict | None:
     """Return a random or specific variant reference for a section type.
 
     Args:

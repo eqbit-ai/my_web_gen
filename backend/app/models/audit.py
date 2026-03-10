@@ -3,9 +3,11 @@ Audit log model — tracks user actions for security and compliance.
 """
 
 import uuid
-from sqlalchemy import Column, String, DateTime, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import func
+
 from app.database import Base
 
 

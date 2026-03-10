@@ -14,7 +14,6 @@ PATTERNS = {
       </div>
     </div>
   </div>""",
-
     "testimonial_slider": """testimonial_slider pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[700px] mx-auto px-6 text-center" data-aos="fade-up">
@@ -30,7 +29,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: .testimonial-slide and .slider-dot.active styles are in the <style> block.""",
-
     "testimonial_split": """testimonial_split pattern:
   <div class="max-w-[1200px] mx-auto px-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center" data-aos="fade-up">

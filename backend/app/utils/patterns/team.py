@@ -12,7 +12,6 @@ PATTERNS = {
       </div>
     </div>
   </div>""",
-
     "team_cards": """team_cards pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -25,7 +24,6 @@ PATTERNS = {
       </div>
     </div>
   </div>""",
-
     "team_masonry": """team_masonry pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 columns-1 md:columns-2 lg:columns-3 gap-6">

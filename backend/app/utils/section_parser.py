@@ -7,7 +7,6 @@ and provides manipulation utilities (reorder, replace, delete, duplicate).
 import re
 from html.parser import HTMLParser
 
-
 # Tags that represent top-level sections
 SECTION_TAGS = {"nav", "header", "section", "main", "article", "aside", "footer"}
 
@@ -92,7 +91,7 @@ def parse_sections(html: str) -> list[dict]:
 
     # Find all opening and closing tags of section types
     tag_pattern = re.compile(
-        r'<(/?)(' + tag_names + r')\b([^>]*)>',
+        r"<(/?)(" + tag_names + r")\b([^>]*)>",
         re.IGNORECASE,
     )
 
@@ -105,12 +104,12 @@ def parse_sections(html: str) -> list[dict]:
     section_index = 0
 
     for m in tag_pattern.finditer(html):
-        is_closing = m.group(1) == '/'
+        is_closing = m.group(1) == "/"
         tag = m.group(2).lower()
         attrs_str = m.group(3)
 
         # Skip self-closing tags
-        if attrs_str.rstrip().endswith('/'):
+        if attrs_str.rstrip().endswith("/"):
             continue
 
         # Transparent wrappers: don't affect depth tracking
@@ -133,7 +132,7 @@ def parse_sections(html: str) -> list[dict]:
                 end = m.end()
                 open_tag = f"<{current_tag}{current_attrs}>"
                 full = html[current_start:end]
-                inner = full[len(open_tag):]
+                inner = full[len(open_tag) :]
 
                 # Extract id if present
                 id_match = re.search(r'id="([^"]*)"', current_attrs)
@@ -143,22 +142,24 @@ def parse_sections(html: str) -> list[dict]:
                 section_type = _detect_section_type(current_tag, open_tag, inner)
 
                 # Extract label from first heading
-                heading_match = re.search(r'<h[1-6][^>]*>(.*?)</h[1-6]>', inner, re.DOTALL)
+                heading_match = re.search(r"<h[1-6][^>]*>(.*?)</h[1-6]>", inner, re.DOTALL)
                 label = heading_match.group(1).strip()[:60] if heading_match else section_type.title()
-                label = re.sub(r'<[^>]+>', '', label).strip()
+                label = re.sub(r"<[^>]+>", "", label).strip()
 
                 section_id = existing_id or f"section-{section_index}"
 
-                sections.append({
-                    "id": section_id,
-                    "index": section_index,
-                    "type": section_type,
-                    "tag": current_tag,
-                    "label": label or section_type.replace("_", " ").title(),
-                    "html_preview": full[:200],
-                    "start": current_start,
-                    "end": end,
-                })
+                sections.append(
+                    {
+                        "id": section_id,
+                        "index": section_index,
+                        "type": section_type,
+                        "tag": current_tag,
+                        "label": label or section_type.replace("_", " ").title(),
+                        "html_preview": full[:200],
+                        "start": current_start,
+                        "end": end,
+                    }
+                )
                 section_index += 1
                 current_start = None
                 current_tag = None
@@ -266,7 +267,7 @@ def extract_section_html(html: str, section_id: str) -> str | None:
     sections = parse_sections(html)
     for section in sections:
         if section["id"] == section_id:
-            return html[section["start"]:section["end"]]
+            return html[section["start"] : section["end"]]
     return None
 
 
@@ -275,7 +276,7 @@ def replace_section_html(html: str, section_id: str, new_section_html: str) -> s
     sections = parse_sections(html)
     for section in sections:
         if section["id"] == section_id:
-            return html[:section["start"]] + new_section_html + html[section["end"]:]
+            return html[: section["start"]] + new_section_html + html[section["end"] :]
     return html
 
 
@@ -292,7 +293,7 @@ def reorder_sections(html: str, new_order: list[str]) -> str:
     # Build map of section ID → original HTML
     section_map = {}
     for section in sections:
-        section_map[section["id"]] = html[section["start"]:section["end"]]
+        section_map[section["id"]] = html[section["start"] : section["end"]]
 
     # Build the ordered list of section HTML contents
     ordered = []
@@ -310,7 +311,7 @@ def reorder_sections(html: str, new_order: list[str]) -> str:
     for i in range(len(sections) - 1, -1, -1):
         if i < len(ordered):
             s = sections[i]
-            result = result[:s["start"]] + ordered[i] + result[s["end"]:]
+            result = result[: s["start"]] + ordered[i] + result[s["end"] :]
 
     return result
 
@@ -320,7 +321,7 @@ def remove_section(html: str, section_id: str) -> str:
     sections = parse_sections(html)
     for section in sections:
         if section["id"] == section_id:
-            return html[:section["start"]] + html[section["end"]:]
+            return html[: section["start"]] + html[section["end"] :]
     return html
 
 
@@ -330,9 +331,9 @@ def insert_section_at(html: str, new_section_html: str, reference_section_id: st
     for section in sections:
         if section["id"] == reference_section_id:
             if position == "before":
-                return html[:section["start"]] + new_section_html + "\n\n" + html[section["start"]:]
+                return html[: section["start"]] + new_section_html + "\n\n" + html[section["start"] :]
             else:  # after
-                return html[:section["end"]] + "\n\n" + new_section_html + html[section["end"]:]
+                return html[: section["end"]] + "\n\n" + new_section_html + html[section["end"] :]
     # If reference not found, append at end of body or end of HTML
     body_end = html.rfind("</body>")
     if body_end != -1:
@@ -345,15 +346,14 @@ def update_section_style(html: str, section_id: str, styles_dict: dict) -> str:
     sections = parse_sections(html)
     for section in sections:
         if section["id"] == section_id:
-            section_html = html[section["start"]:section["end"]]
-            tag = section["tag"]
+            section_html = html[section["start"] : section["end"]]
 
             # Build style string
             style_str = "; ".join(f"{k}: {v}" for k, v in styles_dict.items())
 
             # Check if style attribute already exists on the opening tag
             open_tag_end = section_html.index(">")
-            open_tag = section_html[:open_tag_end + 1]
+            open_tag = section_html[: open_tag_end + 1]
 
             style_match = re.search(r'style="([^"]*)"', open_tag)
             if style_match:
@@ -367,13 +367,13 @@ def update_section_style(html: str, section_id: str, styles_dict: dict) -> str:
                         existing_styles[k.strip()] = v.strip()
                 existing_styles.update(styles_dict)
                 merged = "; ".join(f"{k}: {v}" for k, v in existing_styles.items())
-                new_open_tag = open_tag[:style_match.start()] + f'style="{merged}"' + open_tag[style_match.end():]
+                new_open_tag = open_tag[: style_match.start()] + f'style="{merged}"' + open_tag[style_match.end() :]
             else:
                 # Insert style attribute before the closing >
                 new_open_tag = open_tag[:-1] + f' style="{style_str}">'
 
-            new_section = new_open_tag + section_html[open_tag_end + 1:]
-            return html[:section["start"]] + new_section + html[section["end"]:]
+            new_section = new_open_tag + section_html[open_tag_end + 1 :]
+            return html[: section["start"]] + new_section + html[section["end"] :]
     return html
 
 
@@ -384,12 +384,12 @@ def toggle_section_visibility(html: str, section_id: str, visible: bool = True) 
         sections = parse_sections(html)
         for section in sections:
             if section["id"] == section_id:
-                section_html = html[section["start"]:section["end"]]
+                section_html = html[section["start"] : section["end"]]
                 # Remove display:none from inline style
-                section_html = re.sub(r'display\s*:\s*none\s*;?\s*', '', section_html)
+                section_html = re.sub(r"display\s*:\s*none\s*;?\s*", "", section_html)
                 # Clean up empty style attributes
-                section_html = re.sub(r'\s*style="\s*"', '', section_html)
-                return html[:section["start"]] + section_html + html[section["end"]:]
+                section_html = re.sub(r'\s*style="\s*"', "", section_html)
+                return html[: section["start"]] + section_html + html[section["end"] :]
         return html
     else:
         return update_section_style(html, section_id, {"display": "none"})
@@ -400,7 +400,7 @@ def duplicate_section(html: str, section_id: str) -> str:
     sections = parse_sections(html)
     for section in sections:
         if section["id"] == section_id:
-            original = html[section["start"]:section["end"]]
+            original = html[section["start"] : section["end"]]
             # Give the duplicate a new id
             dup_id = f"{section_id}-copy"
             duplicate = original.replace(
@@ -409,8 +409,6 @@ def duplicate_section(html: str, section_id: str) -> str:
                 1,
             )
             if f'id="{section_id}"' in duplicate:
-                duplicate = duplicate.replace(
-                    f'id="{section_id}"', f'id="{dup_id}"', 1
-                )
-            return html[:section["end"]] + "\n\n" + duplicate + html[section["end"]:]
+                duplicate = duplicate.replace(f'id="{section_id}"', f'id="{dup_id}"', 1)
+            return html[: section["end"]] + "\n\n" + duplicate + html[section["end"] :]
     return html

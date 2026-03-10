@@ -4,11 +4,11 @@ Metrics endpoint — exposes internal counters and histograms.
 Protected by admin JWT auth OR a METRICS_API_KEY from environment.
 """
 
-import os
 import logging
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.utils.auth import decode_access_token
 from app.utils.metrics import get_metrics

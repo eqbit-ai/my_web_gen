@@ -18,7 +18,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: ALL text must stay in the first column. Image in second column. On mobile: single column, image first (use md:order-none order-first on image div).""",
-
     "hero_center": """hero_center pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="relative -mt-[80px]"> (edge-to-edge, no gap)
   If plan has image_query for hero, use background image variant:
@@ -44,7 +43,6 @@ PATTERNS = {
     </div>
     <p class="text-sm text-[var(--text-muted)]">Trust line</p>
   </div>""",
-
     "hero_full_image": """hero_full_image pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="relative -mt-[80px]"> (negative margin pulls hero behind navbar — NO gap)
   <div class="relative min-h-[80vh] bg-cover bg-center bg-no-repeat flex items-center pt-[80px]" style="background-image: url('{{IMG:background hero scene query from plan}}');">
@@ -61,7 +59,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Overlay MUST be bg-black/70 minimum — text must be readable over any image. The -mt-[80px] on the section and pt-[80px] on the inner div ensure hero extends behind the fixed navbar with no gap.""",
-
     "hero_minimal": """hero_minimal pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="py-16 md:py-24">
   <div class="max-w-[800px] mx-auto px-6 text-center py-20 md:py-28">
@@ -71,7 +68,6 @@ PATTERNS = {
       <a href="#" class="BTN_PRIMARY_CLASSES">Single CTA</a>
     </div>
   </div>""",
-
     "hero_video_bg": """hero_video_bg pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="relative -mt-[80px]"> (edge-to-edge hero, no gap)
   <div class="min-h-[80vh] flex items-center relative pt-[80px]" style="background: linear-gradient(-45deg, var(--primary), var(--secondary), var(--accent, var(--primary)), var(--primary)); background-size: 400% 400%; animation: gradientShift 8s ease infinite;">
@@ -85,7 +81,6 @@ PATTERNS = {
       <p class="text-sm text-white/70">Trust line</p>
     </div>
   </div>""",
-
     "hero_product_mockup": """hero_product_mockup pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="pt-8 md:pt-16 pb-16 md:pb-20 relative">
   <div class="max-w-[900px] mx-auto px-6 text-center">
@@ -101,7 +96,6 @@ PATTERNS = {
     <img src="{{IMG:mockup laptop dashboard product interface}}" alt="Product screenshot" class="mx-auto w-full h-auto rounded-xl object-cover shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
   </div>
   NOTE: Text constrained to max-w-[900px], image wider at max-w-[1000px]. Headline MUST be short (max 8 words).""",
-
     "hero_mockup_center": """hero_mockup_center pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="pt-8 md:pt-16 pb-16 md:pb-20 relative">
   <div class="max-w-[900px] mx-auto px-6 text-center">
@@ -122,7 +116,6 @@ PATTERNS = {
     <img src="{{IMG:mockup laptop dashboard product interface}}" alt="Product interface" class="w-full block h-auto">
   </div>
   NOTE: Browser frame with colored dots. For dark themes use bg-white/[0.06] on the dots bar and border-white/[0.08] on frame.""",
-
     "hero_asymmetric": """hero_asymmetric pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="py-16 md:py-24">
   <div class="max-w-[1400px] mx-auto px-6 grid grid-cols-1 md:grid-cols-[55%_45%] gap-12 items-center">

@@ -3,6 +3,7 @@ Templates routes — serve pre-built website templates for users to preview and 
 """
 
 import os
+
 from fastapi import APIRouter, HTTPException
 from fastapi.security import HTTPBearer
 
@@ -269,7 +270,7 @@ def _load_template_file(template_id: str) -> tuple[str, str]:
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Template file not found")
 
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         content = f.read()
 
     # Split CSS from HTML — template files have <style>...</style> at the top
@@ -279,7 +280,7 @@ def _load_template_file(template_id: str) -> tuple[str, str]:
         style_start = content.index("<style>") + len("<style>")
         style_end = content.index("</style>")
         css = content[style_start:style_end].strip()
-        html = content[style_end + len("</style>"):].strip()
+        html = content[style_end + len("</style>") :].strip()
 
     return html, css
 

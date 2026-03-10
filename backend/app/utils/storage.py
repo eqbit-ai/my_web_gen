@@ -3,11 +3,11 @@ File storage abstraction — local disk now, S3/R2 later.
 Handles save, delete, list operations for uploaded media.
 """
 
-import os
 import uuid
+from pathlib import Path
+
 import aiofiles
 import aiofiles.os
-from pathlib import Path
 
 # Base upload directory
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
@@ -22,10 +22,10 @@ ALLOWED_EXTENSIONS = {
 
 # Size limits in bytes
 SIZE_LIMITS = {
-    "image": 5 * 1024 * 1024,       # 5 MB
-    "logo": 5 * 1024 * 1024,        # 5 MB
-    "favicon": 5 * 1024 * 1024,     # 5 MB
-    "video": 50 * 1024 * 1024,      # 50 MB
+    "image": 5 * 1024 * 1024,  # 5 MB
+    "logo": 5 * 1024 * 1024,  # 5 MB
+    "favicon": 5 * 1024 * 1024,  # 5 MB
+    "video": 50 * 1024 * 1024,  # 50 MB
 }
 
 
@@ -100,7 +100,7 @@ async def delete_file(file_url: str) -> bool:
     # Strip leading /uploads/ to get relative path
     rel = file_url.lstrip("/")
     if rel.startswith("uploads/"):
-        rel = rel[len("uploads/"):]
+        rel = rel[len("uploads/") :]
     abs_path = UPLOAD_DIR / rel
 
     if await aiofiles.os.path.exists(str(abs_path)):
@@ -129,11 +129,13 @@ async def list_files(user_id: int, project_id: str | None = None) -> list[dict]:
         if await aiofiles.os.path.isfile(str(entry_path)):
             stat = await aiofiles.os.stat(str(entry_path))
             rel = str(entry_path.relative_to(UPLOAD_DIR))
-            results.append({
-                "filename": entry,
-                "url": f"/uploads/{rel}",
-                "size_bytes": stat.st_size,
-            })
+            results.append(
+                {
+                    "filename": entry,
+                    "url": f"/uploads/{rel}",
+                    "size_bytes": stat.st_size,
+                }
+            )
         elif await aiofiles.os.path.isdir(str(entry_path)):
             # Recurse one level for project subdirectories
             sub_entries = await aiofiles.os.listdir(str(entry_path))
@@ -142,10 +144,12 @@ async def list_files(user_id: int, project_id: str | None = None) -> list[dict]:
                 if await aiofiles.os.path.isfile(str(sub_path)):
                     stat = await aiofiles.os.stat(str(sub_path))
                     rel = str(sub_path.relative_to(UPLOAD_DIR))
-                    results.append({
-                        "filename": sub,
-                        "url": f"/uploads/{rel}",
-                        "size_bytes": stat.st_size,
-                    })
+                    results.append(
+                        {
+                            "filename": sub,
+                            "url": f"/uploads/{rel}",
+                            "size_bytes": stat.st_size,
+                        }
+                    )
 
     return results

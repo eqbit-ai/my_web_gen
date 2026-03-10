@@ -1,14 +1,12 @@
 """Tests for the request tracker middleware (graceful shutdown)."""
 
-import asyncio
 import pytest
-from unittest.mock import patch
 
 import app.middleware.request_tracker as tracker_mod
 from app.middleware.request_tracker import (
+    HEALTH_CHECK_PATHS,
     get_inflight_count,
     is_shutting_down,
-    HEALTH_CHECK_PATHS,
 )
 
 
@@ -39,9 +37,7 @@ async def test_shutdown_rejects_new_requests(client):
     tracker_mod._shutting_down = True
 
     response = await client.get("/api/templates/")
-    assert response.status_code == 503, (
-        f"Expected 503 during shutdown, got {response.status_code}"
-    )
+    assert response.status_code == 503, f"Expected 503 during shutdown, got {response.status_code}"
 
 
 @pytest.mark.asyncio

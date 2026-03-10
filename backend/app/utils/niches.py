@@ -4,11 +4,9 @@ Each niche includes colors, typography, layout hints, image keywords, and sectio
 """
 
 NICHES = {
-
     # ========================
     # FOOD & BEVERAGE
     # ========================
-
     "restaurant": {
         "name": "Restaurant & Dining",
         "category": "Food & Beverage",
@@ -25,10 +23,24 @@ NICHES = {
             "style": "Elegant serif headings with clean sans-serif body text",
         },
         "layout": "Hero with full-width food imagery, menu section with grid cards, reservation CTA, testimonials carousel, footer with hours and map",
-        "image_keywords": ["restaurant interior", "fine dining food", "chef cooking", "elegant table setting", "gourmet dish plating"],
-        "sections": ["Hero", "About/Story", "Menu Highlights", "Chef's Special", "Reservations", "Testimonials", "Gallery", "Contact & Hours"],
+        "image_keywords": [
+            "restaurant interior",
+            "fine dining food",
+            "chef cooking",
+            "elegant table setting",
+            "gourmet dish plating",
+        ],
+        "sections": [
+            "Hero",
+            "About/Story",
+            "Menu Highlights",
+            "Chef's Special",
+            "Reservations",
+            "Testimonials",
+            "Gallery",
+            "Contact & Hours",
+        ],
     },
-
     "bakery": {
         "name": "Bakery & Pastry Shop",
         "category": "Food & Beverage",
@@ -46,9 +58,17 @@ NICHES = {
         },
         "layout": "Hero with fresh bread imagery, product grid with hover effects, custom order section, our story, daily specials",
         "image_keywords": ["fresh baked bread", "pastry display", "bakery interior", "croissants", "cake decoration"],
-        "sections": ["Hero", "Our Story", "Products", "Custom Orders", "Daily Specials", "Gallery", "Reviews", "Contact"],
+        "sections": [
+            "Hero",
+            "Our Story",
+            "Products",
+            "Custom Orders",
+            "Daily Specials",
+            "Gallery",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "food_truck": {
         "name": "Food Truck & Street Food",
         "category": "Food & Beverage",
@@ -68,7 +88,6 @@ NICHES = {
         "image_keywords": ["food truck", "street food", "outdoor dining", "food festival", "gourmet burger"],
         "sections": ["Hero", "Menu", "Find Us", "Our Story", "Catering", "Social Feed", "Reviews", "Contact"],
     },
-
     "brewery": {
         "name": "Brewery & Craft Beer",
         "category": "Food & Beverage",
@@ -88,7 +107,6 @@ NICHES = {
         "image_keywords": ["craft brewery", "beer taps", "brewing process", "taproom interior", "beer flight"],
         "sections": ["Hero", "Our Brews", "Taproom", "Tours & Tastings", "Our Process", "Events", "Shop", "Contact"],
     },
-
     "juice_bar": {
         "name": "Juice Bar & Smoothie Shop",
         "category": "Food & Beverage",
@@ -106,9 +124,17 @@ NICHES = {
         },
         "layout": "Bright colorful hero, menu with ingredient info, health benefits section, cleanse programs, loyalty program",
         "image_keywords": ["fresh juice", "smoothie bowl", "green smoothie", "tropical fruits", "juice bar counter"],
-        "sections": ["Hero", "Menu", "Cleanse Programs", "Health Benefits", "Ingredients", "Loyalty Program", "Reviews", "Contact"],
+        "sections": [
+            "Hero",
+            "Menu",
+            "Cleanse Programs",
+            "Health Benefits",
+            "Ingredients",
+            "Loyalty Program",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "catering": {
         "name": "Catering Service",
         "category": "Food & Beverage",
@@ -125,10 +151,24 @@ NICHES = {
             "style": "Refined serif headings with professional sans-serif body text",
         },
         "layout": "Elegant hero, service packages grid, event gallery, menu customization options, testimonials, inquiry form",
-        "image_keywords": ["catering setup", "buffet spread", "wedding catering", "corporate event food", "elegant appetizers"],
-        "sections": ["Hero", "Services", "Menu Options", "Event Gallery", "Testimonials", "Request a Quote", "FAQ", "Contact"],
+        "image_keywords": [
+            "catering setup",
+            "buffet spread",
+            "wedding catering",
+            "corporate event food",
+            "elegant appetizers",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Menu Options",
+            "Event Gallery",
+            "Testimonials",
+            "Request a Quote",
+            "FAQ",
+            "Contact",
+        ],
     },
-
     "food_blog": {
         "name": "Food Blog & Recipe Site",
         "category": "Food & Beverage",
@@ -145,10 +185,24 @@ NICHES = {
             "style": "Warm editorial serif headings with highly readable body text",
         },
         "layout": "Hero with featured recipe, recipe grid with categories, about the blogger, newsletter signup, popular posts, search",
-        "image_keywords": ["food photography", "recipe preparation", "cooking ingredients", "kitchen workspace", "plated dish"],
-        "sections": ["Hero", "Latest Recipes", "Categories", "About Me", "Popular Posts", "Newsletter", "Cookbook", "Contact"],
+        "image_keywords": [
+            "food photography",
+            "recipe preparation",
+            "cooking ingredients",
+            "kitchen workspace",
+            "plated dish",
+        ],
+        "sections": [
+            "Hero",
+            "Latest Recipes",
+            "Categories",
+            "About Me",
+            "Popular Posts",
+            "Newsletter",
+            "Cookbook",
+            "Contact",
+        ],
     },
-
     "wine_bar": {
         "name": "Wine Bar & Tasting Room",
         "category": "Food & Beverage",
@@ -166,9 +220,17 @@ NICHES = {
         },
         "layout": "Moody hero with wine imagery, wine list by region, tasting events, cheese pairings, sommelier profile, reservations",
         "image_keywords": ["wine glass", "wine cellar", "wine tasting", "vineyard", "cheese and wine pairing"],
-        "sections": ["Hero", "Wine List", "Tasting Events", "Pairings Menu", "Our Sommelier", "Private Events", "Reservations", "Contact"],
+        "sections": [
+            "Hero",
+            "Wine List",
+            "Tasting Events",
+            "Pairings Menu",
+            "Our Sommelier",
+            "Private Events",
+            "Reservations",
+            "Contact",
+        ],
     },
-
     "pizzeria": {
         "name": "Pizzeria & Italian Eatery",
         "category": "Food & Beverage",
@@ -186,9 +248,17 @@ NICHES = {
         },
         "layout": "Hero with wood-fire oven imagery, pizza menu grid, build-your-own section, delivery info, reviews",
         "image_keywords": ["pizza oven", "fresh pizza", "pizza making", "italian restaurant", "pizza ingredients"],
-        "sections": ["Hero", "Our Pizzas", "Build Your Own", "Sides & Drinks", "Delivery", "Our Story", "Reviews", "Contact"],
+        "sections": [
+            "Hero",
+            "Our Pizzas",
+            "Build Your Own",
+            "Sides & Drinks",
+            "Delivery",
+            "Our Story",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "coffee_shop": {
         "name": "Coffee Shop & Cafe",
         "category": "Food & Beverage",
@@ -208,11 +278,9 @@ NICHES = {
         "image_keywords": ["coffee shop interior", "latte art", "pastry display", "cozy cafe", "barista pouring"],
         "sections": ["Hero", "About", "Menu", "Our Coffee", "Gallery", "Loyalty Program", "Location", "Contact"],
     },
-
     # ========================
     # TECHNOLOGY
     # ========================
-
     "tech_startup": {
         "name": "Tech Startup",
         "category": "Technology",
@@ -229,10 +297,24 @@ NICHES = {
             "style": "Modern geometric headings with clean tech body text",
         },
         "layout": "Bold hero with product mockup, features grid, how-it-works steps, pricing table, investor logos, CTA section",
-        "image_keywords": ["tech startup team", "modern office", "product mockup", "digital innovation", "startup workspace"],
-        "sections": ["Hero", "Problem & Solution", "Features", "How It Works", "Pricing", "Team", "Investors", "Contact"],
+        "image_keywords": [
+            "tech startup team",
+            "modern office",
+            "product mockup",
+            "digital innovation",
+            "startup workspace",
+        ],
+        "sections": [
+            "Hero",
+            "Problem & Solution",
+            "Features",
+            "How It Works",
+            "Pricing",
+            "Team",
+            "Investors",
+            "Contact",
+        ],
     },
-
     "ai_startup": {
         "name": "AI & Machine Learning",
         "category": "Technology",
@@ -249,10 +331,15 @@ NICHES = {
             "style": "Futuristic clean headings with technical body text",
         },
         "layout": "Hero with AI visuals, capabilities showcase, use cases grid, model performance metrics, research papers, demo CTA",
-        "image_keywords": ["artificial intelligence", "neural network", "machine learning", "data science", "robot technology"],
+        "image_keywords": [
+            "artificial intelligence",
+            "neural network",
+            "machine learning",
+            "data science",
+            "robot technology",
+        ],
         "sections": ["Hero", "Capabilities", "Use Cases", "Technology", "Research", "Demo", "API Docs", "Contact"],
     },
-
     "cybersecurity": {
         "name": "Cybersecurity Firm",
         "category": "Technology",
@@ -269,10 +356,24 @@ NICHES = {
             "style": "Strong modern headings with technical monospace body text",
         },
         "layout": "Dark-toned hero with shield imagery, threat dashboard, services grid, certifications, case studies, assessment CTA",
-        "image_keywords": ["cybersecurity", "network security", "data protection", "security operations center", "encrypted data"],
-        "sections": ["Hero", "Threats", "Solutions", "Services", "Certifications", "Case Studies", "Assessment", "Contact"],
+        "image_keywords": [
+            "cybersecurity",
+            "network security",
+            "data protection",
+            "security operations center",
+            "encrypted data",
+        ],
+        "sections": [
+            "Hero",
+            "Threats",
+            "Solutions",
+            "Services",
+            "Certifications",
+            "Case Studies",
+            "Assessment",
+            "Contact",
+        ],
     },
-
     "web_agency": {
         "name": "Web Design & Development Agency",
         "category": "Technology",
@@ -289,10 +390,24 @@ NICHES = {
             "style": "Clean geometric headings with modern sans-serif body text",
         },
         "layout": "Hero with device mockups, portfolio carousel, development process steps, tech stack icons, client logos, CTA",
-        "image_keywords": ["web design agency", "website mockup", "design team", "coding workspace", "ux design process"],
-        "sections": ["Hero", "Services", "Portfolio", "Our Process", "Technologies", "Testimonials", "Get a Quote", "Contact"],
+        "image_keywords": [
+            "web design agency",
+            "website mockup",
+            "design team",
+            "coding workspace",
+            "ux design process",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Portfolio",
+            "Our Process",
+            "Technologies",
+            "Testimonials",
+            "Get a Quote",
+            "Contact",
+        ],
     },
-
     "mobile_app": {
         "name": "Mobile App Company",
         "category": "Technology",
@@ -310,9 +425,17 @@ NICHES = {
         },
         "layout": "Hero with phone mockup, app features with screenshots, app store badges, user testimonials, download CTA",
         "image_keywords": ["mobile app design", "phone mockup", "app interface", "app store", "mobile user experience"],
-        "sections": ["Hero", "Features", "Screenshots", "How It Works", "Testimonials", "Pricing", "Download", "Contact"],
+        "sections": [
+            "Hero",
+            "Features",
+            "Screenshots",
+            "How It Works",
+            "Testimonials",
+            "Pricing",
+            "Download",
+            "Contact",
+        ],
     },
-
     "cloud_services": {
         "name": "Cloud Computing Services",
         "category": "Technology",
@@ -329,10 +452,24 @@ NICHES = {
             "style": "Clean corporate headings with standard tech body text",
         },
         "layout": "Hero with cloud infrastructure visuals, services grid, pricing calculator, uptime stats, migration CTA, compliance badges",
-        "image_keywords": ["cloud computing", "data center", "server infrastructure", "cloud migration", "distributed systems"],
-        "sections": ["Hero", "Solutions", "Products", "Pricing", "Compliance", "Case Studies", "Documentation", "Contact"],
+        "image_keywords": [
+            "cloud computing",
+            "data center",
+            "server infrastructure",
+            "cloud migration",
+            "distributed systems",
+        ],
+        "sections": [
+            "Hero",
+            "Solutions",
+            "Products",
+            "Pricing",
+            "Compliance",
+            "Case Studies",
+            "Documentation",
+            "Contact",
+        ],
     },
-
     "blockchain": {
         "name": "Blockchain & Web3",
         "category": "Technology",
@@ -349,10 +486,25 @@ NICHES = {
             "style": "Futuristic angular headings with clean modern body text",
         },
         "layout": "Crypto-style hero with animations, tokenomics section, roadmap timeline, team grid, whitepaper download, community links",
-        "image_keywords": ["blockchain technology", "cryptocurrency", "web3 interface", "decentralized network", "digital tokens"],
-        "sections": ["Hero", "About", "Tokenomics", "Roadmap", "Technology", "Team", "Whitepaper", "Community", "Contact"],
+        "image_keywords": [
+            "blockchain technology",
+            "cryptocurrency",
+            "web3 interface",
+            "decentralized network",
+            "digital tokens",
+        ],
+        "sections": [
+            "Hero",
+            "About",
+            "Tokenomics",
+            "Roadmap",
+            "Technology",
+            "Team",
+            "Whitepaper",
+            "Community",
+            "Contact",
+        ],
     },
-
     "iot_company": {
         "name": "IoT & Smart Devices",
         "category": "Technology",
@@ -369,10 +521,24 @@ NICHES = {
             "style": "Accessible readable headings with friendly technical body text",
         },
         "layout": "Hero with smart device ecosystem visual, product showcase, use cases, connectivity diagram, integrations, contact",
-        "image_keywords": ["smart home devices", "iot sensors", "connected devices", "smart city", "wearable technology"],
-        "sections": ["Hero", "Products", "Use Cases", "How It Works", "Integrations", "Industries", "Support", "Contact"],
+        "image_keywords": [
+            "smart home devices",
+            "iot sensors",
+            "connected devices",
+            "smart city",
+            "wearable technology",
+        ],
+        "sections": [
+            "Hero",
+            "Products",
+            "Use Cases",
+            "How It Works",
+            "Integrations",
+            "Industries",
+            "Support",
+            "Contact",
+        ],
     },
-
     "game_studio": {
         "name": "Game Development Studio",
         "category": "Technology",
@@ -392,11 +558,9 @@ NICHES = {
         "image_keywords": ["game development", "video game art", "gaming studio", "game design", "esports arena"],
         "sections": ["Hero", "Our Games", "About Studio", "Dev Blog", "Careers", "Press Kit", "Community", "Contact"],
     },
-
     # ========================
     # HEALTH & WELLNESS
     # ========================
-
     "healthcare": {
         "name": "Healthcare & Medical",
         "category": "Health & Wellness",
@@ -413,10 +577,24 @@ NICHES = {
             "style": "Trustworthy rounded headings with clear readable body text",
         },
         "layout": "Hero with facility imagery, departments grid, doctor directory, appointment booking, emergency info, patient resources",
-        "image_keywords": ["hospital building", "medical team", "healthcare facility", "doctor patient", "medical equipment"],
-        "sections": ["Hero", "Departments", "Our Doctors", "Services", "Appointments", "Patient Resources", "Emergency", "Contact"],
+        "image_keywords": [
+            "hospital building",
+            "medical team",
+            "healthcare facility",
+            "doctor patient",
+            "medical equipment",
+        ],
+        "sections": [
+            "Hero",
+            "Departments",
+            "Our Doctors",
+            "Services",
+            "Appointments",
+            "Patient Resources",
+            "Emergency",
+            "Contact",
+        ],
     },
-
     "dentist": {
         "name": "Dental Clinic",
         "category": "Health & Wellness",
@@ -434,9 +612,17 @@ NICHES = {
         },
         "layout": "Bright hero with smiling patient, services grid, before/after gallery, team profiles, technology showcase, booking form",
         "image_keywords": ["dental clinic", "dentist office", "teeth cleaning", "dental care", "bright smile"],
-        "sections": ["Hero", "Services", "Our Team", "Before & After", "Technology", "Patient Info", "Book Appointment", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Our Team",
+            "Before & After",
+            "Technology",
+            "Patient Info",
+            "Book Appointment",
+            "Contact",
+        ],
     },
-
     "pharmacy": {
         "name": "Pharmacy & Drugstore",
         "category": "Health & Wellness",
@@ -454,9 +640,17 @@ NICHES = {
         },
         "layout": "Clean hero, product categories, prescription services, health tips blog, store locator, delivery info",
         "image_keywords": ["pharmacy store", "medicine bottles", "pharmacist", "prescription drugs", "health products"],
-        "sections": ["Hero", "Services", "Products", "Prescriptions", "Health Tips", "Store Locator", "Delivery", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Products",
+            "Prescriptions",
+            "Health Tips",
+            "Store Locator",
+            "Delivery",
+            "Contact",
+        ],
     },
-
     "mental_health": {
         "name": "Mental Health & Therapy",
         "category": "Health & Wellness",
@@ -473,10 +667,24 @@ NICHES = {
             "style": "Warm calming serif headings with friendly body text",
         },
         "layout": "Calming hero with nature imagery, services overview, therapist profiles, approach/methodology, booking, resources library",
-        "image_keywords": ["therapy session", "mental health awareness", "peaceful nature", "counseling office", "mindfulness meditation"],
-        "sections": ["Hero", "Our Approach", "Services", "Our Therapists", "Resources", "FAQ", "Book a Session", "Contact"],
+        "image_keywords": [
+            "therapy session",
+            "mental health awareness",
+            "peaceful nature",
+            "counseling office",
+            "mindfulness meditation",
+        ],
+        "sections": [
+            "Hero",
+            "Our Approach",
+            "Services",
+            "Our Therapists",
+            "Resources",
+            "FAQ",
+            "Book a Session",
+            "Contact",
+        ],
     },
-
     "chiropractor": {
         "name": "Chiropractic Clinic",
         "category": "Health & Wellness",
@@ -493,10 +701,24 @@ NICHES = {
             "style": "Strong professional headings with clear body text",
         },
         "layout": "Hero with wellness imagery, conditions treated, techniques explained, doctor profile, patient education, booking CTA",
-        "image_keywords": ["chiropractic adjustment", "spine health", "back pain treatment", "chiropractor office", "wellness care"],
-        "sections": ["Hero", "About", "Conditions We Treat", "Techniques", "Our Doctor", "Patient Education", "Book Appointment", "Contact"],
+        "image_keywords": [
+            "chiropractic adjustment",
+            "spine health",
+            "back pain treatment",
+            "chiropractor office",
+            "wellness care",
+        ],
+        "sections": [
+            "Hero",
+            "About",
+            "Conditions We Treat",
+            "Techniques",
+            "Our Doctor",
+            "Patient Education",
+            "Book Appointment",
+            "Contact",
+        ],
     },
-
     "nutrition": {
         "name": "Nutrition & Dietetics",
         "category": "Health & Wellness",
@@ -513,10 +735,24 @@ NICHES = {
             "style": "Modern clean headings with friendly readable body text",
         },
         "layout": "Fresh hero with healthy food, meal plans section, consultation booking, success stories, blog/recipes, programs",
-        "image_keywords": ["healthy eating", "nutritionist consultation", "meal planning", "fresh vegetables", "diet consultation"],
-        "sections": ["Hero", "About", "Services", "Meal Plans", "Success Stories", "Blog", "Book Consultation", "Contact"],
+        "image_keywords": [
+            "healthy eating",
+            "nutritionist consultation",
+            "meal planning",
+            "fresh vegetables",
+            "diet consultation",
+        ],
+        "sections": [
+            "Hero",
+            "About",
+            "Services",
+            "Meal Plans",
+            "Success Stories",
+            "Blog",
+            "Book Consultation",
+            "Contact",
+        ],
     },
-
     "veterinary": {
         "name": "Veterinary Clinic",
         "category": "Health & Wellness",
@@ -534,9 +770,17 @@ NICHES = {
         },
         "layout": "Hero with pets, services grid, team of vets, pet care tips, emergency info, online booking system",
         "image_keywords": ["veterinary clinic", "pet care", "dog at vet", "cat checkup", "veterinarian team"],
-        "sections": ["Hero", "Services", "Our Vets", "Pet Care Tips", "Emergency Care", "Gallery", "Book Visit", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Our Vets",
+            "Pet Care Tips",
+            "Emergency Care",
+            "Gallery",
+            "Book Visit",
+            "Contact",
+        ],
     },
-
     "optometry": {
         "name": "Optometry & Eye Care",
         "category": "Health & Wellness",
@@ -553,10 +797,24 @@ NICHES = {
             "style": "Clean modern headings with precise body text",
         },
         "layout": "Hero with eye care imagery, services list, frame gallery, eye exam booking, insurance info, vision tips",
-        "image_keywords": ["eye exam", "optometry clinic", "eyeglasses display", "contact lenses", "eye care professional"],
-        "sections": ["Hero", "Services", "Eye Exams", "Frame Gallery", "Contact Lenses", "Insurance", "Book Exam", "Contact"],
+        "image_keywords": [
+            "eye exam",
+            "optometry clinic",
+            "eyeglasses display",
+            "contact lenses",
+            "eye care professional",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Eye Exams",
+            "Frame Gallery",
+            "Contact Lenses",
+            "Insurance",
+            "Book Exam",
+            "Contact",
+        ],
     },
-
     "physiotherapy": {
         "name": "Physiotherapy & Rehabilitation",
         "category": "Health & Wellness",
@@ -573,10 +831,24 @@ NICHES = {
             "style": "Approachable rounded headings with professional body text",
         },
         "layout": "Hero with treatment imagery, conditions treated, treatment methods, therapist profiles, patient outcomes, booking",
-        "image_keywords": ["physiotherapy session", "rehabilitation exercise", "physical therapy clinic", "sports injury treatment", "recovery exercise"],
-        "sections": ["Hero", "Services", "Conditions", "Our Therapists", "Treatment Methods", "Patient Outcomes", "Book Appointment", "Contact"],
+        "image_keywords": [
+            "physiotherapy session",
+            "rehabilitation exercise",
+            "physical therapy clinic",
+            "sports injury treatment",
+            "recovery exercise",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Conditions",
+            "Our Therapists",
+            "Treatment Methods",
+            "Patient Outcomes",
+            "Book Appointment",
+            "Contact",
+        ],
     },
-
     "fitness": {
         "name": "Fitness & Gym",
         "category": "Health & Wellness",
@@ -594,13 +866,20 @@ NICHES = {
         },
         "layout": "High-energy hero with gym imagery, class schedule, trainer profiles, membership plans, transformation stories, free trial CTA",
         "image_keywords": ["gym workout", "fitness training", "weight lifting", "personal trainer", "gym equipment"],
-        "sections": ["Hero", "Programs", "Class Schedule", "Trainers", "Membership", "Transformations", "Free Trial", "Contact"],
+        "sections": [
+            "Hero",
+            "Programs",
+            "Class Schedule",
+            "Trainers",
+            "Membership",
+            "Transformations",
+            "Free Trial",
+            "Contact",
+        ],
     },
-
     # ========================
     # PROFESSIONAL SERVICES
     # ========================
-
     "consulting": {
         "name": "Management Consulting",
         "category": "Professional Services",
@@ -617,10 +896,24 @@ NICHES = {
             "style": "Bold authoritative headings with modern professional body text",
         },
         "layout": "Hero with business imagery, service areas, methodology diagram, case studies, thought leadership, engagement CTA",
-        "image_keywords": ["business consulting", "strategy meeting", "corporate presentation", "executive boardroom", "data analysis"],
-        "sections": ["Hero", "Services", "Methodology", "Case Studies", "Thought Leadership", "Our Team", "Engage Us", "Contact"],
+        "image_keywords": [
+            "business consulting",
+            "strategy meeting",
+            "corporate presentation",
+            "executive boardroom",
+            "data analysis",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Methodology",
+            "Case Studies",
+            "Thought Leadership",
+            "Our Team",
+            "Engage Us",
+            "Contact",
+        ],
     },
-
     "law_firm": {
         "name": "Law Firm & Legal Services",
         "category": "Professional Services",
@@ -638,9 +931,17 @@ NICHES = {
         },
         "layout": "Distinguished hero, practice areas grid, attorney profiles, case results, client testimonials, consultation CTA",
         "image_keywords": ["law office", "attorney team", "courthouse", "legal consultation", "gavel justice"],
-        "sections": ["Hero", "Practice Areas", "Our Attorneys", "Case Results", "Testimonials", "Blog", "Free Consultation", "Contact"],
+        "sections": [
+            "Hero",
+            "Practice Areas",
+            "Our Attorneys",
+            "Case Results",
+            "Testimonials",
+            "Blog",
+            "Free Consultation",
+            "Contact",
+        ],
     },
-
     "accounting": {
         "name": "Accounting & CPA Firm",
         "category": "Professional Services",
@@ -657,10 +958,24 @@ NICHES = {
             "style": "Trustworthy serif headings with clean professional body text",
         },
         "layout": "Professional hero, services grid, industry specialties, team profiles, client resources, consultation booking",
-        "image_keywords": ["accounting office", "financial reports", "tax preparation", "business meeting", "calculator documents"],
-        "sections": ["Hero", "Services", "Industries", "Our Team", "Resources", "Client Portal", "Schedule Consultation", "Contact"],
+        "image_keywords": [
+            "accounting office",
+            "financial reports",
+            "tax preparation",
+            "business meeting",
+            "calculator documents",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Industries",
+            "Our Team",
+            "Resources",
+            "Client Portal",
+            "Schedule Consultation",
+            "Contact",
+        ],
     },
-
     "marketing_agency": {
         "name": "Marketing & Creative Agency",
         "category": "Professional Services",
@@ -677,10 +992,15 @@ NICHES = {
             "style": "Bold creative headings with sleek modern body text",
         },
         "layout": "Dynamic hero with portfolio previews, services, case studies with metrics, client logos, team section, contact form",
-        "image_keywords": ["marketing team", "creative agency", "digital marketing", "brand strategy", "social media campaign"],
+        "image_keywords": [
+            "marketing team",
+            "creative agency",
+            "digital marketing",
+            "brand strategy",
+            "social media campaign",
+        ],
         "sections": ["Hero", "Services", "Portfolio", "Case Studies", "Our Process", "Clients", "Team", "Contact"],
     },
-
     "insurance": {
         "name": "Insurance Agency",
         "category": "Professional Services",
@@ -697,10 +1017,15 @@ NICHES = {
             "style": "Clear trustworthy headings with accessible body text",
         },
         "layout": "Reassuring hero, insurance products grid, quote calculator, claims process, agent profiles, FAQ section",
-        "image_keywords": ["insurance agent", "family protection", "car insurance", "health insurance", "umbrella protection"],
+        "image_keywords": [
+            "insurance agent",
+            "family protection",
+            "car insurance",
+            "health insurance",
+            "umbrella protection",
+        ],
         "sections": ["Hero", "Products", "Get a Quote", "Claims", "Why Choose Us", "Our Agents", "FAQ", "Contact"],
     },
-
     "financial_advisor": {
         "name": "Financial Advisory",
         "category": "Professional Services",
@@ -717,10 +1042,24 @@ NICHES = {
             "style": "Traditional trustworthy serif headings with clean body text",
         },
         "layout": "Professional hero, services overview, investment approach, wealth planning tools, team credentials, consultation CTA",
-        "image_keywords": ["financial planning", "investment advisor", "wealth management", "stock market", "retirement planning"],
-        "sections": ["Hero", "Services", "Our Approach", "Wealth Planning", "Our Team", "Insights", "Schedule Call", "Contact"],
+        "image_keywords": [
+            "financial planning",
+            "investment advisor",
+            "wealth management",
+            "stock market",
+            "retirement planning",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Our Approach",
+            "Wealth Planning",
+            "Our Team",
+            "Insights",
+            "Schedule Call",
+            "Contact",
+        ],
     },
-
     "recruitment": {
         "name": "Recruitment & Staffing Agency",
         "category": "Professional Services",
@@ -737,10 +1076,24 @@ NICHES = {
             "style": "Professional modern headings with clean body text",
         },
         "layout": "Dynamic hero, job listings, industry verticals, candidate resources, employer services, success metrics dashboard",
-        "image_keywords": ["recruitment agency", "job interview", "hiring team", "career fair", "professional handshake"],
-        "sections": ["Hero", "Job Listings", "For Employers", "For Candidates", "Industries", "Success Stories", "Submit Resume", "Contact"],
+        "image_keywords": [
+            "recruitment agency",
+            "job interview",
+            "hiring team",
+            "career fair",
+            "professional handshake",
+        ],
+        "sections": [
+            "Hero",
+            "Job Listings",
+            "For Employers",
+            "For Candidates",
+            "Industries",
+            "Success Stories",
+            "Submit Resume",
+            "Contact",
+        ],
     },
-
     "translation": {
         "name": "Translation & Language Services",
         "category": "Professional Services",
@@ -757,10 +1110,24 @@ NICHES = {
             "style": "Clean global headings with professional readable body text",
         },
         "layout": "Hero with globe/language imagery, service types, language pairs, industry expertise, quote request, client logos",
-        "image_keywords": ["translation service", "multilingual documents", "interpreter headset", "global communication", "language diversity"],
-        "sections": ["Hero", "Services", "Languages", "Industries", "Our Translators", "Quality Process", "Get a Quote", "Contact"],
+        "image_keywords": [
+            "translation service",
+            "multilingual documents",
+            "interpreter headset",
+            "global communication",
+            "language diversity",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Languages",
+            "Industries",
+            "Our Translators",
+            "Quality Process",
+            "Get a Quote",
+            "Contact",
+        ],
     },
-
     "pr_agency": {
         "name": "Public Relations Agency",
         "category": "Professional Services",
@@ -777,10 +1144,24 @@ NICHES = {
             "style": "Bold contemporary headings with polished body text",
         },
         "layout": "Hero with media coverage collage, services, notable campaigns, client roster, press resources, media inquiry form",
-        "image_keywords": ["press conference", "media coverage", "public relations team", "news interview", "brand reputation"],
-        "sections": ["Hero", "Services", "Campaigns", "Client Roster", "Press Room", "Media Resources", "Thought Leadership", "Contact"],
+        "image_keywords": [
+            "press conference",
+            "media coverage",
+            "public relations team",
+            "news interview",
+            "brand reputation",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Campaigns",
+            "Client Roster",
+            "Press Room",
+            "Media Resources",
+            "Thought Leadership",
+            "Contact",
+        ],
     },
-
     "coworking_space": {
         "name": "Co-Working Space",
         "category": "Professional Services",
@@ -797,14 +1178,27 @@ NICHES = {
             "style": "Bold modern headings with clean contemporary body text",
         },
         "layout": "Hero with workspace imagery, membership plans, amenities grid, virtual tour, community events, booking system",
-        "image_keywords": ["coworking space", "modern office", "shared workspace", "office community", "hot desk setup"],
-        "sections": ["Hero", "Spaces", "Membership Plans", "Amenities", "Virtual Tour", "Community", "Events", "Contact"],
+        "image_keywords": [
+            "coworking space",
+            "modern office",
+            "shared workspace",
+            "office community",
+            "hot desk setup",
+        ],
+        "sections": [
+            "Hero",
+            "Spaces",
+            "Membership Plans",
+            "Amenities",
+            "Virtual Tour",
+            "Community",
+            "Events",
+            "Contact",
+        ],
     },
-
     # ========================
     # EDUCATION
     # ========================
-
     "education": {
         "name": "School & Educational Institution",
         "category": "Education",
@@ -821,10 +1215,15 @@ NICHES = {
             "style": "Academic serif headings with clear legible body text",
         },
         "layout": "Campus hero, programs grid, admissions info, campus life, research highlights, events calendar, virtual tour CTA",
-        "image_keywords": ["university campus", "college students", "lecture hall", "graduation ceremony", "library study"],
+        "image_keywords": [
+            "university campus",
+            "college students",
+            "lecture hall",
+            "graduation ceremony",
+            "library study",
+        ],
         "sections": ["Hero", "Programs", "Admissions", "Campus Life", "Research", "Events", "Virtual Tour", "Contact"],
     },
-
     "online_course": {
         "name": "Online Learning Platform",
         "category": "Education",
@@ -841,10 +1240,24 @@ NICHES = {
             "style": "Modern tech headings with clean readable body text",
         },
         "layout": "Hero with course preview, course catalog grid, instructor spotlight, student outcomes, pricing tiers, free trial CTA",
-        "image_keywords": ["online learning", "e-learning platform", "video course", "student laptop", "digital classroom"],
-        "sections": ["Hero", "Featured Courses", "Categories", "Instructors", "Student Stories", "Pricing", "Free Trial", "Contact"],
+        "image_keywords": [
+            "online learning",
+            "e-learning platform",
+            "video course",
+            "student laptop",
+            "digital classroom",
+        ],
+        "sections": [
+            "Hero",
+            "Featured Courses",
+            "Categories",
+            "Instructors",
+            "Student Stories",
+            "Pricing",
+            "Free Trial",
+            "Contact",
+        ],
     },
-
     "music_school": {
         "name": "Music School & Academy",
         "category": "Education",
@@ -862,9 +1275,17 @@ NICHES = {
         },
         "layout": "Hero with performance imagery, instrument lessons, faculty profiles, recital calendar, student showcases, enrollment CTA",
         "image_keywords": ["music school", "piano lesson", "guitar class", "student recital", "music practice room"],
-        "sections": ["Hero", "Instruments", "Faculty", "Programs", "Recitals & Events", "Student Showcase", "Enroll", "Contact"],
+        "sections": [
+            "Hero",
+            "Instruments",
+            "Faculty",
+            "Programs",
+            "Recitals & Events",
+            "Student Showcase",
+            "Enroll",
+            "Contact",
+        ],
     },
-
     "language_school": {
         "name": "Language School",
         "category": "Education",
@@ -881,10 +1302,24 @@ NICHES = {
             "style": "Clean international headings with friendly readable body text",
         },
         "layout": "Hero with diverse students, language offerings, level assessment, cultural programs, scheduling, enrollment form",
-        "image_keywords": ["language class", "students talking", "language school", "international students", "conversation practice"],
-        "sections": ["Hero", "Languages", "Levels & Assessment", "Programs", "Cultural Events", "Schedule", "Enroll Now", "Contact"],
+        "image_keywords": [
+            "language class",
+            "students talking",
+            "language school",
+            "international students",
+            "conversation practice",
+        ],
+        "sections": [
+            "Hero",
+            "Languages",
+            "Levels & Assessment",
+            "Programs",
+            "Cultural Events",
+            "Schedule",
+            "Enroll Now",
+            "Contact",
+        ],
     },
-
     "driving_school": {
         "name": "Driving School",
         "category": "Education",
@@ -901,10 +1336,24 @@ NICHES = {
             "style": "Bold clear headings with highly readable body text",
         },
         "layout": "Hero with car/road imagery, course types, pricing table, pass rates stats, instructor profiles, booking system",
-        "image_keywords": ["driving lesson", "driving school car", "student driver", "road driving", "driving instructor"],
-        "sections": ["Hero", "Courses", "Pricing", "Our Instructors", "Pass Rates", "Student Reviews", "Book Lesson", "Contact"],
+        "image_keywords": [
+            "driving lesson",
+            "driving school car",
+            "student driver",
+            "road driving",
+            "driving instructor",
+        ],
+        "sections": [
+            "Hero",
+            "Courses",
+            "Pricing",
+            "Our Instructors",
+            "Pass Rates",
+            "Student Reviews",
+            "Book Lesson",
+            "Contact",
+        ],
     },
-
     "coding_bootcamp": {
         "name": "Coding Bootcamp",
         "category": "Education",
@@ -921,10 +1370,24 @@ NICHES = {
             "style": "Tech-forward headings with developer-friendly body text",
         },
         "layout": "Hero with code visuals, curriculum overview, career outcomes stats, instructor profiles, student projects, apply now CTA",
-        "image_keywords": ["coding bootcamp", "programming class", "web development", "pair programming", "tech education"],
-        "sections": ["Hero", "Curriculum", "Career Outcomes", "Instructors", "Student Projects", "Financing", "Apply Now", "Contact"],
+        "image_keywords": [
+            "coding bootcamp",
+            "programming class",
+            "web development",
+            "pair programming",
+            "tech education",
+        ],
+        "sections": [
+            "Hero",
+            "Curriculum",
+            "Career Outcomes",
+            "Instructors",
+            "Student Projects",
+            "Financing",
+            "Apply Now",
+            "Contact",
+        ],
     },
-
     "daycare": {
         "name": "Daycare & Preschool",
         "category": "Education",
@@ -941,14 +1404,27 @@ NICHES = {
             "style": "Playful fun headings with soft friendly body text",
         },
         "layout": "Colorful hero with children, programs by age group, daily schedule, facilities tour, parent resources, enrollment form",
-        "image_keywords": ["preschool children", "daycare activities", "kids playground", "nursery classroom", "children painting"],
-        "sections": ["Hero", "Programs", "Daily Schedule", "Our Facilities", "Our Team", "Parent Resources", "Enrollment", "Contact"],
+        "image_keywords": [
+            "preschool children",
+            "daycare activities",
+            "kids playground",
+            "nursery classroom",
+            "children painting",
+        ],
+        "sections": [
+            "Hero",
+            "Programs",
+            "Daily Schedule",
+            "Our Facilities",
+            "Our Team",
+            "Parent Resources",
+            "Enrollment",
+            "Contact",
+        ],
     },
-
     # ========================
     # REAL ESTATE & PROPERTY
     # ========================
-
     "real_estate": {
         "name": "Real Estate Agency",
         "category": "Real Estate & Property",
@@ -965,10 +1441,24 @@ NICHES = {
             "style": "Elegant serif headings with polished sans-serif body text",
         },
         "layout": "Hero with property showcase, featured listings grid, neighborhood guides, agent profiles, mortgage calculator, contact",
-        "image_keywords": ["luxury home", "residential property", "real estate agent", "house interior", "neighborhood view"],
-        "sections": ["Hero", "Featured Properties", "Search Listings", "Neighborhoods", "Our Agents", "Mortgage Calculator", "Testimonials", "Contact"],
+        "image_keywords": [
+            "luxury home",
+            "residential property",
+            "real estate agent",
+            "house interior",
+            "neighborhood view",
+        ],
+        "sections": [
+            "Hero",
+            "Featured Properties",
+            "Search Listings",
+            "Neighborhoods",
+            "Our Agents",
+            "Mortgage Calculator",
+            "Testimonials",
+            "Contact",
+        ],
     },
-
     "interior_design": {
         "name": "Interior Design Studio",
         "category": "Real Estate & Property",
@@ -985,10 +1475,24 @@ NICHES = {
             "style": "Sophisticated serif headings with elegant sans-serif body text",
         },
         "layout": "Gallery-style hero, project portfolio with filters, design process steps, room inspiration, testimonials, consultation booking",
-        "image_keywords": ["interior design", "modern living room", "luxury interior", "home decor", "designer furniture"],
-        "sections": ["Hero", "Portfolio", "Services", "Our Process", "Inspiration", "Testimonials", "Book Consultation", "Contact"],
+        "image_keywords": [
+            "interior design",
+            "modern living room",
+            "luxury interior",
+            "home decor",
+            "designer furniture",
+        ],
+        "sections": [
+            "Hero",
+            "Portfolio",
+            "Services",
+            "Our Process",
+            "Inspiration",
+            "Testimonials",
+            "Book Consultation",
+            "Contact",
+        ],
     },
-
     "architecture_firm": {
         "name": "Architecture Firm",
         "category": "Real Estate & Property",
@@ -1005,10 +1509,15 @@ NICHES = {
             "style": "Clean architectural headings with precise body text",
         },
         "layout": "Full-bleed hero with project imagery, portfolio grid with filters, design philosophy, team section, awards, contact",
-        "image_keywords": ["modern architecture", "architectural design", "building blueprint", "interior architecture", "skyscraper"],
+        "image_keywords": [
+            "modern architecture",
+            "architectural design",
+            "building blueprint",
+            "interior architecture",
+            "skyscraper",
+        ],
         "sections": ["Hero", "Portfolio", "Services", "Design Philosophy", "Our Team", "Awards", "Press", "Contact"],
     },
-
     "construction": {
         "name": "Construction Company",
         "category": "Real Estate & Property",
@@ -1025,10 +1534,15 @@ NICHES = {
             "style": "Bold industrial headings with solid body text",
         },
         "layout": "Hero with construction site, services overview, project portfolio, safety certifications, team section, estimate request CTA",
-        "image_keywords": ["construction site", "building construction", "hard hat worker", "crane building", "architectural blueprint"],
+        "image_keywords": [
+            "construction site",
+            "building construction",
+            "hard hat worker",
+            "crane building",
+            "architectural blueprint",
+        ],
         "sections": ["Hero", "Services", "Projects", "Safety", "Equipment", "Our Team", "Get Estimate", "Contact"],
     },
-
     "property_management": {
         "name": "Property Management",
         "category": "Real Estate & Property",
@@ -1045,10 +1559,24 @@ NICHES = {
             "style": "Reliable modern headings with clear professional body text",
         },
         "layout": "Hero with managed properties, services overview, owner portal preview, tenant resources, maintenance request, stats",
-        "image_keywords": ["property management", "apartment building", "property manager", "tenant handshake", "building maintenance"],
-        "sections": ["Hero", "Services", "Owner Portal", "Tenant Resources", "Maintenance", "Properties", "Testimonials", "Contact"],
+        "image_keywords": [
+            "property management",
+            "apartment building",
+            "property manager",
+            "tenant handshake",
+            "building maintenance",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Owner Portal",
+            "Tenant Resources",
+            "Maintenance",
+            "Properties",
+            "Testimonials",
+            "Contact",
+        ],
     },
-
     "home_staging": {
         "name": "Home Staging & Property Styling",
         "category": "Real Estate & Property",
@@ -1065,10 +1593,24 @@ NICHES = {
             "style": "Sophisticated serif headings with clean body text",
         },
         "layout": "Before/after hero slider, portfolio gallery, staging packages, process explanation, agent partnerships, consultation CTA",
-        "image_keywords": ["home staging", "staged living room", "interior staging", "before after staging", "real estate staging"],
-        "sections": ["Hero", "Before & After", "Services", "Our Process", "Portfolio", "For Agents", "Testimonials", "Contact"],
+        "image_keywords": [
+            "home staging",
+            "staged living room",
+            "interior staging",
+            "before after staging",
+            "real estate staging",
+        ],
+        "sections": [
+            "Hero",
+            "Before & After",
+            "Services",
+            "Our Process",
+            "Portfolio",
+            "For Agents",
+            "Testimonials",
+            "Contact",
+        ],
     },
-
     "landscaping": {
         "name": "Landscaping & Lawn Care",
         "category": "Real Estate & Property",
@@ -1085,14 +1627,27 @@ NICHES = {
             "style": "Fresh natural headings with warm friendly body text",
         },
         "layout": "Hero with beautiful garden, services grid, portfolio of projects, seasonal programs, design services, estimate CTA",
-        "image_keywords": ["beautiful garden", "landscaping design", "lawn mowing", "garden maintenance", "outdoor landscape"],
-        "sections": ["Hero", "Services", "Portfolio", "Seasonal Programs", "Design Services", "Reviews", "Free Estimate", "Contact"],
+        "image_keywords": [
+            "beautiful garden",
+            "landscaping design",
+            "lawn mowing",
+            "garden maintenance",
+            "outdoor landscape",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Portfolio",
+            "Seasonal Programs",
+            "Design Services",
+            "Reviews",
+            "Free Estimate",
+            "Contact",
+        ],
     },
-
     # ========================
     # RETAIL & E-COMMERCE
     # ========================
-
     "ecommerce": {
         "name": "E-Commerce & Online Store",
         "category": "Retail & E-commerce",
@@ -1109,10 +1664,24 @@ NICHES = {
             "style": "Bold modern headings with clean shopping-friendly body text",
         },
         "layout": "Hero with featured product, product grid, categories, deals banner, reviews, newsletter signup, trust badges",
-        "image_keywords": ["online shopping", "product display", "ecommerce website", "shopping cart", "product packaging"],
-        "sections": ["Hero", "Featured Products", "Categories", "Best Sellers", "Deals", "Reviews", "Newsletter", "Contact"],
+        "image_keywords": [
+            "online shopping",
+            "product display",
+            "ecommerce website",
+            "shopping cart",
+            "product packaging",
+        ],
+        "sections": [
+            "Hero",
+            "Featured Products",
+            "Categories",
+            "Best Sellers",
+            "Deals",
+            "Reviews",
+            "Newsletter",
+            "Contact",
+        ],
     },
-
     "jewelry_store": {
         "name": "Jewelry & Accessories",
         "category": "Retail & E-commerce",
@@ -1130,9 +1699,17 @@ NICHES = {
         },
         "layout": "Glamorous hero, collection showcase, custom design service, craftsmanship story, gift guide, bridal section",
         "image_keywords": ["jewelry display", "diamond ring", "gold necklace", "luxury jewelry", "jewelry crafting"],
-        "sections": ["Hero", "Collections", "Custom Design", "Craftsmanship", "Bridal", "Gift Guide", "Care Guide", "Contact"],
+        "sections": [
+            "Hero",
+            "Collections",
+            "Custom Design",
+            "Craftsmanship",
+            "Bridal",
+            "Gift Guide",
+            "Care Guide",
+            "Contact",
+        ],
     },
-
     "bookstore": {
         "name": "Bookstore & Book Shop",
         "category": "Retail & E-commerce",
@@ -1149,10 +1726,24 @@ NICHES = {
             "style": "Literary serif headings with classic serif body text",
         },
         "layout": "Cozy hero with bookshelf imagery, featured books, categories, book clubs, author events, staff picks section",
-        "image_keywords": ["bookstore interior", "book shelf", "reading corner", "book collection", "library aesthetic"],
-        "sections": ["Hero", "Featured Books", "Categories", "Staff Picks", "Book Club", "Events", "Order Online", "Contact"],
+        "image_keywords": [
+            "bookstore interior",
+            "book shelf",
+            "reading corner",
+            "book collection",
+            "library aesthetic",
+        ],
+        "sections": [
+            "Hero",
+            "Featured Books",
+            "Categories",
+            "Staff Picks",
+            "Book Club",
+            "Events",
+            "Order Online",
+            "Contact",
+        ],
     },
-
     "pet_shop": {
         "name": "Pet Store & Supplies",
         "category": "Retail & E-commerce",
@@ -1170,9 +1761,17 @@ NICHES = {
         },
         "layout": "Fun hero with pets, product categories, pet care tips blog, loyalty program, adoption corner, grooming services",
         "image_keywords": ["pet store", "cute puppy", "cat toys", "pet food", "pet accessories"],
-        "sections": ["Hero", "Shop by Pet", "Products", "Pet Care Tips", "Loyalty Program", "Adoption", "Services", "Contact"],
+        "sections": [
+            "Hero",
+            "Shop by Pet",
+            "Products",
+            "Pet Care Tips",
+            "Loyalty Program",
+            "Adoption",
+            "Services",
+            "Contact",
+        ],
     },
-
     "flower_shop": {
         "name": "Flower Shop & Florist",
         "category": "Retail & E-commerce",
@@ -1189,10 +1788,24 @@ NICHES = {
             "style": "Romantic elegant headings with soft rounded body text",
         },
         "layout": "Hero with floral arrangement, shop by occasion, bouquet gallery, subscription plans, delivery info, custom orders",
-        "image_keywords": ["flower arrangement", "florist shop", "bouquet of roses", "wedding flowers", "flower delivery"],
-        "sections": ["Hero", "Shop by Occasion", "Bouquets", "Subscriptions", "Custom Orders", "Delivery", "Reviews", "Contact"],
+        "image_keywords": [
+            "flower arrangement",
+            "florist shop",
+            "bouquet of roses",
+            "wedding flowers",
+            "flower delivery",
+        ],
+        "sections": [
+            "Hero",
+            "Shop by Occasion",
+            "Bouquets",
+            "Subscriptions",
+            "Custom Orders",
+            "Delivery",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "organic_store": {
         "name": "Organic & Health Food Store",
         "category": "Retail & E-commerce",
@@ -1209,10 +1822,24 @@ NICHES = {
             "style": "Natural clean headings with friendly readable body text",
         },
         "layout": "Fresh hero with produce, product categories, farm partners section, health blog, subscription boxes, store locator",
-        "image_keywords": ["organic produce", "health food store", "fresh vegetables", "natural products", "farmers market"],
-        "sections": ["Hero", "Products", "Farm Partners", "Subscription Boxes", "Health Blog", "Store Locator", "Shop Online", "Contact"],
+        "image_keywords": [
+            "organic produce",
+            "health food store",
+            "fresh vegetables",
+            "natural products",
+            "farmers market",
+        ],
+        "sections": [
+            "Hero",
+            "Products",
+            "Farm Partners",
+            "Subscription Boxes",
+            "Health Blog",
+            "Store Locator",
+            "Shop Online",
+            "Contact",
+        ],
     },
-
     "fashion_boutique": {
         "name": "Fashion Boutique",
         "category": "Retail & E-commerce",
@@ -1229,10 +1856,24 @@ NICHES = {
             "style": "High-fashion serif headings with clean modern body text",
         },
         "layout": "Full-screen hero with model imagery, collections grid, lookbook section, new arrivals, newsletter, Instagram feed",
-        "image_keywords": ["fashion model", "clothing store", "fashion collection", "runway fashion", "designer clothes"],
-        "sections": ["Hero", "New Arrivals", "Collections", "Lookbook", "Best Sellers", "About Brand", "Instagram", "Contact"],
+        "image_keywords": [
+            "fashion model",
+            "clothing store",
+            "fashion collection",
+            "runway fashion",
+            "designer clothes",
+        ],
+        "sections": [
+            "Hero",
+            "New Arrivals",
+            "Collections",
+            "Lookbook",
+            "Best Sellers",
+            "About Brand",
+            "Instagram",
+            "Contact",
+        ],
     },
-
     "electronics_store": {
         "name": "Electronics & Tech Store",
         "category": "Retail & E-commerce",
@@ -1250,9 +1891,17 @@ NICHES = {
         },
         "layout": "Hero with latest gadgets, product categories, deals section, tech specs, reviews section, comparison tools",
         "image_keywords": ["electronics store", "gadgets display", "smartphones", "tech products", "computer setup"],
-        "sections": ["Hero", "Featured Products", "Categories", "Deals", "Reviews", "Compare", "Tech Support", "Contact"],
+        "sections": [
+            "Hero",
+            "Featured Products",
+            "Categories",
+            "Deals",
+            "Reviews",
+            "Compare",
+            "Tech Support",
+            "Contact",
+        ],
     },
-
     "furniture_store": {
         "name": "Furniture & Home Store",
         "category": "Retail & E-commerce",
@@ -1269,14 +1918,27 @@ NICHES = {
             "style": "Elegant natural headings with clean modern body text",
         },
         "layout": "Hero with room setting, shop by room categories, collections, room inspiration gallery, customization options, delivery info",
-        "image_keywords": ["modern furniture", "living room design", "furniture showroom", "home interior", "wooden furniture"],
-        "sections": ["Hero", "Shop by Room", "Collections", "Inspiration", "Custom Furniture", "Delivery", "Reviews", "Contact"],
+        "image_keywords": [
+            "modern furniture",
+            "living room design",
+            "furniture showroom",
+            "home interior",
+            "wooden furniture",
+        ],
+        "sections": [
+            "Hero",
+            "Shop by Room",
+            "Collections",
+            "Inspiration",
+            "Custom Furniture",
+            "Delivery",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     # ========================
     # CREATIVE & ARTS
     # ========================
-
     "portfolio": {
         "name": "Creative Portfolio",
         "category": "Creative & Arts",
@@ -1293,10 +1955,15 @@ NICHES = {
             "style": "Modern minimal headings with clean body text",
         },
         "layout": "Minimal hero with name/title, portfolio grid with filters, about section, skills, experience timeline, contact form",
-        "image_keywords": ["creative workspace", "design portfolio", "artistic work", "creative professional", "design studio"],
+        "image_keywords": [
+            "creative workspace",
+            "design portfolio",
+            "artistic work",
+            "creative professional",
+            "design studio",
+        ],
         "sections": ["Hero", "Portfolio", "About", "Skills", "Experience", "Testimonials", "Contact"],
     },
-
     "photography": {
         "name": "Photography Studio",
         "category": "Creative & Arts",
@@ -1313,10 +1980,24 @@ NICHES = {
             "style": "Artistic serif headings with clean minimal body text",
         },
         "layout": "Full-screen photo hero, gallery grid with lightbox, service packages, behind-the-scenes, client love section, booking",
-        "image_keywords": ["photography studio", "camera close up", "photo session", "portrait photography", "professional photographer"],
-        "sections": ["Hero", "Portfolio", "Services", "About", "Behind the Scenes", "Client Love", "Book Session", "Contact"],
+        "image_keywords": [
+            "photography studio",
+            "camera close up",
+            "photo session",
+            "portrait photography",
+            "professional photographer",
+        ],
+        "sections": [
+            "Hero",
+            "Portfolio",
+            "Services",
+            "About",
+            "Behind the Scenes",
+            "Client Love",
+            "Book Session",
+            "Contact",
+        ],
     },
-
     "videography": {
         "name": "Videography & Film Production",
         "category": "Creative & Arts",
@@ -1336,7 +2017,6 @@ NICHES = {
         "image_keywords": ["video production", "film camera", "video editing suite", "film set", "cinematography"],
         "sections": ["Hero", "Showreel", "Services", "Our Work", "Process", "Equipment", "Testimonials", "Contact"],
     },
-
     "music_artist": {
         "name": "Music Artist & Band",
         "category": "Creative & Arts",
@@ -1353,10 +2033,15 @@ NICHES = {
             "style": "Bold dramatic headings with clean strong body text",
         },
         "layout": "Full-screen hero with artist photo, embedded music player, tour dates, discography grid, merch shop, newsletter",
-        "image_keywords": ["live concert", "music studio recording", "band performance", "vinyl record", "music artist portrait"],
+        "image_keywords": [
+            "live concert",
+            "music studio recording",
+            "band performance",
+            "vinyl record",
+            "music artist portrait",
+        ],
         "sections": ["Hero", "Music", "Tour Dates", "Discography", "Videos", "Merch", "Bio", "Contact"],
     },
-
     "tattoo_studio": {
         "name": "Tattoo Studio",
         "category": "Creative & Arts",
@@ -1376,7 +2061,6 @@ NICHES = {
         "image_keywords": ["tattoo studio", "tattoo art", "tattoo artist working", "tattoo design", "tattoo machine"],
         "sections": ["Hero", "Our Artists", "Gallery", "Styles", "Aftercare", "Book Appointment", "FAQ", "Contact"],
     },
-
     "art_gallery": {
         "name": "Art Gallery & Museum",
         "category": "Creative & Arts",
@@ -1393,10 +2077,24 @@ NICHES = {
             "style": "Classic gallery headings with understated body text",
         },
         "layout": "Minimalist hero, current exhibition showcase, permanent collection, artist spotlight, events calendar, virtual tours",
-        "image_keywords": ["art gallery", "modern art exhibition", "gallery interior", "sculpture display", "art museum"],
-        "sections": ["Hero", "Current Exhibition", "Collection", "Artists", "Events", "Virtual Tour", "Visit", "Contact"],
+        "image_keywords": [
+            "art gallery",
+            "modern art exhibition",
+            "gallery interior",
+            "sculpture display",
+            "art museum",
+        ],
+        "sections": [
+            "Hero",
+            "Current Exhibition",
+            "Collection",
+            "Artists",
+            "Events",
+            "Virtual Tour",
+            "Visit",
+            "Contact",
+        ],
     },
-
     "graphic_design": {
         "name": "Graphic Design Studio",
         "category": "Creative & Arts",
@@ -1413,10 +2111,15 @@ NICHES = {
             "style": "Bold geometric headings with clean modern body text",
         },
         "layout": "Hero with design showcase, portfolio grid with categories, services, design process, client brands, inquiry form",
-        "image_keywords": ["graphic design work", "design studio", "branding mockup", "color palette design", "creative process"],
+        "image_keywords": [
+            "graphic design work",
+            "design studio",
+            "branding mockup",
+            "color palette design",
+            "creative process",
+        ],
         "sections": ["Hero", "Portfolio", "Services", "Our Process", "Clients", "About Us", "Testimonials", "Contact"],
     },
-
     "wedding_planner": {
         "name": "Wedding Planning & Services",
         "category": "Creative & Arts",
@@ -1433,10 +2136,24 @@ NICHES = {
             "style": "Romantic elegant serif headings with graceful body text",
         },
         "layout": "Dreamy hero with wedding imagery, services, real weddings gallery, planning tools, vendor list, consultation CTA",
-        "image_keywords": ["wedding ceremony", "wedding decoration", "bridal bouquet", "wedding venue", "wedding couple"],
-        "sections": ["Hero", "Services", "Real Weddings", "Planning Tools", "Vendors", "Testimonials", "Consultation", "Contact"],
+        "image_keywords": [
+            "wedding ceremony",
+            "wedding decoration",
+            "bridal bouquet",
+            "wedding venue",
+            "wedding couple",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Real Weddings",
+            "Planning Tools",
+            "Vendors",
+            "Testimonials",
+            "Consultation",
+            "Contact",
+        ],
     },
-
     "event_management": {
         "name": "Event Planning & Management",
         "category": "Creative & Arts",
@@ -1454,13 +2171,20 @@ NICHES = {
         },
         "layout": "Glamorous hero, event types showcase, past events gallery, planning process steps, vendor partners, inquiry form",
         "image_keywords": ["event setup", "party decoration", "corporate event", "gala dinner", "event planning"],
-        "sections": ["Hero", "Services", "Event Types", "Portfolio", "Our Process", "Vendors", "Testimonials", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Event Types",
+            "Portfolio",
+            "Our Process",
+            "Vendors",
+            "Testimonials",
+            "Contact",
+        ],
     },
-
     # ========================
     # TRAVEL & HOSPITALITY
     # ========================
-
     "hotel": {
         "name": "Hotel & Resort",
         "category": "Travel & Hospitality",
@@ -1478,9 +2202,18 @@ NICHES = {
         },
         "layout": "Full-screen hero with property, room showcase, amenities grid, dining options, location highlights, booking engine",
         "image_keywords": ["luxury hotel", "hotel room", "hotel pool", "resort beach", "hotel lobby"],
-        "sections": ["Hero", "Rooms & Suites", "Amenities", "Dining", "Experiences", "Gallery", "Reviews", "Book Now", "Contact"],
+        "sections": [
+            "Hero",
+            "Rooms & Suites",
+            "Amenities",
+            "Dining",
+            "Experiences",
+            "Gallery",
+            "Reviews",
+            "Book Now",
+            "Contact",
+        ],
     },
-
     "travel_agency": {
         "name": "Travel Agency",
         "category": "Travel & Hospitality",
@@ -1498,9 +2231,17 @@ NICHES = {
         },
         "layout": "Hero with destination imagery, trip packages grid, destinations, travel tips, testimonials, trip planner CTA",
         "image_keywords": ["travel destination", "airplane window", "tropical beach", "world map", "travel planning"],
-        "sections": ["Hero", "Destinations", "Packages", "Custom Trips", "Travel Tips", "Testimonials", "Plan Your Trip", "Contact"],
+        "sections": [
+            "Hero",
+            "Destinations",
+            "Packages",
+            "Custom Trips",
+            "Travel Tips",
+            "Testimonials",
+            "Plan Your Trip",
+            "Contact",
+        ],
     },
-
     "tour_operator": {
         "name": "Tour Operator",
         "category": "Travel & Hospitality",
@@ -1520,7 +2261,6 @@ NICHES = {
         "image_keywords": ["guided tour", "hiking tour group", "city walking tour", "tour guide", "group adventure"],
         "sections": ["Hero", "Our Tours", "Itineraries", "Our Guides", "Gallery", "Reviews", "Book Tour", "Contact"],
     },
-
     "vacation_rental": {
         "name": "Vacation Rental & Holiday Home",
         "category": "Travel & Hospitality",
@@ -1538,9 +2278,17 @@ NICHES = {
         },
         "layout": "Hero with property photo, property listings grid, amenities, location highlights, availability calendar, guest reviews",
         "image_keywords": ["vacation rental", "holiday cottage", "beach house", "mountain cabin", "luxury villa pool"],
-        "sections": ["Hero", "Properties", "Amenities", "Location", "Availability", "Guest Reviews", "Host Info", "Contact"],
+        "sections": [
+            "Hero",
+            "Properties",
+            "Amenities",
+            "Location",
+            "Availability",
+            "Guest Reviews",
+            "Host Info",
+            "Contact",
+        ],
     },
-
     "airline": {
         "name": "Airline & Aviation",
         "category": "Travel & Hospitality",
@@ -1557,10 +2305,24 @@ NICHES = {
             "style": "Professional modern headings with precise body text",
         },
         "layout": "Hero with airplane/sky imagery, flight search, destinations map, class comparison, loyalty program, travel info",
-        "image_keywords": ["airplane in flight", "airport terminal", "business class cabin", "airline crew", "runway takeoff"],
-        "sections": ["Hero", "Search Flights", "Destinations", "Travel Classes", "Loyalty Program", "Travel Info", "Manage Booking", "Contact"],
+        "image_keywords": [
+            "airplane in flight",
+            "airport terminal",
+            "business class cabin",
+            "airline crew",
+            "runway takeoff",
+        ],
+        "sections": [
+            "Hero",
+            "Search Flights",
+            "Destinations",
+            "Travel Classes",
+            "Loyalty Program",
+            "Travel Info",
+            "Manage Booking",
+            "Contact",
+        ],
     },
-
     "cruise": {
         "name": "Cruise Line",
         "category": "Travel & Hospitality",
@@ -1578,13 +2340,20 @@ NICHES = {
         },
         "layout": "Cinematic ocean hero, ship tours, destination itineraries, cabin types, onboard experiences, deal finder section",
         "image_keywords": ["cruise ship", "ocean sunset", "cruise deck", "tropical port", "cruise dining"],
-        "sections": ["Hero", "Our Ships", "Destinations", "Cabins", "Onboard Experience", "Shore Excursions", "Deals", "Contact"],
+        "sections": [
+            "Hero",
+            "Our Ships",
+            "Destinations",
+            "Cabins",
+            "Onboard Experience",
+            "Shore Excursions",
+            "Deals",
+            "Contact",
+        ],
     },
-
     # ========================
     # AUTOMOTIVE
     # ========================
-
     "car_dealership": {
         "name": "Car Dealership",
         "category": "Automotive",
@@ -1602,9 +2371,17 @@ NICHES = {
         },
         "layout": "Hero with featured vehicle, inventory search with filters, vehicle showcase, financing options, trade-in, test drive booking",
         "image_keywords": ["car showroom", "new cars lineup", "car dealership", "luxury vehicle", "test drive"],
-        "sections": ["Hero", "Featured Vehicles", "Inventory", "Financing", "Trade-In", "Reviews", "Test Drive", "Contact"],
+        "sections": [
+            "Hero",
+            "Featured Vehicles",
+            "Inventory",
+            "Financing",
+            "Trade-In",
+            "Reviews",
+            "Test Drive",
+            "Contact",
+        ],
     },
-
     "auto_repair": {
         "name": "Auto Repair & Mechanic",
         "category": "Automotive",
@@ -1622,9 +2399,17 @@ NICHES = {
         },
         "layout": "Hero with garage imagery, services grid, ASE certifications, online scheduling, coupons section, vehicle tips blog",
         "image_keywords": ["auto repair shop", "mechanic working", "car engine", "brake repair", "oil change"],
-        "sections": ["Hero", "Services", "Certifications", "Schedule Service", "Specials", "Vehicle Tips", "Reviews", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Certifications",
+            "Schedule Service",
+            "Specials",
+            "Vehicle Tips",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "car_wash": {
         "name": "Car Wash & Detailing",
         "category": "Automotive",
@@ -1642,9 +2427,17 @@ NICHES = {
         },
         "layout": "Sparkling hero, service packages, before/after slider, membership plans, mobile detailing, gift cards, location",
         "image_keywords": ["car wash", "car detailing", "clean car shine", "auto wash", "car polish"],
-        "sections": ["Hero", "Packages", "Before & After", "Membership", "Mobile Detailing", "Gift Cards", "Location", "Contact"],
+        "sections": [
+            "Hero",
+            "Packages",
+            "Before & After",
+            "Membership",
+            "Mobile Detailing",
+            "Gift Cards",
+            "Location",
+            "Contact",
+        ],
     },
-
     "car_rental": {
         "name": "Car Rental Service",
         "category": "Automotive",
@@ -1661,14 +2454,27 @@ NICHES = {
             "style": "Clear bold headings with precise body text",
         },
         "layout": "Hero with fleet showcase, vehicle search/filter, fleet categories, rental process steps, locations map, loyalty program",
-        "image_keywords": ["car rental fleet", "rental car keys", "luxury car rental", "airport car rental", "car rental counter"],
-        "sections": ["Hero", "Search Cars", "Our Fleet", "Locations", "How It Works", "Loyalty Program", "FAQ", "Contact"],
+        "image_keywords": [
+            "car rental fleet",
+            "rental car keys",
+            "luxury car rental",
+            "airport car rental",
+            "car rental counter",
+        ],
+        "sections": [
+            "Hero",
+            "Search Cars",
+            "Our Fleet",
+            "Locations",
+            "How It Works",
+            "Loyalty Program",
+            "FAQ",
+            "Contact",
+        ],
     },
-
     # ========================
     # HOME SERVICES
     # ========================
-
     "plumbing": {
         "name": "Plumbing Service",
         "category": "Home Services",
@@ -1685,10 +2491,24 @@ NICHES = {
             "style": "Trustworthy bold headings with clear body text",
         },
         "layout": "Hero with technician imagery, services grid, emergency services banner, service areas map, pricing, online scheduling",
-        "image_keywords": ["plumber working", "pipe repair", "bathroom plumbing", "water heater installation", "plumbing tools"],
-        "sections": ["Hero", "Services", "Emergency Plumbing", "Service Areas", "Pricing", "Our Team", "Schedule Service", "Contact"],
+        "image_keywords": [
+            "plumber working",
+            "pipe repair",
+            "bathroom plumbing",
+            "water heater installation",
+            "plumbing tools",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Emergency Plumbing",
+            "Service Areas",
+            "Pricing",
+            "Our Team",
+            "Schedule Service",
+            "Contact",
+        ],
     },
-
     "electrician": {
         "name": "Electrical Service",
         "category": "Home Services",
@@ -1705,10 +2525,24 @@ NICHES = {
             "style": "Strong professional headings with reliable body text",
         },
         "layout": "Hero with electrician at work, services grid, safety certifications, emergency service banner, estimate request CTA",
-        "image_keywords": ["electrician working", "electrical panel", "wiring installation", "lighting setup", "electrical safety"],
-        "sections": ["Hero", "Services", "Certifications", "Emergency Service", "Gallery", "Reviews", "Free Estimate", "Contact"],
+        "image_keywords": [
+            "electrician working",
+            "electrical panel",
+            "wiring installation",
+            "lighting setup",
+            "electrical safety",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Certifications",
+            "Emergency Service",
+            "Gallery",
+            "Reviews",
+            "Free Estimate",
+            "Contact",
+        ],
     },
-
     "cleaning_service": {
         "name": "Cleaning Service",
         "category": "Home Services",
@@ -1725,10 +2559,24 @@ NICHES = {
             "style": "Clean fresh headings with friendly body text",
         },
         "layout": "Bright hero, service types grid, pricing packages, booking system, before/after, trust badges, reviews",
-        "image_keywords": ["cleaning service", "house cleaning", "clean home interior", "professional cleaner", "sparkling kitchen"],
-        "sections": ["Hero", "Services", "Pricing", "Book Now", "Before & After", "Trust & Safety", "Reviews", "Contact"],
+        "image_keywords": [
+            "cleaning service",
+            "house cleaning",
+            "clean home interior",
+            "professional cleaner",
+            "sparkling kitchen",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Pricing",
+            "Book Now",
+            "Before & After",
+            "Trust & Safety",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "pest_control": {
         "name": "Pest Control Service",
         "category": "Home Services",
@@ -1745,10 +2593,24 @@ NICHES = {
             "style": "Confident modern headings with trustworthy body text",
         },
         "layout": "Hero with pest-free home, pest types guide, treatment plans, prevention tips section, scheduling, service guarantee",
-        "image_keywords": ["pest control service", "pest free home", "pest inspector", "home protection", "pest treatment"],
-        "sections": ["Hero", "Pest Types", "Services", "Treatment Plans", "Prevention", "Our Guarantee", "Schedule", "Contact"],
+        "image_keywords": [
+            "pest control service",
+            "pest free home",
+            "pest inspector",
+            "home protection",
+            "pest treatment",
+        ],
+        "sections": [
+            "Hero",
+            "Pest Types",
+            "Services",
+            "Treatment Plans",
+            "Prevention",
+            "Our Guarantee",
+            "Schedule",
+            "Contact",
+        ],
     },
-
     "moving_company": {
         "name": "Moving Company",
         "category": "Home Services",
@@ -1765,10 +2627,24 @@ NICHES = {
             "style": "Strong dependable headings with clear body text",
         },
         "layout": "Hero with moving truck, service types, instant quote calculator, packing tips, service areas map, moving checklist",
-        "image_keywords": ["moving truck", "movers carrying boxes", "packing boxes", "new home moving", "moving company team"],
-        "sections": ["Hero", "Services", "Get a Quote", "Service Areas", "Packing Tips", "Checklist", "Reviews", "Contact"],
+        "image_keywords": [
+            "moving truck",
+            "movers carrying boxes",
+            "packing boxes",
+            "new home moving",
+            "moving company team",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Get a Quote",
+            "Service Areas",
+            "Packing Tips",
+            "Checklist",
+            "Reviews",
+            "Contact",
+        ],
     },
-
     "hvac": {
         "name": "HVAC & Climate Control",
         "category": "Home Services",
@@ -1785,14 +2661,27 @@ NICHES = {
             "style": "Clear professional headings with approachable body text",
         },
         "layout": "Hero with HVAC unit imagery, services breakdown, seasonal maintenance plans, energy efficiency tips, scheduling CTA",
-        "image_keywords": ["hvac system", "air conditioning unit", "heating unit", "hvac technician", "thermostat smart home"],
-        "sections": ["Hero", "Services", "Maintenance Plans", "Energy Efficiency", "Brands We Service", "Reviews", "Schedule", "Contact"],
+        "image_keywords": [
+            "hvac system",
+            "air conditioning unit",
+            "heating unit",
+            "hvac technician",
+            "thermostat smart home",
+        ],
+        "sections": [
+            "Hero",
+            "Services",
+            "Maintenance Plans",
+            "Energy Efficiency",
+            "Brands We Service",
+            "Reviews",
+            "Schedule",
+            "Contact",
+        ],
     },
-
     # ========================
     # NON-PROFIT & COMMUNITY
     # ========================
-
     "charity": {
         "name": "Charity & Foundation",
         "category": "Non-Profit & Community",
@@ -1812,7 +2701,6 @@ NICHES = {
         "image_keywords": ["charity work", "community help", "donation", "volunteer team", "nonprofit impact"],
         "sections": ["Hero", "Our Mission", "Impact", "Programs", "Donate", "Volunteer", "Events", "Contact"],
     },
-
     "church": {
         "name": "Church & Religious Organization",
         "category": "Non-Profit & Community",
@@ -1829,10 +2717,15 @@ NICHES = {
             "style": "Dignified serif headings with warm traditional body text",
         },
         "layout": "Welcoming hero with place of worship, service times, community events, ministries/programs, giving portal, sermons archive",
-        "image_keywords": ["place of worship", "community gathering", "prayer service", "religious ceremony", "spiritual community"],
+        "image_keywords": [
+            "place of worship",
+            "community gathering",
+            "prayer service",
+            "religious ceremony",
+            "spiritual community",
+        ],
         "sections": ["Hero", "About", "Service Times", "Events", "Ministries", "Sermons", "Give", "Contact"],
     },
-
     "community_center": {
         "name": "Community Center",
         "category": "Non-Profit & Community",
@@ -1849,10 +2742,24 @@ NICHES = {
             "style": "Friendly welcoming headings with accessible body text",
         },
         "layout": "Vibrant hero with community activities, programs by age group, facilities tour, event calendar, membership, volunteer opportunities",
-        "image_keywords": ["community center", "community event", "youth program", "senior activities", "community gathering"],
-        "sections": ["Hero", "Programs", "Facilities", "Events", "Membership", "Youth Programs", "Volunteer", "Contact"],
+        "image_keywords": [
+            "community center",
+            "community event",
+            "youth program",
+            "senior activities",
+            "community gathering",
+        ],
+        "sections": [
+            "Hero",
+            "Programs",
+            "Facilities",
+            "Events",
+            "Membership",
+            "Youth Programs",
+            "Volunteer",
+            "Contact",
+        ],
     },
-
     "environmental": {
         "name": "Environmental Organization",
         "category": "Non-Profit & Community",
@@ -1869,14 +2776,27 @@ NICHES = {
             "style": "Modern purposeful headings with clean body text",
         },
         "layout": "Nature hero imagery, mission statement, active campaigns, environmental data visualizations, take action CTA, volunteer signup",
-        "image_keywords": ["environmental conservation", "forest protection", "ocean cleanup", "green earth", "sustainable future"],
-        "sections": ["Hero", "Our Mission", "Campaigns", "Impact Data", "Take Action", "Volunteer", "Donate", "Contact"],
+        "image_keywords": [
+            "environmental conservation",
+            "forest protection",
+            "ocean cleanup",
+            "green earth",
+            "sustainable future",
+        ],
+        "sections": [
+            "Hero",
+            "Our Mission",
+            "Campaigns",
+            "Impact Data",
+            "Take Action",
+            "Volunteer",
+            "Donate",
+            "Contact",
+        ],
     },
-
     # ========================
     # SPORTS & RECREATION
     # ========================
-
     "martial_arts": {
         "name": "Martial Arts Academy",
         "category": "Sports & Recreation",
@@ -1893,10 +2813,24 @@ NICHES = {
             "style": "Bold powerful headings with disciplined body text",
         },
         "layout": "Dynamic hero with martial arts action, programs by age/style, instructor profiles, belt system, class schedule, trial CTA",
-        "image_keywords": ["martial arts training", "karate class", "taekwondo kick", "dojo interior", "martial arts instructor"],
-        "sections": ["Hero", "Programs", "Our Instructors", "Belt System", "Class Schedule", "Testimonials", "Free Trial", "Contact"],
+        "image_keywords": [
+            "martial arts training",
+            "karate class",
+            "taekwondo kick",
+            "dojo interior",
+            "martial arts instructor",
+        ],
+        "sections": [
+            "Hero",
+            "Programs",
+            "Our Instructors",
+            "Belt System",
+            "Class Schedule",
+            "Testimonials",
+            "Free Trial",
+            "Contact",
+        ],
     },
-
     "dance_studio": {
         "name": "Dance Studio",
         "category": "Sports & Recreation",
@@ -1914,9 +2848,17 @@ NICHES = {
         },
         "layout": "Hero with dance performance, dance styles offered, class schedule, instructor bios, student performances, registration CTA",
         "image_keywords": ["dance studio", "ballet dancer", "dance class", "dance performance", "dance rehearsal"],
-        "sections": ["Hero", "Dance Styles", "Class Schedule", "Our Instructors", "Performances", "Gallery", "Register", "Contact"],
+        "sections": [
+            "Hero",
+            "Dance Styles",
+            "Class Schedule",
+            "Our Instructors",
+            "Performances",
+            "Gallery",
+            "Register",
+            "Contact",
+        ],
     },
-
     "swimming_pool": {
         "name": "Swimming Pool & Aquatic Center",
         "category": "Sports & Recreation",
@@ -1934,9 +2876,17 @@ NICHES = {
         },
         "layout": "Hero with pool imagery, programs (swim lessons, lap swim, aqua fitness), pool schedule, membership plans, safety info",
         "image_keywords": ["swimming pool", "swim lesson", "aquatic center", "lap swimming", "pool facility"],
-        "sections": ["Hero", "Programs", "Pool Schedule", "Swim Lessons", "Membership", "Facilities", "Safety", "Contact"],
+        "sections": [
+            "Hero",
+            "Programs",
+            "Pool Schedule",
+            "Swim Lessons",
+            "Membership",
+            "Facilities",
+            "Safety",
+            "Contact",
+        ],
     },
-
     "golf_club": {
         "name": "Golf Club & Course",
         "category": "Sports & Recreation",
@@ -1954,13 +2904,20 @@ NICHES = {
         },
         "layout": "Hero with course aerial view, course details, membership tiers, pro shop, lessons, tournament calendar, tee time booking",
         "image_keywords": ["golf course", "golf swing", "golf club", "putting green", "golf clubhouse"],
-        "sections": ["Hero", "The Course", "Membership", "Pro Shop", "Lessons", "Tournaments", "Book Tee Time", "Contact"],
+        "sections": [
+            "Hero",
+            "The Course",
+            "Membership",
+            "Pro Shop",
+            "Lessons",
+            "Tournaments",
+            "Book Tee Time",
+            "Contact",
+        ],
     },
-
     # ========================
     # MEDIA & ENTERTAINMENT
     # ========================
-
     "podcast": {
         "name": "Podcast & Audio Show",
         "category": "Media & Entertainment",
@@ -1977,10 +2934,15 @@ NICHES = {
             "style": "Bold modern headings with clean listener-friendly body text",
         },
         "layout": "Hero with podcast artwork and player, episode list, about the host, guest highlights, subscribe buttons, newsletter",
-        "image_keywords": ["podcast recording", "microphone setup", "podcast studio", "audio equipment", "podcast host"],
+        "image_keywords": [
+            "podcast recording",
+            "microphone setup",
+            "podcast studio",
+            "audio equipment",
+            "podcast host",
+        ],
         "sections": ["Hero", "Latest Episodes", "About", "Guests", "Subscribe", "Sponsors", "Newsletter", "Contact"],
     },
-
     "magazine": {
         "name": "Online Magazine & Publication",
         "category": "Media & Entertainment",
@@ -1997,10 +2959,15 @@ NICHES = {
             "style": "Editorial serif headings with classic readable body text",
         },
         "layout": "Magazine-style hero with featured article, article grid by category, trending section, opinion columns, newsletter, subscribe CTA",
-        "image_keywords": ["magazine layout", "editorial photography", "newsroom", "journalist writing", "magazine cover"],
+        "image_keywords": [
+            "magazine layout",
+            "editorial photography",
+            "newsroom",
+            "journalist writing",
+            "magazine cover",
+        ],
         "sections": ["Hero", "Featured", "Categories", "Trending", "Opinion", "Archive", "Subscribe", "Contact"],
     },
-
     "film_production": {
         "name": "Film Production Company",
         "category": "Media & Entertainment",
@@ -2017,10 +2984,15 @@ NICHES = {
             "style": "Cinematic serif headings with sleek professional body text",
         },
         "layout": "Full-screen video hero with reel, filmography grid, about the studio, production services, awards, project inquiry",
-        "image_keywords": ["film production set", "movie camera", "film director", "movie premiere", "cinema production"],
+        "image_keywords": [
+            "film production set",
+            "movie camera",
+            "film director",
+            "movie premiere",
+            "cinema production",
+        ],
         "sections": ["Hero", "Filmography", "Services", "About Studio", "Awards", "Our Team", "Inquire", "Contact"],
     },
-
     "streaming_service": {
         "name": "Streaming & Media Platform",
         "category": "Media & Entertainment",
@@ -2037,14 +3009,18 @@ NICHES = {
             "style": "Bold modern headings with clean screen-optimized body text",
         },
         "layout": "Hero with featured content banner, content carousel by category, trending section, subscription plans, device support info",
-        "image_keywords": ["streaming service", "smart tv entertainment", "video streaming", "movie night", "content library"],
+        "image_keywords": [
+            "streaming service",
+            "smart tv entertainment",
+            "video streaming",
+            "movie night",
+            "content library",
+        ],
         "sections": ["Hero", "Trending", "Categories", "Originals", "Plans", "Supported Devices", "FAQ", "Contact"],
     },
-
     # ========================
     # BEAUTY & PERSONAL CARE
     # ========================
-
     "beauty_salon": {
         "name": "Beauty Salon & Spa",
         "category": "Beauty & Personal Care",
@@ -2062,9 +3038,17 @@ NICHES = {
         },
         "layout": "Luxurious hero with salon imagery, services menu, stylist profiles, before/after gallery, booking system, gift cards",
         "image_keywords": ["beauty salon interior", "hair styling", "makeup application", "nail art", "spa treatment"],
-        "sections": ["Hero", "Services", "Our Stylists", "Gallery", "Before & After", "Gift Cards", "Book Appointment", "Contact"],
+        "sections": [
+            "Hero",
+            "Services",
+            "Our Stylists",
+            "Gallery",
+            "Before & After",
+            "Gift Cards",
+            "Book Appointment",
+            "Contact",
+        ],
     },
-
 }
 
 
@@ -2084,18 +3068,30 @@ KEYWORD_MAP = {
     "wine_bar": ["wine bar", "wine tasting", "sommelier", "wine lounge", "wine shop", "vineyard"],
     "pizzeria": ["pizza", "pizzeria", "italian food", "wood fire pizza", "delivery pizza", "pizza shop"],
     "coffee_shop": ["coffee shop", "cafe", "coffee", "espresso", "coffeehouse", "latte", "barista"],
-
     # Technology
     "tech_startup": ["tech startup", "startup", "innovation", "disrupt", "venture", "saas", "software"],
-    "ai_startup": ["artificial intelligence", "machine learning", "ai", "deep learning", "neural network", "ai startup"],
-    "cybersecurity": ["cybersecurity", "security", "infosec", "data protection", "network security", "penetration testing"],
+    "ai_startup": [
+        "artificial intelligence",
+        "machine learning",
+        "ai",
+        "deep learning",
+        "neural network",
+        "ai startup",
+    ],
+    "cybersecurity": [
+        "cybersecurity",
+        "security",
+        "infosec",
+        "data protection",
+        "network security",
+        "penetration testing",
+    ],
     "web_agency": ["web agency", "web design", "web development", "website agency", "digital agency", "web studio"],
     "mobile_app": ["mobile app", "ios app", "android app", "app development", "mobile application", "app company"],
     "cloud_services": ["cloud", "aws", "azure", "cloud computing", "hosting", "cloud services", "devops"],
     "blockchain": ["blockchain", "crypto", "web3", "decentralized", "nft", "cryptocurrency", "defi"],
     "iot_company": ["iot", "smart devices", "internet of things", "connected devices", "smart home", "wearable"],
     "game_studio": ["game studio", "game development", "video games", "gaming", "indie game", "game design"],
-
     # Health & Wellness
     "healthcare": ["hospital", "medical center", "healthcare", "clinic", "medical", "health care"],
     "dentist": ["dental", "dentist", "teeth", "orthodontist", "oral health", "dental clinic"],
@@ -2107,37 +3103,53 @@ KEYWORD_MAP = {
     "optometry": ["optometry", "eye care", "optometrist", "glasses", "vision", "eye doctor"],
     "physiotherapy": ["physiotherapy", "physical therapy", "rehabilitation", "physio", "sports therapy", "recovery"],
     "fitness": ["gym", "fitness", "workout", "training", "exercise", "personal training", "crossfit"],
-
     # Professional Services
     "consulting": ["consulting", "management consulting", "strategy", "advisory", "consultancy", "business consulting"],
     "law_firm": ["law firm", "attorney", "lawyer", "legal", "solicitor", "barrister", "litigation"],
     "accounting": ["accounting", "cpa", "bookkeeping", "tax", "auditing", "accountant", "tax preparation"],
     "marketing_agency": ["marketing agency", "digital marketing", "advertising", "branding", "creative agency", "seo"],
     "insurance": ["insurance", "coverage", "policy", "claims", "underwriting", "insurance agent"],
-    "financial_advisor": ["financial advisor", "wealth management", "investment", "financial planning", "retirement", "financial"],
+    "financial_advisor": [
+        "financial advisor",
+        "wealth management",
+        "investment",
+        "financial planning",
+        "retirement",
+        "financial",
+    ],
     "recruitment": ["recruitment", "staffing", "hiring", "headhunting", "talent acquisition", "recruiter"],
     "translation": ["translation", "interpreter", "localization", "multilingual", "language services", "translator"],
     "pr_agency": ["public relations", "pr agency", "press", "media relations", "communications", "publicity"],
     "coworking_space": ["coworking", "co-working", "shared office", "workspace", "hot desk", "flexible office"],
-
     # Education
     "education": ["university", "college", "school", "academic", "campus", "education", "higher education"],
     "online_course": ["online courses", "e-learning", "online education", "mooc", "digital learning", "online class"],
     "music_school": ["music school", "music lessons", "piano", "guitar lessons", "music academy", "vocal training"],
-    "language_school": ["language school", "language learning", "esl", "foreign language", "language course", "language classes"],
+    "language_school": [
+        "language school",
+        "language learning",
+        "esl",
+        "foreign language",
+        "language course",
+        "language classes",
+    ],
     "driving_school": ["driving school", "driving lessons", "learn to drive", "driver education", "driving instructor"],
     "coding_bootcamp": ["coding bootcamp", "programming course", "web development course", "coding school", "bootcamp"],
     "daycare": ["daycare", "preschool", "nursery", "kindergarten", "childcare", "early childhood"],
-
     # Real Estate & Property
     "real_estate": ["real estate", "homes for sale", "property", "housing", "realtor", "real estate agent"],
     "interior_design": ["interior design", "home decor", "interior decorator", "furnishing", "space planning"],
     "architecture_firm": ["architecture", "architect", "building design", "architectural firm", "urban planning"],
     "construction": ["construction", "builder", "contractor", "building", "general contractor", "construction company"],
-    "property_management": ["property management", "landlord", "tenant management", "rental management", "property manager"],
+    "property_management": [
+        "property management",
+        "landlord",
+        "tenant management",
+        "rental management",
+        "property manager",
+    ],
     "home_staging": ["home staging", "staging", "property styling", "real estate staging", "house staging"],
     "landscaping": ["landscaping", "lawn care", "garden", "yard maintenance", "outdoor design", "lawn service"],
-
     # Retail & E-commerce
     "ecommerce": ["ecommerce", "e-commerce", "online store", "online shop", "dropshipping", "retail"],
     "jewelry_store": ["jewelry", "jewellery", "diamonds", "gold jewelry", "gemstone", "jewelry store"],
@@ -2148,7 +3160,6 @@ KEYWORD_MAP = {
     "fashion_boutique": ["fashion", "clothing", "apparel", "boutique", "designer", "fashion brand"],
     "electronics_store": ["electronics", "gadgets", "tech store", "computers", "smartphones", "electronics store"],
     "furniture_store": ["furniture", "home furniture", "furnishing", "home store", "sofa", "furniture store"],
-
     # Creative & Arts
     "portfolio": ["portfolio", "creative portfolio", "designer portfolio", "freelancer", "personal website"],
     "photography": ["photography", "photographer", "photo studio", "portrait", "wedding photography"],
@@ -2159,7 +3170,6 @@ KEYWORD_MAP = {
     "graphic_design": ["graphic design", "branding", "logo design", "visual design", "design studio"],
     "wedding_planner": ["wedding planner", "wedding planning", "bridal", "wedding services", "marriage"],
     "event_management": ["event planning", "event management", "party planner", "corporate events", "event organizer"],
-
     # Travel & Hospitality
     "hotel": ["hotel", "resort", "accommodation", "lodging", "hospitality", "boutique hotel"],
     "travel_agency": ["travel agency", "travel", "vacation", "holiday", "trip", "tourism"],
@@ -2167,13 +3177,11 @@ KEYWORD_MAP = {
     "vacation_rental": ["vacation rental", "holiday home", "airbnb", "short term rental", "cottage rental"],
     "airline": ["airline", "flights", "aviation", "air travel", "airplane", "carrier"],
     "cruise": ["cruise", "cruise line", "ocean voyage", "ship", "sailing cruise", "cruise ship"],
-
     # Automotive
     "car_dealership": ["car dealership", "car dealer", "auto dealer", "cars for sale", "vehicle sales"],
     "auto_repair": ["auto repair", "mechanic", "car repair", "garage", "auto service", "car maintenance"],
     "car_wash": ["car wash", "auto detailing", "car cleaning", "car detail", "vehicle wash"],
     "car_rental": ["car rental", "rent a car", "vehicle rental", "car hire", "rental fleet"],
-
     # Home Services
     "plumbing": ["plumbing", "plumber", "pipe repair", "drain cleaning", "water heater", "leak repair"],
     "electrician": ["electrician", "electrical service", "wiring", "electrical repair", "lighting", "electrical"],
@@ -2181,25 +3189,28 @@ KEYWORD_MAP = {
     "pest_control": ["pest control", "exterminator", "termite", "bug spray", "pest removal", "pest service"],
     "moving_company": ["moving company", "movers", "relocation", "moving service", "hauling", "moving"],
     "hvac": ["hvac", "air conditioning", "heating", "cooling", "furnace", "ac repair"],
-
     # Non-Profit & Community
     "charity": ["charity", "foundation", "nonprofit", "donation", "fundraising", "non-profit"],
     "church": ["church", "mosque", "temple", "religious", "worship", "congregation", "parish"],
     "community_center": ["community center", "recreation center", "community programs", "civic center", "community"],
     "environmental": ["environmental", "conservation", "sustainability", "climate", "green energy", "eco"],
-
     # Sports & Recreation
     "martial_arts": ["martial arts", "karate", "taekwondo", "jiu jitsu", "kung fu", "self defense", "dojo"],
     "dance_studio": ["dance studio", "dance class", "ballet", "hip hop dance", "contemporary dance", "dance school"],
     "swimming_pool": ["swimming pool", "swim lessons", "aquatic center", "pool", "swimming", "aquatics"],
     "golf_club": ["golf club", "golf course", "golf lessons", "country club", "driving range", "golf"],
-
     # Media & Entertainment
     "podcast": ["podcast", "audio show", "podcast studio", "episodes", "podcasting", "radio show"],
     "magazine": ["magazine", "publication", "editorial", "online magazine", "news", "media outlet"],
     "film_production": ["film production", "movie production", "filmmaking", "cinema", "documentary", "film studio"],
-    "streaming_service": ["streaming", "video streaming", "ott platform", "streaming service", "on demand", "media platform"],
-
+    "streaming_service": [
+        "streaming",
+        "video streaming",
+        "ott platform",
+        "streaming service",
+        "on demand",
+        "media platform",
+    ],
     # Beauty & Personal Care
     "beauty_salon": ["beauty salon", "hair salon", "salon", "hairstylist", "beauty", "nail salon", "barber"],
 }
@@ -2243,6 +3254,7 @@ def detect_niche(prompt: str) -> str | None:
     Returns the niche key with the highest match count, or None if no match.
     """
     import re
+
     prompt_lower = prompt.lower()
     best_match = None
     best_score = 0
@@ -2252,7 +3264,7 @@ def detect_niche(prompt: str) -> str | None:
         for keyword in keywords:
             kw = keyword.lower()
             # Use word boundary matching to avoid partial matches (e.g. "ai" in "dubai")
-            pattern = r'\b' + re.escape(kw) + r'\b'
+            pattern = r"\b" + re.escape(kw) + r"\b"
             if re.search(pattern, prompt_lower):
                 # Longer keyword matches get higher weight
                 score += len(kw.split()) * 2 + len(kw)

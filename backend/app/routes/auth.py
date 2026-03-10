@@ -1,22 +1,22 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db, create_tenant_schema
+from app.database import create_tenant_schema, get_db
 from app.models.user import User
+from app.utils.audit_log import log_event_bg
 from app.utils.auth import (
-    hash_password,
-    verify_password,
     create_access_token,
     decode_access_token,
+    hash_password,
+    verify_password,
 )
 from app.utils.input_sanitizer import validate_license_number
-from app.utils.audit_log import log_event_bg
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ security = HTTPBearer()
 
 
 # --- Schemas ---
+
 
 class SignupRequest(BaseModel):
     email: EmailStr
@@ -55,6 +56,7 @@ class AuthResponse(BaseModel):
 
 # --- Routes ---
 
+
 @router.post("/signup", response_model=AuthResponse)
 async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depends(get_db)):
     # Validate license number format
@@ -64,7 +66,7 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
-        )
+        ) from e
 
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == data.email))
@@ -75,9 +77,7 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         )
 
     # Check if license number already exists
-    result = await db.execute(
-        select(User).where(User.license_number == data.license_number)
-    )
+    result = await db.execute(select(User).where(User.license_number == data.license_number))
     if result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -153,9 +153,7 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
 
     # Update last_login timestamp (best-effort)
     try:
-        await db.execute(
-            update(User).where(User.id == user.id).values(last_login=datetime.now(timezone.utc))
-        )
+        await db.execute(update(User).where(User.id == user.id).values(last_login=datetime.now(UTC)))
         await db.commit()
     except Exception:
         await db.rollback()  # Column may not exist yet

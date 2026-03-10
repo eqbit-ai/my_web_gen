@@ -1,8 +1,6 @@
 """Tests for authentication endpoints (signup, login, /me)."""
 
 import pytest
-from app.utils.auth import hash_password
-
 
 SIGNUP_DATA = {
     "email": "test@meydan.ae",

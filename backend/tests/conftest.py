@@ -6,18 +6,12 @@ to avoid requiring external services during testing.
 """
 
 import os
-import sys
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from types import ModuleType
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import event, JSON
-from sqlalchemy.dialects.postgresql import JSONB
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # ---------------------------------------------------------------------------
 # Environment setup — must happen BEFORE any app imports
@@ -39,13 +33,17 @@ from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
 
 # Teach SQLite compiler to handle PG-specific types (JSONB, UUID)
 if not hasattr(SQLiteTypeCompiler, "visit_JSONB"):
+
     def _visit_jsonb(self, type_, **kw):
         return "JSON"
+
     SQLiteTypeCompiler.visit_JSONB = _visit_jsonb
 
 if not hasattr(SQLiteTypeCompiler, "visit_UUID"):
+
     def _visit_uuid(self, type_, **kw):
         return "VARCHAR(36)"
+
     SQLiteTypeCompiler.visit_UUID = _visit_uuid
 
 _test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
@@ -85,15 +83,14 @@ async def _test_init_db():
 _db_mod.init_db = _test_init_db
 
 # Import models to register them with Base.metadata
-from app.models.user import User  # noqa: F401
-
 from app.database import get_db
-from app.utils.auth import create_access_token, hash_password
-
+from app.models.user import User  # noqa: F401
+from app.utils.auth import create_access_token
 
 # ---------------------------------------------------------------------------
 # Fake Redis (dict-backed)
 # ---------------------------------------------------------------------------
+
 
 class FakeRedisPipeline:
     """Minimal pipeline that collects operations and executes them."""
@@ -202,20 +199,12 @@ patch("app.middleware.rate_limiter.get_redis", _fake_get_redis).start()
 # Database fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create a single event loop for the entire test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
-
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(loop_scope="session", scope="session")
 async def test_engine():
     """Create only the tables we need for testing (skip PG-specific ones)."""
     # Only create tables that are compatible with SQLite
     # (skip audit_logs which uses PG UUID/JSONB)
-    from app.models.user import User
     tables_to_create = [User.__table__]
     async with _test_engine.begin() as conn:
         await conn.run_sync(
@@ -237,6 +226,7 @@ async def db_session(test_engine):
 # Redis fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="function")
 def redis_mock():
     """Provide a fresh FakeRedis instance per test."""
@@ -247,7 +237,8 @@ def redis_mock():
 # FastAPI app + client fixtures
 # ---------------------------------------------------------------------------
 
-@pytest_asyncio.fixture(scope="session")
+
+@pytest_asyncio.fixture(loop_scope="session", scope="session")
 async def app(test_engine):
     """Create the FastAPI app with overridden dependencies."""
 
@@ -273,6 +264,7 @@ async def client(app):
 # ---------------------------------------------------------------------------
 # Auth fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def auth_token():

@@ -458,16 +458,20 @@ def get_all_components_summary() -> list[dict]:
     for comp_key, comp in COMPONENT_VARIANTS.items():
         variants = []
         for var_key, var in comp["variants"].items():
-            variants.append({
-                "key": var_key,
-                "name": var["name"],
-                "description": var["description"],
-            })
-        result.append({
-            "key": comp_key,
-            "name": comp["name"],
-            "variants": variants,
-        })
+            variants.append(
+                {
+                    "key": var_key,
+                    "name": var["name"],
+                    "description": var["description"],
+                }
+            )
+        result.append(
+            {
+                "key": comp_key,
+                "name": comp["name"],
+                "variants": variants,
+            }
+        )
     return result
 
 

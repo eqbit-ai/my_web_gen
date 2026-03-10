@@ -5,7 +5,6 @@ Input sanitization utilities — prompt cleaning, filename safety, ID validation
 import re
 import uuid
 
-
 # HTML tag pattern
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -107,9 +106,6 @@ def validate_license_number(license_number: str) -> str:
     license_number = license_number.strip()
 
     if not _LICENSE_RE.match(license_number):
-        raise ValueError(
-            "License number must be 5-50 characters and contain only "
-            "letters, numbers, and hyphens"
-        )
+        raise ValueError("License number must be 5-50 characters and contain only letters, numbers, and hyphens")
 
     return license_number

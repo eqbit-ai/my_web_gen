@@ -17,15 +17,13 @@ Features:
 - Deduplication across all images on a page (sequential to avoid race conditions)
 """
 
+import asyncio
+import hashlib
 import os
 import re
-import asyncio
 import time
-import hashlib
-from typing import Optional
 
 import httpx
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # API KEYS (from .env)
@@ -66,12 +64,53 @@ PORTRAIT_KEYWORDS = ["portrait", "headshot", "team member", "person", "face", "w
 
 # Filler words that hurt search relevance — remove them from queries
 FILLER_WORDS = {
-    "the", "a", "an", "and", "or", "for", "in", "on", "at", "to", "of", "with",
-    "from", "by", "is", "are", "was", "were", "be", "been", "being",
-    "that", "this", "it", "its", "very", "really", "just", "also",
-    "style", "styled", "based", "using", "showing", "featuring", "looking",
-    "high", "quality", "professional", "beautiful", "amazing", "great",
-    "specific", "descriptive", "keywords", "highly", "query",
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "for",
+    "in",
+    "on",
+    "at",
+    "to",
+    "of",
+    "with",
+    "from",
+    "by",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "that",
+    "this",
+    "it",
+    "its",
+    "very",
+    "really",
+    "just",
+    "also",
+    "style",
+    "styled",
+    "based",
+    "using",
+    "showing",
+    "featuring",
+    "looking",
+    "high",
+    "quality",
+    "professional",
+    "beautiful",
+    "amazing",
+    "great",
+    "specific",
+    "descriptive",
+    "keywords",
+    "highly",
+    "query",
 }
 
 
@@ -140,6 +179,7 @@ def get_orientation(role: str, query: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 # QUERY VARIATION GENERATOR
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def generate_query_variations(query: str, role: str, niche_key: str = None) -> list[str]:
     """Generate 2-3 search variations for broader coverage."""
@@ -250,6 +290,7 @@ def _get_niche_qualifier(niche_key: str, role: str) -> str:
     # Category fallback
     try:
         from app.utils.niches import NICHES
+
         niche = NICHES.get(niche_key)
         if niche:
             category = niche.get("category", "")
@@ -264,6 +305,7 @@ def _get_niche_qualifier(niche_key: str, role: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 # IMAGE SCORING
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def score_unsplash_photo(photo: dict, keywords: list[str], orientation: str, niche_key: str = None) -> int:
     """Score an Unsplash photo by relevance metadata."""
@@ -364,6 +406,7 @@ def score_pexels_photo(photo: dict, keywords: list[str], orientation: str, niche
 # UNSPLASH MULTI-QUERY RANKED SEARCH
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def search_unsplash_ranked(
     client: httpx.AsyncClient,
     variations: list[str],
@@ -371,7 +414,7 @@ async def search_unsplash_ranked(
     used_ids: set,
     orientation: str = "landscape",
     niche_key: str = None,
-) -> Optional[str]:
+) -> str | None:
     """Search Unsplash with multiple query variations, rank results, return best."""
     if not UNSPLASH_ACCESS_KEY:
         return None
@@ -430,6 +473,7 @@ async def search_unsplash_ranked(
 # PEXELS RANKED SEARCH
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def search_pexels_ranked(
     client: httpx.AsyncClient,
     variations: list[str],
@@ -437,7 +481,7 @@ async def search_pexels_ranked(
     used_ids: set,
     orientation: str = "landscape",
     niche_key: str = None,
-) -> Optional[str]:
+) -> str | None:
     """Search Pexels with multiple query variations, rank results, return best."""
     if not PEXELS_API_KEY:
         return None
@@ -543,6 +587,7 @@ def get_fallback_image(role: str) -> str:
 # SINGLE IMAGE RESOLVER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def resolve_single_image(
     client: httpx.AsyncClient,
     raw_query: str,
@@ -566,8 +611,19 @@ async def resolve_single_image(
     print(f"[Images]   Searching: {variations} (orient={orientation}, niche={niche_key or 'none'})", flush=True)
 
     # Determine search order based on niche (Pexels is better for food/product photos)
-    food_niches = {"restaurant", "bakery", "coffee_shop", "food_truck", "pizzeria",
-                   "juice_bar", "wine_bar", "brewery", "catering", "food_blog", "organic_store"}
+    food_niches = {
+        "restaurant",
+        "bakery",
+        "coffee_shop",
+        "food_truck",
+        "pizzeria",
+        "juice_bar",
+        "wine_bar",
+        "brewery",
+        "catering",
+        "food_blog",
+        "organic_store",
+    }
     pexels_first = niche_key in food_niches
 
     if pexels_first:
@@ -601,6 +657,7 @@ async def resolve_single_image(
 # BATCH RESOLVER — main entry point
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def resolve_image_placeholders(html: str, niche_key: str = None) -> str:
     """
     Find all {IMG:query} placeholders in HTML and replace with real image URLs.
@@ -609,7 +666,7 @@ async def resolve_image_placeholders(html: str, niche_key: str = None) -> str:
     with deduplication accuracy. Same-role images are resolved sequentially
     to ensure used_ids deduplication works correctly.
     """
-    pattern = r'{+IMG:([^}]+)}+'
+    pattern = r"{+IMG:([^}]+)}+"
     matches = list(re.finditer(pattern, html))
 
     if not matches:
@@ -645,15 +702,12 @@ async def resolve_image_placeholders(html: str, niche_key: str = None) -> str:
                 url = await resolve_single_image(client, queries[idx], used_ids, niche_key)
                 urls[idx] = url
 
-        await asyncio.gather(*[
-            resolve_role_group(indices)
-            for indices in role_groups.values()
-        ])
+        await asyncio.gather(*[resolve_role_group(indices) for indices in role_groups.values()])
 
     # Replace placeholders with resolved URLs
     result = html
     resolved_count = 0
-    for match, url in zip(matches, urls):
+    for match, url in zip(matches, urls, strict=False):
         old_placeholder = match.group(0)
         result = result.replace(old_placeholder, url, 1)
         resolved_count += 1
@@ -662,7 +716,7 @@ async def resolve_image_placeholders(html: str, niche_key: str = None) -> str:
         print(f"[Images]   '{short_placeholder}' -> {short_url}", flush=True)
 
     # Verify no placeholders remain
-    remaining = re.findall(r'{+IMG:[^}]+}+', result)
+    remaining = re.findall(r"{+IMG:[^}]+}+", result)
     if remaining:
         print(f"[Images] WARNING: {len(remaining)} unresolved placeholders remain!", flush=True)
 

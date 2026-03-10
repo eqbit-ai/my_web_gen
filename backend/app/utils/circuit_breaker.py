@@ -10,16 +10,21 @@ import asyncio
 import functools
 import logging
 import time
-from enum import Enum
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from enum import StrEnum
+from typing import Any
 
 from anthropic import (
     APIError as AnthropicAPIError,
+)
+from anthropic import (
     APITimeoutError as AnthropicTimeoutError,
 )
 from openai import (
     APIError as OpenAIAPIError,
+)
+from openai import (
     APITimeoutError as OpenAITimeoutError,
 )
 
@@ -29,7 +34,7 @@ logger = logging.getLogger(__name__)
 TRANSIENT_STATUS_CODES = {429, 500, 502, 503}
 
 
-class CircuitState(str, Enum):
+class CircuitState(StrEnum):
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
@@ -41,10 +46,7 @@ class CircuitOpenError(Exception):
     def __init__(self, provider: str, remaining_seconds: float):
         self.provider = provider
         self.remaining_seconds = remaining_seconds
-        super().__init__(
-            f"Circuit for '{provider}' is OPEN. "
-            f"Recovery in {remaining_seconds:.1f}s."
-        )
+        super().__init__(f"Circuit for '{provider}' is OPEN. Recovery in {remaining_seconds:.1f}s.")
 
 
 def _is_transient(exc: Exception) -> bool:
@@ -70,7 +72,7 @@ class CircuitMetrics:
     total_failures: int = 0
     consecutive_failures: int = 0
     consecutive_successes: int = 0
-    last_failure_time: Optional[float] = None
+    last_failure_time: float | None = None
     state: CircuitState = CircuitState.CLOSED
 
 
@@ -97,9 +99,7 @@ class _CircuitBreaker:
         old = self._metrics.state
         if old != new_state:
             self._metrics.state = new_state
-            logger.warning(
-                "Circuit '%s': %s -> %s", self.provider, old.value, new_state.value
-            )
+            logger.warning("Circuit '%s': %s -> %s", self.provider, old.value, new_state.value)
 
     def _seconds_until_recovery(self) -> float:
         if self._metrics.last_failure_time is None:
@@ -155,7 +155,7 @@ class _CircuitBreaker:
         """Execute a function through the circuit breaker with retry logic."""
         await self._pre_call()
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
 
         for attempt in range(1 + self.max_retries):
             try:
@@ -166,10 +166,9 @@ class _CircuitBreaker:
                 last_exc = exc
 
                 if _is_transient(exc) and attempt < self.max_retries:
-                    delay = self.base_backoff * (2 ** attempt)
+                    delay = self.base_backoff * (2**attempt)
                     logger.info(
-                        "Circuit '%s': transient error on attempt %d/%d, "
-                        "retrying in %.1fs — %s",
+                        "Circuit '%s': transient error on attempt %d/%d, retrying in %.1fs — %s",
                         self.provider,
                         attempt + 1,
                         1 + self.max_retries,
@@ -188,7 +187,7 @@ class _CircuitBreaker:
             await self._record_failure()
             raise last_exc
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         m = self._metrics
         return {
             "provider": self.provider,
@@ -197,9 +196,7 @@ class _CircuitBreaker:
             "total_failures": m.total_failures,
             "consecutive_failures": m.consecutive_failures,
             "last_failure_time": m.last_failure_time,
-            "seconds_until_recovery": (
-                self._seconds_until_recovery() if m.state == CircuitState.OPEN else 0
-            ),
+            "seconds_until_recovery": (self._seconds_until_recovery() if m.state == CircuitState.OPEN else 0),
         }
 
 
@@ -207,7 +204,7 @@ class _CircuitBreaker:
 # Global registry
 # ---------------------------------------------------------------------------
 
-_circuits: Dict[str, _CircuitBreaker] = {}
+_circuits: dict[str, _CircuitBreaker] = {}
 _registry_lock = asyncio.Lock()
 
 
@@ -231,7 +228,7 @@ async def _get_circuit(
     return _circuits[provider]
 
 
-def _get_circuit_sync(provider: str) -> Optional[_CircuitBreaker]:
+def _get_circuit_sync(provider: str) -> _CircuitBreaker | None:
     """Non-async lookup for existing circuits only."""
     return _circuits.get(provider)
 
@@ -276,15 +273,12 @@ def circuit_protected(
     return decorator
 
 
-def get_circuit_status() -> Dict[str, Any]:
+def get_circuit_status() -> dict[str, Any]:
     """
     Return the current status of all registered circuit breakers.
     Suitable for a /health endpoint response.
     """
-    return {
-        name: cb.get_status()
-        for name, cb in _circuits.items()
-    }
+    return {name: cb.get_status() for name, cb in _circuits.items()}
 
 
 async def reset_circuit(provider: str) -> bool:

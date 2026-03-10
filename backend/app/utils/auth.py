@@ -1,12 +1,10 @@
-from datetime import datetime, timedelta, timezone
 import os
+from datetime import UTC, datetime, timedelta
+
 import bcrypt
-from jose import jwt, JWTError
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from dotenv import load_dotenv
+from fastapi.security import HTTPBearer
+from jose import JWTError, jwt
 
 load_dotenv()
 
@@ -31,7 +29,7 @@ def create_access_token(
     db_schema: str | None = None,
     is_admin: bool = False,
 ) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRE_MINUTES)
+    expire = datetime.now(UTC) + timedelta(minutes=JWT_EXPIRE_MINUTES)
     payload = {"sub": str(user_id), "exp": expire}
     if license_number:
         payload["license_number"] = license_number

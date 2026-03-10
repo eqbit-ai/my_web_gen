@@ -1,15 +1,14 @@
 """Tests for HTML, CSS, and JS validators in the generator module."""
 
-import re
 import pytest
 
 # Import the validators directly from the generator module
-from app.routes.generator import validate_html, validate_css, validate_js
-
+from app.routes.generator import validate_css, validate_html, validate_js
 
 # ---------------------------------------------------------------------------
 # Sample content generators
 # ---------------------------------------------------------------------------
+
 
 def _make_html(length: int = 500, with_section_type: bool = True) -> str:
     """Generate valid-enough HTML of a given length."""
@@ -19,7 +18,7 @@ def _make_html(length: int = 500, with_section_type: bool = True) -> str:
 <body>
 <section{section_attr}>
 <h1>Test Page</h1>
-<p>{'x' * max(0, length - 200)}</p>
+<p>{"x" * max(0, length - 200)}</p>
 </section>
 </body></html>"""
     return base
@@ -33,6 +32,7 @@ def _make_css(length: int = 500) -> str:
 # ---------------------------------------------------------------------------
 # HTML Validator Tests
 # ---------------------------------------------------------------------------
+
 
 def test_validate_html_minimum_length():
     """HTML shorter than 200 chars raises ValueError."""
@@ -62,7 +62,7 @@ def test_validate_html_converts_div_to_section():
     result = validate_html(html)
     assert "<section" in result
     # The div with data-section-type should have been converted
-    assert '<div data-section-type=' not in result
+    assert "<div data-section-type=" not in result
 
 
 def test_validate_html_strips_fontawesome_kit():
@@ -84,6 +84,7 @@ def test_validate_html_valid_passes():
 # ---------------------------------------------------------------------------
 # CSS Validator Tests
 # ---------------------------------------------------------------------------
+
 
 def test_validate_css_minimum_length():
     """CSS shorter than 200 chars raises ValueError."""
@@ -108,6 +109,7 @@ def test_validate_css_strips_aos_rules():
 # ---------------------------------------------------------------------------
 # JS Validator Tests
 # ---------------------------------------------------------------------------
+
 
 def test_validate_js_valid_code():
     """Valid JS passes validation."""

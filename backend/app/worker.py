@@ -10,25 +10,26 @@ Run separately: python -m app.worker
 """
 
 import asyncio
-import os
-import sys
 import json
 import logging
-import traceback
+import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from app.utils.logging_config import setup_logging
+
 setup_logging(os.getenv("LOG_LEVEL", "INFO"))
 
 logger = logging.getLogger(__name__)
 
-from app.utils.redis_client import get_redis, update_job, get_job
+from app.routes.generator import extract_style_block, stage_1_plan, stage_2_html, stage_3_js
+from app.utils.redis_client import get_job, get_redis, update_job
 from app.utils.section_parser import inject_section_ids, parse_sections
-from app.routes.generator import stage_1_plan, stage_2_html, stage_3_js, extract_style_block
 
 
 async def process_generate_job(job_id: str, payload: dict):
@@ -36,14 +37,12 @@ async def process_generate_job(job_id: str, payload: dict):
     prompt = payload["prompt"]
 
     # ── Stage 1: Plan ─────────────────────────────────────────────────
-    await update_job(job_id, status="processing", progress=5,
-                     progress_message="Stage 1/3: Analyzing your request...")
+    await update_job(job_id, status="processing", progress=5, progress_message="Stage 1/3: Analyzing your request...")
 
     plan = await stage_1_plan(prompt, job_id)
 
     # ── Stage 2: HTML + Tailwind CSS ──────────────────────────────────
-    await update_job(job_id, progress=30,
-                     progress_message="Stage 2/3: Building page with styles...")
+    await update_job(job_id, progress=30, progress_message="Stage 2/3: Building page with styles...")
 
     html = await stage_2_html(plan, job_id)
 
@@ -54,29 +53,30 @@ async def process_generate_job(job_id: str, payload: dict):
     css, html = extract_style_block(html)
 
     # ── Stage 3: JS ───────────────────────────────────────────────────
-    await update_job(job_id, progress=70,
-                     progress_message="Stage 3/3: Adding interactions...")
+    await update_job(job_id, progress=70, progress_message="Stage 3/3: Adding interactions...")
 
     js = await stage_3_js(html, job_id)
 
     # ── Quality polish ────────────────────────────────────────────────
-    await update_job(job_id, progress=85,
-                     progress_message="Optimizing images & SEO...")
+    await update_job(job_id, progress=85, progress_message="Optimizing images & SEO...")
 
     try:
         from app.utils.responsive_check import auto_fix_responsive
+
         html, css = auto_fix_responsive(html, css)
     except Exception:
         pass
 
     try:
         from app.utils.image_optimizer import optimize_image_tags
+
         html = optimize_image_tags(html)
     except Exception:
         pass
 
     try:
-        from app.utils.form_handler import inject_form_handler, has_contact_form
+        from app.utils.form_handler import has_contact_form, inject_form_handler
+
         if has_contact_form(html):
             html, js = inject_form_handler(html, js)
     except Exception:
@@ -84,6 +84,7 @@ async def process_generate_job(job_id: str, payload: dict):
 
     try:
         from app.utils.seo_checker import generate_seo_tags, inject_seo_into_html
+
         seo_tags = generate_seo_tags(plan)
         html = inject_seo_into_html(html, seo_tags)
     except Exception:
@@ -91,13 +92,13 @@ async def process_generate_job(job_id: str, payload: dict):
 
     try:
         from app.utils.lighthouse_check import auto_fix_performance
+
         html, css, js = auto_fix_performance(html, css, js)
     except Exception:
         pass
 
     # ── Finalize ─────────────────────────────────────────────────────
-    await update_job(job_id, progress=95,
-                     progress_message="Finalizing...")
+    await update_job(job_id, progress=95, progress_message="Finalizing...")
 
     html = inject_section_ids(html)
     sections = parse_sections(html)
@@ -106,6 +107,7 @@ async def process_generate_job(job_id: str, payload: dict):
     quality = {}
     try:
         from app.utils.lighthouse_check import check_performance
+
         perf = check_performance(html, css, js)
         quality["performance_score"] = perf["score"]
         quality["issues_fixed"] = len(perf["auto_fixable"])
@@ -113,6 +115,7 @@ async def process_generate_job(job_id: str, payload: dict):
         pass
     try:
         from app.utils.seo_checker import check_seo
+
         seo = check_seo(html, plan)
         quality["seo_score"] = seo["score"]
     except Exception:
@@ -130,8 +133,7 @@ async def process_generate_job(job_id: str, payload: dict):
         "quality": quality,
     }
 
-    await update_job(job_id, status="completed", progress=100,
-                     progress_message="Done!", result=result)
+    await update_job(job_id, status="completed", progress=100, progress_message="Done!", result=result)
 
     return result
 
@@ -166,9 +168,7 @@ async def worker_loop():
                 logger.info("job_completed", extra={"job_id": job_id})
             except Exception as e:
                 logger.error("job_failed", extra={"job_id": job_id, "error": str(e)}, exc_info=True)
-                await update_job(job_id, status="failed", progress=0,
-                                 progress_message="Failed",
-                                 error=str(e))
+                await update_job(job_id, status="failed", progress=0, progress_message="Failed", error=str(e))
 
         except asyncio.CancelledError:
             logger.info("worker_shutdown")

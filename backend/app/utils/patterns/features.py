@@ -11,7 +11,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Light themes use border-gray-100 instead of border-white/[0.06].""",
-
     "icon_grid": """icon_grid pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 text-center">
@@ -21,7 +20,6 @@ PATTERNS = {
       <p class="text-sm text-[var(--text-muted)]">Short description</p>
     </div>
   </div>""",
-
     "feature_split": """feature_split pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 space-y-12">
@@ -35,7 +33,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Alternate rows. Second row uses md:order to flip text/image.""",
-
     "feature_cards": """feature_cards pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -48,7 +45,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Each card MUST have a unique {{IMG:feature ...}} with the image_query from the plan.""",
-
     "feature_stacked": """feature_stacked pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[800px] mx-auto px-6 divide-y divide-white/10">
@@ -61,7 +57,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Light themes use divide-gray-100 instead of divide-white/10.""",
-
     "feature_steps": """feature_steps pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="steps-container max-w-[700px] mx-auto px-6 relative">

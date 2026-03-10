@@ -5,9 +5,9 @@ Multi-LLM client manager.
 """
 
 import os
+
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
-
 
 _anthropic_client: AsyncAnthropic | None = None
 _openai_client: AsyncOpenAI | None = None

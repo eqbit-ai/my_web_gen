@@ -1,11 +1,11 @@
-import json
 import time
-from starlette.types import ASGIApp, Receive, Scope, Send
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from app.utils.redis_client import get_redis
-from app.utils.auth import decode_access_token
+from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.utils.auth import decode_access_token
+from app.utils.redis_client import get_redis
 
 RATE_LIMIT_RULES = [
     {
@@ -65,9 +65,7 @@ class RateLimitMiddleware:
         redis_key = f"{rule['key_prefix']}:{identity}"
 
         try:
-            remaining, retry_after = await self._check_rate_limit(
-                redis_key, rule["limit"], rule["window"]
-            )
+            remaining, retry_after = await self._check_rate_limit(redis_key, rule["limit"], rule["window"])
         except Exception:
             await self.app(scope, receive, send)
             return
@@ -135,9 +133,7 @@ class RateLimitMiddleware:
             return forwarded.split(",")[0].strip()
         return request.client.host if request.client else "unknown"
 
-    async def _check_rate_limit(
-        self, key: str, limit: int, window: int
-    ) -> tuple[int, int]:
+    async def _check_rate_limit(self, key: str, limit: int, window: int) -> tuple[int, int]:
         """Sliding window rate limit check. Returns (remaining, retry_after_seconds)."""
         redis = await get_redis()
         now = time.time()

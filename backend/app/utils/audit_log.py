@@ -12,8 +12,9 @@ Usage:
     )
 """
 
-import traceback
 import asyncio
+import traceback
+
 from app.database import async_session
 from app.models.audit import AuditLog
 

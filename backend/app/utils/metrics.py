@@ -8,13 +8,13 @@ Histogram buckets are automatically trimmed to prevent unbounded growth.
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass
 class Metrics:
-    counters: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    histograms: Dict[str, list] = field(default_factory=lambda: defaultdict(list))
+    counters: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    histograms: dict[str, list] = field(default_factory=lambda: defaultdict(list))
     _start_time: float = field(default_factory=time.time)
 
 
@@ -35,9 +35,9 @@ def observe(name: str, value: float):
         hist[:] = hist[-500:]
 
 
-def get_metrics() -> Dict[str, Any]:
+def get_metrics() -> dict[str, Any]:
     """Return a snapshot of all metrics."""
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "uptime_seconds": round(time.time() - _metrics._start_time, 1),
         "counters": dict(_metrics.counters),
         "histograms": {},

@@ -1,6 +1,8 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, UniqueConstraint
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.sql import func
+
 from app.database import Base
 
 
@@ -31,6 +33,4 @@ class ProjectVersion(Base):
     prompt = Column(Text, default="")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("project_id", "version_number", name="uq_project_version"),
-    )
+    __table_args__ = (UniqueConstraint("project_id", "version_number", name="uq_project_version"),)

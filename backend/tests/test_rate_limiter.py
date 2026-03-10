@@ -1,9 +1,8 @@
 """Tests for the rate limiter middleware."""
 
 import pytest
-from unittest.mock import patch, AsyncMock
 
-from app.middleware.rate_limiter import RateLimitMiddleware, RATE_LIMIT_RULES, SKIP_PATHS
+from app.middleware.rate_limiter import SKIP_PATHS, RateLimitMiddleware
 
 
 class TestRateLimitRuleMatching:

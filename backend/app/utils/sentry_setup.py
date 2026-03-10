@@ -5,8 +5,8 @@ Only activates if the SENTRY_DSN environment variable is set.
 If sentry-sdk is not installed, logs a warning and continues gracefully.
 """
 
-import os
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 

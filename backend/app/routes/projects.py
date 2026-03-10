@@ -6,14 +6,13 @@ Supports undo/redo/rollback via versioned snapshots.
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-from sqlalchemy import select, func, delete
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete, func, select
 
-from app.utils.auth import decode_access_token
 from app.database import get_tenant_db
 from app.models.project import Project, ProjectVersion
+from app.utils.auth import decode_access_token
 
 router = APIRouter()
 security = HTTPBearer()
@@ -27,6 +26,7 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────
+
 
 class SaveProjectRequest(BaseModel):
     project_id: str | None = None
@@ -44,23 +44,20 @@ class RollbackRequest(BaseModel):
 
 # ── Endpoints ────────────────────────────────────────────────────────────
 
+
 @router.get("/")
 async def list_projects(user: dict = Depends(require_auth)):
     """List all projects for the current user."""
     async for db in get_tenant_db(user["db_schema"]):
         result = await db.execute(
-            select(Project)
-            .where(Project.user_id == user["user_id"])
-            .order_by(Project.updated_at.desc())
+            select(Project).where(Project.user_id == user["user_id"]).order_by(Project.updated_at.desc())
         )
         projects = result.scalars().all()
 
         items = []
         for p in projects:
             # Get version count
-            count_result = await db.execute(
-                select(func.count()).where(ProjectVersion.project_id == p.id)
-            )
+            count_result = await db.execute(select(func.count()).where(ProjectVersion.project_id == p.id))
             version_count = count_result.scalar() or 0
 
             # Parse metadata JSON safely
@@ -69,18 +66,20 @@ async def list_projects(user: dict = Depends(require_auth)):
             except (json.JSONDecodeError, TypeError):
                 parsed_meta = {}
 
-            items.append({
-                "id": p.id,
-                "name": p.name,
-                "current_version": p.current_version,
-                "total_versions": version_count,
-                "has_content": bool(p.current_html),
-                "html": p.current_html or "",
-                "css": p.current_css or "",
-                "metadata": parsed_meta,
-                "created_at": p.created_at.isoformat() if p.created_at else None,
-                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
-            })
+            items.append(
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "current_version": p.current_version,
+                    "total_versions": version_count,
+                    "has_content": bool(p.current_html),
+                    "html": p.current_html or "",
+                    "css": p.current_css or "",
+                    "metadata": parsed_meta,
+                    "created_at": p.created_at.isoformat() if p.created_at else None,
+                    "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+                }
+            )
 
         return {"projects": items}
 
@@ -89,9 +88,7 @@ async def list_projects(user: dict = Depends(require_auth)):
 async def get_project(project_id: str, user: dict = Depends(require_auth)):
     """Get a project with its current code."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -173,9 +170,7 @@ async def list_versions(project_id: str, user: dict = Depends(require_auth)):
     """List all version snapshots for a project (for history/undo/redo)."""
     async for db in get_tenant_db(user["db_schema"]):
         # Verify ownership
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -205,9 +200,7 @@ async def get_version(project_id: str, version_number: int, user: dict = Depends
     """Get a specific version's code (for rollback preview)."""
     async for db in get_tenant_db(user["db_schema"]):
         # Verify ownership
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         if not result.scalar_one_or_none():
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -239,9 +232,7 @@ async def rollback_project(
 ):
     """Rollback a project to a specific version."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -277,9 +268,7 @@ async def rollback_project(
 async def rename_project(project_id: str, user: dict = Depends(require_auth), name: str = ""):
     """Rename a project."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -294,17 +283,13 @@ async def rename_project(project_id: str, user: dict = Depends(require_auth), na
 async def delete_project(project_id: str, user: dict = Depends(require_auth)):
     """Delete a project and all its versions."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Project).where(Project.id == project_id, Project.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Delete versions first (cascade should handle this, but be explicit)
-        await db.execute(
-            delete(ProjectVersion).where(ProjectVersion.project_id == project_id)
-        )
+        await db.execute(delete(ProjectVersion).where(ProjectVersion.project_id == project_id))
         await db.delete(project)
         await db.commit()
 

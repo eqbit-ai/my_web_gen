@@ -1,10 +1,12 @@
 import asyncio
 import os
 from logging.config import fileConfig
+
+from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
+
 from alembic import context
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -16,18 +18,18 @@ if config.config_file_name is not None:
 config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url")))
 
 from app.database import Base
-from app.models.user import User
-from app.models.project import Project, ProjectVersion
+
 try:
-    from app.models.audit import AuditLog
+    from app.models.audit import AuditLog  # noqa: F401
 except ImportError:
     pass
 try:
-    from app.models.media import Media
+    from app.models.media import Media  # noqa: F401
 except ImportError:
     pass
 
 target_metadata = Base.metadata
+
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
@@ -35,10 +37,12 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
+
 def do_run_migrations(connection):
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()
+
 
 async def run_async_migrations():
     connectable = async_engine_from_config(
@@ -50,8 +54,10 @@ async def run_async_migrations():
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()
 
+
 def run_migrations_online():
     asyncio.run(run_async_migrations())
+
 
 if context.is_offline_mode():
     run_migrations_offline()

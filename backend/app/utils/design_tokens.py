@@ -4,7 +4,6 @@ Each set is a complete design system with colors, radius, spacing, and shadows.
 """
 
 import random
-from typing import Optional
 
 DESIGN_TOKEN_SETS = [
     # ─────────────────────────────────────────────
@@ -1031,6 +1030,7 @@ DESIGN_TOKEN_SETS = [
 
 _NICHE_MAP: dict[str, list[str]] = {}
 
+
 def _build_niche_map():
     """Build reverse map from niche keywords to token set names."""
     if _NICHE_MAP:
@@ -1040,7 +1040,7 @@ def _build_niche_map():
             _NICHE_MAP.setdefault(niche, []).append(token_set["name"])
 
 
-def _get_set_by_name(name: str) -> Optional[dict]:
+def _get_set_by_name(name: str) -> dict | None:
     """Get a token set by its name."""
     for ts in DESIGN_TOKEN_SETS:
         if ts["name"] == name:
@@ -1051,6 +1051,7 @@ def _get_set_by_name(name: str) -> Optional[dict]:
 # ─────────────────────────────────────────────
 # PUBLIC API
 # ─────────────────────────────────────────────
+
 
 def get_random_tokens() -> dict:
     """Return a random design token set."""

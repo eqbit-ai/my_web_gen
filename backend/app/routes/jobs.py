@@ -3,12 +3,12 @@ Job queue routes — submit async generation jobs and poll for status/results.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.utils.auth import decode_access_token
-from app.utils.redis_client import create_job, get_job, get_user_jobs
 from app.utils.niches import detect_niche
+from app.utils.redis_client import create_job, get_job, get_user_jobs
 
 router = APIRouter()
 security = HTTPBearer()
@@ -113,8 +113,8 @@ async def cancel_job(job_id: str, user: dict = Depends(require_auth)):
 
     if job["status"] == "pending":
         from app.utils.redis_client import update_job
-        await update_job(job_id, status="failed", error="Cancelled by user",
-                         progress_message="Cancelled")
+
+        await update_job(job_id, status="failed", error="Cancelled by user", progress_message="Cancelled")
         return {"success": True, "message": "Job cancelled"}
 
     return {"success": False, "message": f"Cannot cancel job in '{job['status']}' state"}
@@ -124,17 +124,21 @@ async def _store_in_sessions(job_id: str, result: dict, user_id: str):
     """Store job result in Redis session for section/component editing."""
     try:
         from app.utils.session_store import save_session as redis_save_session
+
         website = result.get("website", {})
-        await redis_save_session(job_id, {
-            "html": website.get("html", ""),
-            "css": website.get("css", ""),
-            "js": website.get("js", ""),
-            "niche": result.get("niche"),
-            "design_system": result.get("designSystem"),
-            "prompts": [result.get("prompt", "")],
-            "versions": [],
-            "current_version": 1,
-            "user_id": user_id,
-        })
+        await redis_save_session(
+            job_id,
+            {
+                "html": website.get("html", ""),
+                "css": website.get("css", ""),
+                "js": website.get("js", ""),
+                "niche": result.get("niche"),
+                "design_system": result.get("designSystem"),
+                "prompts": [result.get("prompt", "")],
+                "versions": [],
+                "current_version": 1,
+                "user_id": user_id,
+            },
+        )
     except Exception:
         pass

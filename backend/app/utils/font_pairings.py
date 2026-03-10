@@ -6,7 +6,6 @@ and typography best practices. All font names are real Google Fonts.
 """
 
 import random
-from typing import Optional
 
 FONT_PAIRINGS = [
     # --- Modern / Minimal ---
@@ -281,7 +280,7 @@ def get_pairing_for_style(style_hint: str) -> dict:
     return get_random_pairing()
 
 
-def get_font_css_vars(pairing: Optional[dict] = None) -> str:
+def get_font_css_vars(pairing: dict | None = None) -> str:
     """
     Generate CSS custom property declarations for a font pairing.
 
@@ -296,15 +295,20 @@ def get_font_css_vars(pairing: Optional[dict] = None) -> str:
         pairing = get_random_pairing()
 
     serif_fonts = {
-        "Playfair Display", "Cormorant Garamond", "DM Serif Display",
-        "Fraunces", "Lora", "Libre Baskerville", "Newsreader",
-        "Spectral", "Literata",
+        "Playfair Display",
+        "Cormorant Garamond",
+        "DM Serif Display",
+        "Fraunces",
+        "Lora",
+        "Libre Baskerville",
+        "Newsreader",
+        "Spectral",
+        "Literata",
     }
 
     heading_stack = "serif" if pairing["heading"] in serif_fonts else "sans-serif"
     body_stack = "serif" if pairing["body"] in serif_fonts else "sans-serif"
 
     return (
-        f"--font-heading: '{pairing['heading']}', {heading_stack};\n"
-        f"    --font-body: '{pairing['body']}', {body_stack};"
+        f"--font-heading: '{pairing['heading']}', {heading_stack};\n    --font-body: '{pairing['body']}', {body_stack};"
     )

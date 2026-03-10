@@ -20,7 +20,6 @@ PATTERNS = {
     </div>
   </nav>
   NAVBAR RULES: Use bg-white/85 + border-black for light themes, bg-black/40 + border-white for dark themes.""",
-
     "footer_columns": """footer_columns pattern:
   CRITICAL: Footer MUST have ALL 4 columns. Do NOT skip any column. Do NOT output a minimal footer.
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

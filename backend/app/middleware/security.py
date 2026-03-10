@@ -3,11 +3,11 @@ Security middleware (pure ASGI) — adds security headers, sanitizes request bod
 enforces size limits.
 """
 
-import re
 import json
-from starlette.types import ASGIApp, Receive, Scope, Send
-from starlette.requests import Request
+import re
+
 from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 MAX_REQUEST_SIZE = 10 * 1024 * 1024
 HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -28,8 +28,13 @@ def _strip_html_tags(value: str) -> str:
 def _sanitize_dict(data: dict) -> dict:
     sanitized = {}
     code_fields = {
-        "currentHtml", "currentCss", "currentJs",
-        "elementHtml", "html", "css", "js",
+        "currentHtml",
+        "currentCss",
+        "currentJs",
+        "elementHtml",
+        "html",
+        "css",
+        "js",
     }
     for key, value in data.items():
         if isinstance(value, str):
@@ -41,8 +46,10 @@ def _sanitize_dict(data: dict) -> dict:
             sanitized[key] = _sanitize_dict(value)
         elif isinstance(value, list):
             sanitized[key] = [
-                _sanitize_dict(item) if isinstance(item, dict)
-                else _strip_html_tags(item) if isinstance(item, str)
+                _sanitize_dict(item)
+                if isinstance(item, dict)
+                else _strip_html_tags(item)
+                if isinstance(item, str)
                 else item
                 for item in value
             ]

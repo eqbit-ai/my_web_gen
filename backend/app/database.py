@@ -1,9 +1,10 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import text
-import re
 import os
+import re
+
 from dotenv import load_dotenv
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
 load_dotenv()
 
@@ -42,12 +43,13 @@ async def init_tenant_tables(schema_name: str):
     """Create Project + ProjectVersion tables in a tenant schema (idempotent)."""
     if schema_name in _initialized_schemas:
         return
-    from app.models.project import Project, ProjectVersion  # noqa: F401
     from app.models.media import Media  # noqa: F401
+    from app.models.project import Project, ProjectVersion  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.execute(text(f'SET search_path TO "{schema_name}", public'))
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(text('SET search_path TO public'))
+        await conn.execute(text("SET search_path TO public"))
     _initialized_schemas.add(schema_name)
 
 
@@ -69,7 +71,8 @@ async def get_tenant_db(schema_name: str):
 
 
 async def init_db():
-    from app.models.user import User  # noqa: F401
     from app.models.audit import AuditLog  # noqa: F401
+    from app.models.user import User  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -7,6 +7,7 @@ and survives server restarts.
 """
 
 import json
+
 from app.utils.redis_client import get_redis
 
 SESSION_PREFIX = "session:"

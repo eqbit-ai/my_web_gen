@@ -1,13 +1,11 @@
 """Tests for the HTML section parser module."""
 
-import pytest
 from app.utils.section_parser import (
+    _detect_section_type,
     inject_section_ids,
     parse_sections,
     replace_section_html,
-    _detect_section_type,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures: sample HTML documents
@@ -74,6 +72,7 @@ NO_IDS_HTML = """<!DOCTYPE html>
 # Tests
 # ---------------------------------------------------------------------------
 
+
 def test_parse_sections_from_html():
     """parse_sections returns correct section list with id, type, tag."""
     sections = parse_sections(SIMPLE_HTML)
@@ -107,7 +106,7 @@ def test_inject_section_ids():
     # Parse the result to verify all sections have IDs
     sections = parse_sections(result)
     for section in sections:
-        section_html = result[section["start"]:section["end"]]
+        section_html = result[section["start"] : section["end"]]
         assert "data-section-id=" in section_html
 
 

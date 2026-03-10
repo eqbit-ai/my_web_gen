@@ -2,21 +2,21 @@
 Upload routes — file upload, list, delete, download-from-URL, and image transforms.
 """
 
-import uuid
 import mimetypes
+import uuid
 from io import BytesIO
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-from sqlalchemy import select, delete as sa_delete
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import select
 
-from app.utils.auth import decode_access_token
 from app.database import get_tenant_db
 from app.models.media import Media
-from app.utils.storage import save_file, delete_file, list_files, validate_file
+from app.utils.auth import decode_access_token
+from app.utils.storage import delete_file, save_file, validate_file
 
 router = APIRouter()
 security = HTTPBearer()
@@ -31,6 +31,7 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 # ── Schemas ──────────────────────────────────────────────────────────────
 
+
 class FromUrlRequest(BaseModel):
     url: str
     project_id: str | None = None
@@ -40,17 +41,19 @@ class FromUrlRequest(BaseModel):
 class TransformRequest(BaseModel):
     filename: str
     project_id: str | None = None
-    crop: dict | None = None         # {x, y, width, height}
+    crop: dict | None = None  # {x, y, width, height}
     target_width: int | None = None
     target_height: int | None = None
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+
 def _get_image_dimensions(file_bytes: bytes) -> tuple[int | None, int | None]:
     """Try to get image dimensions using Pillow. Returns (width, height) or (None, None)."""
     try:
         from PIL import Image
+
         img = Image.open(BytesIO(file_bytes))
         return img.size  # (width, height)
     except Exception:
@@ -63,6 +66,7 @@ def _guess_mime(filename: str) -> str:
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────
+
 
 @router.post("/upload")
 async def upload_file(
@@ -83,7 +87,6 @@ async def upload_file(
     proj_id = project_id if project_id else None
 
     # Save to disk
-    result = save_file.__wrapped__ if hasattr(save_file, '__wrapped__') else save_file
     saved = await save_file(file_bytes, original_name, user["user_id"], proj_id, category)
 
     # Get dimensions for images
@@ -161,9 +164,7 @@ async def list_uploads(project_id: str, user: dict = Depends(require_auth)):
 async def delete_upload(filename: str, user: dict = Depends(require_auth)):
     """Delete an uploaded file by filename."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Media).where(Media.filename == filename, Media.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Media).where(Media.filename == filename, Media.user_id == user["user_id"]))
         media = result.scalar_one_or_none()
         if not media:
             raise HTTPException(status_code=404, detail="File not found")
@@ -172,9 +173,7 @@ async def delete_upload(filename: str, user: dict = Depends(require_auth)):
         await delete_file(media.url)
 
         # Delete from DB
-        await db.execute(
-            sa_delete(Media).where(Media.id == media.id)
-        )
+        await db.execute(sa_delete(Media).where(Media.id == media.id))
         await db.commit()
 
         return {"success": True, "filename": filename}
@@ -188,7 +187,7 @@ async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth
             resp = await client.get(req.url)
             resp.raise_for_status()
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to download: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to download: {str(e)}") from e
 
     file_bytes = resp.content
 
@@ -198,7 +197,13 @@ async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth
     if "." not in original_name:
         # Try to get extension from content-type
         ct = resp.headers.get("content-type", "image/jpeg")
-        ext_map = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/svg+xml": "svg"}
+        ext_map = {
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp",
+            "image/gif": "gif",
+            "image/svg+xml": "svg",
+        }
         ext = ext_map.get(ct.split(";")[0].strip(), "jpg")
         original_name = f"downloaded.{ext}"
 
@@ -252,31 +257,31 @@ async def transform_image(req: TransformRequest, user: dict = Depends(require_au
     """Crop and/or resize an uploaded image using Pillow."""
     try:
         from PIL import Image
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Pillow is not installed. Cannot transform images.")
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail="Pillow is not installed. Cannot transform images.") from e
 
     # Find the media record
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Media).where(Media.filename == req.filename, Media.user_id == user["user_id"])
-        )
+        result = await db.execute(select(Media).where(Media.filename == req.filename, Media.user_id == user["user_id"]))
         media = result.scalar_one_or_none()
         if not media:
             raise HTTPException(status_code=404, detail="File not found")
 
         # Read the file from disk
         from app.utils.storage import UPLOAD_DIR
+
         rel = media.url.lstrip("/")
         if rel.startswith("uploads/"):
-            rel = rel[len("uploads/"):]
+            rel = rel[len("uploads/") :]
         abs_path = UPLOAD_DIR / rel
 
         try:
             import aiofiles
+
             async with aiofiles.open(str(abs_path), "rb") as f:
                 file_bytes = await f.read()
-        except FileNotFoundError:
-            raise HTTPException(status_code=404, detail="File not found on disk")
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail="File not found on disk") from e
 
         img = Image.open(BytesIO(file_bytes))
 

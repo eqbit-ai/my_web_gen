@@ -4,9 +4,10 @@ Used by the generator to embed high-quality images in websites.
 """
 
 import os
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.utils.auth import decode_access_token
 
@@ -45,16 +46,18 @@ async def search_images(
                 if resp.status_code == 200:
                     data = resp.json()
                     for photo in data.get("results", []):
-                        results.append({
-                            "id": photo["id"],
-                            "source": "unsplash",
-                            "url": photo["urls"]["regular"],
-                            "thumb": photo["urls"]["small"],
-                            "alt": photo.get("alt_description", q),
-                            "photographer": photo["user"]["name"],
-                            "width": photo["width"],
-                            "height": photo["height"],
-                        })
+                        results.append(
+                            {
+                                "id": photo["id"],
+                                "source": "unsplash",
+                                "url": photo["urls"]["regular"],
+                                "thumb": photo["urls"]["small"],
+                                "alt": photo.get("alt_description", q),
+                                "photographer": photo["user"]["name"],
+                                "width": photo["width"],
+                                "height": photo["height"],
+                            }
+                        )
             except Exception:
                 pass
 
@@ -69,16 +72,18 @@ async def search_images(
                 if resp.status_code == 200:
                     data = resp.json()
                     for photo in data.get("photos", []):
-                        results.append({
-                            "id": str(photo["id"]),
-                            "source": "pexels",
-                            "url": photo["src"]["large"],
-                            "thumb": photo["src"]["medium"],
-                            "alt": photo.get("alt", q),
-                            "photographer": photo["photographer"],
-                            "width": photo["width"],
-                            "height": photo["height"],
-                        })
+                        results.append(
+                            {
+                                "id": str(photo["id"]),
+                                "source": "pexels",
+                                "url": photo["src"]["large"],
+                                "thumb": photo["src"]["medium"],
+                                "alt": photo.get("alt", q),
+                                "photographer": photo["photographer"],
+                                "width": photo["width"],
+                                "height": photo["height"],
+                            }
+                        )
             except Exception:
                 pass
 

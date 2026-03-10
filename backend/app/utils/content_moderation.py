@@ -7,12 +7,11 @@ Usage:
         return 400, result["reason"]
 """
 
-import re
 import os
+import re
 import traceback
 
 from app.utils.llm_clients import get_openai_client
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # BLOCKED KEYWORDS BY CATEGORY
@@ -20,37 +19,90 @@ from app.utils.llm_clients import get_openai_client
 
 BLOCKED_KEYWORDS: dict[str, list[str]] = {
     "adult_content": [
-        "porn", "pornography", "xxx", "adult content", "escort", "escorts",
-        "escort service", "cam girl", "camgirl", "onlyfans", "sex worker",
-        "strip club", "nude", "nudity", "erotic", "sex shop", "adult toy",
-        "adult entertainment", "hookup", "fetish",
+        "porn",
+        "pornography",
+        "xxx",
+        "adult content",
+        "escort",
+        "escorts",
+        "escort service",
+        "cam girl",
+        "camgirl",
+        "onlyfans",
+        "sex worker",
+        "strip club",
+        "nude",
+        "nudity",
+        "erotic",
+        "sex shop",
+        "adult toy",
+        "adult entertainment",
+        "hookup",
+        "fetish",
     ],
     "illegal_services": [
-        "drug dealer", "drug dealing", "cocaine", "heroin", "meth",
-        "methamphetamine", "fake passport", "fake id", "counterfeit",
-        "money laundering", "darknet", "dark web marketplace",
-        "illegal weapon", "arms dealer", "hitman", "hack for hire",
-        "stolen credit card", "carding", "identity theft service",
+        "drug dealer",
+        "drug dealing",
+        "cocaine",
+        "heroin",
+        "meth",
+        "methamphetamine",
+        "fake passport",
+        "fake id",
+        "counterfeit",
+        "money laundering",
+        "darknet",
+        "dark web marketplace",
+        "illegal weapon",
+        "arms dealer",
+        "hitman",
+        "hack for hire",
+        "stolen credit card",
+        "carding",
+        "identity theft service",
     ],
     "impersonation": [
-        "government of uae", "uae government official", "ministry of",
-        "dubai police", "abu dhabi police", "central bank of uae",
-        "emirates nbd official", "mashreq bank official",
-        "dubai customs official", "immigration authority",
-        "impersonate government", "fake government", "fake embassy",
+        "government of uae",
+        "uae government official",
+        "ministry of",
+        "dubai police",
+        "abu dhabi police",
+        "central bank of uae",
+        "emirates nbd official",
+        "mashreq bank official",
+        "dubai customs official",
+        "immigration authority",
+        "impersonate government",
+        "fake government",
+        "fake embassy",
         "fake consulate",
     ],
     "phishing": [
-        "phishing", "credential harvesting", "password steal",
-        "login page clone", "fake login", "clone bank website",
-        "steal password", "capture credentials", "fake paypal",
-        "fake stripe", "social engineering attack", "spoof website",
+        "phishing",
+        "credential harvesting",
+        "password steal",
+        "login page clone",
+        "fake login",
+        "clone bank website",
+        "steal password",
+        "capture credentials",
+        "fake paypal",
+        "fake stripe",
+        "social engineering attack",
+        "spoof website",
         "man in the middle",
     ],
     "violence": [
-        "bomb making", "how to make a bomb", "explosive device",
-        "terrorist", "terrorism", "mass shooting", "kill people",
-        "assassination", "biological weapon", "chemical weapon",
+        "bomb making",
+        "how to make a bomb",
+        "explosive device",
+        "terrorist",
+        "terrorism",
+        "mass shooting",
+        "kill people",
+        "assassination",
+        "biological weapon",
+        "chemical weapon",
     ],
 }
 
@@ -65,6 +117,7 @@ for category, keywords in BLOCKED_KEYWORDS.items():
 # ═══════════════════════════════════════════════════════════════════════
 # KEYWORD CHECK (fast, local)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def check_prompt_safety(prompt: str) -> dict:
     """
@@ -84,7 +137,7 @@ def check_prompt_safety(prompt: str) -> dict:
         return {
             "safe": False,
             "reason": f"Content flagged for: {category_str}. "
-                      f"This type of content is not allowed on the Meydan platform.",
+            f"This type of content is not allowed on the Meydan platform.",
             "flagged_terms": flagged_terms,
         }
 
@@ -145,6 +198,7 @@ async def check_prompt_safety_llm(prompt: str) -> dict:
 
         # Parse the JSON response
         import json
+
         # Strip markdown code fences if present
         text = re.sub(r"^```\w*\s*\n?", "", text)
         text = re.sub(r"\n?```\s*$", "", text)
@@ -169,6 +223,7 @@ async def check_prompt_safety_llm(prompt: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════
 # COMBINED CHECK
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def moderate_prompt(prompt: str) -> dict:
     """

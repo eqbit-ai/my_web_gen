@@ -3,21 +3,21 @@ Component variant routes — browse and generate individual section components.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.utils.auth import decode_access_token
 from app.utils.components import (
-    get_all_components_summary,
-    get_variant_detail,
-    get_variant_prompt,
-    get_component_types,
     COMPONENT_VARIANTS,
+    get_all_components_summary,
+    get_component_types,
+    get_variant_prompt,
 )
-from app.utils.design_system import design_system_to_prompt_context, design_system_to_css_vars
+from app.utils.design_system import design_system_to_prompt_context
 from app.utils.llm_clients import get_anthropic_client
-from app.utils.section_parser import replace_section_html, parse_sections
-from app.utils.session_store import get_session as redis_get_session, save_session as redis_save_session
+from app.utils.section_parser import replace_section_html
+from app.utils.session_store import get_session as redis_get_session
+from app.utils.session_store import save_session as redis_save_session
 
 router = APIRouter()
 security = HTTPBearer()
@@ -31,6 +31,7 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 
 # ── Schemas ─────────────────────────────────────────────────────────────
+
 
 class GenerateComponentRequest(BaseModel):
     sessionId: str
@@ -48,6 +49,7 @@ class SwapComponentRequest(BaseModel):
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────
+
 
 @router.get("/")
 async def list_components(user: dict = Depends(require_auth)):
@@ -123,6 +125,7 @@ RULES:
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     return {
@@ -147,6 +150,7 @@ async def preview_swap(req: SwapComponentRequest, user: dict = Depends(require_a
         raise HTTPException(status_code=404, detail="Variant not found")
 
     from app.utils.section_parser import extract_section_html
+
     existing_section = extract_section_html(session["html"], req.sectionId)
     if not existing_section:
         raise HTTPException(status_code=404, detail="Section not found in HTML")
@@ -188,6 +192,7 @@ RULES:
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     return {
@@ -213,6 +218,7 @@ async def swap_component(req: SwapComponentRequest, user: dict = Depends(require
 
     # Get the existing section's content
     from app.utils.section_parser import extract_section_html
+
     existing_section = extract_section_html(session["html"], req.sectionId)
     if not existing_section:
         raise HTTPException(status_code=404, detail="Section not found in HTML")
@@ -248,6 +254,7 @@ RULES:
     )
 
     from app.routes.generator import parse_code_blocks
+
     result = parse_code_blocks(response.content[0].text)
 
     if not result.get("html"):

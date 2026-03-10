@@ -3,8 +3,10 @@ Media model — tracks uploaded files (images, logos, favicons, videos).
 """
 
 import uuid
-from sqlalchemy import Column, String, Integer, DateTime
+
+from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.sql import func
+
 from app.database import Base
 
 

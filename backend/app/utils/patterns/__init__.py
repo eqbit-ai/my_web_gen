@@ -9,9 +9,8 @@ based on the planner's output.
 import json
 import os
 import random
-from typing import Optional
 
-from . import hero, features, testimonials, team, cta, navigation, other
+from . import cta, features, hero, navigation, other, team, testimonials
 
 # ─── Pattern Registry ───────────────────────────────────────────────
 # Maps pattern_name -> (module, template_string)
@@ -69,7 +68,7 @@ _PATTERN_MODULES = {
 ALL_PATTERNS = set(_PATTERN_MODULES.keys())
 
 
-def get_pattern_template(pattern_name: str) -> Optional[str]:
+def get_pattern_template(pattern_name: str) -> str | None:
     """Get the HTML template string for a single pattern."""
     module = _PATTERN_MODULES.get(pattern_name)
     if module is None:
@@ -145,15 +144,27 @@ HISTORY_FILE = os.environ.get(
 
 CATEGORY_PATTERNS = {
     "hero": [
-        "hero_split", "hero_center", "hero_full_image", "hero_minimal",
-        "hero_video_bg", "hero_product_mockup", "hero_mockup_center", "hero_asymmetric",
+        "hero_split",
+        "hero_center",
+        "hero_full_image",
+        "hero_minimal",
+        "hero_video_bg",
+        "hero_product_mockup",
+        "hero_mockup_center",
+        "hero_asymmetric",
     ],
     "features": [
-        "card_grid", "icon_grid", "feature_split", "feature_cards",
-        "feature_stacked", "feature_steps",
+        "card_grid",
+        "icon_grid",
+        "feature_split",
+        "feature_cards",
+        "feature_stacked",
+        "feature_steps",
     ],
     "testimonials": [
-        "testimonial_cards", "testimonial_slider", "testimonial_split",
+        "testimonial_cards",
+        "testimonial_slider",
+        "testimonial_split",
     ],
     "team": ["team_grid", "team_cards", "team_masonry"],
     "cta": ["cta_banner", "cta_split", "cta_gradient", "cta_centered"],
@@ -162,7 +173,7 @@ CATEGORY_PATTERNS = {
 
 def _load_history() -> dict:
     try:
-        with open(HISTORY_FILE, "r") as f:
+        with open(HISTORY_FILE) as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
@@ -216,6 +227,7 @@ def get_rotation_hints() -> str:
         # Count frequencies in last 5
         last_5 = recent[-5:]
         from collections import Counter
+
         counts = Counter(last_5)
         overused = [p for p, c in counts.items() if c >= 2]
 
@@ -223,12 +235,13 @@ def get_rotation_hints() -> str:
             fresh = [p for p in candidates if p not in overused]
             if fresh:
                 hints.append(
-                    f"AVOID {category} patterns: {', '.join(overused)} (recently overused). "
-                    f"PREFER: {', '.join(fresh)}"
+                    f"AVOID {category} patterns: {', '.join(overused)} (recently overused). PREFER: {', '.join(fresh)}"
                 )
 
     if hints:
-        return "\nPATTERN ROTATION (for variety — these were used recently):\n" + "\n".join(f"- {h}" for h in hints) + "\n"
+        return (
+            "\nPATTERN ROTATION (for variety — these were used recently):\n" + "\n".join(f"- {h}" for h in hints) + "\n"
+        )
     return ""
 
 
@@ -237,7 +250,7 @@ def get_rotation_hints() -> str:
 STYLE_PRESETS = {
     "apple": {
         "description": "Ultra-clean minimalism inspired by Apple. Massive whitespace, SF Pro/Inter typography, "
-                       "subtle shadows, rounded corners, mono-color palette with one accent. Content-first layout.",
+        "subtle shadows, rounded corners, mono-color palette with one accent. Content-first layout.",
         "preferred_patterns": ["hero_minimal", "icon_grid", "feature_split", "cta_centered", "stats_row"],
         "avoid_patterns": ["hero_full_image", "hero_video_bg", "cta_gradient"],
         "design_hints": {
@@ -250,7 +263,7 @@ STYLE_PRESETS = {
     },
     "stripe": {
         "description": "Stripe-style design. Clean gradients, vibrant blues/purples, code-friendly typography, "
-                       "diagonal gradient backgrounds, frosted glass cards, technical yet approachable.",
+        "diagonal gradient backgrounds, frosted glass cards, technical yet approachable.",
         "preferred_patterns": ["hero_split", "card_grid", "feature_split", "pricing_table", "cta_gradient"],
         "avoid_patterns": ["hero_full_image", "team_masonry"],
         "design_hints": {
@@ -263,8 +276,14 @@ STYLE_PRESETS = {
     },
     "linear": {
         "description": "Linear.app style. Dark theme, purple/violet accents, clean geometric UI, monospace touches, "
-                       "subtle glow effects, card-based layout with sharp edges.",
-        "preferred_patterns": ["hero_mockup_center", "icon_grid", "feature_stacked", "comparison_table", "cta_centered"],
+        "subtle glow effects, card-based layout with sharp edges.",
+        "preferred_patterns": [
+            "hero_mockup_center",
+            "icon_grid",
+            "feature_stacked",
+            "comparison_table",
+            "cta_centered",
+        ],
         "avoid_patterns": ["hero_full_image", "team_masonry", "gallery_grid"],
         "design_hints": {
             "theme": "dark",
@@ -277,7 +296,7 @@ STYLE_PRESETS = {
     },
     "framer": {
         "description": "Framer-style design. Bold typography, playful animations, asymmetric layouts, "
-                       "black + bright accent color, oversized headings, creative grid breaking.",
+        "black + bright accent color, oversized headings, creative grid breaking.",
         "preferred_patterns": ["hero_asymmetric", "feature_cards", "testimonial_split", "cta_split"],
         "avoid_patterns": ["hero_minimal", "icon_grid", "cta_centered"],
         "design_hints": {
@@ -290,7 +309,7 @@ STYLE_PRESETS = {
     },
     "luxury": {
         "description": "High-end luxury aesthetic. Dark backgrounds (#1a1a2e), gold/champagne accents, "
-                       "serif headings (Playfair Display), dramatic imagery, generous negative space.",
+        "serif headings (Playfair Display), dramatic imagery, generous negative space.",
         "preferred_patterns": ["hero_full_image", "feature_split", "testimonial_split", "gallery_grid", "cta_gradient"],
         "avoid_patterns": ["icon_grid", "comparison_table", "pricing_table"],
         "design_hints": {
@@ -304,8 +323,15 @@ STYLE_PRESETS = {
     },
     "corporate": {
         "description": "Professional corporate style. Navy/slate blues, clean grid layout, Inter/system font, "
-                       "trust signals prominent, data-driven, enterprise-grade feel.",
-        "preferred_patterns": ["hero_split", "card_grid", "stats_row", "testimonial_cards", "pricing_table", "cta_banner"],
+        "trust signals prominent, data-driven, enterprise-grade feel.",
+        "preferred_patterns": [
+            "hero_split",
+            "card_grid",
+            "stats_row",
+            "testimonial_cards",
+            "pricing_table",
+            "cta_banner",
+        ],
         "avoid_patterns": ["hero_asymmetric", "team_masonry", "gallery_grid"],
         "design_hints": {
             "spacing": "compact",
@@ -351,7 +377,6 @@ def enforce_pattern_rotation(plan: dict) -> dict:
                 break
 
             # Count usage in last 5
-            from collections import Counter
             last_5 = recent[-5:]
             count = last_5.count(pattern)
 

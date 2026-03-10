@@ -26,7 +26,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: The middle/recommended plan card should have class "pricing-card featured" to visually emphasize it (auto-scaled 105% + primary border via CSS).""",
-
     "faq_accordion": """faq_accordion pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[800px] mx-auto px-6">
@@ -36,7 +35,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Light themes use border-gray-200 instead of border-white/10. FAQ toggle handled by JS + <style> block.""",
-
     "stats_row": """stats_row pattern:
   <div class="max-w-[900px] mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
     <div class="flex flex-col items-center gap-2" data-aos="fade-up" data-aos-delay="100">
@@ -56,7 +54,6 @@ PATTERNS = {
   - CORRECT: <div class="stat-number ...">120+</div>
   - WRONG: <span>120</span><span>+</span> (NEVER split number and suffix)
   - Do NOT use data-target attributes. JS handles counter animation automatically via IntersectionObserver.""",
-
     "gallery_grid": """gallery_grid pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -72,7 +69,6 @@ PATTERNS = {
     <img class="lightbox-img max-w-[90vw] max-h-[85vh] object-contain rounded-lg" src="" alt="">
   </div>
   NOTE: Each gallery item MUST have a unique {{IMG:gallery ...}} query. JS handles lightbox open/close/navigation.""",
-
     "image_carousel": """image_carousel pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="carousel-container max-w-[1200px] mx-auto px-6 relative overflow-hidden rounded-[var(--radius)]" data-aos="fade-up">
@@ -101,7 +97,6 @@ PATTERNS = {
   - First dot MUST have class "active" initially
   - JS will translate .carousel-track by -100% per slide index
   - Do NOT add any inline onclick handlers — JS handles all navigation""",
-
     "service_modal": """service_modal pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -122,7 +117,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Each card has data-modal="modal-N" pointing to matching modal ID. Use modal-1, modal-2, modal-3, etc. Light themes use border-gray-100. JS handles open/close.""",
-
     "timeline": """timeline pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="timeline-container max-w-[800px] mx-auto px-6 relative">
@@ -139,7 +133,6 @@ PATTERNS = {
     <!-- Repeat 4-6 milestones -->
   </div>
   NOTE: The connecting vertical line is handled by .timeline-container::before in the <style> block. Light themes use border-gray-100. Dates can be years, months, or descriptive phases.""",
-
     "newsletter_cta": """newsletter_cta pattern:
   <div class="max-w-[600px] mx-auto px-6 text-center">
     <h2 class="text-2xl md:text-3xl font-bold mb-3 text-[var(--text)]">Headline</h2>
@@ -151,7 +144,6 @@ PATTERNS = {
     <p class="text-xs text-[var(--text-muted)] mt-3 opacity-70">No spam. Unsubscribe anytime.</p>
   </div>
   NOTE: Light themes use border-gray-200 on input. JS handles form submit with inline success message (not alert).""",
-
     "comparison_table": """comparison_table pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[800px] mx-auto px-6 overflow-x-auto" data-aos="fade-up">
@@ -174,7 +166,6 @@ PATTERNS = {
     </table>
   </div>
   NOTE: Use fa-check (green) for included features, fa-xmark (red/dim) for missing. Some cells can have text instead of icons. Light themes use border-gray-200.""",
-
     "logo_cloud": """logo_cloud pattern:
   <div class="text-center mb-6"><h2 class="text-lg md:text-xl font-semibold text-[var(--text-muted)]">Headline</h2></div>
   <div class="max-w-[1200px] mx-auto px-6 flex flex-wrap justify-center items-center gap-6">
@@ -186,7 +177,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Text-only logos. Do NOT use <img> tags, dummyimage.com, or any image URLs for logos.""",
-
     "logo_carousel": """logo_carousel pattern:
   <div class="text-center mb-6"><h2 class="text-lg md:text-xl font-semibold text-[var(--text-muted)]">Headline</h2></div>
   <div class="logo-carousel-container overflow-hidden relative max-w-[1200px] mx-auto">
@@ -201,7 +191,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: Text-only logos, NO images. JS handles infinite scroll by duplicating track content. The carousel auto-scrolls continuously.""",
-
     "trust_badges": """trust_badges pattern:
   <div class="max-w-[1000px] mx-auto px-6 flex flex-wrap justify-center items-center gap-8 md:gap-12">
     <div class="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity" data-aos="fade-right" data-aos-delay="100">
@@ -214,7 +203,6 @@ PATTERNS = {
     </div>
   </div>
   NOTE: 3-5 badges. Pick industry-relevant certifications: GDPR, HIPAA, SOC2, ISO, PCI-DSS, DED Licensed, TDRA Approved, etc. Compact section — use py-10 md:py-12.""",
-
     "contact_split": """contact_split pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12">

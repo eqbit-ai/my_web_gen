@@ -10,7 +10,6 @@ PATTERNS = {
       <a href="#" class="inline-block border-2 border-white text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-white hover:text-[var(--primary)] bg-transparent">Secondary CTA</a>
     </div>
   </div>""",
-
     "cta_split": """cta_split pattern:
   <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
     <div>
@@ -25,7 +24,6 @@ PATTERNS = {
       <img src="{{IMG:cta image query from plan}}" alt="Call to action" class="w-full h-auto rounded-xl object-cover transition-transform duration-300 hover:scale-[1.02]">
     </div>
   </div>""",
-
     "cta_gradient": """cta_gradient pattern:
   <div class="text-center py-16 md:py-20 relative" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
     <div class="max-w-[800px] mx-auto px-6">
@@ -34,7 +32,6 @@ PATTERNS = {
       <a href="#" class="inline-block bg-white text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]">Primary CTA</a>
     </div>
   </div>""",
-
     "cta_centered": """cta_centered pattern:
   <div class="max-w-[800px] mx-auto px-6 text-center">
     <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2>
