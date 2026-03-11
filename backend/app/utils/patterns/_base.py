@@ -24,13 +24,14 @@ RULES:
 - Use the EXACT content from the plan — headlines, descriptions, button text, etc.
 - Use Font Awesome icons exactly as specified: <i class="fa-solid fa-icon-name"></i>
 - Add data-aos animations on grid items (cards, faq items, etc.) — NOT on section wrappers
-- ANIMATION VARIETY IS CRITICAL: You MUST use at least 3 DIFFERENT data-aos values across the page:
-  * Section 1 cards: data-aos="fade-up"
-  * Section 2 items: data-aos="fade-right" or "fade-left"
-  * Section 3 items: data-aos="zoom-in"
-  * Section 4 items: data-aos="flip-up"
-  Do NOT use fade-up on every section — this makes all websites look identical.
-- Stagger grid items: data-aos-delay="100", "200", "300"
+- Use data-aos for scroll-reveal animations. VARIETY IS CRITICAL:
+  - Available animations: fade-up, fade-down, fade-left, fade-right, zoom-in, zoom-out, flip-up, flip-down, slide-up, slide-right
+  - Available easings: ease, ease-in-out, ease-in-back, ease-out-cubic
+  - Vary delay: data-aos-delay="100" through "600" (stagger items in grids)
+  - Vary duration: data-aos-duration="600" through "1200"
+  - NEVER use the same animation on consecutive sections
+  - Cards in a grid should stagger (each card gets increasing delay)
+  - Use fade-up for most content, but mix in zoom-in, slide-right, fade-left for variety
 - Hero and navbar must NOT have data-aos (visible immediately)
 - Include ALL sections from the plan
 - Do NOT include any JavaScript
@@ -174,10 +175,10 @@ CONTAINER WIDTH RULES (embedded in each pattern's classes):
 - max-w-[800px] or max-w-[700px]: faq, hero_minimal, testimonial_slider, feature_stacked, feature_steps, cta_centered, timeline, comparison_table — narrow for readability
 - max-w-[600px]: newsletter_cta — tight for email signup focus
 
-BACKGROUND ORBS — add as first children inside <main> or right after <nav>:
+BACKGROUND ORBS — ONLY for dark themes (skip entirely on light themes):
   <div class="fixed w-[400px] h-[400px] rounded-full -z-10 pointer-events-none -top-24 -left-24 opacity-[0.15] animate-[floatOrb_20s_ease-in-out_infinite]" style="background: var(--primary); filter: blur(120px)"></div>
   <div class="fixed w-[500px] h-[500px] rounded-full -z-10 pointer-events-none -bottom-36 -right-36 opacity-[0.15] animate-[floatOrb_25s_ease-in-out_infinite_reverse]" style="background: var(--secondary); filter: blur(120px)"></div>
-  On light themes: use opacity-[0.08] instead.
+  Do NOT add orbs on light/white themes — they look muddy and unprofessional on light backgrounds.
 
 SECTION WRAPPER — every content section:
   <section data-section-type="TYPE" class="py-16 md:py-20 relative">
@@ -224,19 +225,18 @@ IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add a descriptive alt text (not empty, not generic)
 - Use appropriate sizing classes: hero images h-[80vh] or min-h-[500px], feature images h-48 or h-64, team photos h-64 or h-72
 
-VANILLA-TILT.JS — add data-tilt on card-based grids for a premium 3D hover effect:
-  On card_grid, feature_cards, pricing_table, and team_cards: add data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
-  Apply on any grid of 3+ cards. JS automatically disables on mobile touch devices.
+VANILLA-TILT.JS — add data-tilt ONLY on card_grid and feature_cards patterns (NOT on every card):
+  On card_grid and feature_cards ONLY: add data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
+  Do NOT add data-tilt to pricing_table, team_cards, testimonials, or other sections. JS automatically disables on mobile touch devices.
 
-TSPARTICLES — add an animated particles background to the hero for a premium feel:
+TSPARTICLES — CONDITIONAL: ONLY add on dark-theme tech or creative sites. Do NOT add on light themes, food, health, wedding, corporate, or nature sites:
   <div id="tsparticles" class="absolute inset-0 z-0"></div>
   Place INSIDE the hero section, before the text content. Text content must have class="relative z-10".
-  JS initializes with a subtle network/dots config. Works on both dark and light themes (opacity adjusts automatically).
-  Use on dark themes, tech/SaaS brands, or any site that benefits from dynamic backgrounds.
+  JS initializes with a subtle network/dots config. ONLY use when the design theme is dark AND the industry is tech, SaaS, creative, or gaming.
 
-SPLITTING.JS — add data-splitting on 2-3 key headlines for a letter-by-letter reveal animation:
+SPLITTING.JS — CONDITIONAL: ONLY add on creative, portfolio, or agency sites. Do NOT add on corporate, health, education, or food sites:
   <h2 data-splitting class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2>
-  JS calls Splitting() on [data-splitting] elements. Apply on the hero headline and 1-2 section headlines for maximum visual impact.
+  JS calls Splitting() on [data-splitting] elements. Only use for creative/portfolio/agency brands where dramatic text animation fits the aesthetic.
 
 LENIS SMOOTH SCROLL — always active. JS initializes Lenis for buttery smooth page scrolling automatically.
 

@@ -219,7 +219,7 @@ You MUST return ONLY valid JSON:
   }},
   "image_style": "cohesive visual theme for all images on this site — e.g. clean modern architecture photography natural light sustainable materials glass buildings greenery",
   "design": {{
-    "theme": "light or dark",
+    "theme": "dark or light",
     "primary_color": "#hex — the main brand color",
     "secondary_color": "#hex — supporting color",
     "accent_color": "#hex — for CTAs and highlights",
@@ -594,9 +594,10 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
     if rotation_hints:
         prompt += "\n" + rotation_hints
 
-    # Always add a style preset for premium design direction
-    preset_name, preset = get_random_style_preset()
-    prompt += "\n" + format_style_hint(preset_name, preset)
+    # Style preset: inject rarely (10% chance) to avoid conflicting with design seed
+    if random.random() < 0.10:
+        preset_name, preset = get_random_style_preset()
+        prompt += "\n" + format_style_hint(preset_name, preset)
 
     # Inject curated font pairing
     try:
@@ -615,20 +616,8 @@ Include this @import in the <style> block. Use these fonts in the design_tokens.
     except Exception:
         pass
 
-    # Inject curated design tokens
-    try:
-        from app.utils.design_tokens import format_tokens_for_prompt, get_random_tokens, get_tokens_for_niche
-
-        tokens = get_tokens_for_niche(niche_key) if niche_key else get_random_tokens()
-        token_css = format_tokens_for_prompt(tokens)
-        prompt += f"""
-
-DESIGN TOKEN REFERENCE (use as starting point, adapt to brand):
-Token set: "{tokens["name"]}" ({tokens["style"]})
-{token_css}
-Adapt these colors/radius/shadows to fit the brand. You may adjust shades but keep the overall feel."""
-    except Exception:
-        pass
+    # Design tokens removed from plan prompt — the design seed is the single source of truth
+    # for color/style direction. Tokens were causing conflicting signals with the seed.
 
     # Inject niche-specific image guidance
     if niche_key:
@@ -2556,69 +2545,76 @@ CRITICAL — JS-DEPENDENT CLASS NAMES:
 # Category → list of design seeds appropriate for that category
 NICHE_DESIGN_SEEDS = {
     "tech": [
-        "Dark theme (#0f172a bg) with neon accents (#22d3ee, #a855f7). Use hero_split + icon_grid + stats_row + testimonial_cards + cta_gradient. Tech aesthetic with glowing hover effects.",
-        "Dark sleek (#111827 bg), blue-to-purple gradient. Use hero_video_bg (typed.js) + logo_carousel + comparison_table + testimonial_slider + newsletter_cta + cta_gradient. Add tsParticles in hero.",
-        "Minimal dark (#0a0a0a bg) with electric blue (#3b82f6). Use hero_split + card_grid (data-tilt) + stats_row + cta_centered. Developer-focused with subtle animations.",
-        "Gradient mesh bg (#1e1b4b to #312e81), cyan accent (#06b6d4). Use hero_center + feature_split + pricing_table + cta_gradient. SaaS modern with parallax orbs.",
+        "Dark theme (#0a0a0a bg) with electric blue (#3b82f6) + cyan gradients. Use hero_full_image + icon_grid. Futuristic, bold typography. Glass-morphism cards.",
+        "Deep navy (#0f172a bg) with neon green (#22c55e) accents. Use hero_asymmetric + card_grid. Terminal/hacker aesthetic, monospace headings.",
+        "Pure black (#000000 bg) with violet (#8b5cf6) + pink (#ec4899) gradient accents. Use hero_center + feature_split. Dramatic, high-contrast.",
+        "Clean white (#ffffff bg) with indigo (#4f46e5) + sharp geometric accents. Use hero_product_mockup + icon_grid. Apple-like precision.",
+        "Warm gray (#1c1917 bg) with amber (#f59e0b) accents. Use hero_split + card_grid. Premium dev-tool aesthetic.",
+        "Light gray (#f8fafc bg) with teal (#0d9488) + dark charcoal text. Use hero_split + feature_cards. Modern SaaS clean.",
     ],
     "corporate": [
-        "Cool professional navy (#1e3a5f) + steel blue (#4682B4). Use hero_split + card_grid + team_cards + testimonial_split + cta_banner. Use data-tilt on cards.",
-        "Clean corporate teal (#0D9488), slate (#334155), Inter font. Use hero_full_image + card_grid + pricing_table + newsletter_cta + cta_centered. Add logo_carousel for clients.",
-        "Bold high-contrast layout. Use hero_full_image + icon_grid + stats_row + testimonial_slider + cta_gradient. Colors: deep navy #1e293b, bright orange #F97316.",
-        "Light professional white bg, charcoal text (#1e293b), blue accent (#2563eb). Use hero_split + feature_split + team_cards + cta_banner. Trust-building corporate.",
+        "Deep charcoal (#1a1a2e bg) with gold (#d4a843) accents. Use hero_full_image + feature_split. Executive, powerful.",
+        "Navy (#0c1b33 bg) with silver (#94a3b8) + white text. Use hero_center + card_grid. Institutional authority.",
+        "Slate (#0f172a bg) with emerald (#059669) accents. Use hero_split + icon_grid. Finance/consulting premium.",
+        "Off-white (#fafaf9 bg) with deep navy (#1e293b) + copper (#b45309) accents. Use hero_full_image + feature_split. Heritage luxury.",
+        "Warm white (#fffbeb bg) with forest green (#166534) + gold. Use hero_split + card_grid. Trust and tradition.",
+        "Light stone (#f5f5f4 bg) with burgundy (#881337) + dark gray. Use hero_asymmetric + feature_cards. Bold corporate.",
     ],
     "luxury": [
-        "Luxurious dark (#1a1a2e), metallic gold (#D4AF37). Use hero_center + feature_split + testimonial_cards + pricing_table + cta_gradient.",
-        "Muted sophisticated design with earthy tones (#8B7355, #D4C5A9) and Playfair Display serif headings. Use hero_center + feature_stacked + testimonial_split + cta_centered.",
-        "Black (#0a0a0a) + champagne gold (#c9a96e) + ivory (#faf9f6). Playfair Display serif. Use hero_full_image + gallery_grid + testimonial_split + cta_centered. Premium feel.",
-        "Deep burgundy (#4a0e1a) + rose gold (#b76e79) + cream (#fdf6f0). Use hero_center + feature_split + testimonial_cards + cta_gradient. Elegant and refined.",
+        "Black (#050505 bg) with gold (#c8a84e) + cream text. Use hero_full_image + feature_split. Ultra-premium, editorial.",
+        "Deep plum (#1a0a2e bg) with rose gold (#e8b4b8) accents. Use hero_center + card_grid. Feminine luxury.",
+        "Charcoal (#111111 bg) with champagne (#d4b896) + white. Use hero_asymmetric + feature_cards. Boutique hotel feel.",
+        "Ivory (#faf8f5 bg) with black (#111111) + gold (#b8860b). Use hero_split + feature_split. Editorial luxury.",
+        "Warm cream (#f5f0e8 bg) with deep green (#1a3a2a) + brass. Use hero_full_image + card_grid. Organic luxury.",
+        "Pearl white (#f8f6f3 bg) with matte black (#1c1c1c) + copper (#b87333). Use hero_asymmetric + icon_grid. Architectural luxury.",
     ],
     "creative": [
-        "Vibrant playful purple (#7C3AED), pink (#EC4899). Use hero_asymmetric + icon_grid + team_masonry + testimonial_cards + cta_split.",
-        "Bright white bg, bold accent yellow (#FBBF24) + charcoal (#1f2937). Use hero_split + gallery_grid + testimonial_slider + cta_centered. Portfolio/agency feel.",
-        "Off-white (#faf8f5) + black text + one vivid red accent (#ef4444). Use hero_center + image_carousel + team_cards + cta_split. Editorial design.",
-        "Pastel gradient (lavender #e9d5ff to soft pink #fce7f3), dark text. Use hero_asymmetric + icon_grid + testimonial_cards + cta_gradient. Playful modern.",
+        "Near-black (#0d0d0d bg) with multi-color gradient accents (pink→orange→yellow). Use hero_asymmetric + feature_cards. Bold, expressive.",
+        "Dark purple (#1e1b4b bg) with lime (#a3e635) + cyan (#22d3ee). Use hero_center + card_grid. Electric creative energy.",
+        "Deep teal (#042f2e bg) with coral (#fb7185) + white. Use hero_split + feature_split. Creative studio.",
+        "Bright white (#ffffff bg) with black (#000000) + one bold accent (red #ef4444). Use hero_asymmetric + icon_grid. Swiss design minimal.",
+        "Soft pink (#fdf2f8 bg) with deep violet (#5b21b6) + black text. Use hero_split + feature_cards. Fashion-forward.",
+        "Light lavender (#f5f3ff bg) with orange (#ea580c) + charcoal. Use hero_center + card_grid. Playful creative.",
     ],
     "food": [
-        "Warm inviting design. Sunset oranges #F97316, deep reds #DC2626. Use hero_full_image + image_carousel + service_modal + testimonial_slider + cta_split. Rustic warm feel.",
-        "Cream bg (#fef9f0), rich brown (#78350f) + warm amber (#d97706). Playfair Display headings. Use hero_center + gallery_grid + testimonial_split + cta_centered. Appetizing warmth.",
-        "Dark moody (#1c1917 bg), golden accent (#ca8a04), warm lighting feel. Use hero_full_image + feature_split + testimonial_cards + cta_gradient. Fine dining aesthetic.",
-        "Fresh bright white, green (#16a34a) + orange (#ea580c). Use hero_split + icon_grid + image_carousel + testimonial_slider + cta_banner. Fresh and healthy vibe.",
-        "Deep charcoal (#1f1f1f bg) + vibrant red (#dc2626) + cream text (#fef2e8). Use hero_asymmetric + feature_cards + stats_row + testimonial_split + cta_gradient. Bold steakhouse energy.",
-        "Soft sage (#f1f5f0 bg) + olive (#65744a) + terracotta (#c2703e). DM Serif Display heading. Use hero_center + feature_stacked + gallery_grid + testimonial_cards + cta_split. Farm-to-table organic.",
-        "Midnight blue (#0c1526 bg) + pearl (#e8e4dd) + copper (#b87333). Use hero_full_image + feature_split + image_carousel + testimonial_slider + cta_gradient. Upscale seafood/wine bar.",
-        "Bright coral (#ff6b6b) + sunny yellow (#fbbf24) + white bg. Use hero_split + icon_grid + stats_row + testimonial_cards + cta_banner. Playful casual dining.",
+        "Dark moody (#1a1209 bg) with warm amber (#d97706) + cream text. Use hero_full_image + feature_cards. Fine dining, atmospheric.",
+        "Rich espresso (#1c1210 bg) with copper (#c2884c) + ivory. Use hero_center + service_modal. Coffee/bistro luxury.",
+        "Charcoal (#1f1f1f bg) with red (#dc2626) + white. Use hero_full_image + feature_cards. Bold steakhouse/grill.",
+        "Warm cream (#fef3c7 bg) with terracotta (#c2410c) + dark brown. Use hero_split + card_grid. Mediterranean warmth.",
+        "Soft sage (#f0fdf4 bg) with deep green (#166534) + wood brown. Use hero_split + feature_cards. Farm-to-table organic.",
+        "Clean white (#ffffff bg) with coral (#f97316) + charcoal. Use hero_full_image + feature_cards. Modern cafe bright.",
     ],
     "health": [
-        "Fresh modern bright whites, emerald #059669. Use hero_split + icon_grid + logo_cloud + testimonial_slider + cta_centered. Calming with smooth scroll animations.",
-        "Soft blue (#e0f2fe bg), deep teal (#0f766e) + calm blue (#0284c7). Use hero_split + card_grid + team_cards + testimonial_split + cta_centered. Calm and trustworthy.",
-        "Clean white bg, gentle green (#22c55e) + soft gray (#f1f5f9). Use hero_center + feature_split + testimonial_cards + cta_banner. Wellness and clarity.",
-        "Light mint (#f0fdf4) + deep green (#15803d) + warm accent (#f59e0b). Use hero_full_image + feature_cards + stats_row + testimonial_slider + cta_split. Vitality and energy.",
-        "Navy (#1e3a5f bg) + sky blue (#38bdf8) + white text. Use hero_asymmetric + icon_grid + team_cards + stats_row + cta_gradient. Bold medical authority.",
-        "Warm beige (#faf5ef bg) + dusty rose (#c08b8b) + deep plum (#5b2c6f). Cormorant heading. Use hero_center + feature_stacked + testimonial_split + cta_centered. Spa and wellness luxury.",
-        "Crisp white (#ffffff bg) + electric blue (#2563eb) + lime (#84cc16). Use hero_split + card_grid + comparison_table + testimonial_cards + cta_banner. Modern clinical tech.",
-        "Soft lavender (#f3f0ff bg) + purple (#7c3aed) + teal (#14b8a6). Use hero_full_image + feature_cards + team_grid + testimonial_slider + cta_split. Holistic wellness.",
+        "Deep teal (#042f2e bg) with aqua (#2dd4bf) + white text. Use hero_split + card_grid. Medical tech futuristic.",
+        "Navy (#0c2340 bg) with sky blue (#38bdf8) + clean white. Use hero_center + icon_grid. Clinical precision.",
+        "Dark slate (#0f172a bg) with green (#22c55e) + light gray. Use hero_full_image + feature_split. Health tech modern.",
+        "Soft mint (#f0fdfa bg) with teal (#0d9488) + dark text. Use hero_split + card_grid. Calming wellness.",
+        "Warm white (#fffbeb bg) with sage (#65a30d) + earth brown. Use hero_split + feature_cards. Natural health.",
+        "Clean blue-white (#f0f9ff bg) with royal blue (#2563eb) + navy text. Use hero_center + icon_grid. Professional healthcare.",
     ],
     "nature": [
-        "Nature-inspired forest green (#166534), warm wood (#92400e). Use hero_full_image + gallery_grid + service_modal + testimonial_split + cta_banner.",
-        "Earth tones: olive (#4d7c0f) + sand (#d4a574) + cream (#fefce8). Use hero_center + feature_split + testimonial_cards + cta_centered. Organic warmth.",
-        "Deep green (#052e16) + sky blue (#38bdf8) + white. Use hero_full_image + icon_grid + stats_row + testimonial_slider + cta_gradient. Eco-modern.",
+        "Forest dark (#0a1f0a bg) with emerald (#34d399) + gold. Use hero_full_image + feature_split. Deep nature immersive.",
+        "Deep ocean (#0c1b33 bg) with turquoise (#14b8a6) + sand. Use hero_center + card_grid. Coastal resort.",
+        "Warm sand (#fefce8 bg) with forest (#166534) + earth brown. Use hero_full_image + feature_cards. Eco-resort.",
+        "Light sage (#ecfdf5 bg) with deep green (#065f46) + wood tones. Use hero_split + card_grid. Sustainable brand.",
     ],
     "wedding": [
-        "Soft blush (#fff1f2) + rose gold (#b76e79) + ivory (#fffbf5). Playfair Display serif. Use hero_center + gallery_grid + testimonial_split + cta_centered. Romantic elegance.",
-        "Cream (#faf5ef) + sage green (#6b8f71) + dusty pink (#d4a5a5). Use hero_full_image + feature_stacked + image_carousel + testimonial_cards + cta_split. Garden romance.",
-        "White (#ffffff) + champagne (#f5e6cc) + soft lavender (#c4b5e0). Cormorant Garamond serif. Use hero_center + gallery_grid + team_cards + testimonial_split + cta_centered. Classic bridal.",
-        "Deep navy (#1e293b) + gold (#c9a96e) + white text. Use hero_full_image + feature_split + testimonial_cards + cta_gradient. Formal luxury wedding.",
+        "Charcoal (#1a1a1a bg) with blush pink (#f9a8d4) + gold. Use hero_full_image + feature_cards. Dramatic elegance.",
+        "Deep burgundy (#450a0a bg) with rose gold (#e8b4b8) + cream. Use hero_center + card_grid. Romantic luxury.",
+        "Soft blush (#fdf2f8 bg) with sage (#6b8f71) + gold. Use hero_split + feature_split. Garden wedding.",
+        "Ivory (#fffff0 bg) with dusty rose (#d4a0a0) + deep green. Use hero_full_image + feature_cards. Classic romance.",
     ],
     "education": [
-        "Bright blue (#2563eb) + warm yellow (#eab308) + white bg. Use hero_split + icon_grid + stats_row + testimonial_slider + cta_banner. Energetic and academic.",
-        "Deep indigo (#312e81) + teal (#0d9488) + light bg (#f8fafc). Use hero_center + feature_cards + card_grid + testimonial_cards + cta_centered. Modern learning.",
-        "White bg + green (#16a34a) + slate (#334155). Use hero_split + feature_split + team_cards + pricing_table + cta_split. Clean institutional.",
+        "Dark navy (#0f172a bg) with yellow (#eab308) + white. Use hero_split + card_grid. Bold academic.",
+        "Deep indigo (#1e1b4b bg) with cyan (#06b6d4) + light text. Use hero_center + icon_grid. EdTech modern.",
+        "Light cream (#fefce8 bg) with navy (#1e3a5f) + orange accent. Use hero_split + feature_cards. Warm institutional.",
+        "Clean white (#f8fafc bg) with blue (#3b82f6) + dark gray. Use hero_center + card_grid. Clean academic.",
     ],
     "minimal": [
-        "Minimal monochromatic. One accent: vivid coral #FF6B6B. Use hero_split + icon_grid + stats_row + cta_centered. Generous whitespace.",
-        "Pure white bg + single black text + one accent blue (#3b82f6). Use hero_split + feature_stacked + testimonial_split + cta_centered. Ultra-clean.",
-        "Off-white (#fafaf9) + charcoal (#292524) + muted accent (#78716c). Use hero_center + icon_grid + testimonial_cards + cta_centered. Japanese-inspired minimalism.",
+        "Pure black (#000000 bg) with white (#ffffff) text only. Use hero_center + feature_split. Ultra-minimal dark.",
+        "Dark gray (#18181b bg) with light gray (#d4d4d8) + single accent. Use hero_asymmetric + icon_grid. Monochrome modern.",
+        "Off-white (#fafafa bg) with black (#000000) + no accent. Use hero_split + card_grid. Swiss clean.",
+        "Warm cream (#f5f5f0 bg) with charcoal (#292524) + subtle gold. Use hero_center + feature_split. Warm minimal.",
     ],
 }
 
@@ -2719,11 +2715,14 @@ _NICHE_CATEGORY_MAP = {
 
 # Fallback pool for unmapped niches
 _FALLBACK_SEEDS = [
-    "Bold high-contrast layout. Use hero_full_image + icon_grid + stats_row + testimonial_slider + cta_gradient. Colors: deep navy #1e293b, bright orange #F97316. Add data-tilt on cards.",
-    "Cool professional navy (#1e3a5f) + steel blue (#4682B4). Use hero_split + card_grid + team_cards + testimonial_split + cta_banner. Smooth parallax orbs background.",
-    "Fresh modern bright whites, emerald #059669. Use hero_center + feature_split + logo_carousel + testimonial_slider + cta_centered. Clean and airy with stagger reveals.",
-    "Minimal monochromatic. One accent: vivid coral #FF6B6B. Use hero_split + icon_grid + stats_row + cta_centered. Generous whitespace with subtle hover animations.",
-    "Clean corporate teal (#0D9488), slate (#334155), Inter font. Use hero_full_image + card_grid + pricing_table + newsletter_cta + cta_centered. Add Splitting.js on hero headline.",
+    "Dark theme (#0a0a0a bg) with electric blue (#3b82f6) + white text. Use hero_full_image + card_grid. Modern, bold, high-contrast.",
+    "Deep navy (#0c1b33 bg) with gold (#d4a843) + cream. Use hero_split + feature_split. Premium, authoritative.",
+    "Charcoal (#1c1c1c bg) with coral (#f97316) + white. Use hero_center + feature_cards. Warm, energetic.",
+    "Clean white (#ffffff bg) with black (#000000) + one bold accent. Use hero_asymmetric + icon_grid. Swiss precision.",
+    "Warm cream (#faf8f5 bg) with deep green (#166534) + gold. Use hero_split + card_grid. Organic, premium.",
+    "Soft gray (#f8fafc bg) with indigo (#4f46e5) + dark charcoal. Use hero_split + icon_grid. Modern SaaS.",
+    "Pure black (#000000 bg) with gradient accents (violet→pink). Use hero_center + feature_split. Bold, dramatic.",
+    "Slate (#1e293b bg) with emerald (#10b981) + light gray. Use hero_full_image + card_grid. Professional tech.",
 ]
 
 
