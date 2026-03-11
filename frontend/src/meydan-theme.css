@@ -68,6 +68,12 @@ html {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 40px;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: navbar-fade-in 0.3s ease 2.8s both;
+}
+
+@keyframes navbar-fade-in {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .navbar.scrolled {
