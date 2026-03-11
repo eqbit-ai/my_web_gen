@@ -1011,7 +1011,7 @@ const GeneratorDemo = () => {
                                             body.show{opacity:1;}
                                         </style></head><body>${site.html}<script>
                                             setTimeout(()=>document.body.classList.add('show'),50);
-                                        <\/script></body></html>`);
+                                        </script></body></html>`);
                                         doc.close();
                                     }
                                 }

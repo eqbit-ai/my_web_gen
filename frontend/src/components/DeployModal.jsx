@@ -86,6 +86,7 @@ const DeployModal = ({ isOpen, onClose, html, css, js }) => {
     const handlePurchaseDomain = (domain) => {
         // Redirect to domain registrar
         const namecheapUrl = `https://www.namecheap.com/domains/registration/results/?domain=${domain.name}`;
+        // eslint-disable-next-line no-console
         console.log('Opening Namecheap:', namecheapUrl);
 
         // Use window.location for more reliable opening (bypasses popup blockers)

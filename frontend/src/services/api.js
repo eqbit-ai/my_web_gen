@@ -720,7 +720,7 @@ export const updateContactConfig = async (sessionId, config) => {
     } catch (error) { console.error('API Error:', error); throw error; }
 };
 
-export default {
+const api = {
     generateWebsite, getSession, getSessionVersions, rollbackSession, clearSession,
     editElement, getNiches, getTemplates,
     listProjects, getProject, saveProject, getProjectVersions, rollbackProject, deleteProject,
@@ -735,3 +735,4 @@ export default {
     uploadFile, listUploads, deleteUpload, saveStockPhoto, transformImage,
     updateNavConfig, updateFooterConfig, updateSiteMeta, updateContactConfig,
 };
+export default api;

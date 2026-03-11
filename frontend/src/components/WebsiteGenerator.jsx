@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // src/components/WebsiteGenerator.jsx
 // Layout: Lovable/Base44 style — Chat sidebar (left) + Preview (right)
 
@@ -1263,6 +1264,7 @@ const WebsiteGenerator = () => {
 
         window.addEventListener('message', handleCmsMessage);
         return () => window.removeEventListener('message', handleCmsMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [addToast]); // stable deps only — state accessed via ref
 
     // ── Element Editing ─────────────────────────────────────────────────
@@ -1967,7 +1969,7 @@ const WebsiteGenerator = () => {
                                                 {hasThumbnail ? (
                                                     <iframe
                                                         title={item.name}
-                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="${window.location.origin}/tailwind.js"><\/script><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
+                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="${window.location.origin}/tailwind.js"></script><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
                                                         className="gn-card-iframe"
                                                         sandbox="allow-scripts allow-same-origin"
                                                         loading="lazy"

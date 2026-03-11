@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 // src/components/Preview.jsx
 
 import React, { useEffect, useRef, useCallback } from 'react';
@@ -620,11 +621,14 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
     useEffect(() => {
         const iframe = iframeRef.current;
         if (!iframe) return;
+        // eslint-disable-next-line no-console
         console.log('[Preview] useEffect triggered, html length:', html?.length, 'css length:', css?.length);
 
         const writeContent = () => {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            // eslint-disable-next-line no-console
             if (!doc) { console.warn('[Preview] No doc available'); return; }
+            // eslint-disable-next-line no-console
             console.log('[Preview] writeContent called, writing', html?.length, 'chars');
 
             const selectionScript = getSelectionScript();
@@ -938,7 +942,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             if (js) {
                 try {
                     // Test if JS parses without errors before injecting
-                    new Function(js);
+                    new Function(js); // eslint-disable-line no-new-func
                     // It parses — inject as a script element
                     const script = doc.createElement('script');
                     script.textContent = js;
