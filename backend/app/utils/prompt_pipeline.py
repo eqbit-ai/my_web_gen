@@ -791,6 +791,17 @@ def build_html_prompt(plan: dict, enhanced_brief: str = None) -> str:
         style_additions=style_additions,
     )
 
+    # Pre-build the Google Fonts URL so Claude doesn't get it wrong
+    design = plan.get("design", {})
+    heading_font = design.get("heading_font", "Space Grotesk").replace(" ", "+")
+    body_font = design.get("body_font", "Inter").replace(" ", "+")
+    font_import = f"@import url('https://fonts.googleapis.com/css2?family={heading_font}:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family={body_font}:wght@400;500;600;700&display=swap');"
+    prompt += f"""
+
+PRE-BUILT FONT IMPORT (use this EXACTLY in the <style> block — do not modify or rebuild it):
+{font_import}
+"""
+
     # Inject enhanced brief so the aesthetic vision carries through to HTML stage
     if enhanced_brief:
         prompt += f"""

@@ -72,6 +72,13 @@ from app.utils.session_store import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _verify_session_ownership(session: dict, user: dict) -> None:
+    """Verify that the session belongs to the authenticated user."""
+    session_user = session.get("user_id")
+    if session_user and str(session_user) != str(user.get("user_id")):
+        raise HTTPException(status_code=403, detail="Forbidden — session belongs to another user")
 security = HTTPBearer()
 
 # Debug output directory — use /tmp to avoid triggering uvicorn --reload
@@ -384,7 +391,7 @@ def validate_html(html: str) -> str:
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
-    if len(html) > 50000:
+    if len(html) > 150000:
         raise ValueError(f"HTML too large ({len(html)} chars) — may be truncated or malformed")
     if "data-section-type" not in html:
         raise ValueError("HTML missing data-section-type attributes")
@@ -495,7 +502,7 @@ def validate_js(js: str) -> str:
     # NOTE: backtick replacement removed — JS is now injected via
     # doc.createElement('script') + appendChild, not embedded in a template literal,
     # so backticks in generated JS are safe and should be left as-is.
-    if len(js) > 20000:
+    if len(js) > 50000:
         raise ValueError(f"JS too large ({len(js)} chars)")
 
     # Fix querySelector('#') crash — bare '#' is invalid CSS selector.
@@ -1186,8 +1193,8 @@ Apply similar polish, spacing, and shadow quality to this page.
         html = parse_single_code_block(text, "html")
         html = validate_html(html)
 
-        # Resolve image placeholders
-        html = await resolve_image_placeholders(html, niche_key=niche_key)
+        # Resolve image placeholders (with hallucination safety + comment stripping)
+        html = await _resolve_images_safe(html, niche_key=niche_key)
 
         duration = int((time.time() - t0) * 1000)
         logger.info(f"[MULTIPAGE] Page '{title}' done → {len(html):,} chars in {_fmt_duration(duration)}")
@@ -1440,13 +1447,11 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
         updated_html = replace_section_html(updated_html, target_id, new_section_html)
         logger.info(f'✅ Section Replaced → id="{target_id}" patched into full HTML')
 
-    # Resolve any {{IMG:}} placeholders Claude may have added
-    if "{{IMG:" in updated_html:
-        img_count = updated_html.count("{{IMG:")
-        logger.info(f"🖼️ Resolving Images → {img_count} {{IMG:}} placeholders in edited section(s)")
+    # Resolve any {{IMG:}} placeholders Claude may have added (with hallucination safety)
+    if "{{IMG:" in updated_html or re.search(r'src=["\']https?://images\.(pexels|unsplash)\.com/', updated_html):
         plan = session.get("plan", {})
         niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
-        updated_html = await resolve_image_placeholders(updated_html, niche_key=niche_key)
+        updated_html = await _resolve_images_safe(updated_html, niche_key=niche_key)
 
     return {"html": updated_html, "css": css, "js": js}
 
@@ -1581,13 +1586,13 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
     t0 = time.time()
 
     try:
-        response = await asyncio.to_thread(
-            client.messages.create,
-            model="claude-sonnet-4-20250514",
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt_text}],
+        raw = await _claude_stream(
+            client,
+            "claude-sonnet-4-20250514",
+            4000,
+            "",
+            prompt_text,
         )
-        raw = response.content[0].text
         new_section_html = parse_single_code_block(raw, "html")
         if not new_section_html:
             new_section_html = raw
@@ -1597,12 +1602,9 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
             f"✅ Section Generated → {section_type} ({len(new_section_html):,} chars) in {_fmt_duration(duration)}"
         )
 
-        # Resolve image placeholders
+        # Resolve image placeholders (with hallucination safety)
         niche_key = brand.get("industry", "general")
-        img_count = new_section_html.count("{{IMG:")
-        if img_count:
-            logger.info(f"🖼️ Resolving Images → {img_count} image placeholders in new section")
-        new_section_html = await resolve_image_placeholders(new_section_html, niche_key=niche_key)
+        new_section_html = await _resolve_images_safe(new_section_html, niche_key=niche_key)
 
         # Insert the new section at the right position
         footer_exists = any(s["type"] == "footer" for s in sections)
@@ -3001,6 +3003,7 @@ async def get_session_endpoint(session_id: str, user: dict = Depends(require_aut
     session = await redis_get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
     return {
         "sessionId": session_id,
         "html": session["html"],
@@ -3017,6 +3020,7 @@ async def get_session_versions(session_id: str, user: dict = Depends(require_aut
     session = await redis_get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
     versions = session.get("versions", [])
     all_versions = versions + [
         {
@@ -3038,6 +3042,7 @@ async def rollback_session(session_id: str, version: int, user: dict = Depends(r
     session = await redis_get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
     versions = session.get("versions", [])
     target = next((v for v in versions if v["version"] == version), None)
     if not target:
