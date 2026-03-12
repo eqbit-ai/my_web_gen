@@ -79,6 +79,8 @@ def _verify_session_ownership(session: dict, user: dict) -> None:
     session_user = session.get("user_id")
     if session_user and str(session_user) != str(user.get("user_id")):
         raise HTTPException(status_code=403, detail="Forbidden — session belongs to another user")
+
+
 security = HTTPBearer()
 
 # Debug output directory — use /tmp to avoid triggering uvicorn --reload
@@ -474,7 +476,7 @@ def validate_css(css: str) -> str:
     """Validate CSS output meets minimum quality."""
     if not css or len(css) < 200:
         raise ValueError(f"CSS too short ({len(css)} chars) — generation likely failed")
-    if len(css) > 40000:
+    if len(css) > 80000:
         raise ValueError(f"CSS too large ({len(css)} chars)")
     # Strip any [data-aos] rules — AOS CSS is loaded via CDN, custom rules cause opacity:0 issues
     css = re.sub(r"/\*[^*]*AOS[^*]*\*/\s*", "", css)
@@ -1890,6 +1892,12 @@ async def restore_session(req: RestoreSessionRequest, user: dict = Depends(requi
     This is called when loading a project from the dashboard so that
     all features (chat iteration, sections, design system) work.
     """
+    # Validate input size to prevent abuse
+    MAX_RESTORE_SIZE = 200_000  # 200KB
+    total_size = len(req.html) + len(req.css) + len(req.js)
+    if total_size > MAX_RESTORE_SIZE:
+        raise HTTPException(status_code=413, detail=f"Payload too large ({total_size} chars, max {MAX_RESTORE_SIZE})")
+
     session_id = str(uuid.uuid4())
 
     html = inject_section_ids(req.html)
@@ -1930,6 +1938,7 @@ async def sync_session(req: SyncSessionRequest, user: dict = Depends(require_aut
     session = await redis_get_session(req.sessionId)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
 
     html = inject_section_ids(req.html)
 
@@ -2520,6 +2529,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         "prompt": existing.get("prompts", [""])[-1] if existing.get("prompts") else "",
                     }
                 )
+                # Cap version history to prevent Redis OOM
+                MAX_VERSIONS = 15
+                if len(prev_versions) > MAX_VERSIONS:
+                    prev_versions = prev_versions[-MAX_VERSIONS:]
 
             # Persist last_edited_targets for follow-up routing context
             last_targets = session.get("last_edited_targets", []) if not is_new else []

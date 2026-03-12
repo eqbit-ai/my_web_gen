@@ -20,61 +20,13 @@ const DeployModal = ({ isOpen, onClose, html, css, js }) => {
     if (!isOpen) return null;
 
     const handleDeploy = async () => {
-        if (!projectName.trim()) {
-            setError('Please enter a project name');
-            return;
-        }
-
-        setIsDeploying(true);
-        setError(null);
-
-        try {
-            const response = await fetch(`${config.apiUrl}/api/deploy`, {
-
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projectName: projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-                    html,
-                    css,
-                    js
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setDeployedUrl(data.url);
-                setStep(2);
-            } else {
-                setError(data.error || 'Deployment failed');
-            }
-        } catch (err) {
-            setError('Failed to deploy. Please try again.');
-        } finally {
-            setIsDeploying(false);
-        }
+        // Deployment feature is not yet available
+        setError('Deployment is coming soon. For now, use the Export button to download your website.');
     };
 
     const handleSearchDomain = async () => {
-        if (!domainSearch.trim()) return;
-
-        setIsSearching(true);
+        // Domain search feature is not yet available
         setDomainResults([]);
-
-        try {
-            const response = await fetch(`${config.apiUrl}/api/domains/search?query=${encodeURIComponent(domainSearch)}`)
-
-            const data = await response.json();
-
-            if (data.success) {
-                setDomainResults(data.domains);
-            }
-        } catch (err) {
-            console.error('Domain search failed:', err);
-        } finally {
-            setIsSearching(false);
-        }
     };
 
     const handleCopyUrl = () => {

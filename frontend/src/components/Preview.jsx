@@ -837,7 +837,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         var href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel')) return;
         // Match "/" or "/index.html" as index
-        if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index') {
+        if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index' || href === '/home' || href === '/home.html' || href === 'home.html') {
             e.preventDefault();
             e.stopPropagation();
             window.parent.postMessage({ type: 'page-navigate', slug: 'index' }, '*');

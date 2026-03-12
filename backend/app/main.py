@@ -126,7 +126,7 @@ app = FastAPI(
 # Allowed CORS origins (configurable via env var, comma-separated)
 _allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:80",
+    "http://localhost:3000",
 ).split(",")
 
 # Middleware (applied bottom-to-top: CORS → Security → Rate Limiter → Request Tracker → Logging)
