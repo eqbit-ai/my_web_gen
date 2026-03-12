@@ -605,8 +605,8 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
     if rotation_hints:
         prompt += "\n" + rotation_hints
 
-    # Style preset: inject rarely (10% chance) to avoid conflicting with design seed
-    if random.random() < 0.10:
+    # Style preset: inject frequently (60% chance) for design variety
+    if random.random() < 0.60:
         preset_name, preset = get_random_style_preset()
         prompt += "\n" + format_style_hint(preset_name, preset)
 

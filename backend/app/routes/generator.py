@@ -435,13 +435,25 @@ def validate_html(html: str) -> str:
     footer_match = re.search(r'<section([^>]*data-section-type="footer"[^>]*)>', html)
     if footer_match:
         attrs = footer_match.group(1)
-        if (
-            "background" not in attrs
-            and "bg-[#" not in attrs
-            and "bg-gray-9" not in attrs
-            and "bg-black" not in attrs
-            and "bg-slate-9" not in attrs
-        ):
+        # Check if footer section tag itself already has a dark bg
+        section_has_bg = (
+            "background" in attrs
+            or "bg-[#" in attrs
+            or "bg-gray-9" in attrs
+            or "bg-black" in attrs
+            or "bg-slate-9" in attrs
+        )
+        # Also check if an inner div right after the section tag has a dark bg class
+        inner_div_match = re.search(
+            r'<section[^>]*data-section-type="footer"[^>]*>\s*<div([^>]*)>',
+            html,
+        )
+        inner_has_bg = False
+        if inner_div_match:
+            inner_attrs = inner_div_match.group(1)
+            inner_has_bg = bool(re.search(r'bg-(gray-[89]\d*|slate-[89]\d*|black|zinc-[89]\d*|\[#)', inner_attrs))
+
+        if not section_has_bg and not inner_has_bg:
             # Add dark background inline style
             if 'style="' in attrs:
                 html = html.replace(
@@ -655,8 +667,29 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
     if len(prompt.strip()) < 80:
         system += "\n\n" + PLAN_SHORT_PROMPT_ADDENDUM
 
-    # Append seed hint to user prompt so it's impossible to ignore
+    # Force pattern variety by randomly assigning patterns to key sections
+    import random as _rnd
+    _hero_variants = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric", "hero_video_bg", "hero_minimal"]
+    _feature_variants = ["card_grid", "icon_grid", "feature_split", "feature_cards", "feature_stacked"]
+    _testimonial_variants = ["testimonial_cards", "testimonial_slider", "testimonial_split"]
+    _cta_variants = ["cta_banner", "cta_gradient", "cta_split", "cta_centered"]
+
+    forced = {
+        "hero": _rnd.choice(_hero_variants),
+        "features": _rnd.choice(_feature_variants),
+        "testimonials": _rnd.choice(_testimonial_variants),
+        "cta": _rnd.choice(_cta_variants),
+    }
+
+    # Append seed hint + forced patterns to user prompt
     user_msg = prompt + f"\n\n[DESIGN HINT: {seed}]"
+    user_msg += f"""
+
+MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
+- Hero: {forced['hero']}
+- Features/Services: {forced['features']}
+- Testimonials: {forced['testimonials']}
+- CTA: {forced['cta']}"""
 
     plan_max_tokens = 8000 if multipage else 4000
 
@@ -3076,3 +3109,68 @@ async def rollback_session(session_id: str, version: int, user: dict = Depends(r
 async def delete_session_endpoint(session_id: str, user: dict = Depends(require_auth)):
     await redis_delete_session(session_id)
     return {"success": True}
+
+
+@router.get("/niches")
+async def get_niches(user: dict = Depends(require_auth)):
+    """Return available niche categories."""
+    from app.utils.niches import NICHES
+    return {
+        "niches": [
+            {"key": k, "label": k.replace("_", " ").title()}
+            for k in NICHES.keys()
+        ]
+    }
+
+
+class DesignSystemRequest(BaseModel):
+    session_id: str
+    updates: dict = {}
+
+
+@router.post("/design-system")
+async def update_design_system(req: DesignSystemRequest, user: dict = Depends(require_auth)):
+    """Apply design system changes to session CSS variables."""
+    session = await redis_get_session(req.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
+
+    css = session.get("css", "")
+    updates = req.updates or {}
+
+    for var_name, value in updates.get("colors", {}).items():
+        css = re.sub(rf"(--{re.escape(var_name)}\s*:)[^;]+;", rf"\1 {value};", css)
+
+    if "heading_font" in updates.get("fonts", {}):
+        font = updates["fonts"]["heading_font"]
+        css = re.sub(r"(--font-heading\s*:)[^;]+;", f"\\1 '{font}', sans-serif;", css)
+    if "body_font" in updates.get("fonts", {}):
+        font = updates["fonts"]["body_font"]
+        css = re.sub(r"(--font-body\s*:)[^;]+;", f"\\1 '{font}', sans-serif;", css)
+
+    session["css"] = css
+    await redis_save_session(req.session_id, session)
+    return {"success": True, "css": css}
+
+
+@router.post("/design-system/generate")
+async def generate_design_system(req: DesignSystemRequest, user: dict = Depends(require_auth)):
+    """Return current design system from session plan."""
+    session = await redis_get_session(req.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    _verify_session_ownership(session, user)
+    plan = session.get("plan", {})
+    design = plan.get("design", {})
+    return {
+        "success": True,
+        "designSystem": {
+            "primary": design.get("primary_color", "#6366f1"),
+            "secondary": design.get("secondary_color", "#8b5cf6"),
+            "accent": design.get("accent_color", "#a78bfa"),
+            "background": design.get("background_color", "#ffffff"),
+            "heading_font": design.get("heading_font", "Space Grotesk"),
+            "body_font": design.get("body_font", "Inter"),
+        }
+    }

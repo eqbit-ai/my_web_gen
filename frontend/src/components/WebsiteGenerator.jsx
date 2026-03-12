@@ -1210,7 +1210,6 @@ const WebsiteGenerator = () => {
         const handleCmsMessage = (e) => {
             if (e.data?.type !== 'cms-edit') return;
             const { editType } = e.data;
-            console.log('[CMS] Received edit:', editType);
             const st = cmsStateRef.current;
 
             // Extract updated HTML directly from the iframe DOM (no fragile selector matching)
@@ -1229,10 +1228,8 @@ const WebsiteGenerator = () => {
             });
 
             const newHtml = cmsRoot.innerHTML;
-            console.log('[CMS] Extracted HTML length:', newHtml.length);
 
             if (newHtml === st.html) {
-                console.log('[CMS] No change detected');
                 return;
             }
 
@@ -1272,16 +1269,13 @@ const WebsiteGenerator = () => {
     const handleElementSelect = (element) => { setSelectedElement(element); setElementPrompt(''); };
 
     const handleElementEdit = async () => {
-        console.log('[ElementEdit] Called — selectedElement:', !!selectedElement, 'prompt:', elementPrompt?.trim()?.substring(0, 50), 'isEditing:', isEditingRef.current, 'sessionId:', sessionId);
         if (!selectedElement || !elementPrompt.trim() || isEditingRef.current) return;
         isEditingRef.current = true;
         setIsEditingElement(true);
         setError(null);
 
         try {
-            console.log('[ElementEdit] Sending → path:', selectedElement.path, 'outerHTML length:', selectedElement.outerHTML?.length, 'html length:', html?.length, 'currentPage:', currentPage);
             const result = await editElement(sessionId, selectedElement.outerHTML, selectedElement.path, elementPrompt, { html, css }, currentPage);
-            console.log('[ElementEdit] Response →', { success: result.success, manualReplace: result.manualReplace, htmlLength: result.website?.html?.length, cssLength: result.website?.css?.length });
             if (result.success && !result.manualReplace) {
                 const newHtml = result.website.html;
                 const newCss = result.website.css || css; // Preserve existing CSS if backend returns empty
@@ -1375,7 +1369,7 @@ const WebsiteGenerator = () => {
         const pageHtml = overrideHtml !== null ? overrideHtml : html;
         const pageCss = overrideCss !== null ? overrideCss : css;
         // For preview: use absolute URL (works from blob: and about:blank). For export: use CDN.
-        const tailwindSrc = forExport ? 'https://cdn.tailwindcss.com' : window.location.origin + '/tailwind.js';
+        const tailwindSrc = 'https://cdn.tailwindcss.com';
         // Extract SEO meta tags from HTML comments
         const seoMatch = pageHtml.match(/<!-- SEO_META\s*([\s\S]*?)\s*END_SEO_META -->/);
         const seoMeta = seoMatch ? seoMatch[1].trim() : `<meta name="description" content="${d}">
@@ -1527,9 +1521,6 @@ const WebsiteGenerator = () => {
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
     };
 
-    // DEBUG: Log multipage state on every render
-    console.log('[MP State] isMultipage:', isMultipage, 'currentPage:', currentPage, 'pages:', Object.keys(pages), 'html length:', html?.length);
-
     // ── Multi-page: switch active page ────────────────────────────────
     const pagesRef = useRef(pages);
     pagesRef.current = pages;
@@ -1551,14 +1542,10 @@ const WebsiteGenerator = () => {
         const curPage = currentPageRef.current;
         const curSessionId = sessionIdRef.current;
 
-        console.log('[PageSwitch] Request:', slug, 'current:', curPage, 'available:', Object.keys(curPages), 'pages count:', Object.keys(curPages).length);
-
         if (!curPages[slug]) {
-            console.warn('[PageSwitch] Cannot switch to', slug, '— available pages:', Object.keys(curPages));
             return;
         }
         if (slug === curPage) {
-            console.log('[PageSwitch] Already on', slug, '— skipping');
             return;
         }
 
@@ -1566,7 +1553,6 @@ const WebsiteGenerator = () => {
         const updated = { ...curPages, [curPage]: { html: curHtml, css: curCss } };
         // 2. Read target page
         const target = updated[slug];
-        console.log('[PageSwitch]', curPage, '→', slug, 'target html length:', target?.html?.length, 'target css length:', target?.css?.length);
 
         // 3. Update all state in one batch (outside any functional updater)
         setPages(updated);
@@ -1969,7 +1955,7 @@ const WebsiteGenerator = () => {
                                                 {hasThumbnail ? (
                                                     <iframe
                                                         title={item.name}
-                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="${window.location.origin}/tailwind.js"></script><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
+                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
                                                         className="gn-card-iframe"
                                                         sandbox="allow-scripts allow-same-origin"
                                                         loading="lazy"

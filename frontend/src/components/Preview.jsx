@@ -621,15 +621,9 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
     useEffect(() => {
         const iframe = iframeRef.current;
         if (!iframe) return;
-        // eslint-disable-next-line no-console
-        console.log('[Preview] useEffect triggered, html length:', html?.length, 'css length:', css?.length);
-
         const writeContent = () => {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
-            // eslint-disable-next-line no-console
-            if (!doc) { console.warn('[Preview] No doc available'); return; }
-            // eslint-disable-next-line no-console
-            console.log('[Preview] writeContent called, writing', html?.length, 'chars');
+            if (!doc) { return; }
 
             const selectionScript = getSelectionScript();
             const cmsScript = getCmsScript();
@@ -666,7 +660,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.min.css">
   <!-- Tailwind CSS -->
-  <script src="/tailwind.js"><\/script>
+  <script src="https://cdn.tailwindcss.com"><\/script>
   <!-- Animations -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
   <style>
@@ -691,24 +685,10 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
     ${BUILTIN_ANIMATION_JS}
 
     // Init AOS with offset 0 so iframe elements animate immediately
-    function initAOS() {
-      if (typeof AOS !== 'undefined') {
-        AOS.init({ duration: 800, once: true, offset: 0, disable: false });
-        // Refresh after content settles
-        setTimeout(function() { AOS.refresh(); }, 300);
-        setTimeout(function() { AOS.refresh(); }, 1000);
-      } else {
-        // AOS didn't load — make all data-aos elements visible
-        document.querySelectorAll('[data-aos]').forEach(function(el) {
-          el.style.opacity = '1';
-          el.style.transform = 'none';
-        });
-      }
+    if (typeof AOS !== 'undefined') {
+      AOS.init({ duration: 800, once: true, offset: 0 });
+      setTimeout(function() { AOS.refresh(); }, 500);
     }
-    // Run on load and after a delay
-    if (document.readyState === 'complete') { initAOS(); }
-    else { window.addEventListener('load', initAOS); }
-    setTimeout(initAOS, 500);
 
     // Mobile hamburger menu — universal fallback
     (function() {

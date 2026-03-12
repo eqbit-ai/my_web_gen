@@ -9,7 +9,7 @@ import { listProjects, getProject, deleteProject, listTemplateCatalog, getTempla
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
 
 const buildSrcDoc = (css, html, withScripts = false) =>
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/tailwind.js"></script><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}${withScripts ? '' : ''}</body></html>`;
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}${withScripts ? '' : ''}</body></html>`;
 
 const mockDomains = [
     {
@@ -546,7 +546,7 @@ const Dashboard = () => {
                                     </div>
                                     <iframe
                                         title="Template Preview"
-                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="/tailwind.js"></script><style>${templatePreviews[previewModal].css || ''}</style></head><body>${templatePreviews[previewModal].html || ''}</body></html>`}
+                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><style>${templatePreviews[previewModal].css || ''}</style></head><body>${templatePreviews[previewModal].html || ''}</body></html>`}
                                         className="dash-template-modal-iframe"
                                         sandbox="allow-same-origin allow-scripts"
                                     />
