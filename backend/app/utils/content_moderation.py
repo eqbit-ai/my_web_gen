@@ -143,8 +143,8 @@ def check_prompt_safety(prompt: str) -> dict:
         category_str = ", ".join(labels)
         return {
             "safe": False,
-            "reason": f"Restricted content: {category_str}. "
-            f"This type of content is not allowed on the Meydan platform.",
+            "reason": f"[RESTRICTED] {category_str} — "
+            f"this type of content cannot be generated on the Meydan platform.",
             "flagged_terms": flagged_terms,
         }
 
@@ -218,9 +218,10 @@ async def check_prompt_safety_llm(prompt: str) -> dict:
         if result.get("safe", True):
             return {"safe": True, "reason": None, "flagged_terms": []}
         else:
+            llm_reason = result.get("reason", "Prohibited content detected")
             return {
                 "safe": False,
-                "reason": result.get("reason", "Content flagged by AI moderation"),
+                "reason": f"[RESTRICTED] {llm_reason}",
                 "flagged_terms": [result.get("category", "unknown")],
             }
 

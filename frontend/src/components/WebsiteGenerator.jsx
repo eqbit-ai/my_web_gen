@@ -1124,15 +1124,16 @@ const WebsiteGenerator = () => {
                 // onError
                 (errorMsg) => {
                     streamControllerRef.current = null;
-                    const isModeration = errorMsg.includes('flagged') || errorMsg.includes('not allowed') || errorMsg.includes('prohibited');
-                    if (isModeration) {
-                        addToast(errorMsg, 'error', 8000);
+                    const isRestricted = errorMsg.includes('[RESTRICTED]');
+                    const displayMsg = errorMsg.replace('[RESTRICTED] ', '');
+                    if (isRestricted) {
+                        addToast(displayMsg, 'error', 8000);
                     } else {
                         setErrorBanner(errorMsg);
                     }
                     lastRetryPrompt.current = promptText;
                     setMessages(prev => [...prev, {
-                        role: 'assistant', text: `Error: ${errorMsg}`,
+                        role: 'assistant', text: isRestricted ? `Restricted: ${displayMsg}` : `Error: ${errorMsg}`,
                         timestamp: new Date().toLocaleTimeString(), isError: true,
                     }]);
                     setIsLoading(false); setLoadingMessage('');
@@ -1352,8 +1353,8 @@ const WebsiteGenerator = () => {
         } catch (err) {
             console.error('[ElementEdit] Error:', err.message || err);
             const msg = err.message || 'Failed to edit element';
-            if (msg.includes('flagged') || msg.includes('not allowed') || msg.includes('prohibited')) {
-                addToast(msg, 'error', 8000);
+            if (msg.includes('[RESTRICTED]')) {
+                addToast(msg.replace('[RESTRICTED] ', ''), 'error', 8000);
             } else {
                 setError(msg);
             }
