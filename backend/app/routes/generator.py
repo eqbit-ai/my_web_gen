@@ -2540,14 +2540,14 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         pages_dict = {**existing_pages}
                         pages_dict[page_slug] = {"html": new_page_code["html"], "css": new_page_code["css"]}
 
-                    # Update navbars in ALL existing pages to include the new page link
+                    # Update navbars + footer quick links in ALL pages (including new page)
                     pages_dict = _update_all_page_navbars(pages_dict, page_slug, page_title)
                     # Also update session["html"] if index was modified
                     if "index" in pages_dict:
                         session["html"] = pages_dict["index"]["html"]
 
-                    # code dict = the new page (frontend will display it)
-                    code = new_page_code
+                    # code dict = the new page FROM pages_dict (post-nav-sync, not pre-sync)
+                    code = pages_dict[page_slug]
                     plan = session.get("plan") or {}
 
                     # Save multipage state to session

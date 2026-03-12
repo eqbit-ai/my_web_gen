@@ -245,6 +245,7 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .slider-dot.active {{ background: var(--primary); }}
 
 /* ═══ Footer ═══ */
+footer {{ margin-top: 4rem; }}
 .footer-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }}
 @media (max-width: 1024px) {{ .footer-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
 @media (max-width: 640px) {{ .footer-grid {{ grid-template-columns: 1fr; }} }}
@@ -361,6 +362,7 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 {style_additions}
 .typed-cursor {{ color: var(--primary); font-weight: 100; }}
 .search-dropdown.active {{ display: block; }}
+#back-to-top {{ position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 50; }}
 #back-to-top.visible {{ opacity: 1; pointer-events: auto; }}
 .whatsapp-float {{ animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }}
 [data-splitting] .char {{ display: inline-block; opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }}
