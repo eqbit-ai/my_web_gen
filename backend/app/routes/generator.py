@@ -1489,6 +1489,60 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     return {"html": updated_html, "css": css, "js": js}
 
 
+def _inject_page_nav_link(html: str, page_slug: str, page_title: str) -> str:
+    """Add a nav link for a new page into an existing page's navbar.
+
+    Finds the last </li> or last <a> inside the nav-links container and appends
+    a new link before the CTA button (if present) or at the end of the nav list.
+    """
+    # Strategy: find the nav-links list and insert a new <li><a> for the page
+    # Look for the pattern: </li> followed by optional whitespace then a CTA link or </ul>
+    new_link = f'<li><a href="/{page_slug}.html" class="text-[var(--text)] hover:text-[var(--primary)] transition-colors font-medium">{page_title}</a></li>'
+
+    # Try to insert before the CTA button in nav (usually the last <li> with a styled <a>)
+    # Pattern: find the last plain nav link </li> before a CTA-style link
+    cta_pattern = re.compile(
+        r'(</li>\s*)'
+        r'(<li>\s*<a\s[^>]*(?:bg-gradient|bg-\[var\(--primary\)\)|rounded-\[var\(--radius-btn\)\])[^>]*>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = cta_pattern.search(html)
+    if match:
+        insert_pos = match.start() + len(match.group(1))
+        return html[:insert_pos] + '\n      ' + new_link + '\n      ' + html[insert_pos:]
+
+    # Fallback: insert before </ul> in the nav-links
+    nav_ul_pattern = re.compile(r'(</li>\s*)(</ul>)', re.IGNORECASE)
+    match = nav_ul_pattern.search(html)
+    if match:
+        insert_pos = match.start() + len(match.group(1))
+        return html[:insert_pos] + '\n      ' + new_link + '\n      ' + html[insert_pos:]
+
+    # Last resort: just return unchanged (nav structure unrecognized)
+    logger.warning(f"[NAV UPDATE] Could not find nav insertion point for {page_slug}")
+    return html
+
+
+def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) -> dict:
+    """Update navbars in ALL existing pages to include a link to the new page.
+
+    Skips the new page itself (it should already have correct links).
+    Returns the updated pages_dict.
+    """
+    for slug, page_data in pages_dict.items():
+        if slug == new_slug:
+            continue
+        page_html = page_data.get("html", "")
+        # Check if this page already has a link to the new page
+        if f'/{new_slug}.html' in page_html or f'{new_slug}.html' in page_html:
+            continue
+        updated = _inject_page_nav_link(page_html, new_slug, new_title)
+        if updated != page_html:
+            pages_dict[slug] = {**page_data, "html": updated}
+            logger.info(f'[NAV UPDATE] Added "{new_title}" link to {slug} page navbar')
+    return pages_dict
+
+
 async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: str) -> dict[str, str]:
     """Generate a brand-new page using the existing homepage as a design reference.
 
@@ -2371,6 +2425,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     else:
                         pages_dict = {**existing_pages}
                         pages_dict[page_slug] = {"html": new_page_code["html"], "css": new_page_code["css"]}
+
+                    # Update navbars in ALL existing pages to include the new page link
+                    pages_dict = _update_all_page_navbars(pages_dict, page_slug, page_title)
+                    # Also update session["html"] if index was modified
+                    if "index" in pages_dict:
+                        session["html"] = pages_dict["index"]["html"]
 
                     # code dict = the new page (frontend will display it)
                     code = new_page_code
