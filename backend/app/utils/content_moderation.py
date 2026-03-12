@@ -19,90 +19,96 @@ from app.utils.llm_clients import get_openai_client
 
 BLOCKED_KEYWORDS: dict[str, list[str]] = {
     "adult_content": [
-        "porn",
-        "pornography",
-        "xxx",
-        "adult content",
-        "escort",
-        "escorts",
-        "escort service",
-        "cam girl",
-        "camgirl",
-        "onlyfans",
-        "sex worker",
-        "strip club",
-        "nude",
-        "nudity",
-        "erotic",
-        "sex shop",
-        "adult toy",
-        "adult entertainment",
-        "hookup",
-        "fetish",
+        "porn", "pornography", "xxx", "adult content",
+        "escort", "escorts", "escort service",
+        "cam girl", "camgirl", "onlyfans", "sex worker",
+        "strip club", "nude", "nudity", "erotic",
+        "sex shop", "adult toy", "adult entertainment",
+        "hookup", "fetish", "sexy girls", "sexy women",
+        "dating site", "sugar daddy", "sugar baby",
+        "massage parlor", "happy ending",
+        "lingerie shop", "adult dating",
     ],
     "illegal_services": [
-        "drug dealer",
-        "drug dealing",
-        "cocaine",
-        "heroin",
-        "meth",
-        "methamphetamine",
-        "fake passport",
-        "fake id",
-        "counterfeit",
-        "money laundering",
-        "darknet",
-        "dark web marketplace",
-        "illegal weapon",
-        "arms dealer",
-        "hitman",
-        "hack for hire",
-        "stolen credit card",
-        "carding",
-        "identity theft service",
+        "drug dealer", "drug dealing",
+        "cocaine", "heroin", "meth", "methamphetamine",
+        "marijuana dispensary", "cannabis shop", "weed delivery",
+        "fake passport", "fake id", "counterfeit",
+        "money laundering", "darknet", "dark web marketplace",
+        "illegal weapon", "arms dealer", "gun shop", "firearms dealer",
+        "hitman", "hack for hire",
+        "stolen credit card", "carding", "identity theft service",
+        "pyramid scheme", "ponzi scheme",
+        "fake certificate", "fake degree", "diploma mill",
+        "spy software", "spyware service", "stalkerware",
     ],
-    "impersonation": [
-        "government of uae",
-        "uae government official",
-        "ministry of",
-        "dubai police",
-        "abu dhabi police",
-        "central bank of uae",
-        "emirates nbd official",
-        "mashreq bank official",
-        "dubai customs official",
-        "immigration authority",
-        "impersonate government",
-        "fake government",
-        "fake embassy",
-        "fake consulate",
+    "gambling": [
+        "online casino", "casino website", "gambling site",
+        "sports betting", "betting platform", "poker site",
+        "slot machine", "roulette online", "blackjack online",
+        "bet365", "bookmaker", "bookie",
+        "crypto gambling", "binary options",
+    ],
+    "alcohol_tobacco": [
+        "liquor store", "liquor shop", "wine shop",
+        "beer delivery", "alcohol delivery",
+        "online liquor", "buy alcohol online",
+        "vape shop", "vaping store", "e-cigarette shop",
+        "tobacco shop", "cigarette shop", "hookah shop", "shisha shop",
+        "cigar shop",
+    ],
+    "government": [
+        "government of uae", "uae government official",
+        "ministry of", "dubai police", "abu dhabi police",
+        "central bank of uae", "immigration authority",
+        "impersonate government", "fake government",
+        "fake embassy", "fake consulate",
+        "royal family", "sheikh official",
+        "dewa official", "rta official", "dha official",
+        "government website", "government portal",
+        "municipality website", "federal authority",
+        "dubai municipality", "abu dhabi government",
+        "sharjah government", "ajman government",
+    ],
+    "banking": [
+        "bank website", "banking website", "banking portal",
+        "emirates nbd", "mashreq bank", "adcb bank",
+        "fab bank", "dib bank", "enbd",
+        "rakbank", "commercial bank", "national bank",
+        "central bank", "investment bank website",
+        "nbd official", "banking platform",
     ],
     "phishing": [
-        "phishing",
-        "credential harvesting",
-        "password steal",
-        "login page clone",
-        "fake login",
-        "clone bank website",
-        "steal password",
-        "capture credentials",
-        "fake paypal",
-        "fake stripe",
-        "social engineering attack",
-        "spoof website",
-        "man in the middle",
+        "phishing", "credential harvesting",
+        "password steal", "login page clone",
+        "fake login", "clone bank website",
+        "steal password", "capture credentials",
+        "fake paypal", "fake stripe",
+        "social engineering attack", "spoof website",
+        "man in the middle", "fake checkout",
+        "clone website", "mirror site",
     ],
     "violence": [
-        "bomb making",
-        "how to make a bomb",
-        "explosive device",
-        "terrorist",
-        "terrorism",
-        "mass shooting",
-        "kill people",
-        "assassination",
-        "biological weapon",
-        "chemical weapon",
+        "bomb making", "how to make a bomb", "explosive device",
+        "terrorist", "terrorism", "mass shooting",
+        "kill people", "assassination",
+        "biological weapon", "chemical weapon",
+        "hate group", "white supremacy", "neo nazi",
+        "extremist", "jihadi",
+    ],
+    "crypto_scam": [
+        "crypto pump", "pump and dump",
+        "guaranteed returns", "guaranteed profit",
+        "get rich quick", "double your bitcoin",
+        "forex robot", "trading bot scam",
+        "investment guaranteed",
+    ],
+    "religious_political": [
+        "anti islam", "anti muslim", "islamophobia",
+        "anti christian", "anti jewish", "antisemitic",
+        "political party website", "political campaign",
+        "propaganda site", "hate speech",
+        "blasphemy", "religious defamation",
     ],
 }
 
@@ -132,11 +138,24 @@ def check_prompt_safety(prompt: str) -> dict:
             flagged_terms.append(keyword)
             categories_hit.add(category)
 
+    CATEGORY_LABELS = {
+        "adult_content": "Adult content",
+        "illegal_services": "Illegal services",
+        "gambling": "Gambling & betting",
+        "alcohol_tobacco": "Alcohol & tobacco",
+        "government": "Government websites",
+        "banking": "Banking & financial institutions",
+        "phishing": "Phishing & scams",
+        "violence": "Violence & extremism",
+        "crypto_scam": "Crypto scams",
+        "religious_political": "Religious/political content",
+    }
     if flagged_terms:
-        category_str = ", ".join(sorted(categories_hit))
+        labels = [CATEGORY_LABELS.get(c, c) for c in sorted(categories_hit)]
+        category_str = ", ".join(labels)
         return {
             "safe": False,
-            "reason": f"Content flagged for: {category_str}. "
+            "reason": f"Restricted content: {category_str}. "
             f"This type of content is not allowed on the Meydan platform.",
             "flagged_terms": flagged_terms,
         }
@@ -153,13 +172,17 @@ _LLM_MODERATION_SYSTEM = """You are a content moderation system for Meydan Free 
 Your job is to determine if a user's website generation prompt is requesting prohibited content.
 
 PROHIBITED content categories:
-1. Adult/sexual content or services
-2. Illegal products or services (drugs, weapons, counterfeit goods)
-3. Government or bank impersonation
-4. Phishing, scam, or fraud websites
-5. Violence, terrorism, or weapons
-6. Hate speech or discrimination
-7. Gambling (unless properly licensed)
+1. Adult/sexual content or services (porn, escorts, dating, nudity)
+2. Illegal products or services (drugs, weapons, counterfeit goods, fake documents)
+3. Government websites or impersonation (any government entity, ministry, police, authority)
+4. Bank or financial institution websites (bank websites, central bank, official financial portals)
+5. Phishing, scam, or fraud websites
+6. Violence, terrorism, or weapons
+7. Hate speech, discrimination, or religious/political extremism
+8. Gambling and betting (casinos, sports betting, poker, any betting platform)
+9. Alcohol or tobacco shops/delivery services
+10. Cryptocurrency scams, pyramid schemes, get-rich-quick schemes
+11. Religious or political campaign websites
 
 ALLOWED content (do NOT flag these):
 - Legitimate businesses (restaurants, tech companies, consulting, retail, etc.)

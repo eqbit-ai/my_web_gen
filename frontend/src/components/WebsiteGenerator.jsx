@@ -1124,7 +1124,12 @@ const WebsiteGenerator = () => {
                 // onError
                 (errorMsg) => {
                     streamControllerRef.current = null;
-                    setErrorBanner(errorMsg);
+                    const isModeration = errorMsg.includes('flagged') || errorMsg.includes('not allowed') || errorMsg.includes('prohibited');
+                    if (isModeration) {
+                        addToast(errorMsg, 'error', 8000);
+                    } else {
+                        setErrorBanner(errorMsg);
+                    }
                     lastRetryPrompt.current = promptText;
                     setMessages(prev => [...prev, {
                         role: 'assistant', text: `Error: ${errorMsg}`,
@@ -1346,7 +1351,12 @@ const WebsiteGenerator = () => {
             }
         } catch (err) {
             console.error('[ElementEdit] Error:', err.message || err);
-            setError(err.message || 'Failed to edit element');
+            const msg = err.message || 'Failed to edit element';
+            if (msg.includes('flagged') || msg.includes('not allowed') || msg.includes('prohibited')) {
+                addToast(msg, 'error', 8000);
+            } else {
+                setError(msg);
+            }
         } finally {
             setIsEditingElement(false);
             isEditingRef.current = false;

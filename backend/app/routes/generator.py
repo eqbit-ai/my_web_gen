@@ -3422,6 +3422,10 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
     if not req.prompt:
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
+    moderation = await moderate_prompt(req.prompt)
+    if not moderation["safe"]:
+        raise HTTPException(status_code=400, detail=moderation["reason"])
+
     log_event_bg(
         user_id=str(user["user_id"]),
         action="edit_website",
