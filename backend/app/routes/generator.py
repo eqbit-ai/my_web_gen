@@ -9,6 +9,7 @@ CSS is semantic classes in a <style> block (layout, components, responsive).
 """
 
 import asyncio
+import difflib
 import json
 import logging
 import os
@@ -1487,86 +1488,200 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     return {"html": updated_html, "css": css, "js": js}
 
 
-def _build_nav_links(pages_dict: dict, current_slug: str) -> tuple[str, str]:
-    """Build nav link HTML for both <ul><li> and <div><a> navbar formats.
+def _extract_nav_items(content: str, fmt: str) -> list[dict]:
+    """Extract nav link items from a nav-links block.
 
-    Returns (li_links, a_links) where:
-      - li_links: <li><a href="...">Title</a></li> for each page
-      - a_links: <a href="...">Title</a> for each page
+    Returns a list of dicts: [{"full": "<li>...", "text": "About", "href": "#about"}, ...]
+    fmt is "li" for <ul> format or "a" for <div> format.
     """
-    li_parts = []
-    a_parts = []
-    for slug in pages_dict:
-        if slug == "index":
-            href = "/"
-            title = "Home"
-        else:
-            href = f"/{slug}.html"
-            # Derive title from slug: "about-us" → "About Us"
-            title = slug.replace("-", " ").replace("_", " ").title()
-        li_parts.append(f'<li><a href="{href}">{title}</a></li>')
-        a_parts.append(f'<a href="{href}">{title}</a>')
-    return "\n      ".join(li_parts), "\n      ".join(a_parts)
+    items = []
+    if fmt == "li":
+        for m in re.finditer(
+            r'(<li(?:\s[^>]*)?>)\s*(<a\s[^>]*href="([^"]*)"[^>]*>(.*?)</a>)\s*(</li>)',
+            content, re.IGNORECASE | re.DOTALL,
+        ):
+            items.append({
+                "full": m.group(0),
+                "text": re.sub(r'<[^>]+>', '', m.group(4)).strip(),
+                "href": m.group(3),
+                "is_cta": "mobile-cta" in m.group(1).lower(),
+            })
+    else:  # "a" format
+        for m in re.finditer(
+            r'<a\s[^>]*href="([^"]*)"[^>]*>(.*?)</a>',
+            content, re.IGNORECASE | re.DOTALL,
+        ):
+            text = re.sub(r'<[^>]+>', '', m.group(2)).strip()
+            is_cta = "btn-primary" in m.group(0).lower()
+            items.append({
+                "full": m.group(0),
+                "text": text,
+                "href": m.group(1),
+                "is_cta": is_cta,
+            })
+    return items
 
 
-def _sync_page_navbar(html: str, pages_dict: dict, current_slug: str) -> str:
-    """Replace the nav links in a page's navbar with inter-page navigation links.
+def _find_best_nav_match(nav_items: list[dict], new_title: str) -> int | None:
+    """Find the nav item that best matches the new page title.
 
-    Handles both formats that Claude generates:
+    Uses fuzzy matching + keyword overlap. Returns the index of the best match
+    among non-CTA, anchor-only (href starts with #) items, or None if no
+    reasonable match is found (score < 0.3).
+    """
+    new_lower = new_title.lower()
+    new_words = set(new_lower.split())
+    best_idx = None
+    best_score = 0.0
+
+    for i, item in enumerate(nav_items):
+        if item["is_cta"]:
+            continue
+        # Only consider anchor links (intra-page) for replacement, not existing page links
+        href = item["href"]
+        if href.endswith(".html") or href == "/":
+            continue
+
+        text_lower = item["text"].lower()
+        text_words = set(text_lower.split())
+
+        # Fuzzy string ratio
+        ratio = difflib.SequenceMatcher(None, new_lower, text_lower).ratio()
+
+        # Word overlap bonus
+        overlap = len(new_words & text_words)
+        word_bonus = overlap * 0.3
+
+        # Keyword synonyms bonus
+        synonym_groups = [
+            {"services", "service", "solutions", "offerings", "what we do", "our services"},
+            {"about", "about us", "our story", "who we are", "company"},
+            {"contact", "contact us", "get in touch", "reach us"},
+            {"team", "our team", "people", "staff", "leadership"},
+            {"portfolio", "work", "projects", "our work", "case studies", "gallery"},
+            {"pricing", "plans", "packages"},
+            {"blog", "news", "articles", "insights"},
+            {"faq", "faqs", "questions", "help"},
+            {"careers", "jobs", "join us", "work with us"},
+        ]
+        synonym_bonus = 0.0
+        for group in synonym_groups:
+            if new_lower in group and text_lower in group:
+                synonym_bonus = 0.5
+                break
+            # Partial: check if any word from new_title matches any word in a group that text is in
+            if text_lower in group and new_words & group:
+                synonym_bonus = 0.35
+                break
+            if new_lower in group and text_words & group:
+                synonym_bonus = 0.35
+                break
+
+        score = ratio + word_bonus + synonym_bonus
+        if score > best_score:
+            best_score = score
+            best_idx = i
+
+    if best_score >= 0.3 and best_idx is not None:
+        logger.info(f'[NAV MATCH] Best match for "{new_title}": "{nav_items[best_idx]["text"]}" (score={best_score:.2f})')
+        return best_idx
+
+    logger.info(f'[NAV MATCH] No good match for "{new_title}" (best score={best_score:.2f}), will append')
+    return None
+
+
+def _sync_page_navbar(html: str, pages_dict: dict, current_slug: str, new_slug: str, new_title: str) -> str:
+    """Smart-update the navbar: replace the best-matching nav item with the new page link,
+    keep all other existing nav items intact, and ensure a Home link exists for inter-page nav.
+
+    Handles both formats:
       Format A: <ul class="nav-links"><li><a>...</a></li>...</ul>
       Format B: <div class="nav-links"><a>...</a>...</div>
 
-    Preserves CTA buttons (mobile-cta <li> and nav-cta <a>).
+    Preserves CTA buttons.
     """
-    li_links, a_links = _build_nav_links(pages_dict, current_slug)
+    new_href = f"/{new_slug}.html"
+    # For subpages, the page itself needs a Home link pointing to /
+    is_subpage = current_slug != "index"
 
-    # --- Format A: <ul class="nav-links"> with <li> children ---
+    # --- Format A: <ul class="nav-links"> ---
     ul_pattern = re.compile(
-        r'(<ul\s+class="nav-links"[^>]*>)'   # opening <ul>
-        r'(.*?)'                               # content (li items)
-        r'(</ul>)',                             # closing </ul>
+        r'(<ul\s+class="nav-links"[^>]*>)(.*?)(</ul>)',
         re.IGNORECASE | re.DOTALL,
     )
     ul_match = ul_pattern.search(html)
     if ul_match:
         old_content = ul_match.group(2)
-        # Extract CTA items to preserve (mobile-cta <li>)
-        cta_items = re.findall(
-            r'<li\s+class="mobile-cta"[^>]*>.*?</li>',
-            old_content,
-            re.IGNORECASE | re.DOTALL,
-        )
-        cta_html = "\n      ".join(cta_items)
-        # Build new content: page links + preserved CTA
-        new_content = f"\n      {li_links}"
-        if cta_html:
-            new_content += f"\n      {cta_html}"
-        new_content += "\n    "
+        items = _extract_nav_items(old_content, "li")
+        non_cta = [it for it in items if not it["is_cta"]]
+        cta_items = [it for it in items if it["is_cta"]]
+
+        # Check if new page link already exists
+        if any(it["href"] == new_href for it in items):
+            return html
+
+        best_idx = _find_best_nav_match(non_cta, new_title)
+
+        # Build the replacement link
+        new_li = f'<li><a href="{new_href}">{new_title}</a></li>'
+
+        if best_idx is not None:
+            # Replace the matched item
+            replaced_text = non_cta[best_idx]["text"]
+            non_cta[best_idx] = {**non_cta[best_idx], "full": new_li, "text": new_title, "href": new_href}
+            logger.info(f'[NAV SYNC] Replacing "{replaced_text}" → "{new_title}" in "{current_slug}"')
+        else:
+            # Append before CTAs
+            non_cta.append({"full": new_li, "text": new_title, "href": new_href, "is_cta": False})
+            logger.info(f'[NAV SYNC] Appending "{new_title}" link to "{current_slug}"')
+
+        # Ensure Home link exists (for inter-page navigation from subpages)
+        has_home = any(it["href"] == "/" for it in non_cta)
+        if not has_home and is_subpage:
+            home_li = '<li><a href="/">Home</a></li>'
+            non_cta.insert(0, {"full": home_li, "text": "Home", "href": "/", "is_cta": False})
+
+        # Reassemble
+        all_items = [it["full"] for it in non_cta] + [it["full"] for it in cta_items]
+        new_content = "\n      " + "\n      ".join(all_items) + "\n    "
         html = html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
         return html
 
-    # --- Format B: <div class="nav-links"> with direct <a> children ---
+    # --- Format B: <div class="nav-links"> ---
     div_pattern = re.compile(
-        r'(<div\s+class="nav-links"[^>]*>)'   # opening <div>
-        r'(.*?)'                                # content (a tags)
-        r'(</div>)',                            # closing </div>
+        r'(<div\s+class="nav-links"[^>]*>)(.*?)(</div>)',
         re.IGNORECASE | re.DOTALL,
     )
     div_match = div_pattern.search(html)
     if div_match:
         old_content = div_match.group(2)
-        # Extract CTA links to preserve (btn-primary class)
-        cta_links = re.findall(
-            r'<a\s[^>]*class="[^"]*btn-primary[^"]*"[^>]*>.*?</a>',
-            old_content,
-            re.IGNORECASE | re.DOTALL,
-        )
-        cta_html = "\n      ".join(cta_links)
-        # Build new content: page links + preserved CTA
-        new_content = f"\n      {a_links}"
-        if cta_html:
-            new_content += f"\n      {cta_html}"
-        new_content += "\n    "
+        items = _extract_nav_items(old_content, "a")
+        non_cta = [it for it in items if not it["is_cta"]]
+        cta_items = [it for it in items if it["is_cta"]]
+
+        # Check if new page link already exists
+        if any(it["href"] == new_href for it in items):
+            return html
+
+        best_idx = _find_best_nav_match(non_cta, new_title)
+
+        new_a = f'<a href="{new_href}">{new_title}</a>'
+
+        if best_idx is not None:
+            replaced_text = non_cta[best_idx]["text"]
+            non_cta[best_idx] = {**non_cta[best_idx], "full": new_a, "text": new_title, "href": new_href}
+            logger.info(f'[NAV SYNC] Replacing "{replaced_text}" → "{new_title}" in "{current_slug}"')
+        else:
+            non_cta.append({"full": new_a, "text": new_title, "href": new_href, "is_cta": False})
+            logger.info(f'[NAV SYNC] Appending "{new_title}" link to "{current_slug}"')
+
+        has_home = any(it["href"] == "/" for it in non_cta)
+        if not has_home and is_subpage:
+            home_a = '<a href="/">Home</a>'
+            non_cta.insert(0, {"full": home_a, "text": "Home", "href": "/", "is_cta": False})
+
+        all_items = [it["full"] for it in non_cta] + [it["full"] for it in cta_items]
+        new_content = "\n      " + "\n      ".join(all_items) + "\n    "
         html = html[:div_match.start(2)] + new_content + html[div_match.end(2):]
         return html
 
@@ -1574,15 +1689,13 @@ def _sync_page_navbar(html: str, pages_dict: dict, current_slug: str) -> str:
     return html
 
 
-def _sync_footer_quick_links(html: str, pages_dict: dict) -> str:
-    """Update the 'Quick Links' column in the footer with inter-page navigation.
+def _sync_footer_quick_links(html: str, pages_dict: dict, new_slug: str, new_title: str) -> str:
+    """Smart-update the 'Quick Links' column in the footer.
 
-    Identifies the Quick Links block by its heading text (Quick Links, Navigation,
-    Pages, Explore, etc.) and replaces its anchor links with page links.
-    Only modifies the first matching footer-links block. Leaves other footer
-    columns (Products, Services, Contact) untouched.
+    Same strategy as navbar: replace the best-matching anchor link with the new page link,
+    keep all other footer links intact.
     """
-    li_links, a_links = _build_nav_links(pages_dict, "")
+    new_href = f"/{new_slug}.html"
 
     # Find the footer element
     footer_match = re.search(r'<footer[\s>]', html, re.IGNORECASE)
@@ -1590,8 +1703,7 @@ def _sync_footer_quick_links(html: str, pages_dict: dict) -> str:
         return html
     footer_start = footer_match.start()
 
-    # Look for a heading followed by a footer-links block inside the footer
-    # Match headings like "Quick Links", "Navigation", "Pages", "Explore", "Menu", "Sitemap"
+    # Look for Quick Links heading
     quick_link_headings = re.compile(
         r'<h[3-6][^>]*class="footer-heading"[^>]*>\s*'
         r'(Quick\s*Links?|Navigation|Pages|Explore|Site\s*Map|Menu|Links)\s*'
@@ -1602,49 +1714,83 @@ def _sync_footer_quick_links(html: str, pages_dict: dict) -> str:
     if not heading_match:
         return html
 
-    # Find the footer-links block immediately after this heading
     search_start = heading_match.end()
 
-    # Format A: <ul class="footer-links">
+    # Try <ul class="footer-links"> first
     ul_pattern = re.compile(
         r'(<ul\s+class="footer-links"[^>]*>)(.*?)(</ul>)',
         re.IGNORECASE | re.DOTALL,
     )
     ul_match = ul_pattern.search(html, search_start)
-    # Only match if it's close to the heading (within 200 chars — same column)
     if ul_match and ul_match.start() - search_start < 200:
-        new_content = f"\n          {li_links}\n        "
+        old_content = ul_match.group(2)
+        items = _extract_nav_items(old_content, "li")
+
+        # Already has this page link?
+        if any(it["href"] == new_href for it in items):
+            return html
+
+        best_idx = _find_best_nav_match(items, new_title)
+        new_li = f'<li><a href="{new_href}">{new_title}</a></li>'
+
+        if best_idx is not None:
+            items[best_idx] = {**items[best_idx], "full": new_li}
+        else:
+            items.append({"full": new_li, "text": new_title, "href": new_href, "is_cta": False})
+
+        # Ensure Home link
+        if not any(it["href"] == "/" for it in items):
+            items.insert(0, {"full": '<li><a href="/">Home</a></li>', "text": "Home", "href": "/", "is_cta": False})
+
+        new_content = "\n          " + "\n          ".join(it["full"] for it in items) + "\n        "
         return html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
 
-    # Format B: <div class="footer-links">
+    # Try <div class="footer-links">
     div_pattern = re.compile(
         r'(<div\s+class="footer-links"[^>]*>)(.*?)(</div>)',
         re.IGNORECASE | re.DOTALL,
     )
     div_match = div_pattern.search(html, search_start)
     if div_match and div_match.start() - search_start < 200:
-        new_content = f"\n          {a_links}\n        "
+        old_content = div_match.group(2)
+        items = _extract_nav_items(old_content, "a")
+
+        if any(it["href"] == new_href for it in items):
+            return html
+
+        best_idx = _find_best_nav_match(items, new_title)
+        new_a = f'<a href="{new_href}">{new_title}</a>'
+
+        if best_idx is not None:
+            items[best_idx] = {**items[best_idx], "full": new_a}
+        else:
+            items.append({"full": new_a, "text": new_title, "href": new_href, "is_cta": False})
+
+        if not any(it["href"] == "/" for it in items):
+            items.insert(0, {"full": '<a href="/">Home</a>', "text": "Home", "href": "/", "is_cta": False})
+
+        new_content = "\n          " + "\n          ".join(it["full"] for it in items) + "\n        "
         return html[:div_match.start(2)] + new_content + html[div_match.end(2):]
 
     return html
 
 
 def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) -> dict:
-    """Sync navbars AND footer quick links in ALL pages for inter-page navigation.
+    """Smart-sync navbars AND footer quick links in ALL pages.
 
-    Replaces anchor-only navbars with inter-page links. Preserves CTA buttons.
-    Updates footer Quick Links column with page links.
+    Instead of replacing all nav items, finds the best-matching anchor link
+    and swaps it with the new page link. Keeps all other nav items intact.
     Returns the updated pages_dict.
     """
     for slug, page_data in pages_dict.items():
         page_html = page_data.get("html", "")
         if not page_html:
             continue
-        updated = _sync_page_navbar(page_html, pages_dict, slug)
-        updated = _sync_footer_quick_links(updated, pages_dict)
+        updated = _sync_page_navbar(page_html, pages_dict, slug, new_slug, new_title)
+        updated = _sync_footer_quick_links(updated, pages_dict, new_slug, new_title)
         if updated != page_html:
             pages_dict[slug] = {**page_data, "html": updated}
-            logger.info(f'[NAV SYNC] Updated navbar + footer in "{slug}" page with {len(pages_dict)} page links')
+            logger.info(f'[NAV SYNC] Updated navbar + footer in "{slug}" page')
     return pages_dict
 
 
