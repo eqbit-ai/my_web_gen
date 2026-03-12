@@ -1487,57 +1487,107 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     return {"html": updated_html, "css": css, "js": js}
 
 
-def _inject_page_nav_link(html: str, page_slug: str, page_title: str) -> str:
-    """Add a nav link for a new page into an existing page's navbar.
+def _build_nav_links(pages_dict: dict, current_slug: str) -> tuple[str, str]:
+    """Build nav link HTML for both <ul><li> and <div><a> navbar formats.
 
-    Finds the last </li> or last <a> inside the nav-links container and appends
-    a new link before the CTA button (if present) or at the end of the nav list.
+    Returns (li_links, a_links) where:
+      - li_links: <li><a href="...">Title</a></li> for each page
+      - a_links: <a href="...">Title</a> for each page
     """
-    # Strategy: find the nav-links list and insert a new <li><a> for the page
-    # Look for the pattern: </li> followed by optional whitespace then a CTA link or </ul>
-    new_link = f'<li><a href="/{page_slug}.html">{page_title}</a></li>'
+    li_parts = []
+    a_parts = []
+    for slug in pages_dict:
+        if slug == "index":
+            href = "/"
+            title = "Home"
+        else:
+            href = f"/{slug}.html"
+            # Derive title from slug: "about-us" → "About Us"
+            title = slug.replace("-", " ").replace("_", " ").title()
+        li_parts.append(f'<li><a href="{href}">{title}</a></li>')
+        a_parts.append(f'<a href="{href}">{title}</a>')
+    return "\n      ".join(li_parts), "\n      ".join(a_parts)
 
-    # Try to insert before the CTA button in nav (usually the last <li> with a styled <a>)
-    # Pattern: find the last plain nav link </li> before a CTA-style link
-    cta_pattern = re.compile(
-        r'(</li>\s*)'
-        r'(<li>\s*<a\s[^>]*(?:bg-gradient|bg-\[var\(--primary\)\)|rounded-\[var\(--radius-btn\)\])[^>]*>)',
+
+def _sync_page_navbar(html: str, pages_dict: dict, current_slug: str) -> str:
+    """Replace the nav links in a page's navbar with inter-page navigation links.
+
+    Handles both formats that Claude generates:
+      Format A: <ul class="nav-links"><li><a>...</a></li>...</ul>
+      Format B: <div class="nav-links"><a>...</a>...</div>
+
+    Preserves CTA buttons (mobile-cta <li> and nav-cta <a>).
+    """
+    li_links, a_links = _build_nav_links(pages_dict, current_slug)
+
+    # --- Format A: <ul class="nav-links"> with <li> children ---
+    ul_pattern = re.compile(
+        r'(<ul\s+class="nav-links"[^>]*>)'   # opening <ul>
+        r'(.*?)'                               # content (li items)
+        r'(</ul>)',                             # closing </ul>
         re.IGNORECASE | re.DOTALL,
     )
-    match = cta_pattern.search(html)
-    if match:
-        insert_pos = match.start() + len(match.group(1))
-        return html[:insert_pos] + '\n      ' + new_link + '\n      ' + html[insert_pos:]
+    ul_match = ul_pattern.search(html)
+    if ul_match:
+        old_content = ul_match.group(2)
+        # Extract CTA items to preserve (mobile-cta <li>)
+        cta_items = re.findall(
+            r'<li\s+class="mobile-cta"[^>]*>.*?</li>',
+            old_content,
+            re.IGNORECASE | re.DOTALL,
+        )
+        cta_html = "\n      ".join(cta_items)
+        # Build new content: page links + preserved CTA
+        new_content = f"\n      {li_links}"
+        if cta_html:
+            new_content += f"\n      {cta_html}"
+        new_content += "\n    "
+        html = html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
+        return html
 
-    # Fallback: insert before </ul> in the nav-links
-    nav_ul_pattern = re.compile(r'(</li>\s*)(</ul>)', re.IGNORECASE)
-    match = nav_ul_pattern.search(html)
-    if match:
-        insert_pos = match.start() + len(match.group(1))
-        return html[:insert_pos] + '\n      ' + new_link + '\n      ' + html[insert_pos:]
+    # --- Format B: <div class="nav-links"> with direct <a> children ---
+    div_pattern = re.compile(
+        r'(<div\s+class="nav-links"[^>]*>)'   # opening <div>
+        r'(.*?)'                                # content (a tags)
+        r'(</div>)',                            # closing </div>
+        re.IGNORECASE | re.DOTALL,
+    )
+    div_match = div_pattern.search(html)
+    if div_match:
+        old_content = div_match.group(2)
+        # Extract CTA links to preserve (btn-primary class)
+        cta_links = re.findall(
+            r'<a\s[^>]*class="[^"]*btn-primary[^"]*"[^>]*>.*?</a>',
+            old_content,
+            re.IGNORECASE | re.DOTALL,
+        )
+        cta_html = "\n      ".join(cta_links)
+        # Build new content: page links + preserved CTA
+        new_content = f"\n      {a_links}"
+        if cta_html:
+            new_content += f"\n      {cta_html}"
+        new_content += "\n    "
+        html = html[:div_match.start(2)] + new_content + html[div_match.end(2):]
+        return html
 
-    # Last resort: just return unchanged (nav structure unrecognized)
-    logger.warning(f"[NAV UPDATE] Could not find nav insertion point for {page_slug}")
+    logger.warning(f"[NAV SYNC] Could not find nav-links in page '{current_slug}'")
     return html
 
 
 def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) -> dict:
-    """Update navbars in ALL existing pages to include a link to the new page.
+    """Sync navbars in ALL pages so every page can navigate to every other page.
 
-    Skips the new page itself (it should already have correct links).
+    Replaces anchor-only navbars with inter-page links. Preserves CTA buttons.
     Returns the updated pages_dict.
     """
     for slug, page_data in pages_dict.items():
-        if slug == new_slug:
-            continue
         page_html = page_data.get("html", "")
-        # Check if this page already has a link to the new page
-        if f'/{new_slug}.html' in page_html or f'{new_slug}.html' in page_html:
+        if not page_html:
             continue
-        updated = _inject_page_nav_link(page_html, new_slug, new_title)
+        updated = _sync_page_navbar(page_html, pages_dict, slug)
         if updated != page_html:
             pages_dict[slug] = {**page_data, "html": updated}
-            logger.info(f'[NAV UPDATE] Added "{new_title}" link to {slug} page navbar')
+            logger.info(f'[NAV SYNC] Updated navbar in "{slug}" page with {len(pages_dict)} page links')
     return pages_dict
 
 
