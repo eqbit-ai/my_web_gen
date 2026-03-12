@@ -2,10 +2,10 @@
 Generator routes — 3-stage AI website generation pipeline:
 
   Stage 1: Plan  → GPT-4.1 → JSON structure + content + layout patterns
-  Stage 2: HTML  → Claude  → HTML with Tailwind CSS + embedded <style> block
+  Stage 2: HTML  → Claude  → HTML with pure CSS classes + <style> block
   Stage 3: JS    → Claude  → Interactions/animations
 
-CSS is inline Tailwind utilities. A <style> block handles variables/animations.
+CSS is semantic classes in a <style> block (layout, components, responsive).
 """
 
 import asyncio
@@ -979,7 +979,7 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
 
 async def stage_2_html(plan: dict, session_id: str = "", niche_key: str = None, reference_html: str = None, enhanced_brief: str = None) -> str:
     """Generate semantic HTML from the website plan using component patterns."""
-    logger.info("🚀 Stage 2: HTML → Generating page structure with Tailwind CSS")
+    logger.info("🚀 Stage 2: HTML → Generating page structure with pure CSS")
     t0 = time.time()
     client = get_anthropic_client()
 
@@ -1495,7 +1495,7 @@ def _inject_page_nav_link(html: str, page_slug: str, page_title: str) -> str:
     """
     # Strategy: find the nav-links list and insert a new <li><a> for the page
     # Look for the pattern: </li> followed by optional whitespace then a CTA link or </ul>
-    new_link = f'<li><a href="/{page_slug}.html" class="text-[var(--text)] hover:text-[var(--primary)] transition-colors font-medium">{page_title}</a></li>'
+    new_link = f'<li><a href="/{page_slug}.html">{page_title}</a></li>'
 
     # Try to insert before the CTA button in nav (usually the last <li> with a styled <a>)
     # Pattern: find the last plain nav link </li> before a CTA-style link
@@ -1807,12 +1807,12 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
 # ELEMENT EDITING
 # ═══════════════════════════════════════════════════════════════════════
 
-ELEMENT_EDIT_PROMPT = """You are an expert web developer. Edit a specific element on a website that uses Tailwind CSS.
+ELEMENT_EDIT_PROMPT = """You are an expert web developer. Edit a specific element on a website that uses pure CSS classes (NO Tailwind).
 
-CURRENT FULL HTML (body content with Tailwind classes):
+CURRENT FULL HTML (body content with semantic CSS classes):
 {html}
 
-CURRENT STYLE BLOCK (CSS variables, animations):
+CURRENT STYLE BLOCK (CSS variables, layout, components):
 {css}
 
 SELECTED ELEMENT (CSS path: {element_path}):
@@ -1824,17 +1824,19 @@ Return the COMPLETE updated HTML. Only modify the targeted element.
 
 RULES:
 - Return ONE fenced code block: ```html
-- HTML = <style> block FIRST + FULL updated body content with Tailwind classes
-- Use Tailwind utility classes for styling changes
+- HTML = <style> block FIRST + FULL updated body content with semantic CSS classes
+- Use CSS classes already defined in the <style> block for styling changes
+- Do NOT use Tailwind utility classes. Add new CSS rules to the <style> block if needed.
+- Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include any explanation, just the code block
 
 SECTION SIZE CONSTRAINTS:
-- Hero: max min-h-[80vh]. NEVER taller than viewport.
+- Hero: max height 80vh. NEVER taller than viewport.
 - All sections: keep the same size as original. No excessive padding.
 
 IMAGE HANDLING:
 - "Add background image" = CSS background-image ONLY (no extra <img> tag)
-- Background images: use bg-cover bg-center with overlay (bg-black/40 max)
+- Background images: background-size: cover; background-position: center; with overlay
 - NEVER add BOTH a background-image AND a foreground <img> for the same purpose
 
 JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
@@ -2920,6 +2922,17 @@ ELEMENT_SECTION_EDIT_PROMPT = """You are an expert frontend developer editing a 
 DESIGN SYSTEM (CSS variables — use these for consistency):
 {css_vars}
 
+AVAILABLE CSS CLASSES (pre-defined in the page's <style> block — USE THEM):
+Layout: .container, .container-wide, .container-narrow, .container-xs
+Grid: .grid-2, .grid-3, .grid-4 (auto-responsive)
+Buttons: .btn-primary, .btn-secondary, .btn-group
+Cards: .card, .card-title, .card-text, .card-body, .icon-box
+Images: .img-cover, .img-wrapper
+Section: .section-header, .section-title, .section-subtitle, .text-center, .text-light
+Hero: .hero-section, .hero-heading, .hero-subtitle, .hero-split-grid, .hero-ctas, .hero-bg-cover, .hero-overlay
+Stats: .stat-item, .stat-number, .stat-label
+Forms: .form-input, .contact-form
+
 SECTION CONTAINING THE ELEMENT ({section_type} section):
 {section_html}
 
@@ -2932,16 +2945,17 @@ RULES:
 - Return ONLY the COMPLETE updated section HTML inside a single ```html code block
 - Return the FULL section element (opening tag through closing tag)
 - ONLY modify the targeted element — keep everything else unchanged
-- Use Tailwind CSS utility classes for styling changes
-- Use CSS variables via arbitrary values: text-[var(--accent)], bg-[var(--bg)], etc.
+- Use the CSS classes listed above — NO Tailwind utility classes
+- Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
 - Keep the same outer section tag and data-section-type / data-section-id attributes
 - For images, keep existing src URLs unless user asks to change images
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
+- Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include any explanation, just the html code block
 
 SECTION SIZE CONSTRAINTS:
-- Hero: max min-h-[80vh]. NEVER taller than viewport.
+- Hero: max height 80vh. NEVER taller than viewport.
 - All other sections: keep the same size as original.
 
 IMAGE HANDLING:

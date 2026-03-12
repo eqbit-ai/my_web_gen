@@ -30,16 +30,21 @@ security = HTTPBearer()
 # Shared rules appended to ALL section edit/regen prompts
 SHARED_SECTION_RULES = """
 SECTION SIZE CONSTRAINTS (CRITICAL):
-- Hero sections: max min-h-[80vh]. NEVER taller than viewport.
-- All other sections: keep roughly the same visual size as the original. No min-h-screen.
+- Hero sections: max height 80vh. NEVER taller than viewport.
+- All other sections: keep roughly the same visual size as the original.
 - Do NOT add excessive padding/margins.
 
 IMAGE HANDLING:
 - "Add background image" = CSS background-image ONLY. Do NOT also add a foreground <img>.
 - NEVER add BOTH a background-image AND a foreground <img> for the same purpose.
-- Background images: use bg-cover bg-center with overlay div (bg-black/40 max).
+- Background images: background-size: cover; background-position: center; with overlay div (max 40% opacity).
 - For NEW images use placeholder: src="{{IMG:descriptive keywords}}"
 - Image queries must be industry-specific. NEVER use generic/unrelated images.
+
+STYLING:
+- Use pure CSS classes already defined in the page's <style> block. NO Tailwind utility classes.
+- Use CSS variables: var(--primary), var(--accent), var(--bg), var(--radius), etc.
+- Do NOT generate large inline SVGs or decorative clip-path shapes.
 
 JS-DEPENDENT CLASS NAMES (do NOT rename or remove — JS will break):
 - Navbar: .nav-links, .nav-toggle, .nav-scrolled, .nav-cta, .mobile-cta
@@ -163,10 +168,8 @@ def _extract_section_css(css: str, section_id: str, section_html: str) -> str:
     classes = set()
     for cn in class_names:
         for c in cn.split():
-            # Skip Tailwind utility classes (they contain colons or are very short common utilities)
-            if ":" not in c and not c.startswith(
-                ("flex", "grid", "p-", "m-", "w-", "h-", "text-", "bg-", "border-", "rounded")
-            ):
+            # Skip responsive prefixes (sm:, md:, lg:) if any remain
+            if ":" not in c:
                 classes.add(c)
 
     # Also look for the section ID directly
@@ -533,10 +536,10 @@ CURRENT SECTION HTML:
 {existing_section}
 
 CSS VARIABLES (use these for colors):
-{css_vars if css_vars else "(use Tailwind defaults)"}
+{css_vars if css_vars else "(see page <style> block)"}
 
 SECTION-SPECIFIC CSS:
-{section_css if section_css else "(styles are inline Tailwind)"}
+{section_css if section_css else "(styles are in the page <style> block)"}
 
 PAGE CONTEXT:
 Sections on this page: {", ".join(s["type"] for s in all_sections)}
@@ -549,7 +552,9 @@ RULES:
 - KEEP data-section-id="{req.sectionId}" on the root element
 - KEEP data-section-type="{section_type}" on the root element
 - Use the SAME design system (colors, fonts, spacing, radius) as the existing section
-- Use Tailwind CSS utility classes + CSS custom properties (var(--primary), etc.)
+- Use the CSS classes from the page's <style> block + CSS custom properties (var(--primary), etc.)
+- Do NOT use Tailwind utility classes. Use semantic class names.
+- Do NOT generate large inline SVGs or decorative clip-path shapes
 - KEEP existing text/images unless the user explicitly asks to change them
 - For images, keep any existing image URLs from the current section. For NEW images, use placeholder format: src="{{{{IMG:descriptive keywords}}}}" (e.g. src="{{{{IMG:modern office workspace}}}}")
 - Output ONLY the section HTML (no full page, no wrappers)
@@ -559,7 +564,7 @@ RULES:
 - Your ```css block must include ALL CSS needed — it fully replaces previous section CSS
 
 SECTION SIZE CONSTRAINTS (CRITICAL — prevents layout breakage):
-- Hero sections: max height min-h-[80vh]. NEVER make a hero taller than viewport.
+- Hero sections: max height 80vh. NEVER make a hero taller than viewport.
 - All other sections: reasonable height, no min-h-screen or min-h-[100vh] unless the current section already uses it.
 - Do NOT add excessive padding or margins that make a section abnormally tall.
 - Keep the section roughly the same visual size as the original.
@@ -567,10 +572,10 @@ SECTION SIZE CONSTRAINTS (CRITICAL — prevents layout breakage):
 IMAGE HANDLING (CRITICAL — follow exactly):
 - "Add background image" = use CSS background-image on the section wrapper. Do NOT also add an <img> tag.
   Example: style="background-image: url('{{{{IMG:creative workspace modern}}}}'); background-size: cover; background-position: center;"
-  Add a semi-transparent overlay div (bg-black/40 max) for text readability.
+  Add a semi-transparent overlay div (max 40% opacity) for text readability.
 - "Add image" or "change image" = use an <img> tag in the layout.
 - NEVER add BOTH a background-image AND a foreground <img> tag for the same visual purpose.
-- Background images on hero: use bg-cover bg-center with overlay. Keep text content the SAME size.
+- Background images on hero: use background-size: cover; background-position: center; with overlay. Keep text content the SAME size.
 - Image queries must be SPECIFIC to the industry (e.g. "creative design studio workspace" for portfolio, "dental clinic modern interior" for dental). NEVER use generic queries like "space earth" or "abstract technology".
 
 CRITICAL — JS-DEPENDENT CLASS NAMES (do NOT rename these):
@@ -908,7 +913,7 @@ INSTRUCTIONS:
 - {logo_instruction}
 - Items with "isButton": true should be styled as CTA buttons
 - Keep data-section-id="{section_id}" and data-section-type="navbar" on the root element
-- Use Tailwind CSS utility classes
+- Use the page's existing CSS classes (NO Tailwind utility classes)
 - Use CSS custom properties (var(--color-primary), etc.)
 - Maintain consistency with the existing website design
 - Output HTML in ```html block, CSS in ```css block (if needed)
@@ -988,7 +993,7 @@ SOCIAL LINKS:
 INSTRUCTIONS:
 - {logo_instruction}
 - Keep data-section-id="{section_id}" and data-section-type="footer" on the root element
-- Use Tailwind CSS utility classes
+- Use the page's existing CSS classes (NO Tailwind utility classes)
 - Use CSS custom properties (var(--color-primary), etc.)
 - Social links should use appropriate SVG icons for each platform
 - Maintain consistency with the existing website design
@@ -1161,7 +1166,7 @@ INSTRUCTIONS:
 - Add a hidden field or data attribute for the recipient email: data-recipient="{req.recipientEmail}"
 - Include the success message in a hidden div with class "form-success-message"
 - Keep data-section-id="{section_id}" and data-section-type="contact" on the root element
-- Use Tailwind CSS utility classes
+- Use the page's existing CSS classes (NO Tailwind utility classes)
 - Use CSS custom properties (var(--color-primary), etc.)
 - Maintain consistency with the existing website design
 - Output HTML in ```html block, CSS in ```css block (if needed)

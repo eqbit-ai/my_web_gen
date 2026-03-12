@@ -1217,6 +1217,30 @@ COMPONENT_EDIT_PROMPT = """You are an expert frontend developer editing a single
 DESIGN SYSTEM (CSS variables — use these for consistency):
 {css_vars}
 
+AVAILABLE CSS CLASSES (these are pre-defined in the page's <style> block — USE THEM):
+Layout: .container (max-width 1200px), .container-wide (1400px), .container-narrow (800px), .container-xs (600px)
+Grid: .grid-2 (2 columns), .grid-3 (3 columns), .grid-4 (4 columns) — all auto-responsive
+Buttons: .btn-primary (gradient bg), .btn-secondary (outline), .btn-primary-light (white bg), .btn-secondary-light (white outline)
+  .btn-group (flex row of buttons), .btn-group.center (centered)
+Cards: .card (styled card), .card-title, .card-text, .card-body, .card-image, .card-link, .icon-box (icon container)
+Images: .img-cover (object-fit cover), .img-wrapper (rounded container)
+Hero: .hero-section (padded section), .hero-section-flush (edge-to-edge), .hero-heading (huge responsive h1), .hero-subtitle (lead text)
+  .hero-split-grid (2-col hero), .hero-ctas (button row), .hero-ctas-center (centered), .trust-line (small muted text)
+  .hero-bg-cover (full-bleed bg image), .hero-overlay (dark gradient), .hero-overlay-left, .hero-overlay-center
+  .bg-number (giant faded decorative number), .section-label + .label-line (small uppercase label)
+  .floating-card (floating accent card), .browser-frame (mockup frame)
+Section: .section-header, .section-title, .section-subtitle, .text-center, .text-light (white text)
+Nav: .navbar, .navbar-inner, .nav-brand, .nav-links, .nav-toggle, .nav-cta, .mobile-cta, .nav-scrolled
+Footer: .footer-grid, .footer-heading, .footer-links, .footer-description, .social-links, .social-link, .footer-bottom
+Stats: .stat-item, .stat-icon, .stat-number, .stat-label
+FAQ: .faq-item, .faq-question, .faq-answer
+Testimonials: .stars, .testimonial-quote, .testimonial-quote-lg, .testimonial-author, .slider-dots, .slider-dot
+Pricing: .pricing-card, .pricing-card.featured, .plan-price, .plan-features, .popular-badge
+Gallery: .gallery-item, .gallery-image, .gallery-lightbox, .masonry-grid, .masonry-item, .masonry-overlay
+Carousel: .carousel-container, .carousel-track, .carousel-slide, .carousel-image, .carousel-prev, .carousel-next, .carousel-dots, .carousel-dot
+Forms: .form-input, .form-textarea, .newsletter-form, .form-hint, .contact-form, .contact-info, .contact-item, .contact-icon
+Other: .team-photo, .timeline-item, .timeline-date, .timeline-dot, .timeline-card, .logo-cloud, .logo-item, .trust-badges, .trust-badge
+
 SECTION TO EDIT ({section_type} section):
 {section_html}
 
@@ -1225,7 +1249,7 @@ USER REQUEST: {prompt}
 RULES:
 - Return ONLY the updated section HTML inside a single ```html code block
 - Return the COMPLETE section element (opening tag through closing tag)
-- Use pure CSS classes for ALL styling — NO Tailwind utility classes
+- Use the CSS classes listed above — they are already defined in the <style> block
 - Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
 - Keep the same outer element tag and data-section-type attribute
 - Keep the same data-section-id attribute
@@ -1234,6 +1258,8 @@ RULES:
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
 - Do NOT include any explanation, just the html code block
 - You CAN freely change the section's internal layout/structure when the user asks for it (e.g., converting hero_split to hero with background image)
+- Do NOT generate large inline SVGs or decorative clip-path shapes — use CSS gradients, borders, and the existing utility classes instead
+- Keep decorative elements minimal and CSS-based (gradients, box-shadows, border-radius, pseudo-elements)
 
 SECTION SIZE CONSTRAINTS (CRITICAL):
 - Hero sections: max height 80vh. NEVER make a hero taller than viewport.
@@ -1244,9 +1270,9 @@ IMAGE HANDLING FOR EDITS:
 - "Add background image" = CSS background-image ONLY. Do NOT also add a foreground <img> tag.
 - NEVER add BOTH a background-image AND a foreground <img> for the same visual purpose.
 - When converting an <img> to a background image: use the SAME src URL from the existing <img> tag as the background-image URL
-- Background image hero: use background-size: cover; background-position: center; with a dark overlay div (40% max opacity)
+- Background image hero: use .hero-bg-cover + .hero-overlay classes, or inline style with background-size: cover; background-position: center;
 - When moving image from side to background, REMOVE the old <img> tag completely
-- Make sure text is readable over the background (use white text + dark overlay)
+- Make sure text is readable over the background (use .text-light class + dark overlay)
 
 CRITICAL — JS-DEPENDENT CLASS NAMES (DO NOT rename or remove these):
 JavaScript already exists on the page and depends on these exact class names and IDs.
@@ -1327,6 +1353,22 @@ APPEND_SECTION_PROMPT = """You are an expert frontend developer adding a NEW sec
 DESIGN SYSTEM (CSS variables — use these for consistency):
 {css_vars}
 
+AVAILABLE CSS CLASSES (pre-defined in the page's <style> block — USE THEM):
+Layout: .container, .container-wide, .container-narrow, .container-xs
+Grid: .grid-2, .grid-3, .grid-4 (auto-responsive)
+Buttons: .btn-primary, .btn-secondary, .btn-primary-light, .btn-secondary-light, .btn-group
+Cards: .card, .card-title, .card-text, .card-body, .card-image, .icon-box
+Images: .img-cover, .img-wrapper
+Section: .section-header, .section-title, .section-subtitle, .text-center, .text-light
+Hero: .hero-section, .hero-heading, .hero-subtitle, .hero-split-grid, .hero-ctas, .hero-bg-cover, .hero-overlay
+Stats: .stat-item, .stat-icon, .stat-number, .stat-label
+FAQ: .faq-item, .faq-question, .faq-answer
+Testimonials: .stars, .testimonial-quote, .testimonial-author, .slider-dots, .slider-dot
+Pricing: .pricing-card, .plan-price, .plan-features, .popular-badge
+Gallery: .gallery-item, .gallery-image, .masonry-grid, .masonry-item
+Forms: .form-input, .contact-form, .newsletter-form
+Footer: .footer-grid, .footer-heading, .footer-links, .social-links, .footer-bottom
+
 EXISTING SECTIONS ON PAGE (for context — match the style):
 {existing_sections}
 
@@ -1342,8 +1384,9 @@ USER REQUEST: {prompt}
 RULES:
 - Return ONLY the new section HTML inside a single ```html code block
 - The section MUST have data-section-type="{section_type}" attribute
-- Use pure CSS classes for ALL styling — NO Tailwind utility classes
+- Use the CSS classes listed above — they are already defined in the <style> block
 - Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
+- Do NOT generate large inline SVGs or decorative clip-path shapes
 - Match the design style of the existing sections (colors, fonts, spacing, border radius)
 - Write REAL content that matches the business context — no "Lorem ipsum" or placeholder text
 - For images, use placeholder format: src="{{{{IMG:descriptive keywords}}}}"
