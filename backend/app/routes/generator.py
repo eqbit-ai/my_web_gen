@@ -478,10 +478,6 @@ def validate_css(css: str) -> str:
         raise ValueError(f"CSS too short ({len(css)} chars) — generation likely failed")
     if len(css) > 80000:
         raise ValueError(f"CSS too large ({len(css)} chars)")
-    # Strip any [data-aos] rules — AOS CSS is loaded via CDN, custom rules cause opacity:0 issues
-    css = re.sub(r"/\*[^*]*AOS[^*]*\*/\s*", "", css)
-    css = re.sub(r"\[data-aos\][^{]*\{[^}]*\}\s*", "", css)
-    css = re.sub(r"\[data-aos\][^{]*\.aos-animate[^{]*\{[^}]*\}\s*", "", css)
     return css
 
 
@@ -2835,6 +2831,22 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
         existing = await redis_get_session(session_id) or {}
         prev_versions = existing.get("versions", [])
+
+        if not is_new and existing:
+            prev_versions.append(
+                {
+                    "version": len(prev_versions),
+                    "html": existing["html"],
+                    "css": existing["css"],
+                    "js": existing.get("js", ""),
+                    "prompt": existing.get("prompts", [""])[-1] if existing.get("prompts") else "",
+                }
+            )
+            # Cap version history to prevent Redis OOM
+            MAX_VERSIONS = 15
+            if len(prev_versions) > MAX_VERSIONS:
+                prev_versions = prev_versions[-MAX_VERSIONS:]
+
         version_number = len(prev_versions) + 1
 
         last_targets = session.get("last_edited_targets", []) if not is_new else []
@@ -3059,7 +3071,9 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
         if s:
-            s.get("versions", []).append(
+            _verify_session_ownership(s, user)
+            versions = s.get("versions", [])
+            versions.append(
                 {
                     "version": s.get("current_version", 0),
                     "html": s["html"],
@@ -3068,6 +3082,11 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                     "prompt": f"[Element edit: {req.elementPath}] {req.prompt}",
                 }
             )
+            # Cap version history
+            MAX_VERSIONS = 15
+            if len(versions) > MAX_VERSIONS:
+                versions = versions[-MAX_VERSIONS:]
+            s["versions"] = versions
             s["html"] = result_html
             s["css"] = result_css
             # Multi-page aware: also update the correct page slot

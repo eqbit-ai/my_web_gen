@@ -735,11 +735,15 @@ const WebsiteGenerator = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Persist to sessionStorage
+    // Persist to sessionStorage (store lightweight version refs, not full HTML snapshots)
     useEffect(() => {
         if (sessionId || html) {
+            // Strip heavy html/css/js/pages from version entries to avoid 5MB quota
+            const lightVersions = versions.map(v => ({
+                prompt: v.prompt, version: v.version,
+            }));
             sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-                sessionId, html, css, js, messages, versions, currentVersion, projectId,
+                sessionId, html, css, js, messages, versions: lightVersions, currentVersion, projectId,
                 isMultipage, pages, currentPage,
             }));
         }
