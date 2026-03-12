@@ -3219,6 +3219,26 @@ RULES:
 - For background images: use inline style background-image with overlay
 - Icons: use <i class="fa-solid fa-xxx"> (Font Awesome is pre-loaded)
 
+TYPOGRAPHY & STYLING (when changing text appearance):
+- Font size: use inline style font-size (rem units: 0.875rem, 1rem, 1.25rem, 1.5rem, 2rem, 3rem)
+- Font weight: 400 (normal), 500 (medium), 600 (semibold), 700 (bold), 800 (extrabold)
+- Text color: use var(--primary), var(--accent), var(--text), var(--text-muted), or any CSS color
+- Font family: use var(--font-heading) or var(--font-body) for existing fonts.
+  For a NEW font: inline style with Google Fonts-safe family, e.g. style="font-family: 'Playfair Display', serif"
+  Popular: Inter, Poppins, Playfair Display, Space Grotesk, DM Sans, Outfit, Sora, Crimson Text, Lora
+- Letter spacing: e.g. letter-spacing: 0.05em, 0.1em | Text transform: uppercase, lowercase, capitalize
+
+ANIMATIONS & EFFECTS:
+- Scroll reveal: add data-aos="fade-up|fade-down|fade-left|fade-right|zoom-in|zoom-out|flip-up|slide-up"
+  Optional: data-aos-delay="100"-"600", data-aos-duration="600"-"1200"
+- Hover: use inline transition + transform, e.g. style="transition: transform 0.3s" → scale(1.05), translateY(-5px)
+- Tilt (cards): data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
+- Typed.js (hero): <span class="typed-text" data-typed='["Phrase 1", "Phrase 2"]'></span>
+- Text split (creative): add data-splitting on headings
+- Gradient text: background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent
+- Glass effect: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
+- Box shadow: 0 4px 15px rgba(0,0,0,0.1) (subtle) | 0 10px 30px rgba(0,0,0,0.3) (heavy)
+
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
 - Adapt image size to context with inline style:
@@ -3271,17 +3291,25 @@ RULES:
 - Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include explanation
 
+TYPOGRAPHY & STYLING (when changing text appearance):
+- Font size: inline style font-size in rem (0.875rem, 1rem, 1.25rem, 1.5rem, 2rem, 3rem)
+- Font weight: 400-800 | Text color: var(--primary), var(--accent), var(--text), or any CSS color
+- Font family: var(--font-heading), var(--font-body), or Google Fonts family inline (e.g. 'Playfair Display', serif)
+- Letter spacing, text-transform: via inline style
+
+ANIMATIONS & EFFECTS:
+- Scroll reveal: data-aos="fade-up|zoom-in|slide-up|fade-left" + data-aos-delay, data-aos-duration
+- Tilt (cards): data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
+- Gradient text: background: linear-gradient(...); -webkit-background-clip: text; -webkit-text-fill-color: transparent
+- Glass: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
+- Hover transitions: inline transition + transform (scale, translateY, shadow)
+
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
-- Adapt image size to context with inline style:
-  - Navbar logo: max-height: 40-50px, width: auto
-  - Card/grid image: width: 100%, height: 200-280px, object-fit: cover
-  - Hero image: width: 100%, max-height: 500px, object-fit: cover
-  - Team/avatar: width: 80-120px, height: 80-120px, border-radius: 50%, object-fit: cover
-  - Icon/thumbnail: width: 48-64px, height: auto
-  - General: max-width: 100%, height: auto (responsive default)
-- Always add alt attribute describing the image
-- Add loading="lazy" for images below the fold
+- Adapt image size to context:
+  Navbar logo: max-height: 40-50px | Card: width:100%, height:200-280px, object-fit:cover
+  Hero: width:100%, max-height:500px | Avatar: 80-120px, border-radius:50% | General: max-width:100%, height:auto
+- Always add alt attribute, loading="lazy" for below-fold images
 
 JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
