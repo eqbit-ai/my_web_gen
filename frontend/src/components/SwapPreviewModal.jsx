@@ -20,7 +20,6 @@ const SwapPreviewModal = ({ isOpen, onClose, currentHtml, currentCss, previewHtm
         doc.open();
         doc.write(`<!DOCTYPE html><html><head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <script src="https://cdn.tailwindcss.com"><\/script>
             <style>${css || ''}</style>
             <style>body{margin:0;overflow:hidden;font-family:system-ui,sans-serif;}</style>
         </head><body>${html}</body></html>`);

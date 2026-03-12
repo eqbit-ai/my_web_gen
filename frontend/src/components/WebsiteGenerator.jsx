@@ -1372,8 +1372,6 @@ const WebsiteGenerator = () => {
         const d = siteMeta.description || '';
         const pageHtml = overrideHtml !== null ? overrideHtml : html;
         const pageCss = overrideCss !== null ? overrideCss : css;
-        // For preview: use absolute URL (works from blob: and about:blank). For export: use CDN.
-        const tailwindSrc = 'https://cdn.tailwindcss.com';
         // Extract SEO meta tags from HTML comments
         const seoMatch = pageHtml.match(/<!-- SEO_META\s*([\s\S]*?)\s*END_SEO_META -->/);
         const seoMeta = seoMatch ? seoMatch[1].trim() : `<meta name="description" content="${d}">
@@ -1398,7 +1396,6 @@ const WebsiteGenerator = () => {
             '  ' + favicon,
             '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">',
             '  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.min.css">',
-            '  <script src="' + tailwindSrc + '"></script>',
             '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">',
             '  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/splitting@1.0.6/dist/splitting.css">',
             '  <style>',
@@ -1959,7 +1956,7 @@ const WebsiteGenerator = () => {
                                                 {hasThumbnail ? (
                                                     <iframe
                                                         title={item.name}
-                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
+                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
                                                         className="gn-card-iframe"
                                                         sandbox="allow-scripts allow-same-origin"
                                                         loading="lazy"

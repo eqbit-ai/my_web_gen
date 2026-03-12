@@ -22,14 +22,14 @@ RATE_LIMIT_RULES = [
     },
     {
         "prefixes": ["/api/auth/"],
-        "limit": 10,
+        "limit": 60,
         "window": 60,
         "key_prefix": "rl:auth",
         "by_ip": True,
     },
     {
         "prefixes": ["/api/"],
-        "limit": 100,
+        "limit": 300,
         "window": 60,
         "key_prefix": "rl:api",
     },

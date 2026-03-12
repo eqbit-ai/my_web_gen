@@ -2,11 +2,10 @@
 Multi-stage AI website generation pipeline.
 
 Stage 1: Plan      → GPT-4.1 analyzes prompt → JSON structure + layout patterns
-Stage 2: HTML      → Claude generates HTML with Tailwind CSS + <style> block
+Stage 2: HTML      → Claude generates HTML with pure CSS classes + <style> block
 Stage 3: JS        → Claude generates interactions/animations
 
-CSS is embedded as Tailwind utility classes in the HTML output.
-A small <style> block handles CSS variables, animations, and states.
+CSS is embedded as semantic classes in a <style> block in the HTML output.
 """
 
 import json
@@ -678,7 +677,7 @@ def _build_niche_image_hint(niche_key: str) -> str:
 # TEMPLATE-FIRST CUSTOMIZATION (faster, higher quality)
 # ═══════════════════════════════════════════════════════════════════════
 
-TEMPLATE_CUSTOMIZE_PROMPT = """You are an expert frontend developer. Study the REFERENCE TEMPLATE below, then generate a NEW website using Tailwind CSS utility classes that matches the template's visual quality.
+TEMPLATE_CUSTOMIZE_PROMPT = """You are an expert frontend developer. Study the REFERENCE TEMPLATE below, then generate a NEW website using pure CSS classes that matches the template's visual quality.
 
 REFERENCE TEMPLATE (study this for design quality, layout patterns, hover effects, visual texture):
 {template_html}
@@ -687,18 +686,18 @@ BUSINESS PLAN (use this content):
 {plan_json}
 
 YOUR TASK:
-Create a website that looks AS GOOD as the reference template, but using Tailwind CSS utility classes + CSS variables. Study the template's:
+Create a website that looks AS GOOD as the reference template, using pure CSS classes + CSS variables. NO Tailwind, NO utility frameworks. Study the template's:
 - Hero layout and visual impact
 - Card hover effects and animations
 - Section spacing and visual rhythm
 - Typography scale and weight usage
 - Color usage and gradients
 - Background textures and decorative elements
-Then recreate that level of quality using Tailwind classes.
+Then recreate that level of quality using semantic CSS classes.
 
 OUTPUT FORMAT:
 - Return ONLY HTML inside a single ```html code block
-- Output a <style> block FIRST (CSS variables, fonts, custom effects) then HTML body content
+- Output a <style> block FIRST (CSS variables, fonts, layout, components) then HTML body content
 - NO <html>, <head>, <body>, <link>, <meta> tags
 - Do NOT add Font Awesome <script> or <link> tags — FA is pre-loaded
 - Do NOT include any JavaScript
@@ -707,26 +706,21 @@ MANDATORY STRUCTURE:
 1. <style> block with:
    - @import for Google Fonts (from plan's heading_font + body_font)
    - :root {{ --primary, --secondary, --accent, --bg, --bg-surface, --text, --text-muted, --font-heading, --font-body, --radius, --radius-btn }}
-   - body, heading, section animation styles
-   - .nav-links, .nav-toggle, .nav-scrolled, .faq-item/.faq-answer, .testimonial-slide, .pricing-card.featured styles
-   - Mobile responsive @media for nav
-   - CUSTOM EFFECTS from the reference template (clip-paths, hover pseudo-elements, noise textures, faded background numbers — put these in <style> block)
+   - Base reset, typography, layout system (.container, .grid-2, .grid-3, .grid-4)
+   - Component styles (.card, .btn-primary, .btn-secondary, .icon-box, .img-cover)
+   - Navbar (.navbar, .nav-brand, .nav-links, .nav-toggle, .nav-scrolled)
+   - Hero (.hero-section, .hero-heading, .hero-subtitle, .hero-split-grid)
+   - Footer (.footer-grid, .footer-heading, .footer-links, .social-links)
+   - Mobile responsive @media queries
+   - CUSTOM EFFECTS from the reference template (clip-paths, hover pseudo-elements, noise textures, faded background numbers)
 
-2. HTML body with Tailwind utility classes:
+2. HTML body with semantic CSS classes:
    - EVERY <section> MUST have data-section-type="TYPE" (hero, features, services, testimonials, team, gallery, contact, cta, faq, stats, pricing, footer)
    - Use <nav> for navbar, <footer> for footer, <section> for content
-   - Use Tailwind classes: bg-[var(--bg)], text-[var(--text)], rounded-[var(--radius)], etc.
+   - Use semantic CSS classes defined in <style> block
    - ⚠️ Use {{{{IMG:role query}}}} placeholders for ALL images — NEVER write real pexels.com/unsplash.com URLs (they will 404)
    - Use Font Awesome icons: <i class="fa-solid fa-icon-name"></i>
    - Include ALL sections from the plan
-
-TAILWIND CLASSES TO USE:
-- Container: max-w-[1200px] mx-auto px-6
-- Card: bg-[var(--bg-surface)] rounded-[var(--radius)] p-6 md:p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/[0.06]
-- Btn primary: inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold
-- Grid: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
-- Section: py-20 md:py-28 relative
-- Hero headline: text-5xl md:text-6xl lg:text-7xl font-bold (NEVER text-3xl or text-4xl)
 
 PRESERVE FROM REFERENCE (recreate in <style> block):
 - Card hover choreography: border-left reveal, ::before gradient sweep, title color change
@@ -737,8 +731,8 @@ PRESERVE FROM REFERENCE (recreate in <style> block):
 ADD THESE ELEMENTS:
 - <!-- SEO_META --> after </style> with meta description, og:title, og:description <!-- END_SEO_META -->
 - <!-- FAVICON --> with SVG favicon <!-- END_FAVICON -->
-- WhatsApp float: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-all z-50"><i class="fa-brands fa-whatsapp"></i></a>
-- Back-to-top: <button id="back-to-top" class="fixed bottom-6 right-24 w-11 h-11 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all z-50"><i class="fa-solid fa-chevron-up text-sm"></i></button>
+- WhatsApp float button (fixed bottom-right, green background #25D366)
+- Back-to-top button (fixed, hidden by default, shows on scroll)
 
 Return ONLY the HTML. No explanation."""
 
@@ -811,7 +805,7 @@ AESTHETIC MANDATE (from creative brief — execute with FULL commitment):
 
 The aesthetic described above MUST be visible in every element. If the brief says dark industrial — use near-black backgrounds, sharp angles, noise textures. If it says luxury editorial — use generous spacing, serif display fonts at massive scale, gold accents. Never dilute the vision with safe defaults.
 
-CUSTOM CSS EFFECTS — add these in the <style> block (Tailwind can't express them):
+CUSTOM CSS EFFECTS — add these in the <style> block:
 - Card hover choreography: .card-hover::before {{ content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(var(--primary-rgb, 59,130,246), 0.1), transparent 60%); opacity: 0; transition: opacity 0.4s; }} .card-hover:hover::before {{ opacity: 1; }}
 - Card left border reveal: .card-hover {{ border-left: 3px solid transparent; transition: border-color 0.3s; }} .card-hover:hover {{ border-left-color: var(--accent); }}
 - Hero staggered entrance: .hero-stagger {{ opacity: 0; transform: translateY(30px); animation: heroIn 0.8s ease forwards; }} @keyframes heroIn {{ to {{ opacity: 1; transform: translateY(0); }} }}
@@ -1008,7 +1002,7 @@ RULES:
 - Output a <style> block FIRST (only for NEW styles this page needs — do NOT duplicate the reference CSS) then the HTML body content
 - NO <html>, <head>, <body>, <link> tags — just <style> block + body content
 - Match the EXACT same design language as the reference page:
-  * Same Tailwind utility patterns and class naming
+  * Same CSS class patterns and naming
   * Same CSS variables: var(--primary), var(--bg), var(--accent), etc.
   * Same typography scale, font families, spacing rhythm
   * Same button styles, card styles, border-radius patterns
@@ -1021,13 +1015,13 @@ RULES:
 - Reuse images from the EXISTING IMAGE URLS list above when they fit contextually
 - Only use new Unsplash/Pexels URLs if no existing image is suitable
 - All images must have: loading="lazy", alt text, width/height attributes
-- Responsive: mobile-first with Tailwind breakpoints (sm:, md:, lg:, xl:)
+- Responsive: mobile-first with @media breakpoints
 - Do NOT include any explanation — just the html code block"""
 
 
 # ═══════════════════════════════════════════════════════════════════════
 # STAGE 2: HTML Generation — use build_html_prompt() from patterns/
-# STAGE 3: CSS — now inline Tailwind in HTML stage
+# STAGE 3: CSS — now inline in HTML stage
 # (Legacy HTML_GEN_SYSTEM_PROMPT and CSS_GEN_SYSTEM_PROMPT deleted)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -1129,10 +1123,10 @@ RULES:
 # ITERATION PROMPT (single Claude call to modify existing site)
 # ═══════════════════════════════════════════════════════════════════════
 
-ITERATION_SYSTEM_PROMPT = """You are an expert web developer modifying an existing website that uses Tailwind CSS utility classes.
+ITERATION_SYSTEM_PROMPT = """You are an expert web developer modifying an existing website that uses pure CSS classes (NO Tailwind, NO utility frameworks).
 
 CURRENT CODE:
---- HTML (includes <style> block + body content with Tailwind classes) ---
+--- HTML (includes <style> block + body content with semantic CSS classes) ---
 {html}
 
 --- CSS (extracted <style> block — CSS variables, animations, states) ---
@@ -1151,20 +1145,21 @@ Apply the requested changes. Return TWO fenced code blocks: ```html and ```js
 RULES:
 - Return COMPLETE updated code (not partial diffs)
 - HTML first, then JS
-- HTML = <style> block FIRST (CSS variables, fonts, animations) + body content with Tailwind utility classes
-- Use Tailwind CSS utility classes for layout, spacing, typography, colors, responsive
-- Use CSS variables via arbitrary values: text-[var(--primary)], bg-[var(--bg)], etc.
+- HTML = <style> block FIRST (CSS variables, fonts, layout, components) + body content with semantic CSS classes
+- Use pure CSS classes for layout, spacing, typography, colors, responsive
+- Use CSS variables: var(--primary), var(--bg), var(--accent), etc.
+- NO Tailwind utility classes. Write proper CSS in the <style> block.
 - Maintain existing design and functionality unless changes are requested
 - Do NOT include any explanation, just the two code blocks
 
 SECTION SIZE CONSTRAINTS:
-- Hero: max min-h-[80vh]. NEVER taller than viewport.
+- Hero: max height 80vh. NEVER taller than viewport.
 - All sections: keep same size as original. No excessive padding.
 
 IMAGE HANDLING:
 - "Add background image" = CSS background-image ONLY (no extra <img> tag)
 - NEVER add BOTH a background-image AND a foreground <img> for the same purpose
-- Background images: bg-cover bg-center with overlay (bg-black/40 max)
+- Background images: background-size: cover; background-position: center; with overlay
 
 JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
@@ -1230,11 +1225,10 @@ USER REQUEST: {prompt}
 RULES:
 - Return ONLY the updated section HTML inside a single ```html code block
 - Return the COMPLETE section element (opening tag through closing tag)
-- Use Tailwind CSS utility classes for ALL styling
-- Use CSS variables via arbitrary values: text-[var(--accent)], bg-[var(--bg)], rounded-[var(--radius)], etc.
+- Use pure CSS classes for ALL styling — NO Tailwind utility classes
+- Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
 - Keep the same outer element tag and data-section-type attribute
 - Keep the same data-section-id attribute
-- For icon colors, use text-[var(--accent)] NOT text-[var(--primary)]
 - For images, keep existing src URLs unless user asks to change images
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
@@ -1242,29 +1236,26 @@ RULES:
 - You CAN freely change the section's internal layout/structure when the user asks for it (e.g., converting hero_split to hero with background image)
 
 SECTION SIZE CONSTRAINTS (CRITICAL):
-- Hero sections: max min-h-[80vh]. NEVER make a hero taller than viewport.
-- All other sections: keep the same visual size as the original. No min-h-screen unless it was already there.
+- Hero sections: max height 80vh. NEVER make a hero taller than viewport.
+- All other sections: keep the same visual size as the original.
 - Do NOT add excessive padding/margins that make the section abnormally tall.
 
 IMAGE HANDLING FOR EDITS:
 - "Add background image" = CSS background-image ONLY. Do NOT also add a foreground <img> tag.
 - NEVER add BOTH a background-image AND a foreground <img> for the same visual purpose.
 - When converting an <img> to a background image: use the SAME src URL from the existing <img> tag as the background-image URL
-- Background image hero: <section style="background-image: url('EXISTING_IMAGE_URL'); background-size: cover; background-position: center;" class="relative min-h-[80vh] flex items-center">
-  Then add a dark overlay: <div class="absolute inset-0 bg-black/40"></div> (40% max opacity — image must be visible)
-  Then wrap text in: <div class="relative z-10 max-w-[1400px] mx-auto px-6">
+- Background image hero: use background-size: cover; background-position: center; with a dark overlay div (40% max opacity)
 - When moving image from side to background, REMOVE the old <img> tag completely
-- Make sure text is readable over the background (use text-white + dark overlay)
+- Make sure text is readable over the background (use white text + dark overlay)
 
 CRITICAL — JS-DEPENDENT CLASS NAMES (DO NOT rename or remove these):
 JavaScript already exists on the page and depends on these exact class names and IDs.
 If you change them, the interactive features will break silently.
 
 NAVBAR:
-- .nav-links MUST keep class "nav-links" and have "flex list-none gap-8 items-center m-0 p-0"
-- .nav-toggle MUST keep class "nav-toggle hidden" (CSS shows it on mobile via @media)
+- .nav-links MUST keep class "nav-links"
+- .nav-toggle MUST keep class "nav-toggle"
 - .nav-cta stays visible on desktop; .mobile-cta stays hidden on desktop
-- Do NOT add flex-direction: column, display: none, position: fixed, or class "active" to .nav-links
 - Mobile responsive behavior is handled by existing CSS @media rules — do NOT override
 
 FAQ ACCORDION:
@@ -1351,16 +1342,16 @@ USER REQUEST: {prompt}
 RULES:
 - Return ONLY the new section HTML inside a single ```html code block
 - The section MUST have data-section-type="{section_type}" attribute
-- Use Tailwind CSS utility classes for ALL styling
-- Use CSS variables via arbitrary values: text-[var(--accent)], bg-[var(--bg)], rounded-[var(--radius)], etc.
+- Use pure CSS classes for ALL styling — NO Tailwind utility classes
+- Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
 - Match the design style of the existing sections (colors, fonts, spacing, border radius)
 - Write REAL content that matches the business context — no "Lorem ipsum" or placeholder text
 - For images, use placeholder format: src="{{{{IMG:descriptive keywords}}}}"
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
 - Do NOT include any explanation, just the html code block
-- Section should have class="py-16 md:py-20 relative" (standard section padding)
-- Footer sections: use py-14 md:py-16 and dark background (bg-[#1a1a2e] or similar)
+- Use standard section padding consistent with the existing page
+- Footer sections: use dark background (style="background: #1a1a2e")
 
 SECTION SIZE CONSTRAINTS:
 - Keep sections compact and content-dense. No min-h-screen.

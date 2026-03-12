@@ -1,24 +1,25 @@
 """
 Core HTML generation rules — always included in every prompt.
-This is the skeleton: style block, Tailwind reference, image rules, etc.
+This is the skeleton: style block, CSS framework, image rules, etc.
 Pattern-specific templates are injected dynamically.
 """
 
 # The {plan_json} and {pattern_templates} and {style_additions} placeholders
 # are filled by build_html_prompt() in prompt_pipeline.py
 
-HTML_CORE_PROMPT = """You are an expert frontend developer. Generate HTML with Tailwind CSS utility classes.
+HTML_CORE_PROMPT = """You are an expert frontend developer. Generate a complete, production-quality website using pure CSS (NO Tailwind, NO utility frameworks).
 
 WEBSITE PLAN:
 {plan_json}
 
 RULES:
 - Return ONLY HTML inside a single ```html code block
-- Output a <style> block FIRST (for CSS variables, fonts, animations) then the HTML body content
+- Output a <style> block FIRST (for CSS variables, fonts, all layout/component styles) then the HTML body content
 - NO <html>, <head>, <body>, <link>, <meta> tags — just <style> block + body content
 - Do NOT add Font Awesome <script> or <link> tags (e.g. kit.fontawesome.com) — Font Awesome is already loaded by the host page. Just use <i class="fa-solid fa-xxx"> icons directly.
-- Use Tailwind CSS utility classes for ALL layout, spacing, typography, colors, responsive design, hover effects
-- Use CSS variables via Tailwind arbitrary values: text-[var(--primary)], bg-[var(--bg)], rounded-[var(--radius)], etc.
+- Write ALL styling in the <style> block using CSS classes. NO Tailwind utility classes. NO utility framework.
+- Use semantic CSS class names (e.g. .container, .card, .btn-primary, .hero-heading)
+- Use CSS variables for colors, fonts, radii (defined in :root)
 - Use semantic HTML5: <nav>, <header>, <main>, <section>, <footer>
 - EVERY content section MUST use: <section data-section-type="{{type}}"> — never <div>
 - Use the EXACT content from the plan — headlines, descriptions, button text, etc.
@@ -37,9 +38,13 @@ RULES:
 - Do NOT include any JavaScript
 - Do NOT include any explanation, just the html code block
 
-STYLE BLOCK — output this FIRST before any HTML elements:
+STYLE BLOCK — output this FIRST before any HTML elements.
+The <style> block must contain ALL CSS for the entire page. This is a COMPLETE website — every element must be styled.
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=HEADING_FONT:wght@400;500;600;700;800&family=BODY_FONT:wght@400;500;600&display=swap');
+
+/* ═══ Design Tokens ═══ */
 :root {{
   --primary: PRIMARY_COLOR;
   --secondary: SECONDARY_COLOR;
@@ -52,56 +57,307 @@ STYLE BLOCK — output this FIRST before any HTML elements:
   --font-body: 'BODY_FONT', sans-serif;
   --radius: CARD_RADIUS;
   --radius-btn: BUTTON_RADIUS;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-hover: 0 20px 60px rgba(0,0,0,0.15);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }}
-body {{ font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; }}
-h1, h2, h3, h4, h5, h6 {{ font-family: var(--font-heading); }}
-section[data-section-type] {{ opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; animation: sectionFallback 0.8s ease forwards; animation-delay: 1s; }}
+
+/* ═══ Base Reset & Typography ═══ */
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+body {{ font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; }}
+h1, h2, h3, h4, h5, h6 {{ font-family: var(--font-heading); font-weight: 700; line-height: 1.2; color: var(--text); }}
+a {{ text-decoration: none; color: inherit; }}
+img {{ max-width: 100%; height: auto; }}
+ul {{ list-style: none; padding: 0; margin: 0; }}
+
+/* ═══ Layout System ═══ */
+.container {{ max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }}
+.container-wide {{ max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }}
+.container-narrow {{ max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }}
+.container-xs {{ max-width: 600px; margin: 0 auto; padding: 0 1.5rem; }}
+
+/* ═══ Grid System ═══ */
+.grid-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }}
+.grid-3 {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }}
+.grid-4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }}
+@media (max-width: 1024px) {{
+  .grid-3 {{ grid-template-columns: repeat(2, 1fr); }}
+  .grid-4 {{ grid-template-columns: repeat(2, 1fr); }}
+}}
+@media (max-width: 768px) {{
+  .grid-2 {{ grid-template-columns: 1fr; }}
+  .grid-3 {{ grid-template-columns: 1fr; }}
+  .grid-4 {{ grid-template-columns: repeat(2, 1fr); }}
+}}
+@media (max-width: 480px) {{
+  .grid-4 {{ grid-template-columns: 1fr; }}
+}}
+.text-center {{ text-align: center; }}
+.md-order-1 {{ order: 0; }}
+.md-order-2 {{ order: 0; }}
+@media (min-width: 769px) {{
+  .md-order-1 {{ order: 1; }}
+  .md-order-2 {{ order: 2; }}
+}}
+
+/* ═══ Section Styles ═══ */
+section[data-section-type] {{ padding: 4rem 0; position: relative; opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; animation: sectionFallback 0.8s ease forwards; animation-delay: 1s; }}
 section[data-section-type].visible {{ opacity: 1; transform: translateY(0); animation: none; }}
 @keyframes sectionFallback {{ to {{ opacity: 1; transform: translateY(0); }} }}
-/* AOS fallback: reveal items after 1.5s if AOS doesn't fire */
 [data-aos] {{ animation: sectionFallback 0.6s ease forwards; animation-delay: 1.5s; }}
 [data-aos].aos-animate {{ animation: none; }}
 footer, footer section[data-section-type] {{ opacity: 1; transform: none; }}
-.faq-answer {{ max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }}
-.faq-item.active .faq-answer {{ max-height: 500px; padding-bottom: 1.25rem; }}
-.faq-item.active .faq-question i {{ transform: rotate(180deg); transition: transform 0.3s; }}
-.testimonial-slide {{ display: none; }}
-.testimonial-slide.active {{ display: block; }}
-/* Nav link underline animation */
-.nav-links a {{ position: relative; }}
-.nav-links a::after {{ content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }}
-.nav-links a:hover::after {{ width: 100%; }}
-/* Navbar scroll effect */
-nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }}
-/* Intentional section background rhythm */
+@media (min-width: 769px) {{
+  section[data-section-type] {{ padding: 5rem 0; }}
+}}
+.section-header {{ text-align: center; margin-bottom: 2rem; }}
+.section-title {{ font-size: clamp(1.75rem, 3vw, 2.5rem); margin-bottom: 0.75rem; }}
+.section-subtitle {{ font-size: 1.05rem; color: var(--text-muted); max-width: 36rem; margin: 0 auto; line-height: 1.7; }}
+
+/* Section background rhythm */
 section[data-section-type="features"],
 section[data-section-type="stats"] {{ background: var(--bg-surface); }}
 section[data-section-type="testimonials"],
 section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }}
-/* Featured pricing card */
-.pricing-card.featured {{ transform: scale(1.05); border: 2px solid var(--primary) !important; z-index: 1; }}
-/* Card hover choreography */
-.card-hover {{ position: relative; overflow: hidden; border-left: 3px solid transparent; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; }}
-.card-hover:hover {{ transform: translateY(-8px); box-shadow: 0 20px 60px rgba(0,0,0,0.12); border-left-color: var(--accent); }}
-.card-hover::before {{ content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent); transition: left 0.6s ease; }}
-.card-hover:hover::before {{ left: 100%; }}
-.card-hover:hover h3 {{ color: var(--accent); transition: color 0.3s ease; }}
-/* Gradient text utility */
-.gradient-text {{ background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }}
-/* Staggered grid reveals */
-.card-grid > *:nth-child(3n+1) {{ transition-delay: 0ms; }}
-.card-grid > *:nth-child(3n+2) {{ transition-delay: 120ms; }}
-.card-grid > *:nth-child(3n+3) {{ transition-delay: 240ms; }}
-@keyframes floatOrb {{ 0% {{ transform: translateY(0); }} 50% {{ transform: translateY(-30px); }} 100% {{ transform: translateY(0); }} }}
-@keyframes logoGradient {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
-@keyframes gradientShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
+
+/* ═══ Buttons ═══ */
+.btn-primary {{ display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; }}
+.btn-primary:hover {{ transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.25); }}
+.btn-secondary {{ display: inline-block; border: 2px solid var(--primary); color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; background: transparent; cursor: pointer; transition: var(--transition); text-align: center; }}
+.btn-secondary:hover {{ background: var(--primary); color: white; transform: translateY(-2px); }}
+.btn-primary-light {{ display: inline-block; background: white; color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }}
+.btn-primary-light:hover {{ transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }}
+.btn-secondary-light {{ display: inline-block; border: 2px solid white; color: white; padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; background: transparent; cursor: pointer; transition: var(--transition); }}
+.btn-secondary-light:hover {{ background: white; color: var(--primary); }}
+.btn-group {{ display: flex; flex-wrap: wrap; gap: 1rem; }}
+.btn-group.center {{ justify-content: center; }}
+
+/* ═══ Cards ═══ */
+.card {{ background: var(--bg-surface); border-radius: var(--radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }}
+.card:hover {{ transform: translateY(-8px); box-shadow: var(--shadow-hover); }}
+.card::before {{ content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent); transition: left 0.6s ease; }}
+.card:hover::before {{ left: 100%; }}
+.card:hover h3 {{ color: var(--accent); transition: color 0.3s ease; }}
+.card-title {{ font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }}
+.card-text {{ color: var(--text-muted); line-height: 1.7; font-size: 0.9rem; }}
+.card-body {{ padding: 1.25rem; }}
+.card-image {{ width: 100%; height: 12rem; object-fit: cover; display: block; }}
+.icon-box {{ width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--accent); margin-bottom: 1.25rem; flex-shrink: 0; }}
+
+/* ═══ Images ═══ */
+.img-cover {{ width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.4s ease; }}
+.img-cover:hover {{ transform: scale(1.02); }}
+.img-wrapper {{ overflow: hidden; border-radius: var(--radius); }}
+.team-photo {{ width: 100%; height: 16rem; object-fit: cover; display: block; }}
+
+/* ═══ Navbar ═══ */
+.navbar {{ position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(12px); transition: var(--transition); padding: 1rem 0; }}
+.navbar-light {{ background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.06); }}
+.navbar-dark {{ background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.08); }}
+nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }}
+.navbar-inner {{ display: flex; justify-content: space-between; align-items: center; }}
+.nav-brand {{ display: flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 1.15rem; color: var(--text); }}
+.nav-links {{ display: flex; align-items: center; gap: 2rem; }}
+.nav-links a {{ font-weight: 500; color: var(--text); transition: color 0.3s; position: relative; }}
+.nav-links a::after {{ content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }}
+.nav-links a:hover {{ color: var(--primary); }}
+.nav-links a:hover::after {{ width: 100%; }}
+.nav-toggle {{ display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }}
+.nav-cta {{ display: inline-block; }}
+.mobile-cta {{ display: none; }}
 @media (max-width: 768px) {{
   .nav-links {{ display: none !important; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; padding: 1.5rem 2rem; gap: 1.25rem; z-index: 999; border-bottom: 1px solid rgba(255,255,255,0.08); }}
   .nav-links.active {{ display: flex !important; background: var(--bg); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }}
-  .nav-toggle {{ display: block !important; }}
+  .nav-toggle {{ display: flex !important; }}
   .nav-cta {{ display: none !important; }}
   .mobile-cta {{ display: block !important; }}
 }}
+
+/* ═══ Hero ═══ */
+.hero-section {{ padding: 4rem 0; position: relative; overflow: hidden; }}
+@media (min-width: 769px) {{ .hero-section {{ padding: 6rem 0; }} }}
+.hero-section.hero-edge {{ margin-top: -80px; padding: 0; }}
+.hero-heading {{ font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; }}
+.hero-subtitle {{ font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
+.trust-line {{ font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }}
+.hero-split-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }}
+@media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; }} }}
+.hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; }}
+.hero-bg-cover {{ position: relative; min-height: 85vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; padding-top: 80px; }}
+.hero-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; }}
+.hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.4), transparent); }}
+.hero-overlay-center {{ background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.4), rgba(0,0,0,0.6)); }}
+.hero-animated-bg {{ min-height: 85vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }}
+.text-light {{ color: white; }}
+.text-light .hero-heading {{ color: white; }}
+.text-light .hero-subtitle {{ color: rgba(255,255,255,0.85); }}
+.text-light .trust-line {{ color: rgba(255,255,255,0.7); }}
+.text-light .section-label {{ color: rgba(255,255,255,0.8); }}
+.text-light .label-line {{ background: rgba(255,255,255,0.6); }}
+.bg-number {{ position: absolute; right: 5%; top: 10%; font-size: clamp(120px, 22vw, 320px); font-weight: 700; opacity: 0.04; pointer-events: none; user-select: none; line-height: 1; }}
+.section-label {{ display: inline-flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.25em; font-weight: 600; color: var(--accent); margin-bottom: 1.5rem; }}
+.label-line {{ width: 2.5rem; height: 2px; background: var(--accent); display: inline-block; }}
+.floating-card {{ position: absolute; bottom: -1.25rem; left: -1.25rem; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-hover); display: flex; align-items: center; gap: 0.75rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }}
+@media (max-width: 768px) {{ .floating-card {{ display: none; }} }}
+.browser-frame {{ border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-hover); border: 1px solid rgba(0,0,0,0.1); }}
+.browser-dots {{ display: flex; gap: 0.375rem; padding: 0.75rem 1rem; background: rgba(0,0,0,0.04); }}
+.browser-dots span {{ width: 0.625rem; height: 0.625rem; border-radius: 50%; }}
+.browser-dots span:nth-child(1) {{ background: #ff5f57; }}
+.browser-dots span:nth-child(2) {{ background: #ffbd2e; }}
+.browser-dots span:nth-child(3) {{ background: #28c940; }}
+
+/* ═══ Gradient & Decorative ═══ */
+.gradient-text {{ background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }}
+.card-grid > *:nth-child(3n+1) {{ transition-delay: 0ms; }}
+.card-grid > *:nth-child(3n+2) {{ transition-delay: 120ms; }}
+.card-grid > *:nth-child(3n+3) {{ transition-delay: 240ms; }}
+
+/* ═══ Pricing ═══ */
+.pricing-card.featured {{ transform: scale(1.05); border: 2px solid var(--primary) !important; z-index: 1; }}
+.plan-price {{ font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; color: var(--accent); margin: 1rem 0; }}
+.plan-period {{ font-size: 1rem; font-weight: 400; color: var(--text-muted); }}
+.plan-features {{ text-align: left; margin: 1.5rem 0; }}
+.plan-feature {{ display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; }}
+.popular-badge {{ position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 1rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }}
+
+/* ═══ Stats ═══ */
+.stat-item {{ display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }}
+.stat-icon {{ width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--accent); }}
+.stat-number {{ font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; line-height: 1; white-space: nowrap; }}
+.stat-label {{ font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600; color: var(--text-muted); max-width: 180px; }}
+
+/* ═══ FAQ ═══ */
+.faq-item {{ border-bottom: 1px solid rgba(255,255,255,0.1); }}
+.faq-question {{ width: 100%; background: transparent; border: none; padding: 1.25rem 0; display: flex; justify-content: space-between; align-items: center; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: left; color: var(--text); font-family: inherit; }}
+.faq-answer {{ max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }}
+.faq-item.active .faq-answer {{ max-height: 500px; padding-bottom: 1.25rem; }}
+.faq-item.active .faq-question i {{ transform: rotate(180deg); transition: transform 0.3s; }}
+
+/* ═══ Testimonials ═══ */
+.stars {{ color: #f59e0b; margin-bottom: 0.75rem; }}
+.testimonial-quote {{ color: var(--text-muted); line-height: 1.7; font-style: italic; margin-bottom: 1.25rem; }}
+.testimonial-quote-lg {{ font-size: 1.2rem; font-style: italic; line-height: 1.8; margin: 1.5rem 0; }}
+.testimonial-author {{ display: flex; align-items: center; gap: 0.75rem; }}
+.testimonial-slide {{ display: none; }}
+.testimonial-slide.active {{ display: block; }}
+.slider-dots {{ display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; }}
+.slider-dot {{ width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }}
+.slider-dot.active {{ background: var(--primary); }}
+
+/* ═══ Footer ═══ */
+.footer-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }}
+@media (max-width: 1024px) {{ .footer-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
+@media (max-width: 640px) {{ .footer-grid {{ grid-template-columns: 1fr; }} }}
+.footer-description {{ font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 280px; }}
+.footer-heading {{ font-weight: 700; color: white; margin-bottom: 1rem; }}
+.footer-links li {{ margin-bottom: 0.5rem; }}
+.footer-links a {{ color: rgba(255,255,255,0.7); transition: color 0.3s; font-size: 0.9rem; }}
+.footer-links a:hover {{ color: white; }}
+.social-links {{ display: flex; gap: 0.75rem; margin-top: 1rem; }}
+.social-link {{ width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: white; border: 1px solid rgba(255,255,255,0.1); transition: var(--transition); }}
+.social-link:hover {{ background: var(--primary); border-color: var(--primary); transform: translateY(-2px); }}
+.footer-bottom {{ border-top: 1px solid rgba(255,255,255,0.08); margin-top: 2.5rem; padding-top: 1.5rem; text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.5); }}
+.contact-item {{ display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }}
+.contact-icon {{ color: var(--accent); width: 1.25rem; margin-top: 0.25rem; flex-shrink: 0; }}
+
+/* ═══ Forms ═══ */
+.form-input {{ width: 100%; padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-surface); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; }}
+.form-input:focus {{ border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent); }}
+.form-textarea {{ resize: vertical; }}
+.newsletter-form {{ display: flex; gap: 0.75rem; max-width: 28rem; margin: 0 auto; }}
+@media (max-width: 640px) {{ .newsletter-form {{ flex-direction: column; }} }}
+.form-hint {{ font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; opacity: 0.7; }}
+
+/* ═══ Gallery & Carousel ═══ */
+.gallery-item {{ overflow: hidden; border-radius: var(--radius); cursor: pointer; }}
+.gallery-image {{ width: 100%; height: 16rem; object-fit: cover; transition: transform 0.5s ease; }}
+.gallery-item:hover .gallery-image {{ transform: scale(1.1); }}
+.gallery-lightbox {{ position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; padding: 1rem; }}
+.gallery-lightbox.active {{ display: flex; }}
+.lightbox-close {{ position: absolute; top: 1.5rem; right: 1.5rem; color: white; font-size: 2rem; background: transparent; border: none; cursor: pointer; z-index: 10; }}
+.lightbox-prev, .lightbox-next {{ position: absolute; top: 50%; transform: translateY(-50%); color: white; font-size: 1.5rem; background: rgba(0,0,0,0.3); border: none; cursor: pointer; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }}
+.lightbox-prev {{ left: 1rem; }}
+.lightbox-next {{ right: 1rem; }}
+.lightbox-prev:hover, .lightbox-next:hover {{ background: rgba(0,0,0,0.6); }}
+.lightbox-img {{ max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 0.5rem; }}
+.carousel-container {{ position: relative; overflow: hidden; border-radius: var(--radius); }}
+.carousel-track {{ display: flex; transition: transform 0.5s ease-in-out; }}
+.carousel-slide {{ min-width: 100%; position: relative; }}
+.carousel-image {{ width: 100%; height: 25rem; object-fit: cover; }}
+@media (min-width: 769px) {{ .carousel-image {{ height: 31rem; }} }}
+.carousel-caption {{ position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); padding: 2rem; color: white; }}
+.carousel-prev, .carousel-next {{ position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; z-index: 10; }}
+.carousel-prev {{ left: 1rem; }}
+.carousel-next {{ right: 1rem; }}
+.carousel-prev:hover, .carousel-next:hover {{ background: rgba(255,255,255,0.4); }}
+.carousel-dots {{ display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }}
+.carousel-dot {{ width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }}
+.carousel-dot.active {{ background: var(--primary); }}
+
+/* ═══ Masonry ═══ */
+.masonry-grid {{ column-count: 3; column-gap: 1.5rem; }}
+@media (max-width: 1024px) {{ .masonry-grid {{ column-count: 2; }} }}
+@media (max-width: 768px) {{ .masonry-grid {{ column-count: 1; }} }}
+.masonry-item {{ break-inside: avoid; margin-bottom: 1.5rem; position: relative; border-radius: var(--radius); overflow: hidden; }}
+.masonry-overlay {{ position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); color: white; padding: 1.5rem; transform: translateY(100%); transition: transform 0.3s ease; }}
+.masonry-item:hover .masonry-overlay {{ transform: translateY(0); }}
+
+/* ═══ Timeline ═══ */
+.timeline-item {{ display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }}
+.timeline-date {{ min-width: 5rem; text-align: right; font-size: 0.875rem; font-weight: 700; color: var(--accent); }}
+.timeline-dot {{ width: 1rem; height: 1rem; min-width: 1rem; border-radius: 50%; background: var(--primary); margin-top: 0.25rem; z-index: 10; box-shadow: 0 0 0 4px var(--bg); }}
+.timeline-card {{ flex: 1; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }}
+
+/* ═══ Logo Cloud ═══ */
+.logo-cloud {{ display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.5rem; }}
+.logo-item {{ padding: 0.75rem 1rem; }}
+.logo-text {{ font-size: 1rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.4; transition: opacity 0.3s; white-space: nowrap; color: var(--text); }}
+.logo-text:hover {{ opacity: 0.8; }}
+
+/* ═══ Trust Badges ═══ */
+.trust-badges {{ display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; }}
+@media (min-width: 769px) {{ .trust-badges {{ gap: 3rem; }} }}
+.trust-badge {{ display: flex; align-items: center; gap: 0.75rem; opacity: 0.6; transition: opacity 0.3s; }}
+.trust-badge:hover {{ opacity: 1; }}
+.badge-icon {{ font-size: 1.5rem; color: var(--accent); }}
+
+/* ═══ Feature Patterns ═══ */
+.feature-split-list {{ display: flex; flex-direction: column; gap: 3rem; }}
+.feature-title {{ font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }}
+.feature-text {{ color: var(--text-muted); line-height: 1.7; }}
+.stacked-list {{ border-top: 1px solid rgba(255,255,255,0.1); }}
+.stacked-item {{ display: flex; gap: 1.25rem; align-items: flex-start; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); }}
+@media (max-width: 768px) {{ .stacked-item {{ flex-direction: column; }} }}
+.step-item {{ display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }}
+.step-number {{ width: 3.5rem; height: 3.5rem; min-width: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: white; z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }}
+
+/* ═══ Service Modal ═══ */
+.modal-trigger {{ cursor: pointer; }}
+.modal-trigger:hover .icon-box {{ transform: scale(1.1); transition: transform 0.3s; }}
+.detail-modal {{ position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; padding: 1rem; }}
+.detail-modal.active {{ display: flex; }}
+.modal-content {{ background: var(--bg); border-radius: var(--radius); max-width: 32rem; width: 100%; padding: 2rem; position: relative; box-shadow: var(--shadow-hover); max-height: 90vh; overflow-y: auto; }}
+.modal-close {{ position: absolute; top: 1rem; right: 1rem; color: var(--text-muted); font-size: 1.25rem; background: transparent; border: none; cursor: pointer; }}
+.modal-close:hover {{ color: var(--text); }}
+
+/* ═══ Comparison Table ═══ */
+.comparison-table {{ width: 100%; border-collapse: collapse; text-align: left; }}
+.comparison-table th {{ padding: 1rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1); }}
+.comparison-table td {{ padding: 0.875rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(255,255,255,0.06); }}
+.comparison-table tr:hover {{ background: rgba(255,255,255,0.02); }}
+.check-icon {{ color: #10b981; }}
+.xmark-icon {{ color: #ef4444; opacity: 0.5; }}
+
+/* ═══ Animations ═══ */
+@keyframes floatOrb {{ 0% {{ transform: translateY(0); }} 50% {{ transform: translateY(-30px); }} 100% {{ transform: translateY(0); }} }}
+@keyframes logoGradient {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
+@keyframes gradientShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
+
+/* ═══ Utilities ═══ */
+.relative {{ position: relative; }}
+.z-10 {{ z-index: 10; }}
+.logo-mark {{ width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-size: 200% 200%; animation: logoGradient 6s ease infinite; }}
+
 {style_additions}
 .typed-cursor {{ color: var(--primary); font-weight: 100; }}
 .search-dropdown.active {{ display: block; }}
@@ -112,44 +368,19 @@ section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--pri
 @media (max-width: 768px) {{ .steps-container::before {{ left: 24px; }} .timeline-container::before {{ left: 98px; }} }}
 </style>
 Fill in ALL values from the plan's design spec. Use the EXACT colors, fonts, and radii.
-The <style> block above is a MINIMUM — you MUST add MORE custom CSS below the closing comment for:
-- Card hover effects (::before, ::after pseudo-elements for shine/border reveals)
-- Hero decorative elements (.hero-bg-element, .gradient-text, etc.)
+The <style> block above is a MINIMUM — you MUST add MORE custom CSS for:
 - Section-specific backgrounds and textures
 - Custom animation @keyframes beyond the basics above
-- Testimonial/slider transition styles
-- Mobile responsive tweaks for custom layouts
-A good website needs 150-300 lines of custom CSS. Do NOT rely only on Tailwind utilities.
-
-TAILWIND CLASS REFERENCE (use these consistently):
-- Section wrapper: class="py-16 md:py-20 relative"
-- Section header: <div class="text-center mb-8 md:mb-10">
-    <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">...</h2>
-    <p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">...</p>
-  </div>
-- Container wide: class="max-w-[1400px] mx-auto px-6"
-- Container: class="max-w-[1200px] mx-auto px-6"
-- Container narrow: class="max-w-[800px] mx-auto px-6"
-- Card: class="card-hover bg-[var(--bg-surface)] rounded-[var(--radius)] p-6 md:p-8 shadow-md border border-white/[0.06]"
-  (light theme: use border-gray-100 instead of border-white/[0.06])
-  The card-hover class provides coordinated hover effects (translate, shadow, border-left, shine sweep, title color change) — do NOT add separate hover:-translate-y-2 hover:shadow-xl when using card-hover.
-- Card icon box: class="w-14 h-14 rounded-xl flex items-center justify-center text-xl text-[var(--accent)] mb-5" style="background: color-mix(in srgb, var(--accent) 12%, transparent)"
-- ICON COLOR RULE (CRITICAL): ALWAYS use text-[var(--accent)] for icons and check marks, NOT text-[var(--primary)]. On dark themes, --primary is often a dark color that becomes invisible. --accent is always bright. This applies to: card icons, pricing check marks, stat icons, feature icons.
-- Btn primary: class="inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-none cursor-pointer"
-- Btn secondary: class="inline-block border-2 border-[var(--primary)] text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-[var(--primary)] hover:text-white bg-transparent"
-- Grid 3-col: class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-- Grid 4-col: class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
-- Image: class="w-full h-auto rounded-xl object-cover transition-transform duration-300 hover:scale-[1.02]" loading="lazy"
-- EVERY <img> tag MUST include loading="lazy" for performance (except hero images which should load eagerly)
-- Dark theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-black/40 border-b border-white/[0.08] transition-all duration-300"
-- Light theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-white/85 border-b border-black/[0.06] transition-all duration-300"
+- Any section-specific layout not covered by the framework above
+- Light theme adjustments (e.g. border-color: rgba(0,0,0,0.08) instead of rgba(255,255,255,0.06))
+A good website needs 200-400 lines of CSS. The framework above gives you ~200, add 100-200 more for section-specific styles.
 
 ⚠️ MANDATORY IMAGE RULES — VIOLATION = BROKEN OUTPUT ⚠️
 NEVER write real image URLs (pexels.com, unsplash.com, etc). They will ALL 404.
 The ONLY way to include images is the {{IMG:role query}} placeholder system:
 - For EVERY <img> tag: src="{{IMG:role query keywords}}"
 - For EVERY background-image: url('{{IMG:background query keywords}}')
-- Format: <img src="{{IMG:role query keywords}}" alt="descriptive alt text" class="w-full h-auto rounded-xl object-cover">
+- Format: <img src="{{IMG:role query keywords}}" alt="descriptive alt text" class="img-cover" loading="lazy">
 - IMAGE ROLES: hero, product, feature, gallery, team, testimonial, background, cta, mockup
 - Use the EXACT image_query from the plan — do NOT simplify or shorten
 - Each placeholder MUST have a DIFFERENT query — never reuse
@@ -160,96 +391,83 @@ The ONLY way to include images is the {{IMG:role query}} placeholder system:
 CRITICAL: Match each section's "pattern" field to the EXACT HTML structure below.
 
 LOGO MARK — use a gradient icon/initial in navbar. Pick one:
-  - Initial: <span class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">X</span>
+  - Initial: <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">X</span>
   - Icon: same but with <i class="fa-solid fa-icon"></i> inside
   - Monogram: same but with two initials (e.g. "HC")
   Vary the style per brand.
 
 TYPED.JS HERO EFFECT — adds a typewriter animation to the hero headline. Use freely on any hero:
   Replace the static headline text with:
-    <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-none mb-6 text-[var(--text)]">
+    <h1 class="hero-heading">
       <span class="typed-text" data-typed='["First Phrase Here", "Second Phrase Here", "Third Phrase Here"]'></span>
     </h1>
   The JS stage auto-detects .typed-text and initializes Typed.js. Use 3-4 different phrases that showcase the brand.
 
 HERO DEPTH ELEMENTS — add at least 2 of these to every hero section for visual richness:
-  1. Giant faded decorative text (absolute positioned behind hero content):
-     <span class="absolute right-[5%] top-[10%] text-[clamp(100px,20vw,300px)] font-bold opacity-[0.04] pointer-events-none select-none" style="font-family: var(--font-heading)">01</span>
-  2. Section label above headline (small uppercase tag):
-     <span class="inline-flex items-center gap-3 text-xs uppercase tracking-[0.25em] font-semibold text-[var(--accent)] mb-6"><span class="w-10 h-[2px] bg-[var(--accent)]"></span>LABEL TEXT</span>
-  3. Staggered entrance: add class="hero-stagger" on headline, subheadline, and CTA wrapper with style="animation-delay: 0.2s/0.4s/0.6s"
-  4. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom of hero
+  1. Giant faded decorative text: <span class="bg-number" style="font-family: var(--font-heading)">01</span>
+  2. Section label above headline: <span class="section-label"><span class="label-line"></span>LABEL TEXT</span>
+  3. Staggered entrance: add class="hero-stagger" on headline, subheadline, and CTA wrapper
+  4. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom
 
-HERO HEADLINE SIZE — NEVER use text-3xl or text-4xl for hero headlines. MINIMUM is text-5xl md:text-6xl lg:text-7xl.
-  - Display fonts (Oswald, Black Ops One, Bebas Neue): use text-6xl md:text-7xl lg:text-8xl
-  - Serif display fonts (Playfair Display, DM Serif Display): use text-5xl md:text-6xl lg:text-7xl
-  - Use leading-none or leading-tight on hero headlines (tight line-height = more impact)
+HERO HEADLINE SIZE — hero-heading class gives clamp(2.5rem, 6vw, 4.5rem). For display fonts (Oswald, Bebas Neue), add style="font-size: clamp(3rem, 7vw, 5.5rem)" inline.
+  Use line-height: 1.05 on hero headlines (tight = more impact).
 
 SECTION PATTERNS (use ONLY these — match each section's "pattern" field exactly):
 
 {pattern_templates}
 
-EVERY section with items MUST use the matching Tailwind pattern structure.
+EVERY section with items MUST use the matching pattern structure.
 
-CONTAINER WIDTH RULES (embedded in each pattern's classes):
-- max-w-[1400px]: hero patterns — wide breathing room
-- max-w-[1200px]: card_grid, icon_grid, feature_split, feature_cards, pricing, testimonials, team, gallery_grid, image_carousel, service_modal, contact, stats, cta_banner/split, logo_cloud, footer — standard width
-- max-w-[800px] or max-w-[700px]: faq, hero_minimal, testimonial_slider, feature_stacked, feature_steps, cta_centered, timeline, comparison_table — narrow for readability
-- max-w-[600px]: newsletter_cta — tight for email signup focus
+CONTAINER WIDTH RULES (embedded in pattern class names):
+- container-wide (1400px): hero patterns — wide breathing room
+- container (1200px): features, pricing, testimonials, team, gallery, contact, stats, cta, footer
+- container-narrow (800px): faq, testimonial_slider, feature_stacked, feature_steps, cta_centered, timeline
+- container-xs (600px): newsletter_cta
 
 BACKGROUND ORBS — TEMPLATE DECISION (not optional):
-  IF theme == "dark": include these two orb divs (use --secondary and --accent for color, NEVER --primary which may be near-black):
-  <div class="fixed w-[400px] h-[400px] rounded-full -z-10 pointer-events-none -top-24 -left-24 opacity-[0.15] animate-[floatOrb_20s_ease-in-out_infinite]" style="background: var(--secondary); filter: blur(120px)"></div>
-  <div class="fixed w-[500px] h-[500px] rounded-full -z-10 pointer-events-none -bottom-36 -right-36 opacity-[0.15] animate-[floatOrb_25s_ease-in-out_infinite_reverse]" style="background: var(--accent); filter: blur(120px)"></div>
-  IF theme == "light": OMIT orb divs entirely — do NOT generate them. Zero orb divs in output. They look muddy on light backgrounds.
+  IF theme == "dark": include these two orb divs (use --secondary and --accent for color, NEVER --primary):
+  <div style="position:fixed;width:400px;height:400px;border-radius:50%;z-index:-1;pointer-events:none;top:-6rem;left:-6rem;opacity:0.15;background:var(--secondary);filter:blur(120px);animation:floatOrb 20s ease-in-out infinite"></div>
+  <div style="position:fixed;width:500px;height:500px;border-radius:50%;z-index:-1;pointer-events:none;bottom:-9rem;right:-9rem;opacity:0.15;background:var(--accent);filter:blur(120px);animation:floatOrb 25s ease-in-out infinite reverse"></div>
+  IF theme == "light": OMIT orb divs entirely.
 
 SECTION WRAPPER — every content section:
-  <section data-section-type="TYPE" class="py-16 md:py-20 relative">
+  <section data-section-type="TYPE">
     <!-- pattern content here -->
   </section>
-  EXCEPTION: Hero sections use NO py padding — just <section data-section-type="hero" class="relative">
-  For hero_full_image / hero_video_bg / hero_center with bg image: add class "-mt-[80px]" on the section to pull it UP behind the fixed navbar (edge-to-edge hero with no gap).
-  HERO IMAGE OVERLAY: Use a GRADIENT overlay, not flat black. Options:
-    - Left-to-right: bg-gradient-to-r from-black/60 via-black/40 to-transparent (text left, image visible right)
-    - Top-to-bottom: bg-gradient-to-b from-black/50 via-black/40 to-black/60 (centered text)
-    NEVER use flat bg-black/70 — the image must be clearly visible through the overlay.
-  Logo cloud sections: use py-10 md:py-12 (compact).
-  Footer: use py-14 md:py-16 and a dark background.
+  The CSS handles section padding via section[data-section-type].
+  For hero_full_image / hero_video_bg / hero_center with bg image: add class "hero-edge" on the section.
+  Logo cloud sections: add style="padding: 2.5rem 0" (compact).
+  Footer: add a dark background via style="background: #1a1a2e".
 
 ADDITIONAL HTML RULES:
 - Each {{IMG:...}} placeholder MUST have a DIFFERENT query. Never reuse.
 - Footer copyright: use &copy; <span id="year"></span> Brand Name — JS sets current year.
 - Do NOT hardcode a year like &copy; 2024.
-- REMINDER: ALL images must use {{IMG:role query}} placeholders. Real URLs (pexels.com, unsplash.com) will 404.
-- BTN_PRIMARY_CLASSES = inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-none cursor-pointer
-- BTN_SECONDARY_CLASSES = inline-block border-2 border-[var(--primary)] text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-[var(--primary)] hover:text-white bg-transparent
+- REMINDER: ALL images must use {{IMG:role query}} placeholders. Real URLs will 404.
+- ICON COLOR RULE: ALWAYS use color: var(--accent) for icons and check marks (via icon-box, stat-icon). On dark themes, --primary may be invisible. --accent is always bright.
 
 NAVBAR SEARCH — add a search toggle button in nav-links with a dropdown input. Class: search-toggle, search-dropdown.
 
-WHATSAPP FLOAT — ALWAYS add: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-all z-50"><i class="fa-brands fa-whatsapp"></i></a>
+WHATSAPP FLOAT — ALWAYS add: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
 
-BACK-TO-TOP — add: <button id="back-to-top" class="fixed bottom-6 right-24 w-11 h-11 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all z-50"><i class="fa-solid fa-chevron-up text-sm"></i></button>
+BACK-TO-TOP — add: <button id="back-to-top" style="position:fixed;bottom:1.5rem;right:6rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
 
 IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add loading="lazy" (except hero images — hero loads eagerly)
 - ALWAYS add decoding="async"
-- ALWAYS add a descriptive alt text (not empty, not generic)
-- Use appropriate sizing classes: hero images h-[80vh] or min-h-[500px], feature images h-48 or h-64, team photos h-64 or h-72
+- ALWAYS add a descriptive alt text
 
 VANILLA-TILT.JS — add data-tilt ONLY on card_grid and feature_cards patterns (NOT on every card):
   On card_grid and feature_cards ONLY: add data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
-  Do NOT add data-tilt to pricing_table, team_cards, testimonials, or other sections. JS automatically disables on mobile touch devices.
 
-TSPARTICLES — CONDITIONAL: ONLY add on dark-theme tech or creative sites. Do NOT add on light themes, food, health, wedding, corporate, or nature sites:
-  <div id="tsparticles" class="absolute inset-0 z-0"></div>
-  Place INSIDE the hero section, before the text content. Text content must have class="relative z-10".
-  JS initializes with a subtle network/dots config. ONLY use when the design theme is dark AND the industry is tech, SaaS, creative, or gaming.
+TSPARTICLES — CONDITIONAL: ONLY add on dark-theme tech or creative sites:
+  <div id="tsparticles" style="position:absolute;inset:0;z-index:0"></div>
+  Place INSIDE the hero section, before the text content. Text content must have class z-10.
 
-SPLITTING.JS — CONDITIONAL: ONLY add on creative, portfolio, or agency sites. Do NOT add on corporate, health, education, or food sites:
-  <h2 data-splitting class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2>
-  JS calls Splitting() on [data-splitting] elements. Only use for creative/portfolio/agency brands where dramatic text animation fits the aesthetic.
+SPLITTING.JS — CONDITIONAL: ONLY add on creative, portfolio, or agency sites:
+  <h2 data-splitting class="section-title">Headline</h2>
 
-LENIS SMOOTH SCROLL — always active. JS initializes Lenis for buttery smooth page scrolling automatically.
+LENIS SMOOTH SCROLL — always active. JS initializes Lenis automatically.
 
 DESIGN QUALITY — what makes a website look "designed" vs "generated":
 
@@ -259,39 +477,25 @@ DESIGN QUALITY — what makes a website look "designed" vs "generated":
   - Every design choice should reinforce the aesthetic. No mixing styles.
 
   TYPOGRAPHY (non-negotiable):
-  - Hero headline: text-5xl md:text-6xl lg:text-7xl font-bold (MASSIVE and impactful — NEVER text-3xl or text-4xl)
+  - Hero headline: hero-heading class = clamp(2.5rem, 6vw, 4.5rem) (MASSIVE and impactful)
   - NEVER use Inter, Roboto, Arial, or system-ui — these scream "generic"
-  - Use the EXACT fonts from the plan. Make them distinctive.
-  - Small labels/tags: text-xs uppercase tracking-widest font-semibold text-[var(--accent)]
-
-  SPACING:
-  - Sections: py-20 md:py-28 (generous — never cramped)
-  - Hero: min-h-[85vh] with content vertically centered
-  - Card padding: p-6 md:p-8 (never less than p-5)
+  - Use the EXACT fonts from the plan.
+  - Small labels/tags: use .section-label class
 
   VISUAL DEPTH & TEXTURE (what separates good from great):
-  - Large faded text as background texture: position absolute, font-size 6-8rem, opacity 0.03-0.06
-  - Pseudo-elements (::before, ::after) for hover effects and decorative lines — never extra divs
-  - CSS noise texture on dark themes: use SVG data URI feTurbulence as subtle overlay
-  - Diagonal clip-path on at least one element (buttons or section dividers)
-  - Sticky elements for interactive depth (e.g. sticky sidebar in program sections)
-  - gap: 2px on grids for industrial seam effect (when bold/industrial aesthetic)
-
-  ANIMATIONS (CSS-only, no libraries needed):
-  - IntersectionObserver scroll reveals on all sections (JS stage adds this)
-  - Hover transitions on ALL interactive elements: transform, box-shadow, border-color
-  - Hero elements: staggered entrance with animation-delay (0.2s, 0.4s, 0.6s)
-  - Counter animations on stats (JS stage handles)
-  - Testimonial auto-scroll or marquee for social proof
+  - Large faded text as background texture: .bg-number
+  - Pseudo-elements (::before, ::after) for hover effects and decorative lines
+  - Section-specific custom CSS
+  - CSS noise texture on dark themes
 
   COLOR:
-  - Gradient text on hero headline: bg-clip-text text-transparent bg-gradient-to-r
-  - Use color-mix() for section alternation: color-mix(in srgb, var(--bg-surface) 50%, var(--bg))
+  - Gradient text on hero: use .gradient-text
+  - Use color-mix() for section alternation
   - Accent color for: CTAs, icons, links, tags, hover borders
-  - Glass-morphism on dark: bg-white/[0.05] backdrop-blur-lg border border-white/[0.1]
+  - Glass-morphism on dark: background rgba(255,255,255,0.05), backdrop-filter blur(16px), border rgba(255,255,255,0.1)
 
   IMAGES:
-  - Hero images: min-h-[500px] object-cover, use overlay gradient for text readability
+  - Hero images: min-height 500px via inline style if needed, object-fit cover
   - EVERY <img> must have loading="lazy" decoding="async" (except hero)
 
 SEO META — after </style>, add: <!-- SEO_META --> with meta description (150 chars), og:title, og:description, og:type, twitter:card, robots, canonical. <!-- END_SEO_META -->
