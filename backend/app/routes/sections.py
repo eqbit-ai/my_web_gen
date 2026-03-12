@@ -7,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.utils.auth import decode_access_token
+from app.utils.content_moderation import check_prompt_safety
 from app.utils.design_system import design_system_to_prompt_context
 from app.utils.llm_clients import get_anthropic_client
 from app.utils.section_parser import (
@@ -406,6 +407,11 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
         f'🟡 Section Regenerate Request → id="{req.sectionId}", prompt="{(req.prompt or "")[:80]}", pageSlug="{req.pageSlug}"'
     )
 
+    if req.prompt:
+        moderation = check_prompt_safety(req.prompt)
+        if not moderation["safe"]:
+            raise HTTPException(status_code=400, detail=moderation["reason"])
+
     session = await redis_get_session(req.sessionId)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -757,8 +763,15 @@ USER REQUEST: {req.prompt}"""
 @router.post("/update-text")
 async def update_text(req: UpdateTextRequest, user: dict = Depends(require_auth)):
     """Update text content within a section without AI (direct string replacement).
-    Sanitizes input to prevent XSS injection.
+    Sanitizes input to prevent XSS injection + content moderation.
     """
+    # Check all new text for restricted content
+    all_text = " ".join(c.get("newText", "") for c in req.changes)
+    if all_text.strip():
+        moderation = check_prompt_safety(all_text)
+        if not moderation["safe"]:
+            raise HTTPException(status_code=400, detail=moderation["reason"])
+
     session = await redis_get_session(req.sessionId)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")

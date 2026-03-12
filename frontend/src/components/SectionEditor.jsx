@@ -91,7 +91,7 @@ const SectionEditor = ({ isOpen, onClose, sections, sessionId, onUpdate, pageSlu
                 onUpdate(result.html, result.css, result.js, `Regenerated ${label}: "${prompt}"`);
                 if (result.sections) setLocalSections(result.sections);
             }
-        } catch (e) { setError(e.message); }
+        } catch (e) { setError(e.message.replace('[RESTRICTED] ', '')); }
         setRegenPrompt('');
         setRegenTarget(null);
         setLoading(null);
