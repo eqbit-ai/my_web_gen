@@ -3270,7 +3270,7 @@ def _is_structural_edit(prompt: str) -> bool:
     """Detect if the edit requires adding/removing/reordering elements (needs full section context)."""
     structural_keywords = [
         r'\badd\b.*\b(card|item|column|row|button|link|section|image|icon|field|input|element)',
-        r'\bremove\b', r'\bdelete\b', r'\breorder\b', r'\brearrange\b', r'\bmove\b.*\b(before|after|above|below)',
+        r'\bremove\b', r'\bdelete\b', r'\breorder\b', r'\brearrange\b', r'\bmove\b.*\b(before|after|above|below|up|down)',
         r'\bsplit\b', r'\bmerge\b', r'\bduplicate\b', r'\bcopy\b', r'\binsert\b',
         r'\badd\s+(a|an|another|new|more)\b', r'\bchange\s+layout\b', r'\bswap\b',
         r'\bgrid\b.*\bcolumn', r'\bconvert\b.*\b(to|into)\b',
@@ -3279,16 +3279,56 @@ def _is_structural_edit(prompt: str) -> bool:
     return any(re.search(pat, prompt_lower) for pat in structural_keywords)
 
 
+VOID_ELEMENTS = frozenset([
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+])
+
+
+def _find_element_end(full_html: str, start: int, tag_name: str) -> int | None:
+    """From *start* (the '<' of the opening tag), find where the element ends.
+
+    For void elements (img, br, hr …) → end of the self-closing tag.
+    For normal elements → matching closing tag respecting nesting depth.
+    """
+    tag_lower = tag_name.lower()
+
+    if tag_lower in VOID_ELEMENTS:
+        # Find the end of this self-closing tag: scan for '>'
+        gt = full_html.find('>', start)
+        if gt == -1:
+            return None
+        return gt + 1
+
+    # Normal element — walk the HTML counting open/close of the same tag
+    depth = 0
+    tag_re = re.compile(
+        rf'(<{tag_name}[\s>/])|(</{tag_name}\s*>)', re.IGNORECASE
+    )
+    for m in tag_re.finditer(full_html, start):
+        if m.group(1):   # opening tag
+            depth += 1
+        elif m.group(2): # closing tag
+            depth -= 1
+            if depth == 0:
+                return m.end()
+    return None
+
+
 def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] | None:
     """Find the exact position of an element's outerHTML in the full page HTML.
 
     Tries exact match first, then normalised whitespace match, then
-    first-80-chars prefix match.
+    first-80-chars prefix match.  All fallbacks use tag-aware end detection
+    so we never blindly slice by len(element_html).
     """
     # Exact match
     idx = full_html.find(element_html)
     if idx != -1:
         return idx, idx + len(element_html)
+
+    tag = re.match(r'<(\w+)', element_html)
+    tag_name = tag.group(1) if tag else None
 
     # Normalise whitespace and try again
     def normalise(s: str) -> str:
@@ -3298,38 +3338,21 @@ def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] 
     norm_full = normalise(full_html)
     idx = norm_full.find(norm_el)
     if idx != -1:
-        # Map back to original positions — find the chunk in original
-        # Use first 80 chars as anchor
         anchor = element_html[:80].strip()
         orig_idx = full_html.find(anchor)
-        if orig_idx != -1:
-            # Find the closing tag from there
-            tag = re.match(r'<(\w+)', element_html)
-            if tag:
-                tag_name = tag.group(1)
-                depth = 0
-                i = orig_idx
-                while i < len(full_html):
-                    open_m = re.match(rf'<{tag_name}[\s>/]', full_html[i:], re.IGNORECASE)
-                    close_m = re.match(rf'</{tag_name}\s*>', full_html[i:], re.IGNORECASE)
-                    if close_m and depth == 0:
-                        end = i + close_m.end()
-                        return orig_idx, end
-                    if close_m:
-                        depth -= 1
-                        i += close_m.end()
-                    elif open_m:
-                        if i > orig_idx:
-                            depth += 1
-                        i += open_m.end()
-                    else:
-                        i += 1
+        if orig_idx != -1 and tag_name:
+            end = _find_element_end(full_html, orig_idx, tag_name)
+            if end is not None:
+                return orig_idx, end
 
-    # Prefix match (first 80 chars)
+    # Prefix match — use the first 80 chars to locate, then find the
+    # actual end of the element in the stored HTML (not len(element_html))
     prefix = element_html[:80].strip()
     idx = full_html.find(prefix)
-    if idx != -1:
-        return idx, idx + len(element_html)
+    if idx != -1 and tag_name:
+        end = _find_element_end(full_html, idx, tag_name)
+        if end is not None:
+            return idx, end
 
     return None
 
