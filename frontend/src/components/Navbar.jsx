@@ -38,7 +38,7 @@ const Navbar = () => {
                 <div className="nav-actions">
                     {user ? (
                         <>
-                            <span className="nav-link" style={{ cursor: 'default' }}>{user.full_name}</span>
+                            <Link to="/dashboard" className="nav-link">Dashboard</Link>
                             <button className="btn-primary btn-sm" onClick={() => { logout(); navigate('/'); }}>
                                 Log Out
                             </button>
@@ -68,9 +68,12 @@ const Navbar = () => {
                     <a href="#how-it-works" className="mobile-link" onClick={() => setMobileOpen(false)}>How It Works</a>
                     <div className="mobile-actions">
                         {user ? (
-                            <button className="btn-primary full" onClick={() => { logout(); navigate('/'); setMobileOpen(false); }}>
-                                Log Out
-                            </button>
+                            <>
+                                <Link to="/dashboard" className="btn-secondary full" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+                                <button className="btn-primary full" onClick={() => { logout(); navigate('/'); setMobileOpen(false); }}>
+                                    Log Out
+                                </button>
+                            </>
                         ) : (
                             <>
                                 <Link to="/login" className="btn-secondary full">Log In</Link>
