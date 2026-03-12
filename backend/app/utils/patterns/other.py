@@ -25,7 +25,10 @@ PATTERNS = {
       <a href="#" class="block w-full BTN_PRIMARY_CLASSES text-center">Get Started</a>
     </div>
   </div>
-  NOTE: The middle/recommended plan card should have class "pricing-card featured" to visually emphasize it (auto-scaled 105% + primary border via CSS).""",
+  NOTE: The middle/recommended plan card MUST have class "pricing-card featured" AND include a "Most Popular" badge:
+  <div class="pricing-card featured bg-[var(--bg-surface)] rounded-[var(--radius)] p-8 text-center shadow-md ... relative border-2 border-[var(--primary)]">
+    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--primary)] text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wide">Most Popular</div>
+  The featured card auto-scales 105% + primary border via CSS. Non-featured cards have NO border-2.""",
     "faq_accordion": """faq_accordion pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>
   <div class="max-w-[800px] mx-auto px-6">
@@ -36,23 +39,29 @@ PATTERNS = {
   </div>
   NOTE: Light themes use border-gray-200 instead of border-white/10. FAQ toggle handled by JS + <style> block.""",
     "stats_row": """stats_row pattern:
-  <div class="max-w-[900px] mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-    <div class="flex flex-col items-center gap-2" data-aos="fade-up" data-aos-delay="100">
-      <i class="fa-solid fa-building text-2xl text-[var(--accent)] opacity-80"></i>
-      <div class="stat-number text-3xl md:text-4xl font-bold text-[var(--accent)] leading-none whitespace-nowrap">500+</div>
-      <div class="text-xs uppercase tracking-widest text-[var(--text-muted)] max-w-[200px]">Projects Completed</div>
+  <div class="max-w-[1000px] mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+    <div class="flex flex-col items-center gap-3" data-aos="fade-up" data-aos-delay="100">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-lg text-[var(--accent)] mb-1" style="background: color-mix(in srgb, var(--accent) 12%, transparent)">
+        <i class="fa-solid fa-building"></i>
+      </div>
+      <div class="stat-number text-4xl md:text-5xl font-bold text-[var(--text)] leading-none whitespace-nowrap">500+</div>
+      <div class="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--text-muted)] max-w-[180px]">Projects Completed</div>
     </div>
-    <div class="flex flex-col items-center gap-2" data-aos="fade-up" data-aos-delay="200">
-      <i class="fa-solid fa-leaf text-2xl text-[var(--accent)] opacity-80"></i>
-      <div class="stat-number text-3xl md:text-4xl font-bold text-[var(--accent)] leading-none whitespace-nowrap">45%</div>
-      <div class="text-xs uppercase tracking-widest text-[var(--text-muted)] max-w-[200px]">Average Energy Reduction</div>
+    <div class="flex flex-col items-center gap-3" data-aos="fade-up" data-aos-delay="200">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-lg text-[var(--accent)] mb-1" style="background: color-mix(in srgb, var(--accent) 12%, transparent)">
+        <i class="fa-solid fa-leaf"></i>
+      </div>
+      <div class="stat-number text-4xl md:text-5xl font-bold text-[var(--text)] leading-none whitespace-nowrap">45%</div>
+      <div class="text-xs uppercase tracking-[0.2em] font-semibold text-[var(--text-muted)] max-w-[180px]">Energy Reduction</div>
     </div>
   </div>
   STATS RULES:
-  - Each stat: optional icon -> .stat-number -> label
+  - Each stat: icon box -> .stat-number (MASSIVE size) -> label (tiny uppercase)
+  - Stat numbers must be text-4xl md:text-5xl — this size contrast IS the design
   - Number AND suffix (+, %, M, K, M+) MUST be in the SAME .stat-number element
   - CORRECT: <div class="stat-number ...">120+</div>
   - WRONG: <span>120</span><span>+</span> (NEVER split number and suffix)
+  - Labels should be SHORT (2-3 words max) — they wrap badly at small sizes
   - Do NOT use data-target attributes. JS handles counter animation automatically via IntersectionObserver.""",
     "gallery_grid": """gallery_grid pattern:
   <div class="text-center mb-8 md:mb-10"><h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-[var(--text)]">Headline</h2><p class="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto leading-relaxed">Subheadline</p></div>

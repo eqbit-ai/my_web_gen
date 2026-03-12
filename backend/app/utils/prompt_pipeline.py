@@ -80,36 +80,44 @@ COMPONENT_PATTERNS = {
 
 PROMPT_ENHANCE_SYSTEM = """You are a senior creative director at a top-tier web design agency.
 
-Your job: take the user's raw website request and expand it into a rich, detailed creative brief that will guide our AI website generator to produce stunning, professional output.
+Your job: take the user's raw website request and produce a DESIGN BRIEF with a bold, committed aesthetic vision.
+
+CRITICAL: Before anything else, decide on a SPECIFIC aesthetic direction. Not "professional" — that means nothing. Choose a real design identity:
+- Raw Industrial Brutalism (dark, heavy type, sharp angles, noise textures)
+- Clean Swiss Minimalism (lots of whitespace, grid-based, monospace accents)
+- Luxury Editorial (serif headlines, muted tones, generous spacing, gold accents)
+- Bold Geometric (bright accent colors, clip-paths, angular shapes, large type)
+- Dark Tech (near-black bg, neon accent, glassmorphism, code-inspired)
+- Warm Organic (earth tones, rounded shapes, hand-drawn feel, soft shadows)
+- High Contrast Modern (black + one vivid color, oversized headlines, dramatic)
+Pick the one that BEST fits the industry. Commit fully. Never mix styles.
 
 RULES:
-- Keep the user's original intent and any specifics they mentioned (company name, industry, colors, etc.)
-- Fill in gaps they didn't mention with smart, industry-appropriate defaults
-- Add concrete details: specific services/features, target audience, tone of voice, visual direction
-- Suggest real-sounding content themes (not placeholder text, but content direction)
+- Keep the user's original intent and any specifics they mentioned
+- Fill gaps with smart, industry-appropriate defaults
 - Keep the brief under 300 words — concise but rich
 - Write in directive style ("The website should...", "Include a section for...")
-- Do NOT generate HTML, CSS, or JSON — just an enhanced text brief
-- Do NOT add generic marketing fluff — be specific to the industry
-- If the user asks for multipage, suggest 4-6 key pages MAX (Home + 3-5 subpages). Do NOT suggest more than 6 pages.
+- Do NOT generate HTML, CSS, or JSON — just the text brief
+- Do NOT use generic phrases: "cutting-edge", "world-class", "innovative", "seamless"
+- If multipage, suggest 4-6 pages MAX
 
-WHAT TO ADD (if not already specified by the user):
-1. **Industry context**: What specific niche? Who are the customers?
-2. **Brand personality**: Professional/playful/luxury/minimal/bold?
-3. **Key sections to include**: What content sections make sense for this business?
-4. **Content direction**: What should headlines emphasize? What pain points to address?
-5. **Visual direction**: Photography style, color mood, typography feel
-6. **Differentiators**: What makes this business stand out? (suggest realistic ones)
-7. **Social proof**: What kind of testimonials/stats would be credible?
-8. **Call-to-action strategy**: What's the primary conversion goal?
+YOUR BRIEF MUST INCLUDE:
+1. **Aesthetic direction**: Name the specific design style (from list above or your own bold choice)
+2. **Color system**: One dominant dark/light base + one sharp accent color. Name exact mood.
+3. **Typography direction**: Describe the type personality (e.g. "military uppercase condensed" or "elegant serif with thin sans body"). NEVER suggest Inter, Roboto, Arial, or system-ui.
+4. **One unforgettable design element**: What makes this site visually memorable? (e.g. diagonal clip-path buttons, noise texture overlay, giant faded background numbers, animated gradient hero)
+5. **Content sections**: What sections make sense for this business (7-9 max)
+6. **Content direction**: What should headlines emphasize? Specific industry language.
+7. **Social proof**: Concrete stats and testimonials (realistic for the industry)
+8. **CTA strategy**: Primary conversion goal
 
 EXAMPLES:
 
 User: "make a website for a gym"
-Enhanced: "Create a website for an elite fitness center called 'Iron District' targeting working professionals aged 25-45 in Dubai. The brand should feel premium but approachable — dark theme with energetic accent colors (electric orange or neon green). Include sections for: membership tiers (3 plans from basic to VIP), class schedule highlights (HIIT, CrossFit, yoga, boxing), trainer profiles with certifications, facility gallery showcasing modern equipment and clean locker rooms, member transformation testimonials with before/after stats, and a free trial CTA. Headlines should emphasize results and community, not just equipment. Stats should show concrete numbers: members trained, classes per week, years in operation, trainer certifications. Photography style: high-contrast action shots, dramatic gym lighting, real people mid-workout."
+Enhanced: "AESTHETIC: Raw Industrial Brutalism. Dark iron-black background (#0a0a0a) with blood-red accent (#c0392b). Typography: heavy condensed uppercase for headlines (like Oswald or Barlow Condensed), clean sans-serif body. UNFORGETTABLE ELEMENT: Large faded numbers as background texture (opacity 0.04) behind each section + diagonal clip-path on CTA buttons. Create a website for 'IRONBLOOD MMA' — an elite combat training facility in Dubai. Include: full-viewport hero with animated counter stats (12+ years, 340+ fighters, 47+ champions), 6 discipline cards (Muay Thai, Wrestling, BJJ, Boxing, S&C, MMA), 3 elite coach profiles with fight records and specialties, interactive program selector (Beginner/Competitor/Fight Fitness/Youth/Private), weekly schedule grid color-coded by difficulty, 3-tier pricing (AED 999/1,999/3,499), and auto-scrolling testimonial marquee. Copy should be direct and tough — no corporate fluff. Stats should show real fighting credentials."
 
 User: "law firm website"
-Enhanced: "Create a website for 'Al Rashid & Partners', a corporate law firm in Dubai specializing in commercial law, real estate transactions, and dispute resolution for businesses in the UAE free zones. The brand should feel authoritative, trustworthy, and sophisticated — clean design with navy blue and gold accents, serif headings for tradition, sans-serif body for readability. Include sections for: practice areas (corporate structuring, real estate, IP, dispute resolution, compliance), attorney profiles with credentials and bar admissions, notable case results with anonymized outcomes, client testimonials from business owners, an FAQ covering common legal questions for free zone businesses, and a consultation booking CTA. Stats: years of combined experience, cases handled, jurisdictions covered, client retention rate. Photography: professional headshots, Dubai skyline, modern office interiors, courthouse imagery."
+Enhanced: "AESTHETIC: Luxury Editorial. Deep navy (#0d1b3e) with warm gold accent (#c9a84c) on ivory (#faf9f6). Typography: classic serif for headlines (like Playfair Display), thin sans-serif body (like Outfit or DM Sans). UNFORGETTABLE ELEMENT: Subtle parallax scroll on hero image + gold underline animations on section headings. Create a website for 'Al Rashid & Partners' — a corporate law firm in Dubai DIFC. Include: hero with Dubai skyline silhouette overlay, 5 practice area cards (Corporate, Real Estate, IP, Dispute Resolution, Compliance), 4 senior partner profiles with credentials and bar admissions, notable case results with anonymized outcomes (AED 50M+ recovered, 200+ cases), client testimonials from business leaders, FAQ for free zone legal questions, and consultation booking CTA. Copy should be authoritative and specific — cite real legal frameworks (UAE Commercial Companies Law, DIFC Courts). No generic 'trusted legal partner' language."
 
 Return ONLY the enhanced brief text. No preamble, no explanations."""
 
@@ -121,6 +129,7 @@ Return ONLY the enhanced brief text. No preamble, no explanations."""
 PLAN_SYSTEM_PROMPT = """You are an expert UI/UX architect and creative director.
 
 Analyze the user's website request and create a comprehensive website plan.
+The brief may specify an AESTHETIC DIRECTION (e.g. "Raw Industrial Brutalism", "Luxury Editorial"). If so, your color, font, and layout choices MUST match that aesthetic. Execute it with full commitment — no diluting the vision with safe defaults.
 
 INSTRUCTIONS:
 - Determine the best page structure for this business/purpose
@@ -227,7 +236,7 @@ You MUST return ONLY valid JSON:
     "surface_color": "#hex — card/section background (slightly different from bg)",
     "text_color": "#hex — primary text",
     "text_muted": "#hex — secondary/muted text",
-    "heading_font": "Google Font name for headings",
+    "heading_font": "Google Font name for headings (NEVER Inter, Roboto, Arial, Open Sans — these are banned. Use distinctive fonts like Playfair Display, Oswald, Barlow Condensed, Space Grotesk, Syne, DM Serif Display, Outfit, etc.)",
     "body_font": "Google Font name for body text",
     "style": "e.g. minimal, bold, elegant, playful, corporate",
     "card_radius": "8px or 12px or 16px",
@@ -294,6 +303,8 @@ Rules:
 - End the page with contact or CTA before the footer.
 - Every website MUST include at least one of: stats_row, feature_split, or logo_cloud.
 - The layout should feel like a professionally designed landing page with visual variety.
+
+SECTION COUNT LIMIT: Use 7-9 content sections (excluding navbar and footer). NEVER exceed 10 content sections — more sections make the page too long and dilute impact. Quality over quantity.
 
 Examples of GOOD section orders (use DIFFERENT patterns each time — do NOT always copy one example):
 
@@ -663,7 +674,105 @@ def _build_niche_image_hint(niche_key: str) -> str:
     return "\n".join(lines)
 
 
-def build_html_prompt(plan: dict) -> str:
+# ═══════════════════════════════════════════════════════════════════════
+# TEMPLATE-FIRST CUSTOMIZATION (faster, higher quality)
+# ═══════════════════════════════════════════════════════════════════════
+
+TEMPLATE_CUSTOMIZE_PROMPT = """You are an expert frontend developer. Study the REFERENCE TEMPLATE below, then generate a NEW website using Tailwind CSS utility classes that matches the template's visual quality.
+
+REFERENCE TEMPLATE (study this for design quality, layout patterns, hover effects, visual texture):
+{template_html}
+
+BUSINESS PLAN (use this content):
+{plan_json}
+
+YOUR TASK:
+Create a website that looks AS GOOD as the reference template, but using Tailwind CSS utility classes + CSS variables. Study the template's:
+- Hero layout and visual impact
+- Card hover effects and animations
+- Section spacing and visual rhythm
+- Typography scale and weight usage
+- Color usage and gradients
+- Background textures and decorative elements
+Then recreate that level of quality using Tailwind classes.
+
+OUTPUT FORMAT:
+- Return ONLY HTML inside a single ```html code block
+- Output a <style> block FIRST (CSS variables, fonts, custom effects) then HTML body content
+- NO <html>, <head>, <body>, <link>, <meta> tags
+- Do NOT add Font Awesome <script> or <link> tags — FA is pre-loaded
+- Do NOT include any JavaScript
+
+MANDATORY STRUCTURE:
+1. <style> block with:
+   - @import for Google Fonts (from plan's heading_font + body_font)
+   - :root {{ --primary, --secondary, --accent, --bg, --bg-surface, --text, --text-muted, --font-heading, --font-body, --radius, --radius-btn }}
+   - body, heading, section animation styles
+   - .nav-links, .nav-toggle, .nav-scrolled, .faq-item/.faq-answer, .testimonial-slide, .pricing-card.featured styles
+   - Mobile responsive @media for nav
+   - CUSTOM EFFECTS from the reference template (clip-paths, hover pseudo-elements, noise textures, faded background numbers — put these in <style> block)
+
+2. HTML body with Tailwind utility classes:
+   - EVERY <section> MUST have data-section-type="TYPE" (hero, features, services, testimonials, team, gallery, contact, cta, faq, stats, pricing, footer)
+   - Use <nav> for navbar, <footer> for footer, <section> for content
+   - Use Tailwind classes: bg-[var(--bg)], text-[var(--text)], rounded-[var(--radius)], etc.
+   - ⚠️ Use {{{{IMG:role query}}}} placeholders for ALL images — NEVER write real pexels.com/unsplash.com URLs (they will 404)
+   - Use Font Awesome icons: <i class="fa-solid fa-icon-name"></i>
+   - Include ALL sections from the plan
+
+TAILWIND CLASSES TO USE:
+- Container: max-w-[1200px] mx-auto px-6
+- Card: bg-[var(--bg-surface)] rounded-[var(--radius)] p-6 md:p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-white/[0.06]
+- Btn primary: inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold
+- Grid: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
+- Section: py-20 md:py-28 relative
+- Hero headline: text-5xl md:text-6xl lg:text-7xl font-bold (NEVER text-3xl or text-4xl)
+
+PRESERVE FROM REFERENCE (recreate in <style> block):
+- Card hover choreography: border-left reveal, ::before gradient sweep, title color change
+- Hero depth: faded background elements, gradient overlays, staggered entrance animations
+- Section texture: alternating backgrounds, decorative elements
+- Transition timing: cubic-bezier easing, staggered delays
+
+ADD THESE ELEMENTS:
+- <!-- SEO_META --> after </style> with meta description, og:title, og:description <!-- END_SEO_META -->
+- <!-- FAVICON --> with SVG favicon <!-- END_FAVICON -->
+- WhatsApp float: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-all z-50"><i class="fa-brands fa-whatsapp"></i></a>
+- Back-to-top: <button id="back-to-top" class="fixed bottom-6 right-24 w-11 h-11 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all z-50"><i class="fa-solid fa-chevron-up text-sm"></i></button>
+
+Return ONLY the HTML. No explanation."""
+
+
+def build_template_customize_prompt(template_html: str, plan: dict) -> str:
+    """Build a prompt for customizing an existing template with plan content.
+
+    This is MUCH smaller than the from-scratch prompt (~35K vs ~72K) and produces
+    more reliable results because Claude modifies working code instead of generating
+    from scratch.
+    """
+    # Strip long image URLs to reduce token count — Claude will replace them anyway
+    import re as _re
+    compressed = _re.sub(
+        r'src="https://[^"]{50,}"',
+        'src="REPLACE_ME"',
+        template_html,
+    )
+
+    # Build minimal plan JSON with just the content Claude needs
+    plan_content = {
+        "brand": plan.get("brand", {}),
+        "design": plan.get("design", {}),
+        "image_style": plan.get("image_style", ""),
+        "sections": plan.get("sections", []),
+    }
+
+    return TEMPLATE_CUSTOMIZE_PROMPT.format(
+        template_html=compressed,
+        plan_json=json.dumps(plan_content, indent=2),
+    )
+
+
+def build_html_prompt(plan: dict, enhanced_brief: str = None) -> str:
     """Build the HTML generation prompt with ONLY the needed pattern templates.
 
     This is the key optimization: instead of injecting all 38 patterns (~1200 lines),
@@ -681,6 +790,23 @@ def build_html_prompt(plan: dict) -> str:
         pattern_templates=pattern_templates,
         style_additions=style_additions,
     )
+
+    # Inject enhanced brief so the aesthetic vision carries through to HTML stage
+    if enhanced_brief:
+        prompt += f"""
+
+AESTHETIC MANDATE (from creative brief — execute with FULL commitment):
+{enhanced_brief}
+
+The aesthetic described above MUST be visible in every element. If the brief says dark industrial — use near-black backgrounds, sharp angles, noise textures. If it says luxury editorial — use generous spacing, serif display fonts at massive scale, gold accents. Never dilute the vision with safe defaults.
+
+CUSTOM CSS EFFECTS — add these in the <style> block (Tailwind can't express them):
+- Card hover choreography: .card-hover::before {{ content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(var(--primary-rgb, 59,130,246), 0.1), transparent 60%); opacity: 0; transition: opacity 0.4s; }} .card-hover:hover::before {{ opacity: 1; }}
+- Card left border reveal: .card-hover {{ border-left: 3px solid transparent; transition: border-color 0.3s; }} .card-hover:hover {{ border-left-color: var(--accent); }}
+- Hero staggered entrance: .hero-stagger {{ opacity: 0; transform: translateY(30px); animation: heroIn 0.8s ease forwards; }} @keyframes heroIn {{ to {{ opacity: 1; transform: translateY(0); }} }}
+  Use animation-delay: 0.2s, 0.4s, 0.6s on child elements for stagger effect
+- Stats suffix accent: .stat-suffix {{ color: var(--accent); }} (wrap +, %, M in this class)
+"""
 
     # Inject animation guidance
     try:
@@ -988,14 +1114,18 @@ TAILWIND CLASS REFERENCE (use these consistently):
 - Dark theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-black/40 border-b border-white/[0.08] transition-all duration-300"
 - Light theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-white/85 border-b border-black/[0.06] transition-all duration-300"
 
-IMAGE RULES — use the {{IMG:role query}} placeholder system:
-- For EVERY <img> tag, use a role prefix + the image_query from the plan
+⚠️ MANDATORY IMAGE RULES — VIOLATION = BROKEN OUTPUT ⚠️
+NEVER write real image URLs (pexels.com, unsplash.com, etc). They will ALL 404.
+The ONLY way to include images is the {{IMG:role query}} placeholder system:
+- For EVERY <img> tag: src="{{IMG:role query keywords}}"
+- For EVERY background-image: url('{{IMG:background query keywords}}')
 - Format: <img src="{{IMG:role query keywords}}" alt="descriptive alt text" class="w-full h-auto rounded-xl object-cover">
 - IMAGE ROLES: hero, product, feature, gallery, team, testimonial, background, cta, mockup
 - Use the EXACT image_query from the plan — do NOT simplify or shorten
 - Each placeholder MUST have a DIFFERENT query — never reuse
-- NEVER use hardcoded URLs — ONLY {{IMG:role query}} format
-- Do NOT use /images/ or /logos/ paths
+- ABSOLUTELY NO hardcoded URLs from pexels.com, unsplash.com, or any other domain
+- ABSOLUTELY NO /images/ or /logos/ paths
+- If you write a real URL instead of {{IMG:...}}, the image WILL be broken
 
 CRITICAL: Match each section's "pattern" field to the EXACT HTML structure below.
 
@@ -1720,7 +1850,7 @@ ADDITIONAL HTML RULES:
 - Each {{IMG:...}} placeholder MUST have a DIFFERENT query. Never reuse.
 - Footer copyright: use &copy; <span id="year"></span> Brand Name — JS sets current year.
 - Do NOT hardcode a year like &copy; 2024.
-- Do NOT use hardcoded Unsplash URLs — ONLY {{IMG:role query}} placeholders.
+- REMINDER: ALL images must use {{IMG:role query}} placeholders. Real URLs (pexels.com, unsplash.com) will 404.
 - BTN_PRIMARY_CLASSES = inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-none cursor-pointer
 - BTN_SECONDARY_CLASSES = inline-block border-2 border-[var(--primary)] text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-[var(--primary)] hover:text-white bg-transparent
 
@@ -2275,6 +2405,11 @@ RULES:
     - const lenis = new Lenis({{ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) }})
     - function raf(time) {{ lenis.raf(time); requestAnimationFrame(raf); }} requestAnimationFrame(raf);
   * Section scroll reveal: IntersectionObserver on all <section> elements — add class 'visible' when section enters viewport (threshold 0.1). Do NOT target nav. DO include footer sections.
+  * Staggered grid item reveals: For every grid of cards/items inside sections, add staggered transition-delay so items appear to "fall in" left to right:
+    - querySelectorAll('[data-section-type] .grid > *') — for each child, set style.transitionDelay = (index % 3) * 120 + 'ms'
+    - This makes columns stagger: col 0 = 0ms, col 1 = 120ms, col 2 = 240ms
+    - Apply this to all grid containers, not just specific ones
+  * Hero stagger entrance: If .hero-stagger elements exist, they animate via CSS @keyframes heroIn — JS just needs to add 'visible' class to hero section immediately (no delay)
   * Active nav link highlighting on scroll
   * Set footer year: document.getElementById('year') — set textContent to new Date().getFullYear()
 - IMPORTANT: Use these exact selectors: '.nav-links' for nav menu, '.nav-toggle' for hamburger button. Do NOT use '.navbar-nav' or '.mobile-menu-btn'
@@ -2355,7 +2490,8 @@ USER REQUEST: {prompt}
 RULES:
 - Return ONLY a JSON array of section IDs that need editing
 - Most requests target 1 section. Multi-section edits are rare.
-- If the request is about global styling (colors, fonts, spacing), return ["__style__"]
+- If the request is ONLY about colors, fonts, or spacing (e.g., "change color to blue", "use different font"), return ["__style__"]
+- If the request mentions "animation", "effects", "more beautiful", "redesign", "make it better", "more modern", "more professional", "improve design" → these require HTML changes, NOT just CSS. Return ["__full__"]
 - If the request asks to ADD/INSERT a new section (e.g., "add a footer", "add testimonials section", "add a gallery"), return ["__append__:SECTION_TYPE"] where SECTION_TYPE is one of: hero, features, services, stats, testimonials, pricing, faq, cta, team, gallery, about, contact, footer, timeline, newsletter
   Examples: "add footer" → ["__append__:footer"], "add a testimonials section" → ["__append__:testimonials"], "add gallery section" → ["__append__:gallery"]
 - If the request is about the whole page layout, rearranging sections, or a full redesign, return ["__full__"]
@@ -2486,10 +2622,12 @@ USER REQUEST: {prompt}
 
 RULES:
 - Return ONLY the updated <style> block inside a single ```css code block
-- Keep ALL existing CSS rules unless the user asks to change them
-- Only modify what the user requested (colors, fonts, spacing, etc.)
+- CRITICAL: You MUST return the COMPLETE CSS — every single rule, unchanged, except for what the user asked to modify
+- NEVER remove or shorten existing CSS rules — the output MUST be the same length or longer than the input
+- Only modify what the user specifically requested (colors, fonts, spacing, etc.)
 - CSS variables are in :root {{ ... }}
-- Maintain all animation keyframes, media queries, and component styles
+- Maintain ALL animation keyframes, media queries, component styles, responsive rules, and utility classes
+- If in doubt, keep the rule as-is
 - Do NOT include any explanation, just the css code block"""
 
 

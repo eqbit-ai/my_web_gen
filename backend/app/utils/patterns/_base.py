@@ -73,10 +73,25 @@ footer, footer section[data-section-type] {{ opacity: 1; transform: none; }}
 .nav-links a:hover::after {{ width: 100%; }}
 /* Navbar scroll effect */
 nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }}
-/* Alternate section backgrounds */
-section[data-section-type]:nth-of-type(even) {{ background: color-mix(in srgb, var(--bg-surface) 50%, var(--bg)); }}
+/* Intentional section background rhythm */
+section[data-section-type="features"],
+section[data-section-type="stats"] {{ background: var(--bg-surface); }}
+section[data-section-type="testimonials"],
+section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }}
 /* Featured pricing card */
 .pricing-card.featured {{ transform: scale(1.05); border: 2px solid var(--primary) !important; z-index: 1; }}
+/* Card hover choreography */
+.card-hover {{ position: relative; overflow: hidden; border-left: 3px solid transparent; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; }}
+.card-hover:hover {{ transform: translateY(-8px); box-shadow: 0 20px 60px rgba(0,0,0,0.12); border-left-color: var(--accent); }}
+.card-hover::before {{ content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent); transition: left 0.6s ease; }}
+.card-hover:hover::before {{ left: 100%; }}
+.card-hover:hover h3 {{ color: var(--accent); transition: color 0.3s ease; }}
+/* Gradient text utility */
+.gradient-text {{ background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }}
+/* Staggered grid reveals */
+.card-grid > *:nth-child(3n+1) {{ transition-delay: 0ms; }}
+.card-grid > *:nth-child(3n+2) {{ transition-delay: 120ms; }}
+.card-grid > *:nth-child(3n+3) {{ transition-delay: 240ms; }}
 @keyframes floatOrb {{ 0% {{ transform: translateY(0); }} 50% {{ transform: translateY(-30px); }} 100% {{ transform: translateY(0); }} }}
 @keyframes logoGradient {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 @keyframes gradientShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
@@ -97,6 +112,14 @@ section[data-section-type]:nth-of-type(even) {{ background: color-mix(in srgb, v
 @media (max-width: 768px) {{ .steps-container::before {{ left: 24px; }} .timeline-container::before {{ left: 98px; }} }}
 </style>
 Fill in ALL values from the plan's design spec. Use the EXACT colors, fonts, and radii.
+The <style> block above is a MINIMUM — you MUST add MORE custom CSS below the closing comment for:
+- Card hover effects (::before, ::after pseudo-elements for shine/border reveals)
+- Hero decorative elements (.hero-bg-element, .gradient-text, etc.)
+- Section-specific backgrounds and textures
+- Custom animation @keyframes beyond the basics above
+- Testimonial/slider transition styles
+- Mobile responsive tweaks for custom layouts
+A good website needs 150-300 lines of custom CSS. Do NOT rely only on Tailwind utilities.
 
 TAILWIND CLASS REFERENCE (use these consistently):
 - Section wrapper: class="py-16 md:py-20 relative"
@@ -107,10 +130,11 @@ TAILWIND CLASS REFERENCE (use these consistently):
 - Container wide: class="max-w-[1400px] mx-auto px-6"
 - Container: class="max-w-[1200px] mx-auto px-6"
 - Container narrow: class="max-w-[800px] mx-auto px-6"
-- Card: class="bg-[var(--bg-surface)] rounded-[var(--radius)] p-6 md:p-8 shadow-md hover:-translate-y-2 hover:shadow-xl transition-all duration-300 border border-white/[0.06]"
+- Card: class="card-hover bg-[var(--bg-surface)] rounded-[var(--radius)] p-6 md:p-8 shadow-md border border-white/[0.06]"
   (light theme: use border-gray-100 instead of border-white/[0.06])
+  The card-hover class provides coordinated hover effects (translate, shadow, border-left, shine sweep, title color change) — do NOT add separate hover:-translate-y-2 hover:shadow-xl when using card-hover.
 - Card icon box: class="w-14 h-14 rounded-xl flex items-center justify-center text-xl text-[var(--accent)] mb-5" style="background: color-mix(in srgb, var(--accent) 12%, transparent)"
-- ICON COLOR RULE (CRITICAL): ALWAYS use text-[var(--accent)] for icons, NOT text-[var(--primary)]. On dark themes, --primary is often a dark color that becomes invisible against dark backgrounds. --accent is always a bright, high-contrast color.
+- ICON COLOR RULE (CRITICAL): ALWAYS use text-[var(--accent)] for icons and check marks, NOT text-[var(--primary)]. On dark themes, --primary is often a dark color that becomes invisible. --accent is always bright. This applies to: card icons, pricing check marks, stat icons, feature icons.
 - Btn primary: class="inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-none cursor-pointer"
 - Btn secondary: class="inline-block border-2 border-[var(--primary)] text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-[var(--primary)] hover:text-white bg-transparent"
 - Grid 3-col: class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -120,48 +144,46 @@ TAILWIND CLASS REFERENCE (use these consistently):
 - Dark theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-black/40 border-b border-white/[0.08] transition-all duration-300"
 - Light theme navbar: class="fixed top-0 w-full z-50 backdrop-blur-md bg-white/85 border-b border-black/[0.06] transition-all duration-300"
 
-IMAGE RULES — use the {{IMG:role query}} placeholder system:
-- For EVERY <img> tag, use a role prefix + the image_query from the plan
+⚠️ MANDATORY IMAGE RULES — VIOLATION = BROKEN OUTPUT ⚠️
+NEVER write real image URLs (pexels.com, unsplash.com, etc). They will ALL 404.
+The ONLY way to include images is the {{IMG:role query}} placeholder system:
+- For EVERY <img> tag: src="{{IMG:role query keywords}}"
+- For EVERY background-image: url('{{IMG:background query keywords}}')
 - Format: <img src="{{IMG:role query keywords}}" alt="descriptive alt text" class="w-full h-auto rounded-xl object-cover">
 - IMAGE ROLES: hero, product, feature, gallery, team, testimonial, background, cta, mockup
 - Use the EXACT image_query from the plan — do NOT simplify or shorten
 - Each placeholder MUST have a DIFFERENT query — never reuse
-- NEVER use hardcoded URLs — ONLY {{IMG:role query}} format
-- Do NOT use /images/ or /logos/ paths
+- ABSOLUTELY NO hardcoded URLs from pexels.com, unsplash.com, or any other domain
+- ABSOLUTELY NO /images/ or /logos/ paths
+- If you write a real URL instead of {{IMG:...}}, the image WILL be broken
 
 CRITICAL: Match each section's "pattern" field to the EXACT HTML structure below.
 
-LOGO MARK RULES — generate a unique logo for each brand (NOT a plain colored square):
-  Choose ONE of these logo styles based on the brand and industry:
-
-  STYLE A — Brand initial in gradient circle (best for single-word brands):
-    <span class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">H</span>
-    (Use the first letter of the brand name)
-
-  STYLE B — Industry icon in gradient square (best for service businesses):
-    <span class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-white text-sm shadow-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary))"><i class="fa-solid fa-scale-balanced"></i></span>
-    (Pick a Font Awesome icon that matches the industry)
-
-  STYLE C — Two initials monogram (best for multi-word brands like "Harrison & Cole"):
-    <span class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">HC</span>
-
-  STYLE D — Inline SVG logo mark (best for tech/modern brands):
-    <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 36 36" fill="none">
-      <rect width="36" height="36" rx="8" fill="url(#logo-grad)"/>
-      <path d="M10 18L16 12L22 18L16 24Z" fill="white" opacity="0.9"/>
-      <path d="M14 18L20 12L26 18L20 24Z" fill="white" opacity="0.6"/>
-      <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36"><stop stop-color="var(--primary)"/><stop offset="1" stop-color="var(--secondary)"/></linearGradient></defs>
-    </svg>
-    (Create a UNIQUE simple geometric SVG for each brand. NEVER reuse the same SVG path.)
-
-  Pick the style that best matches the brand personality. Vary across generations.
+LOGO MARK — use a gradient icon/initial in navbar. Pick one:
+  - Initial: <span class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-lg" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">X</span>
+  - Icon: same but with <i class="fa-solid fa-icon"></i> inside
+  - Monogram: same but with two initials (e.g. "HC")
+  Vary the style per brand.
 
 TYPED.JS HERO EFFECT — adds a typewriter animation to the hero headline. Use freely on any hero:
   Replace the static headline text with:
-    <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-[var(--text)]">
+    <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold leading-none mb-6 text-[var(--text)]">
       <span class="typed-text" data-typed='["First Phrase Here", "Second Phrase Here", "Third Phrase Here"]'></span>
     </h1>
   The JS stage auto-detects .typed-text and initializes Typed.js. Use 3-4 different phrases that showcase the brand.
+
+HERO DEPTH ELEMENTS — add at least 2 of these to every hero section for visual richness:
+  1. Giant faded decorative text (absolute positioned behind hero content):
+     <span class="absolute right-[5%] top-[10%] text-[clamp(100px,20vw,300px)] font-bold opacity-[0.04] pointer-events-none select-none" style="font-family: var(--font-heading)">01</span>
+  2. Section label above headline (small uppercase tag):
+     <span class="inline-flex items-center gap-3 text-xs uppercase tracking-[0.25em] font-semibold text-[var(--accent)] mb-6"><span class="w-10 h-[2px] bg-[var(--accent)]"></span>LABEL TEXT</span>
+  3. Staggered entrance: add class="hero-stagger" on headline, subheadline, and CTA wrapper with style="animation-delay: 0.2s/0.4s/0.6s"
+  4. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom of hero
+
+HERO HEADLINE SIZE — NEVER use text-3xl or text-4xl for hero headlines. MINIMUM is text-5xl md:text-6xl lg:text-7xl.
+  - Display fonts (Oswald, Black Ops One, Bebas Neue): use text-6xl md:text-7xl lg:text-8xl
+  - Serif display fonts (Playfair Display, DM Serif Display): use text-5xl md:text-6xl lg:text-7xl
+  - Use leading-none or leading-tight on hero headlines (tight line-height = more impact)
 
 SECTION PATTERNS (use ONLY these — match each section's "pattern" field exactly):
 
@@ -175,10 +197,11 @@ CONTAINER WIDTH RULES (embedded in each pattern's classes):
 - max-w-[800px] or max-w-[700px]: faq, hero_minimal, testimonial_slider, feature_stacked, feature_steps, cta_centered, timeline, comparison_table — narrow for readability
 - max-w-[600px]: newsletter_cta — tight for email signup focus
 
-BACKGROUND ORBS — ONLY for dark themes (skip entirely on light themes):
-  <div class="fixed w-[400px] h-[400px] rounded-full -z-10 pointer-events-none -top-24 -left-24 opacity-[0.15] animate-[floatOrb_20s_ease-in-out_infinite]" style="background: var(--primary); filter: blur(120px)"></div>
-  <div class="fixed w-[500px] h-[500px] rounded-full -z-10 pointer-events-none -bottom-36 -right-36 opacity-[0.15] animate-[floatOrb_25s_ease-in-out_infinite_reverse]" style="background: var(--secondary); filter: blur(120px)"></div>
-  Do NOT add orbs on light/white themes — they look muddy and unprofessional on light backgrounds.
+BACKGROUND ORBS — TEMPLATE DECISION (not optional):
+  IF theme == "dark": include these two orb divs (use --secondary and --accent for color, NEVER --primary which may be near-black):
+  <div class="fixed w-[400px] h-[400px] rounded-full -z-10 pointer-events-none -top-24 -left-24 opacity-[0.15] animate-[floatOrb_20s_ease-in-out_infinite]" style="background: var(--secondary); filter: blur(120px)"></div>
+  <div class="fixed w-[500px] h-[500px] rounded-full -z-10 pointer-events-none -bottom-36 -right-36 opacity-[0.15] animate-[floatOrb_25s_ease-in-out_infinite_reverse]" style="background: var(--accent); filter: blur(120px)"></div>
+  IF theme == "light": OMIT orb divs entirely — do NOT generate them. Zero orb divs in output. They look muddy on light backgrounds.
 
 SECTION WRAPPER — every content section:
   <section data-section-type="TYPE" class="py-16 md:py-20 relative">
@@ -186,7 +209,10 @@ SECTION WRAPPER — every content section:
   </section>
   EXCEPTION: Hero sections use NO py padding — just <section data-section-type="hero" class="relative">
   For hero_full_image / hero_video_bg / hero_center with bg image: add class "-mt-[80px]" on the section to pull it UP behind the fixed navbar (edge-to-edge hero with no gap).
-  HERO IMAGE OVERLAY: When using background-image on hero, use bg-black/40 (40% opacity max). NEVER use bg-black/60 or darker — the image must be clearly visible through the overlay. The hero image is the most important visual on the page.
+  HERO IMAGE OVERLAY: Use a GRADIENT overlay, not flat black. Options:
+    - Left-to-right: bg-gradient-to-r from-black/60 via-black/40 to-transparent (text left, image visible right)
+    - Top-to-bottom: bg-gradient-to-b from-black/50 via-black/40 to-black/60 (centered text)
+    NEVER use flat bg-black/70 — the image must be clearly visible through the overlay.
   Logo cloud sections: use py-10 md:py-12 (compact).
   Footer: use py-14 md:py-16 and a dark background.
 
@@ -194,30 +220,15 @@ ADDITIONAL HTML RULES:
 - Each {{IMG:...}} placeholder MUST have a DIFFERENT query. Never reuse.
 - Footer copyright: use &copy; <span id="year"></span> Brand Name — JS sets current year.
 - Do NOT hardcode a year like &copy; 2024.
-- Do NOT use hardcoded Unsplash URLs — ONLY {{IMG:role query}} placeholders.
+- REMINDER: ALL images must use {{IMG:role query}} placeholders. Real URLs (pexels.com, unsplash.com) will 404.
 - BTN_PRIMARY_CLASSES = inline-block bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-none cursor-pointer
 - BTN_SECONDARY_CLASSES = inline-block border-2 border-[var(--primary)] text-[var(--primary)] py-3 px-7 rounded-[var(--radius-btn)] font-semibold no-underline transition-all duration-300 hover:bg-[var(--primary)] hover:text-white bg-transparent
 
-NAVBAR SEARCH BAR — add expandable search to the navbar (inside .nav-links, before the mobile CTA):
-  <li class="relative">
-    <button class="search-toggle bg-transparent border-none text-[var(--text)] cursor-pointer p-2 hover:text-[var(--primary)] transition-colors" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
-    <div class="search-dropdown hidden absolute right-0 top-full mt-2 w-64 bg-[var(--bg-surface)] rounded-[var(--radius)] shadow-xl border border-white/10 p-3 z-50">
-      <input type="text" placeholder="Search..." class="w-full p-2.5 rounded-lg border border-white/10 bg-[var(--bg)] text-[var(--text)] text-sm font-[inherit] focus:border-[var(--primary)] focus:outline-none">
-    </div>
-  </li>
-  JS toggles .search-dropdown visibility on click. Click outside closes it.
+NAVBAR SEARCH — add a search toggle button in nav-links with a dropdown input. Class: search-toggle, search-dropdown.
 
-WHATSAPP FLOATING BUTTON — add before </body> (after all sections, before footer or after footer):
-  <a href="https://wa.me/971XXXXXXXXX" target="_blank" rel="noopener" class="whatsapp-float fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300 z-50" aria-label="Chat on WhatsApp">
-    <i class="fa-brands fa-whatsapp"></i>
-  </a>
-  NOTE: Replace 971XXXXXXXXX with a plausible UAE number. ALWAYS include this on every website.
+WHATSAPP FLOAT — ALWAYS add: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-all z-50"><i class="fa-brands fa-whatsapp"></i></a>
 
-BACK-TO-TOP BUTTON — add before </body>:
-  <button id="back-to-top" class="fixed bottom-6 right-24 w-11 h-11 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 hover:-translate-y-1 hover:shadow-xl" aria-label="Back to top">
-    <i class="fa-solid fa-chevron-up text-sm"></i>
-  </button>
-  JS shows button (opacity-1, pointer-events-auto) when scrolled past 500px, hides when at top. Click scrolls to top smoothly.
+BACK-TO-TOP — add: <button id="back-to-top" class="fixed bottom-6 right-24 w-11 h-11 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg opacity-0 pointer-events-none transition-all z-50"><i class="fa-solid fa-chevron-up text-sm"></i></button>
 
 IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add loading="lazy" (except hero images — hero loads eagerly)
@@ -240,40 +251,51 @@ SPLITTING.JS — CONDITIONAL: ONLY add on creative, portfolio, or agency sites. 
 
 LENIS SMOOTH SCROLL — always active. JS initializes Lenis for buttery smooth page scrolling automatically.
 
-PREMIUM DESIGN QUALITY — CRITICAL:
-  Every website must look like it was designed by a top agency. Follow these rules:
-  - Add custom CSS hover effects on cards: scale, shadow elevation, border glow, or color shifts
-  - Use CSS transitions (300ms ease) on ALL interactive elements — buttons, cards, links, images
-  - Add subtle box-shadow layers for depth: shadow-lg on cards, shadow-2xl on hover
-  - Use backdrop-blur on overlapping elements (navbar, modals, dropdowns) for glass effect
-  - Vary data-aos animations: mix fade-up, fade-right, fade-left, zoom-in — do NOT use only fade-up everywhere
-  - Add gradient text on key headlines using bg-clip-text text-transparent bg-gradient-to-r
-  - Use rounded-2xl or rounded-3xl on cards for modern softness
-  - Ensure generous padding (py-16 md:py-24) between sections for breathing room
-  - Apply hover:-translate-y-1 or hover:-translate-y-2 on cards for lift effect
-  - Use ring-1 ring-white/10 borders on dark themes for subtle glass edges
+DESIGN QUALITY — what makes a website look "designed" vs "generated":
 
-SEO META TAGS — add these inside the <style> block as HTML comments (they'll be extracted to <head> by the renderer):
-  After the closing </style> tag, add this comment block:
-  <!-- SEO_META
-  <meta name="description" content="COMPANY_DESCRIPTION — 150-160 chars summarizing the business">
-  <meta name="keywords" content="keyword1, keyword2, keyword3, keyword4, keyword5">
-  <meta property="og:title" content="BRAND_NAME — TAGLINE">
-  <meta property="og:description" content="Same as meta description">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="BRAND_NAME — TAGLINE">
-  <meta name="twitter:description" content="Same as meta description">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="#">
-  END_SEO_META -->
-  Fill in real values from the plan's brand name, description, and industry. Make the description compelling and keyword-rich.
+  COMMIT TO AN AESTHETIC: The plan specifies a design style. Execute it with FULL commitment:
+  - Dark themes: use near-black backgrounds (#0a0a0a), not dark gray (#333). Accent colors should POP.
+  - Light themes: use warm whites (#faf9f6 or #f8f7f4), not pure white (#fff). Add depth with subtle tints.
+  - Every design choice should reinforce the aesthetic. No mixing styles.
 
-FAVICON — add an SVG favicon using the brand's first letter and primary color:
-  Include this right after the SEO_META comment block:
-  <!-- FAVICON
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='PRIMARY_COLOR'/><text x='50' y='70' font-size='60' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'>FIRST_LETTER</text></svg>">
-  END_FAVICON -->
-  Replace PRIMARY_COLOR with the actual hex color (e.g., %2523F97316 — URL-encoded #). Replace FIRST_LETTER with the brand's first letter.
+  TYPOGRAPHY (non-negotiable):
+  - Hero headline: text-5xl md:text-6xl lg:text-7xl font-bold (MASSIVE and impactful — NEVER text-3xl or text-4xl)
+  - NEVER use Inter, Roboto, Arial, or system-ui — these scream "generic"
+  - Use the EXACT fonts from the plan. Make them distinctive.
+  - Small labels/tags: text-xs uppercase tracking-widest font-semibold text-[var(--accent)]
 
-BREADCRUMBS — Do NOT add visible breadcrumbs to single-page websites. They add clutter with no navigation value on one-page sites."""
+  SPACING:
+  - Sections: py-20 md:py-28 (generous — never cramped)
+  - Hero: min-h-[85vh] with content vertically centered
+  - Card padding: p-6 md:p-8 (never less than p-5)
+
+  VISUAL DEPTH & TEXTURE (what separates good from great):
+  - Large faded text as background texture: position absolute, font-size 6-8rem, opacity 0.03-0.06
+  - Pseudo-elements (::before, ::after) for hover effects and decorative lines — never extra divs
+  - CSS noise texture on dark themes: use SVG data URI feTurbulence as subtle overlay
+  - Diagonal clip-path on at least one element (buttons or section dividers)
+  - Sticky elements for interactive depth (e.g. sticky sidebar in program sections)
+  - gap: 2px on grids for industrial seam effect (when bold/industrial aesthetic)
+
+  ANIMATIONS (CSS-only, no libraries needed):
+  - IntersectionObserver scroll reveals on all sections (JS stage adds this)
+  - Hover transitions on ALL interactive elements: transform, box-shadow, border-color
+  - Hero elements: staggered entrance with animation-delay (0.2s, 0.4s, 0.6s)
+  - Counter animations on stats (JS stage handles)
+  - Testimonial auto-scroll or marquee for social proof
+
+  COLOR:
+  - Gradient text on hero headline: bg-clip-text text-transparent bg-gradient-to-r
+  - Use color-mix() for section alternation: color-mix(in srgb, var(--bg-surface) 50%, var(--bg))
+  - Accent color for: CTAs, icons, links, tags, hover borders
+  - Glass-morphism on dark: bg-white/[0.05] backdrop-blur-lg border border-white/[0.1]
+
+  IMAGES:
+  - Hero images: min-h-[500px] object-cover, use overlay gradient for text readability
+  - EVERY <img> must have loading="lazy" decoding="async" (except hero)
+
+SEO META — after </style>, add: <!-- SEO_META --> with meta description (150 chars), og:title, og:description, og:type, twitter:card, robots, canonical. <!-- END_SEO_META -->
+
+FAVICON — after SEO block: <!-- FAVICON --> with SVG favicon using brand initial + primary color. <!-- END_FAVICON -->
+
+Do NOT add breadcrumbs to single-page websites."""

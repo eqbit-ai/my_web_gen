@@ -3195,7 +3195,7 @@ KEYWORD_MAP = {
     "community_center": ["community center", "recreation center", "community programs", "civic center", "community"],
     "environmental": ["environmental", "conservation", "sustainability", "climate", "green energy", "eco"],
     # Sports & Recreation
-    "martial_arts": ["martial arts", "karate", "taekwondo", "jiu jitsu", "kung fu", "self defense", "dojo"],
+    "martial_arts": ["martial arts", "karate", "taekwondo", "jiu jitsu", "kung fu", "self defense", "dojo", "mma", "boxing", "kickboxing", "muay thai", "combat", "fighting"],
     "dance_studio": ["dance studio", "dance class", "ballet", "hip hop dance", "contemporary dance", "dance school"],
     "swimming_pool": ["swimming pool", "swim lessons", "aquatic center", "pool", "swimming", "aquatics"],
     "golf_club": ["golf club", "golf course", "golf lessons", "country club", "driving range", "golf"],

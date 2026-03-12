@@ -81,6 +81,101 @@ DEBUG_DIR = os.path.join(
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# AUTO-MATCH REFERENCE TEMPLATE BY NICHE
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def _find_best_reference_template(niche_key: str) -> str | None:
+    """Find the closest matching template for a detected niche.
+    Returns the template HTML+CSS string, or None if no match."""
+    from app.routes.templates import _load_template_file, TEMPLATE_CATALOG
+
+    # Direct match: niche_key matches a template ID
+    template_ids = [t["id"] for t in TEMPLATE_CATALOG]
+    if niche_key in template_ids:
+        try:
+            html, css = _load_template_file(niche_key)
+            return f"<style>{css}</style>\n{html}"
+        except Exception:
+            pass
+
+    # Niche-to-template mapping for indirect matches
+    NICHE_TEMPLATE_MAP = {
+        "pharmacy": "dentist",
+        "clinic": "dentist",
+        "hospital": "dentist",
+        "medical": "dentist",
+        "veterinary": "pet_shop",
+        "spa": "beauty_salon",
+        "barbershop": "beauty_salon",
+        "gym": "fitness",
+        "personal_trainer": "fitness",
+        "martial_arts": "fitness",
+        "cafe": "coffee_shop",
+        "catering": "restaurant",
+        "food_truck": "restaurant",
+        "bar": "restaurant",
+        "juice_bar": "coffee_shop",
+        "construction": "architecture",
+        "plumber": "cleaning_service",
+        "electrician": "cleaning_service",
+        "hvac": "cleaning_service",
+        "roofing": "cleaning_service",
+        "landscaping": "cleaning_service",
+        "insurance": "consulting",
+        "financial_advisor": "accounting",
+        "recruitment": "consulting",
+        "marketing_agency": "consulting",
+        "web_agency": "tech_startup",
+        "saas": "tech_startup",
+        "software": "tech_startup",
+        "ai_startup": "tech_startup",
+        "blockchain": "tech_startup",
+        "cybersecurity": "tech_startup",
+        "iot": "tech_startup",
+        "it_services": "tech_startup",
+        "gaming": "tech_startup",
+        "gallery": "photography",
+        "videography": "photography",
+        "graphic_design": "portfolio",
+        "freelancer": "portfolio",
+        "artist": "music_artist",
+        "band": "music_artist",
+        "dj": "music_artist",
+        "tutoring": "coding_bootcamp",
+        "language_school": "coding_bootcamp",
+        "music_school": "coding_bootcamp",
+        "daycare": "coding_bootcamp",
+        "driving_school": "coding_bootcamp",
+        "church": "charity",
+        "community_center": "charity",
+        "nonprofit": "charity",
+        "bridal": "wedding_planner",
+        "florist": "flower_shop",
+        "jewelry": "beauty_salon",
+        "fashion": "ecommerce",
+        "retail": "ecommerce",
+        "furniture": "interior_design",
+        "home_decor": "interior_design",
+        "auto_repair": "car_dealership",
+        "car_rental": "car_dealership",
+        "logistics": "moving_company",
+        "courier": "moving_company",
+        "coworking_space": "real_estate",
+    }
+
+    mapped = NICHE_TEMPLATE_MAP.get(niche_key)
+    if mapped:
+        try:
+            html, css = _load_template_file(mapped)
+            return f"<style>{css}</style>\n{html}"
+        except Exception:
+            pass
+
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # LOGGING HELPER
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -117,6 +212,166 @@ def save_debug(session_id: str, stage: str, content: str):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# CSS POLISH
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def polish_css(css: str, theme: str = "light") -> str:
+    """Auto-inject premium CSS polish if missing."""
+    additions = []
+
+    # Smooth scroll behavior
+    if "scroll-behavior" not in css:
+        additions.append("html { scroll-behavior: smooth; }")
+
+    # Better image rendering
+    if "image-rendering" not in css:
+        additions.append("img { image-rendering: -webkit-optimize-contrast; }")
+
+    # Selection color matching brand
+    if "::selection" not in css:
+        additions.append("::selection { background: var(--primary); color: white; }")
+
+    # Focus visible for accessibility
+    if ":focus-visible" not in css:
+        additions.append(":focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }")
+
+    # Smooth transitions on all interactive elements
+    if "transition" not in css or "a, button" not in css:
+        additions.append("a, button { transition: all 0.3s ease; }")
+
+    # Better font rendering
+    if "-webkit-font-smoothing" not in css:
+        additions.append("body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }")
+
+    # Dark theme specific polish
+    if theme == "dark":
+        if "scrollbar" not in css:
+            additions.append("::-webkit-scrollbar { width: 8px; }")
+            additions.append("::-webkit-scrollbar-track { background: var(--bg); }")
+            additions.append("::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }")
+
+    if additions:
+        polish = "\n/* === Auto-polish === */\n" + "\n".join(additions) + "\n"
+        # Insert before closing </style> or append to end
+        css = css.rstrip() + "\n" + polish
+
+    return css
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# IMAGE SAFETY
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
+    """Convert hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders.
+
+    Claude sometimes ignores the {{IMG:}} instruction and generates fake
+    image URLs that return 404. This catches them and converts to placeholders
+    using the alt text, so the image resolver can fetch real images.
+    """
+    import re as _re
+
+    # Pattern: <img with src containing pexels or unsplash URLs
+    def _replace_img_src(match: _re.Match) -> str:
+        full_tag = match.group(0)
+        # Extract alt text to use as image query
+        alt_match = _re.search(r'alt=["\']([^"\']+)["\']', full_tag)
+        alt_text = alt_match.group(1) if alt_match else "professional business photo"
+
+        # Determine role from context
+        role = "feature"
+        alt_lower = alt_text.lower()
+        if any(w in alt_lower for w in ("hero", "banner", "main")):
+            role = "hero"
+        elif any(w in alt_lower for w in ("team", "chef", "portrait", "person", "staff")):
+            role = "team"
+        elif any(w in alt_lower for w in ("testimonial", "review", "client")):
+            role = "testimonial"
+        elif any(w in alt_lower for w in ("food", "dish", "menu", "cuisine", "restaurant")):
+            role = "feature"
+        elif any(w in alt_lower for w in ("gallery", "photo")):
+            role = "gallery"
+        elif any(w in alt_lower for w in ("event", "celebration", "music")):
+            role = "feature"
+
+        placeholder = f"{{{{IMG:{role} {alt_text}}}}}"
+        # Replace the src value
+        new_tag = _re.sub(
+            r'src=["\']https?://images\.(pexels|unsplash)\.com/[^"\']+["\']',
+            f'src="{placeholder}"',
+            full_tag,
+        )
+        return new_tag
+
+    # Also handle background-image: url(...) with pexels/unsplash
+    def _replace_bg_url(match: _re.Match) -> str:
+        return match.group(0).replace(
+            match.group(1),
+            "{{IMG:background professional scene}}",
+        )
+
+    # Count before
+    hallucinated_count = len(_re.findall(
+        r'src=["\']https?://images\.(pexels|unsplash)\.com/photos/[^"\']+["\']',
+        html,
+    ))
+
+    if hallucinated_count > 0:
+        logger.warning(
+            f"⚠️ {hallucinated_count} hallucinated image URLs detected — converting to {{IMG:}} placeholders"
+        )
+        # Replace <img src="https://images.pexels.com/..."> tags
+        html = _re.sub(
+            r'<img\s[^>]*src=["\']https?://images\.(pexels|unsplash)\.com/photos/[^"\']+["\'][^>]*>',
+            _replace_img_src,
+            html,
+        )
+        # Replace background-image: url('https://images.pexels.com/...')
+        html = _re.sub(
+            r"background-image:\s*url\(['\"]?(https?://images\.(pexels|unsplash)\.com/photos/[^'\")]+)['\"]?\)",
+            _replace_bg_url,
+            html,
+        )
+
+    return html
+
+
+def _strip_comment_markers(html: str) -> str:
+    """Strip SEO_META and FAVICON comment markers so --> doesn't leak into rendered output."""
+    html = re.sub(r'<!--\s*SEO_META\s*-->\s*', '', html)
+    html = re.sub(r'<!--\s*END_SEO_META\s*-->\s*', '', html)
+    html = re.sub(r'<!--\s*FAVICON\s*-->\s*', '', html)
+    html = re.sub(r'<!--\s*END_FAVICON\s*-->\s*', '', html)
+    return html
+
+
+async def _resolve_images_safe(html: str, niche_key: str = None) -> str:
+    """Resolve image placeholders with safety cleanup for any unresolved ones."""
+    # First: convert any hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders
+    html = _convert_hallucinated_urls_to_placeholders(html)
+
+    # Then resolve placeholders to real image URLs
+    html = await resolve_image_placeholders(html, niche_key=niche_key)
+
+    # Safety: replace any unresolved {{IMG:...}} placeholders with a fallback
+    unresolved = re.findall(r'\{\{IMG:[^}]+\}\}', html)
+    if unresolved:
+        logger.warning(f"⚠️ {len(unresolved)} unresolved image placeholders — using fallback")
+        html = re.sub(
+            r'\{\{IMG:[^}]+\}\}',
+            'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
+            html,
+        )
+
+    # Strip comment markers that leak into rendered output
+    html = _strip_comment_markers(html)
+
+    return html
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # OUTPUT VALIDATORS
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -149,10 +404,10 @@ def validate_html(html: str) -> str:
 
     # Strip Font Awesome kit/CDN script and link tags (AI adds placeholder kit URLs)
     html = re.sub(
-        r"<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*",
+        r"<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>.*?</script>\s*",
         "",
         html,
-        flags=re.IGNORECASE,
+        flags=re.IGNORECASE | re.DOTALL,
     )
     html = re.sub(
         r"<link[^>]*(?:fontawesome|font-awesome)[^>]*/?\s*>\s*",
@@ -287,7 +542,7 @@ def format_conversation_history(session: dict, max_entries: int = 5) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2) -> str:
+async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3) -> str:
     """Call Claude with streaming, circuit breaker protection, and retry on failure."""
 
     @circuit_protected(provider="anthropic")
@@ -296,7 +551,7 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
         async with client.messages.stream(
             model=model,
             max_tokens=max_tokens,
-            temperature=1,
+            temperature=temperature,
             system=system,
             messages=[{"role": "user", "content": user_msg}],
         ) as stream:
@@ -684,32 +939,28 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def stage_2_html(plan: dict, session_id: str = "", niche_key: str = None, reference_html: str = None) -> str:
+async def stage_2_html(plan: dict, session_id: str = "", niche_key: str = None, reference_html: str = None, enhanced_brief: str = None) -> str:
     """Generate semantic HTML from the website plan using component patterns."""
     logger.info("🚀 Stage 2: HTML → Generating page structure with Tailwind CSS")
     t0 = time.time()
     client = get_anthropic_client()
 
     # Build modular prompt with only the needed pattern templates
-    system = build_html_prompt(plan)
+    system = build_html_prompt(plan, enhanced_brief=enhanced_brief)
     logger.info(f"⚙️ HTML Prompt Built → {len(system):,} chars (only patterns needed for this plan loaded)")
 
-    # If a reference template is provided, inject it as inspiration
+    # If a reference template is provided, extract just the CSS design system as inspiration
     if reference_html:
-        # Truncate to ~8000 chars to stay within context limits
-        ref_snippet = reference_html[:8000]
-        if len(reference_html) > 8000:
-            ref_snippet += "\n<!-- ... rest of template truncated ... -->"
-        system += f"""
+        import re as _re
+        # Extract only the :root CSS variables block — the useful design system part
+        root_match = _re.search(r':root\s*\{[^}]+\}', reference_html)
+        if root_match:
+            ref_css_vars = root_match.group(0)
+            system += f"""
 
-═══════════════════════════════════════════════════════════
-REFERENCE TEMPLATE (use as inspiration for quality, structure, and style):
-═══════════════════════════════════════════════════════════
-{ref_snippet}
-
-IMPORTANT: Use this reference as INSPIRATION for layout quality, design patterns, and section structure.
-Do NOT copy it verbatim — create a UNIQUE design that matches the plan above.
-Adapt the reference's best qualities (spacing, typography hierarchy, visual polish) to the brand and content in the plan.
+REFERENCE DESIGN SYSTEM (use as quality inspiration — adapt colors/spacing to the plan above):
+{ref_css_vars}
+Study this reference's design quality: variable naming, spacing values, shadow depths, and transitions. Apply similar polish to the generated HTML.
 """
 
     text = await _claude_stream(
@@ -728,16 +979,106 @@ Adapt the reference's best qualities (spacing, typography hierarchy, visual poli
     log_stage("HTML", html_duration, len(html), True, f"{n_sections} sections")
     logger.info(f"✅ HTML Generated → {len(html):,} chars with {n_sections} sections in {_fmt_duration(html_duration)}")
 
-    # Resolve {{IMG:query}} placeholders to real image URLs (niche-aware)
+    # Resolve {{IMG:query}} placeholders to real image URLs (niche-aware, with safety fallback)
     img_count = html.count("{{IMG:")
     logger.info(
         f"🖼️ Resolving Images → {img_count} {{IMG:}} placeholders found, fetching from Unsplash/Pexels (niche={niche_key or 'general'})"
     )
-    html = await resolve_image_placeholders(html, niche_key=niche_key)
+    html = await _resolve_images_safe(html, niche_key=niche_key)
     logger.info("✅ Images Resolved → all placeholders replaced with real URLs")
 
     save_debug(session_id, "html", html)
     return html
+
+
+async def stage_2_html_from_template(
+    template_html: str, plan: dict, session_id: str = "", niche_key: str = None
+) -> str:
+    """Generate HTML by customizing an existing template — faster and higher quality.
+
+    Instead of generating from scratch with a 72K prompt, this sends the working
+    template HTML (~30K) with a short customization prompt (~5K). Claude modifies
+    the proven structure rather than building from zero.
+    """
+    from app.utils.prompt_pipeline import build_template_customize_prompt
+
+    logger.info("🚀 Stage 2: HTML → Template-first customization (faster path)")
+    t0 = time.time()
+    client = get_anthropic_client()
+
+    system = build_template_customize_prompt(template_html, plan)
+    logger.info(f"⚙️ Template Customize Prompt → {len(system):,} chars (vs ~72K for from-scratch)")
+
+    text = await _claude_stream(
+        client,
+        "claude-sonnet-4-20250514",
+        16000,
+        system,
+        "Customize this template for the business described in the plan. Return the complete HTML.",
+    )
+
+    html = parse_single_code_block(text, "html")
+    html = validate_html(html)
+
+    # Ensure data-section-type attributes exist (post-process if Claude missed some)
+    html = _ensure_section_types(html)
+
+    html_duration = int((time.time() - t0) * 1000)
+    n_sections = html.count("data-section-type")
+    log_stage("HTML-TEMPLATE", html_duration, len(html), True, f"{n_sections} sections (template-customized)")
+    logger.info(f"✅ HTML Generated (template path) → {len(html):,} chars with {n_sections} sections in {_fmt_duration(html_duration)}")
+
+    # Resolve {{IMG:query}} placeholders to real image URLs (niche-aware)
+    img_count = html.count("{{IMG:")
+    # Also handle any REPLACE_ME markers that Claude didn't convert
+    replace_me_count = html.count('src="REPLACE_ME"')
+    if replace_me_count > 0:
+        logger.warning(f"⚠️ {replace_me_count} REPLACE_ME markers not converted — removing")
+        html = html.replace('src="REPLACE_ME"', 'src="{{IMG:feature placeholder}}"')
+        img_count = html.count("{{IMG:")
+
+    logger.info(f"🖼️ Resolving Images → {img_count} {{IMG:}} placeholders found")
+    html = await _resolve_images_safe(html, niche_key=niche_key)
+    logger.info("✅ Images Resolved → all placeholders replaced with real URLs")
+
+    save_debug(session_id, "html", html)
+    return html
+
+
+def _ensure_section_types(html: str) -> str:
+    """Post-process: add data-section-type to <section> tags that lack it."""
+    import re
+
+    def _add_section_type(match):
+        tag = match.group(0)
+        if "data-section-type" in tag:
+            return tag  # Already has it
+
+        # Try to infer type from class or id
+        id_match = re.search(r'id="[^"]*?-?(\w+)"', tag)
+        class_match = re.search(r'class="[^"]*?-(\w+)', tag)
+
+        section_type = "content"
+        if id_match:
+            name = id_match.group(1).lower()
+            for t in ["hero", "about", "menu", "features", "services", "testimonials",
+                       "team", "gallery", "contact", "cta", "faq", "stats", "pricing",
+                       "footer", "reservation", "special", "portfolio", "blog"]:
+                if t in name:
+                    section_type = t
+                    break
+        elif class_match:
+            name = class_match.group(1).lower()
+            for t in ["hero", "about", "menu", "features", "services", "testimonials",
+                       "team", "gallery", "contact", "cta", "faq", "stats", "pricing",
+                       "footer", "reservation", "special", "portfolio", "blog"]:
+                if t in name:
+                    section_type = t
+                    break
+
+        return tag.rstrip(">") + f' data-section-type="{section_type}">'
+
+    return re.sub(r"<section[^>]*>", _add_section_type, html)
 
 
 def extract_style_block(html: str) -> tuple[str, str]:
@@ -821,16 +1162,16 @@ async def generate_multipage_html(
 
         prompt = build_page_html_prompt(plan, page, shared_sections)
 
-        # If a reference template is provided, inject it as inspiration
+        # If a reference template is provided, extract just CSS design system
         if reference_html:
-            ref_snippet = reference_html[:8000]
-            if len(reference_html) > 8000:
-                ref_snippet += "\n<!-- ... rest of template truncated ... -->"
-            prompt += f"""
+            import re as _re
+            root_match = _re.search(r':root\s*\{[^}]+\}', reference_html)
+            if root_match:
+                prompt += f"""
 
-REFERENCE TEMPLATE (use as inspiration):
-{ref_snippet}
-IMPORTANT: Use this reference as INSPIRATION only — create a UNIQUE design matching the plan above.
+REFERENCE DESIGN SYSTEM (quality inspiration):
+{root_match.group(0)}
+Apply similar polish, spacing, and shadow quality to this page.
 """
 
         client = get_anthropic_client()
@@ -1012,7 +1353,7 @@ async def edit_style_block(css: str, section_types: str, prompt: str) -> str:
     text = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
-        4000,
+        12000,
         system,
         f"Update the styles: {prompt}",
     )
@@ -1613,6 +1954,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     except Exception as e:
                         logger.warning(f"[TEMPLATE] failed to load '{req.templateId}': {e}")
 
+                # Auto-match reference template from niche if none was explicitly chosen
+                if not reference_html and niche_key:
+                    reference_html = _find_best_reference_template(niche_key)
+                    if reference_html:
+                        logger.info(f"[TEMPLATE] auto-matched niche '{niche_key}' → reference template ({len(reference_html):,} chars)")
+
                 # ── Detect multi-page request (only from user's ORIGINAL prompt, not the enhanced brief) ──
                 multipage_requested = is_multipage_request(req.prompt)
 
@@ -1702,9 +2049,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     )
 
                     # Extract CSS from each page and build pages_dict
+                    theme = plan.get("design", {}).get("theme", "light")
                     pages_dict = {}
                     for slug, page_html in pages_html.items():
                         page_css, page_html_clean = extract_style_block(page_html)
+                        # Auto-polish CSS
+                        page_css = polish_css(page_css, theme)
                         pages_dict[slug] = {"html": page_html_clean, "css": page_css}
 
                     # Use index page as the main html/css for backward compatibility
@@ -1725,15 +2075,25 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         },
                     )
                 else:
-                    # Single-page: existing flow
-                    yield sse(
-                        "stage",
-                        {"stage": 1, "name": "html", "status": "running", "message": "Building the page structure..."},
-                    )
+                    # Single-page: prefer template-first when a reference template is available
+                    use_template_path = reference_html is not None
+                    if use_template_path:
+                        yield sse(
+                            "stage",
+                            {"stage": 1, "name": "html", "status": "running", "message": "Customizing template for your business..."},
+                        )
+                        html_task = asyncio.create_task(
+                            stage_2_html_from_template(reference_html, plan, session_id, niche_key=niche_key)
+                        )
+                    else:
+                        yield sse(
+                            "stage",
+                            {"stage": 1, "name": "html", "status": "running", "message": "Building the page structure..."},
+                        )
+                        html_task = asyncio.create_task(
+                            stage_2_html(plan, session_id, niche_key=niche_key, reference_html=None, enhanced_brief=enhanced_prompt)
+                        )
 
-                    html_task = asyncio.create_task(
-                        stage_2_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
-                    )
                     while not html_task.done():
                         await asyncio.sleep(8)
                         if not html_task.done():
@@ -1747,6 +2107,9 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                     # ── Extract CSS from HTML <style> block ──────────────
                     css, html = extract_style_block(html)
+                    # Auto-polish CSS
+                    theme = plan.get("design", {}).get("theme", "light")
+                    css = polish_css(css, theme)
                     save_debug(session_id, "css", css)
 
                     yield sse(
@@ -2215,15 +2578,38 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
             niche_key = detect_niche(req.prompt)
             multipage_requested = is_multipage_request(req.prompt)
+
+            # Load reference template (explicit or auto-matched)
+            reference_html = None
+            if req.templateId:
+                try:
+                    from app.routes.templates import _load_template_file
+
+                    ref_html, ref_css = _load_template_file(req.templateId)
+                    reference_html = f"<style>{ref_css}</style>\n{ref_html}"
+                    logger.info(f"[TEMPLATE] loaded '{req.templateId}' ({len(reference_html):,} chars)")
+                except Exception as e:
+                    logger.warning(f"[TEMPLATE] failed to load '{req.templateId}': {e}")
+
+            # Auto-match reference template from niche if none was explicitly chosen
+            if not reference_html and niche_key:
+                reference_html = _find_best_reference_template(niche_key)
+                if reference_html:
+                    logger.info(f"[TEMPLATE] auto-matched niche '{niche_key}' → reference template ({len(reference_html):,} chars)")
+
             plan = await stage_1_plan(req.prompt, session_id, niche_key=niche_key, multipage=multipage_requested)
             is_multipage_gen = plan.get("multipage", False)
 
+            theme = plan.get("design", {}).get("theme", "light")
+
             if is_multipage_gen:
                 # Multi-page generation
-                pages_html = await generate_multipage_html(plan, session_id, niche_key=niche_key)
+                pages_html = await generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
                 pages_dict = {}
                 for slug, page_html in pages_html.items():
                     page_css, page_html_clean = extract_style_block(page_html)
+                    # Auto-polish CSS
+                    page_css = polish_css(page_css, theme)
                     pages_dict[slug] = {"html": page_html_clean, "css": page_css}
                 # Use index page as main for backward compat
                 index_data = pages_dict.get(
@@ -2235,8 +2621,13 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 combined_html = "\n".join(pd["html"] for pd in pages_dict.values())
                 js = await stage_3_js(combined_html, session_id)
             else:
-                html = await stage_2_html(plan, session_id, niche_key=niche_key)
+                if reference_html:
+                    html = await stage_2_html_from_template(reference_html, plan, session_id, niche_key=niche_key)
+                else:
+                    html = await stage_2_html(plan, session_id, niche_key=niche_key, reference_html=None)
                 css, html = extract_style_block(html)
+                # Auto-polish CSS
+                css = polish_css(css, theme)
                 js = await stage_3_js(html, session_id)
 
             # Responsive check + auto-fix
