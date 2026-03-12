@@ -2122,6 +2122,12 @@ class EditElementRequest(BaseModel):
     currentHtml: str
     currentCss: str
     currentPage: str = "index"
+    contextBefore: str = ""
+    contextAfter: str = ""
+    sectionId: str = ""
+    sectionType: str = ""
+    parentTag: str = ""
+    parentClass: str = ""
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -3170,12 +3176,12 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 # ELEMENT EDITING
 # ═══════════════════════════════════════════════════════════════════════
 
-ELEMENT_SECTION_EDIT_PROMPT = """You are an expert frontend developer editing a specific element inside a website section.
+ELEMENT_EDIT_PROMPT_PRECISE = """You are a surgical HTML editor. You will receive a specific HTML element from a website and an edit instruction. Return ONLY the edited version of that element.
 
-DESIGN SYSTEM (CSS variables — use these for consistency):
+DESIGN SYSTEM (CSS variables in the page):
 {css_vars}
 
-AVAILABLE CSS CLASSES (pre-defined in the page's <style> block — USE THEM):
+CSS CLASSES available in the page <style>:
 Layout: .container, .container-wide, .container-narrow, .container-xs
 Grid: .grid-2, .grid-3, .grid-4 (auto-responsive)
 Buttons: .btn-primary, .btn-secondary, .btn-group
@@ -3185,56 +3191,160 @@ Section: .section-header, .section-title, .section-subtitle, .text-center, .text
 Hero: .hero-section, .hero-heading, .hero-subtitle, .hero-split-grid, .hero-ctas, .hero-bg-cover, .hero-overlay
 Stats: .stat-item, .stat-number, .stat-label
 Forms: .form-input, .contact-form
+Footer: .footer-grid, .footer-heading, .footer-links, .footer-bottom, .social-links, .social-link
 
-SECTION CONTAINING THE ELEMENT ({section_type} section):
-{section_html}
+LOCATION: {section_type} section, path: {element_path}
+Parent: <{parent_tag} class="{parent_class}">
 
-SELECTED ELEMENT (CSS path: {element_path}):
+{context_block}
+
+ELEMENT TO EDIT:
+```html
 {element_html}
+```
 
-USER'S EDIT REQUEST: {prompt}
+EDIT REQUEST: {prompt}
 
 RULES:
-- Return ONLY the COMPLETE updated section HTML inside a single ```html code block
-- Return the FULL section element (opening tag through closing tag)
-- ONLY modify the targeted element — keep everything else unchanged
-- Use the CSS classes listed above — NO Tailwind utility classes
-- Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
-- Keep the same outer section tag and data-section-type / data-section-id attributes
-- For images, keep existing src URLs unless user asks to change images
-- Do NOT add Font Awesome script tags — icons are already loaded
-- Do NOT wrap in extra divs or add <html>/<head>/<body> tags
-- Do NOT generate large inline SVGs or decorative clip-path shapes
-- Do NOT include any explanation, just the html code block
+- Return ONLY the edited element in a single ```html code block
+- Same opening tag (e.g. if it's a <div>, return a <div>; if <h2>, return <h2>)
+- Keep existing classes, ids, data attributes unless the edit requires changing them
+- Use inline style for one-off changes, or use the CSS classes listed above
+- Use var(--primary), var(--accent), var(--bg), var(--text), var(--radius) for colors/tokens
+- Keep existing image src URLs unless user explicitly asks to change images
+- Do NOT bloat the element — keep it concise
+- Do NOT add extra wrapper divs
+- Do NOT generate inline SVGs or decorative clip-path shapes
+- Do NOT include explanation — just the code block
+- For background images: use inline style background-image with overlay
+- Icons: use <i class="fa-solid fa-xxx"> (Font Awesome is pre-loaded)
 
-SECTION SIZE CONSTRAINTS:
-- Hero: max height 80vh. NEVER taller than viewport.
-- All other sections: keep the same size as original.
-
-IMAGE HANDLING:
-- "Add background image" = CSS background-image ONLY (no extra <img> tag)
-- NEVER add BOTH a background-image AND a foreground <img> for the same purpose
-
-JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
+JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
 .testimonial-slide, .slider-dot, .carousel-container, .carousel-track,
 .carousel-slide, .carousel-prev, .carousel-next, .carousel-dot,
-#gallery-lightbox, .gallery-item, .modal-trigger, .detail-modal,
-.modal-close, .stat-number, #year, #back-to-top"""
+#gallery-lightbox, .gallery-item, .stat-number, #year, #back-to-top"""
+
+ELEMENT_EDIT_PROMPT_SECTION = """You are an expert frontend developer editing a specific element inside a website section.
+The edit requires structural changes (adding/removing elements, reordering, layout changes).
+
+DESIGN SYSTEM (CSS variables):
+{css_vars}
+
+CSS CLASSES available:
+Layout: .container, .container-wide, .container-narrow, .container-xs
+Grid: .grid-2, .grid-3, .grid-4 | Buttons: .btn-primary, .btn-secondary, .btn-group
+Cards: .card, .card-title, .card-text, .card-body, .icon-box
+Images: .img-cover, .img-wrapper | Section: .section-header, .section-title, .section-subtitle, .text-center, .text-light
+Hero: .hero-section, .hero-heading, .hero-subtitle, .hero-split-grid, .hero-ctas
+Stats: .stat-item, .stat-number, .stat-label | Forms: .form-input, .contact-form
+
+FULL SECTION ({section_type}, id={section_id}):
+{section_html}
+
+TARGET ELEMENT (path: {element_path}):
+```html
+{element_html}
+```
+
+EDIT REQUEST: {prompt}
+
+RULES:
+- Return the COMPLETE updated section HTML in a single ```html code block
+- Keep the same <section data-section-type data-section-id> wrapper
+- ONLY modify what the user asked for — keep everything else byte-for-byte identical
+- Use CSS classes above, NOT Tailwind. Use var(--primary), var(--accent), etc.
+- Keep existing image src URLs unless asked to change
+- Do NOT add Font Awesome script tags
+- Do NOT generate large inline SVGs or decorative clip-path shapes
+- Do NOT include explanation
+
+JS-DEPENDENT CLASS NAMES (do NOT rename):
+.nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
+.testimonial-slide, .slider-dot, .carousel-container, .carousel-track,
+.carousel-slide, .carousel-prev, .carousel-next, .carousel-dot,
+#gallery-lightbox, .gallery-item, .stat-number, #year, #back-to-top"""
+
+
+def _is_structural_edit(prompt: str) -> bool:
+    """Detect if the edit requires adding/removing/reordering elements (needs full section context)."""
+    structural_keywords = [
+        r'\badd\b.*\b(card|item|column|row|button|link|section|image|icon|field|input|element)',
+        r'\bremove\b', r'\bdelete\b', r'\breorder\b', r'\brearrange\b', r'\bmove\b.*\b(before|after|above|below)',
+        r'\bsplit\b', r'\bmerge\b', r'\bduplicate\b', r'\bcopy\b', r'\binsert\b',
+        r'\badd\s+(a|an|another|new|more)\b', r'\bchange\s+layout\b', r'\bswap\b',
+        r'\bgrid\b.*\bcolumn', r'\bconvert\b.*\b(to|into)\b',
+    ]
+    prompt_lower = prompt.lower()
+    return any(re.search(pat, prompt_lower) for pat in structural_keywords)
+
+
+def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] | None:
+    """Find the exact position of an element's outerHTML in the full page HTML.
+
+    Tries exact match first, then normalised whitespace match, then
+    first-80-chars prefix match.
+    """
+    # Exact match
+    idx = full_html.find(element_html)
+    if idx != -1:
+        return idx, idx + len(element_html)
+
+    # Normalise whitespace and try again
+    def normalise(s: str) -> str:
+        return re.sub(r'\s+', ' ', s).strip()
+
+    norm_el = normalise(element_html)
+    norm_full = normalise(full_html)
+    idx = norm_full.find(norm_el)
+    if idx != -1:
+        # Map back to original positions — find the chunk in original
+        # Use first 80 chars as anchor
+        anchor = element_html[:80].strip()
+        orig_idx = full_html.find(anchor)
+        if orig_idx != -1:
+            # Find the closing tag from there
+            tag = re.match(r'<(\w+)', element_html)
+            if tag:
+                tag_name = tag.group(1)
+                depth = 0
+                i = orig_idx
+                while i < len(full_html):
+                    open_m = re.match(rf'<{tag_name}[\s>/]', full_html[i:], re.IGNORECASE)
+                    close_m = re.match(rf'</{tag_name}\s*>', full_html[i:], re.IGNORECASE)
+                    if close_m and depth == 0:
+                        end = i + close_m.end()
+                        return orig_idx, end
+                    if close_m:
+                        depth -= 1
+                        i += close_m.end()
+                    elif open_m:
+                        if i > orig_idx:
+                            depth += 1
+                        i += open_m.end()
+                    else:
+                        i += 1
+
+    # Prefix match (first 80 chars)
+    prefix = element_html[:80].strip()
+    idx = full_html.find(prefix)
+    if idx != -1:
+        return idx, idx + len(element_html)
+
+    return None
 
 
 @router.post("/edit-element")
 async def edit_element(req: EditElementRequest, user: dict = Depends(require_auth)):
     logger.info(
-        f'🖱️ [ELEMENT EDIT] path="{req.elementPath}" prompt="{req.prompt[:80]}" elementHTML={len(req.elementHtml):,} chars, pageHTML={len(req.currentHtml):,} chars, page={req.currentPage}'
+        f'🖱️ [ELEMENT EDIT] path="{req.elementPath}" prompt="{req.prompt[:80]}" '
+        f'element={len(req.elementHtml):,}chars section={req.sectionType or "?"} page={req.currentPage}'
     )
 
-    # ── Sanitize prompt ─────────────────────────────────────────────
     req.prompt = sanitize_prompt(req.prompt)
     if not req.prompt:
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
 
-    # ── Audit log ───────────────────────────────────────────────────
     log_event_bg(
         user_id=str(user["user_id"]),
         action="edit_website",
@@ -3247,89 +3357,141 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         full_html = req.currentHtml
         css = req.currentCss
         css_vars = extract_css_vars(css)
+        structural = _is_structural_edit(req.prompt)
 
-        # ── Find which section contains the clicked element ──────
+        # ── Find which section contains the element ──────────────
         sections = parse_sections(full_html)
         target_section = None
-        for s in sections:
-            section_html = full_html[s["start"] : s["end"]]
-            if req.elementHtml[:80] in section_html:
-                target_section = s
-                break
 
-        if not target_section:
-            # Fallback: try matching by element path keywords in section types
+        # Method 1: Use sectionId from frontend if provided
+        if req.sectionId:
             for s in sections:
-                section_html = full_html[s["start"] : s["end"]]
-                # Check if elementPath classes appear in this section
-                path_classes = re.findall(r"\.([a-zA-Z][\w-]*)", req.elementPath)
+                if s["id"] == req.sectionId:
+                    target_section = s
+                    break
+
+        # Method 2: Find by element HTML substring
+        if not target_section:
+            element_snippet = req.elementHtml[:80]
+            for s in sections:
+                section_html = full_html[s["start"]:s["end"]]
+                if element_snippet in section_html:
+                    target_section = s
+                    break
+
+        # Method 3: Fallback — path class matching
+        if not target_section:
+            path_classes = re.findall(r"\.([a-zA-Z][\w-]*)", req.elementPath)
+            for s in sections:
+                section_html = full_html[s["start"]:s["end"]]
                 if any(cls in section_html for cls in path_classes):
                     target_section = s
                     break
 
-        if target_section:
-            # ── Section-scoped edit (fast + reliable) ────────────
-            section_html = full_html[target_section["start"] : target_section["end"]]
+        client = get_anthropic_client()
+
+        if structural and target_section:
+            # ── STRUCTURAL EDIT: needs full section context ──────
+            section_html = full_html[target_section["start"]:target_section["end"]]
             section_type = target_section["type"]
             section_id = target_section["id"]
-            logger.info(
-                f'🖱️ [ELEMENT EDIT] Found element in section id="{section_id}" type="{section_type}" ({len(section_html):,} chars)'
-            )
+            logger.info(f'🖱️ [ELEMENT EDIT] Structural edit in section "{section_id}" ({section_type})')
 
-            system = ELEMENT_SECTION_EDIT_PROMPT.format(
+            system = ELEMENT_EDIT_PROMPT_SECTION.format(
                 css_vars=css_vars,
                 section_type=section_type,
+                section_id=section_id,
                 section_html=section_html,
                 element_path=req.elementPath,
                 element_html=req.elementHtml,
                 prompt=req.prompt,
             )
-            logger.info(f"🖱️ [ELEMENT EDIT] Prompt: {len(system):,} chars (section-scoped), sending to Claude...")
 
-            client = get_anthropic_client()
-            text = await _claude_stream(
-                client, "claude-sonnet-4-20250514", 8000, system, f"Edit the element at {req.elementPath}: {req.prompt}"
-            )
-            logger.info(f"🖱️ [ELEMENT EDIT] Claude response: {len(text):,} chars")
-
+            text = await _claude_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
             edited_section = parse_single_code_block(text, "html")
             if not edited_section:
-                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed. Response first 500 chars: {text[:500]}")
-                raise HTTPException(status_code=500, detail="Failed to parse edited element")
+                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed from section edit")
+                raise HTTPException(status_code=500, detail="Failed to parse edited section")
 
-            logger.info(f"🖱️ [ELEMENT EDIT] Edited section: {len(edited_section):,} chars (was {len(section_html):,})")
-
-            # Patch the edited section back into the full HTML
             result_html = replace_section_html(full_html, section_id, edited_section)
             result_css = css
+            logger.info(f'🖱️ [ELEMENT EDIT] Section patched: {len(edited_section):,} chars')
 
-        else:
-            # ── Fallback: full-page edit (for elements outside sections, e.g. nav) ──
-            logger.info("🖱️ [ELEMENT EDIT] Element not found in any section — using full-page fallback")
+        elif target_section or not structural:
+            # ── PRECISE ELEMENT EDIT: return only the element ────
+            section_type = req.sectionType or (target_section["type"] if target_section else "unknown")
 
-            system = ELEMENT_EDIT_PROMPT.format(
-                html=full_html,
-                css=css,
+            # Build context block showing surrounding elements
+            context_parts = []
+            if req.contextBefore:
+                context_parts.append(f"ELEMENT BEFORE (sibling):\n{req.contextBefore}")
+            if req.contextAfter:
+                context_parts.append(f"ELEMENT AFTER (sibling):\n{req.contextAfter}")
+            context_block = "\n\n".join(context_parts) if context_parts else ""
+
+            system = ELEMENT_EDIT_PROMPT_PRECISE.format(
+                css_vars=css_vars,
+                section_type=section_type,
                 element_path=req.elementPath,
+                parent_tag=req.parentTag or "div",
+                parent_class=req.parentClass or "",
+                context_block=context_block,
                 element_html=req.elementHtml,
                 prompt=req.prompt,
             )
-            logger.info(f"🖱️ [ELEMENT EDIT] Fallback prompt: {len(system):,} chars, sending to Claude...")
+            logger.info(f"🖱️ [ELEMENT EDIT] Precise prompt: {len(system):,} chars")
 
-            client = get_anthropic_client()
+            text = await _claude_stream(
+                client, "claude-sonnet-4-20250514", 4000, system,
+                f"Edit this element: {req.prompt}"
+            )
+            edited_element = parse_single_code_block(text, "html")
+            if not edited_element:
+                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed. Response: {text[:500]}")
+                raise HTTPException(status_code=500, detail="Failed to parse edited element")
+
+            logger.info(f"🖱️ [ELEMENT EDIT] Got edited element: {len(edited_element):,} chars (was {len(req.elementHtml):,})")
+
+            # ── Patch the edited element back into the page ──────
+            # Try to find and replace the original element in the HTML
+            if target_section:
+                # Replace within the section first, then patch section into page
+                section_html = full_html[target_section["start"]:target_section["end"]]
+                pos = _find_element_in_html(section_html, req.elementHtml)
+                if pos:
+                    new_section = section_html[:pos[0]] + edited_element + section_html[pos[1]:]
+                    result_html = replace_section_html(full_html, target_section["id"], new_section)
+                else:
+                    # Fallback: replace in full HTML
+                    pos = _find_element_in_html(full_html, req.elementHtml)
+                    if pos:
+                        result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
+                    else:
+                        logger.warning("🖱️ [ELEMENT EDIT] Could not locate element — using simple replace")
+                        result_html = full_html.replace(req.elementHtml, edited_element, 1)
+            else:
+                # Element outside sections (nav, footer, etc.)
+                pos = _find_element_in_html(full_html, req.elementHtml)
+                if pos:
+                    result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
+                else:
+                    result_html = full_html.replace(req.elementHtml, edited_element, 1)
+
+            result_css = css
+
+        else:
+            # ── Fallback: full-page edit (structural, no section found) ──
+            logger.info("🖱️ [ELEMENT EDIT] Full-page fallback (structural, no section)")
+            system = ELEMENT_EDIT_PROMPT.format(
+                html=full_html, css=css,
+                element_path=req.elementPath, element_html=req.elementHtml, prompt=req.prompt,
+            )
             text = await _claude_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
-            logger.info(f"🖱️ [ELEMENT EDIT] Claude response: {len(text):,} chars")
             code = parse_code_blocks(text)
-            logger.info(f"🖱️ [ELEMENT EDIT] Parsed → html={len(code['html']):,}, css={len(code['css']):,}")
-
             if not code["html"]:
-                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed. Response first 500 chars: {text[:500]}")
                 raise HTTPException(status_code=500, detail="Failed to parse edited code")
-
             result_html = code["html"]
             result_css = code["css"] if code["css"] else css
-
-            # Extract <style> from HTML if present
             style_match = re.search(r"<style[^>]*>(.*?)</style>", result_html, re.DOTALL)
             if style_match:
                 result_css = style_match.group(1).strip()
@@ -3340,23 +3502,17 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         if s:
             _verify_session_ownership(s, user)
             versions = s.get("versions", [])
-            versions.append(
-                {
-                    "version": s.get("current_version", 0),
-                    "html": s["html"],
-                    "css": s["css"],
-                    "js": s.get("js", ""),
-                    "prompt": f"[Element edit: {req.elementPath}] {req.prompt}",
-                }
-            )
-            # Cap version history
+            versions.append({
+                "version": s.get("current_version", 0),
+                "html": s["html"], "css": s["css"], "js": s.get("js", ""),
+                "prompt": f"[Element edit: {req.elementPath}] {req.prompt}",
+            })
             MAX_VERSIONS = 15
             if len(versions) > MAX_VERSIONS:
                 versions = versions[-MAX_VERSIONS:]
             s["versions"] = versions
             s["html"] = result_html
             s["css"] = result_css
-            # Multi-page aware: also update the correct page slot
             if s.get("multipage") and req.currentPage:
                 if "pages" not in s:
                     s["pages"] = {}
@@ -3370,7 +3526,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             s["prompts"] = s.get("prompts", []) + [f"[Element: {req.elementPath}] {req.prompt}"]
             await redis_save_session(req.sessionId, s)
 
-        logger.info(f"🖱️ [ELEMENT EDIT] ✅ Done → result_html={len(result_html):,}, result_css={len(result_css):,}")
+        logger.info(f"🖱️ [ELEMENT EDIT] ✅ Done → html={len(result_html):,}, css={len(result_css):,}")
         return {"success": True, "website": {"html": result_html, "css": result_css}, "manualReplace": False}
 
     except HTTPException:

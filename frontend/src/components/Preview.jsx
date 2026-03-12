@@ -207,13 +207,30 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
 
             function getElementPath(el) {
                 if (!el || el === document.body) return 'body';
-                let path = el.tagName.toLowerCase();
-                if (el.id) path += '#' + el.id;
-                else if (el.className && typeof el.className === 'string') {
-                    const classes = el.className.trim().split(/\\s+/).slice(0, 2).join('.');
-                    if (classes) path += '.' + classes;
+                const parts = [];
+                let node = el;
+                while (node && node !== document.body) {
+                    let seg = node.tagName.toLowerCase();
+                    if (node.id) { seg += '#' + node.id; parts.unshift(seg); break; }
+                    if (node.className && typeof node.className === 'string') {
+                        const cls = node.className.trim().split(/\\s+/).filter(c => !c.startsWith('aos-')).slice(0, 2).join('.');
+                        if (cls) seg += '.' + cls;
+                    }
+                    // Add nth-child for disambiguation
+                    const parent = node.parentElement;
+                    if (parent) {
+                        const siblings = Array.from(parent.children).filter(c => c.tagName === node.tagName);
+                        if (siblings.length > 1) {
+                            const idx = siblings.indexOf(node) + 1;
+                            seg += ':nth-child(' + idx + ')';
+                        }
+                    }
+                    parts.unshift(seg);
+                    // Stop at section boundaries
+                    if (node.tagName === 'SECTION' || node.tagName === 'NAV' || node.tagName === 'FOOTER' || node.tagName === 'HEADER') break;
+                    node = node.parentElement;
                 }
-                return path;
+                return parts.join(' > ');
             }
 
             function positionOverlay(overlayEl, targetEl) {
@@ -259,6 +276,19 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                 if (!el || !isValidElement(el)) return;
                 selectedEl = el;
                 positionOverlay(selectedOverlay, el);
+                // Gather context: sibling elements around the clicked one
+                let contextBefore = '';
+                let contextAfter = '';
+                const prev = el.previousElementSibling;
+                const next = el.nextElementSibling;
+                if (prev) contextBefore = prev.outerHTML.substring(0, 300);
+                if (next) contextAfter = next.outerHTML.substring(0, 300);
+
+                // Find the parent section for section-level context
+                let sectionEl = el.closest('section[data-section-type], nav, footer, header');
+                const sectionId = sectionEl ? (sectionEl.getAttribute('data-section-id') || '') : '';
+                const sectionType = sectionEl ? (sectionEl.getAttribute('data-section-type') || sectionEl.tagName.toLowerCase()) : '';
+
                 const elementInfo = {
                     tagName: el.tagName.toLowerCase(),
                     id: el.id || null,
@@ -266,7 +296,13 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                     path: getElementPath(el),
                     outerHTML: el.outerHTML,
                     textContent: el.textContent?.substring(0, 100) || '',
-                    rect: el.getBoundingClientRect()
+                    rect: el.getBoundingClientRect(),
+                    contextBefore: contextBefore,
+                    contextAfter: contextAfter,
+                    sectionId: sectionId,
+                    sectionType: sectionType,
+                    parentTag: el.parentElement ? el.parentElement.tagName.toLowerCase() : '',
+                    parentClass: el.parentElement?.className || '',
                 };
                 window.parent.postMessage({ type: 'element-selected', element: elementInfo }, '*');
             }, true);

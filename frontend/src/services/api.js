@@ -145,19 +145,25 @@ export const clearSession = async (sessionId) => {
     }
 };
 
-export const editElement = async (sessionId, elementHtml, elementPath, prompt, currentCode, currentPage = 'index') => {
+export const editElement = async (sessionId, elementData, prompt, currentCode, currentPage = 'index') => {
     try {
         const response = await fetch(`${API_BASE_URL}/generator/edit-element`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 sessionId,
-                elementHtml,
-                elementPath,
+                elementHtml: elementData.outerHTML,
+                elementPath: elementData.path,
                 prompt,
                 currentHtml: currentCode.html,
                 currentCss: currentCode.css,
                 currentPage,
+                contextBefore: elementData.contextBefore || '',
+                contextAfter: elementData.contextAfter || '',
+                sectionId: elementData.sectionId || '',
+                sectionType: elementData.sectionType || '',
+                parentTag: elementData.parentTag || '',
+                parentClass: elementData.parentClass || '',
             }),
         });
         const data = await response.json();

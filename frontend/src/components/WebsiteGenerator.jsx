@@ -1279,7 +1279,7 @@ const WebsiteGenerator = () => {
         setError(null);
 
         try {
-            const result = await editElement(sessionId, selectedElement.outerHTML, selectedElement.path, elementPrompt, { html, css }, currentPage);
+            const result = await editElement(sessionId, selectedElement, elementPrompt, { html, css }, currentPage);
             if (result.success && !result.manualReplace) {
                 const newHtml = result.website.html;
                 const newCss = result.website.css || css; // Preserve existing CSS if backend returns empty
