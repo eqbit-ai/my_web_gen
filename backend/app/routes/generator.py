@@ -3219,6 +3219,18 @@ RULES:
 - For background images: use inline style background-image with overlay
 - Icons: use <i class="fa-solid fa-xxx"> (Font Awesome is pre-loaded)
 
+IMAGE RULES (when adding/changing images):
+- If the user provides a URL, use that exact URL as the src
+- Adapt image size to context with inline style:
+  - Navbar logo: max-height: 40-50px, width: auto
+  - Card/grid image: width: 100%, height: 200-280px, object-fit: cover
+  - Hero image: width: 100%, max-height: 500px, object-fit: cover
+  - Team/avatar: width: 80-120px, height: 80-120px, border-radius: 50%, object-fit: cover
+  - Icon/thumbnail: width: 48-64px, height: auto
+  - General: max-width: 100%, height: auto (responsive default)
+- Always add alt attribute describing the image
+- Add loading="lazy" for images below the fold
+
 JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
 .testimonial-slide, .slider-dot, .carousel-container, .carousel-track,
@@ -3259,6 +3271,18 @@ RULES:
 - Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include explanation
 
+IMAGE RULES (when adding/changing images):
+- If the user provides a URL, use that exact URL as the src
+- Adapt image size to context with inline style:
+  - Navbar logo: max-height: 40-50px, width: auto
+  - Card/grid image: width: 100%, height: 200-280px, object-fit: cover
+  - Hero image: width: 100%, max-height: 500px, object-fit: cover
+  - Team/avatar: width: 80-120px, height: 80-120px, border-radius: 50%, object-fit: cover
+  - Icon/thumbnail: width: 48-64px, height: auto
+  - General: max-width: 100%, height: auto (responsive default)
+- Always add alt attribute describing the image
+- Add loading="lazy" for images below the fold
+
 JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
 .testimonial-slide, .slider-dot, .carousel-container, .carousel-track,
@@ -3269,11 +3293,13 @@ JS-DEPENDENT CLASS NAMES (do NOT rename):
 def _is_structural_edit(prompt: str) -> bool:
     """Detect if the edit requires adding/removing/reordering elements (needs full section context)."""
     structural_keywords = [
-        r'\badd\b.*\b(card|item|column|row|button|link|section|image|icon|field|input|element)',
+        r'\badd\b.*\b(card|item|column|row|button|link|section|image|picture|photo|logo|img|icon|field|input|element)',
         r'\bremove\b', r'\bdelete\b', r'\breorder\b', r'\brearrange\b', r'\bmove\b.*\b(before|after|above|below|up|down)',
         r'\bsplit\b', r'\bmerge\b', r'\bduplicate\b', r'\bcopy\b', r'\binsert\b',
-        r'\badd\s+(a|an|another|new|more)\b', r'\bchange\s+layout\b', r'\bswap\b',
+        r'\badd\s+(a|an|another|new|more|this|the|my)\b', r'\bchange\s+layout\b', r'\bswap\b',
         r'\bgrid\b.*\bcolumn', r'\bconvert\b.*\b(to|into)\b',
+        r'\bput\b.*\b(image|picture|photo|logo|img)\b',
+        r'\bplace\b.*\b(image|picture|photo|logo|img)\b',
     ]
     prompt_lower = prompt.lower()
     return any(re.search(pat, prompt_lower) for pat in structural_keywords)
