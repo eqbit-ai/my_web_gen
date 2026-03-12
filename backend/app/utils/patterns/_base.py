@@ -450,7 +450,8 @@ NAVBAR SEARCH — add a search toggle button in nav-links with a dropdown input.
 
 WHATSAPP FLOAT — ALWAYS add: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
 
-BACK-TO-TOP — add: <button id="back-to-top" style="position:fixed;bottom:1.5rem;right:6rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
+BACK-TO-TOP — add ABOVE the WhatsApp button (NOT beside it): <button id="back-to-top" style="position:fixed;bottom:5.5rem;right:1.5rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
+IMPORTANT: Back-to-top MUST be at bottom:5.5rem;right:1.5rem (stacked ABOVE WhatsApp). Do NOT place them side-by-side or overlapping.
 
 IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add loading="lazy" (except hero images — hero loads eagerly)

@@ -402,8 +402,8 @@ html {
 /* ---------- Back-to-Top Button with Progress Ring ---------- */
 .back-to-top {
   position: fixed;
-  bottom: 32px;
-  right: 32px;
+  bottom: 88px;
+  right: 24px;
   width: 48px;
   height: 48px;
   border-radius: 50%;
