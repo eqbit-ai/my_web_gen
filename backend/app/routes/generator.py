@@ -1574,10 +1574,66 @@ def _sync_page_navbar(html: str, pages_dict: dict, current_slug: str) -> str:
     return html
 
 
+def _sync_footer_quick_links(html: str, pages_dict: dict) -> str:
+    """Update the 'Quick Links' column in the footer with inter-page navigation.
+
+    Identifies the Quick Links block by its heading text (Quick Links, Navigation,
+    Pages, Explore, etc.) and replaces its anchor links with page links.
+    Only modifies the first matching footer-links block. Leaves other footer
+    columns (Products, Services, Contact) untouched.
+    """
+    li_links, a_links = _build_nav_links(pages_dict, "")
+
+    # Find the footer element
+    footer_match = re.search(r'<footer[\s>]', html, re.IGNORECASE)
+    if not footer_match:
+        return html
+    footer_start = footer_match.start()
+
+    # Look for a heading followed by a footer-links block inside the footer
+    # Match headings like "Quick Links", "Navigation", "Pages", "Explore", "Menu", "Sitemap"
+    quick_link_headings = re.compile(
+        r'<h[3-6][^>]*class="footer-heading"[^>]*>\s*'
+        r'(Quick\s*Links?|Navigation|Pages|Explore|Site\s*Map|Menu|Links)\s*'
+        r'</h[3-6]>',
+        re.IGNORECASE,
+    )
+    heading_match = quick_link_headings.search(html, footer_start)
+    if not heading_match:
+        return html
+
+    # Find the footer-links block immediately after this heading
+    search_start = heading_match.end()
+
+    # Format A: <ul class="footer-links">
+    ul_pattern = re.compile(
+        r'(<ul\s+class="footer-links"[^>]*>)(.*?)(</ul>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    ul_match = ul_pattern.search(html, search_start)
+    # Only match if it's close to the heading (within 200 chars — same column)
+    if ul_match and ul_match.start() - search_start < 200:
+        new_content = f"\n          {li_links}\n        "
+        return html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
+
+    # Format B: <div class="footer-links">
+    div_pattern = re.compile(
+        r'(<div\s+class="footer-links"[^>]*>)(.*?)(</div>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    div_match = div_pattern.search(html, search_start)
+    if div_match and div_match.start() - search_start < 200:
+        new_content = f"\n          {a_links}\n        "
+        return html[:div_match.start(2)] + new_content + html[div_match.end(2):]
+
+    return html
+
+
 def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) -> dict:
-    """Sync navbars in ALL pages so every page can navigate to every other page.
+    """Sync navbars AND footer quick links in ALL pages for inter-page navigation.
 
     Replaces anchor-only navbars with inter-page links. Preserves CTA buttons.
+    Updates footer Quick Links column with page links.
     Returns the updated pages_dict.
     """
     for slug, page_data in pages_dict.items():
@@ -1585,9 +1641,10 @@ def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) ->
         if not page_html:
             continue
         updated = _sync_page_navbar(page_html, pages_dict, slug)
+        updated = _sync_footer_quick_links(updated, pages_dict)
         if updated != page_html:
             pages_dict[slug] = {**page_data, "html": updated}
-            logger.info(f'[NAV SYNC] Updated navbar in "{slug}" page with {len(pages_dict)} page links')
+            logger.info(f'[NAV SYNC] Updated navbar + footer in "{slug}" page with {len(pages_dict)} page links')
     return pages_dict
 
 
