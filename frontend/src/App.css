@@ -871,6 +871,30 @@ body {
 
 .gn-ep-hint { margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center; }
 
+.gn-ep-attachment {
+  position: relative; display: inline-flex; align-items: center;
+  padding: 6px 8px; background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 8px; width: fit-content; margin-bottom: 4px;
+}
+.gn-ep-attachment-img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; }
+.gn-ep-attachment-uploading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.5); border-radius: 8px;
+}
+.gn-ep-attachment-remove {
+  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.gn-ep-attachment-remove:hover { color: var(--text-primary); }
+.gn-ep-attach-btn {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 8px; border-radius: 8px; display: flex; align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.gn-ep-attach-btn:hover:not(:disabled) { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+.gn-ep-attach-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Preview container (shared) */
 .preview-container {
   width: 100%;

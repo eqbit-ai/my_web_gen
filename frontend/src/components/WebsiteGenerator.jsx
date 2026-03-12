@@ -11,7 +11,7 @@ import {
     Save, Search, Palette, RotateCcw,
     Monitor, Smartphone, ExternalLink, Layers,
     AlertTriangle, CheckCircle, Info, Keyboard, Wifi, WifiOff,
-    ChevronRight, Type, MessageSquare, FileText
+    ChevronRight, Type, MessageSquare, FileText, Paperclip
 } from 'lucide-react';
 import Preview from './Preview';
 import CodeEditor from './CodeEditor';
@@ -19,7 +19,7 @@ import DeployModal from './DeployModal';
 import DesignSystemPanel from './DesignSystemPanel';
 import SectionEditor from './SectionEditor';
 import {
-    generateWebsiteStream, clearSession, editElement,
+    generateWebsiteStream, clearSession, editElement, uploadFile,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
     submitJob, getJobStatus, restoreSession,
 } from '../services/api';
@@ -501,6 +501,8 @@ const WebsiteGenerator = () => {
     const [selectedElement, setSelectedElement] = useState(null);
     const [elementPrompt, setElementPrompt] = useState('');
     const [isEditingElement, setIsEditingElement] = useState(false);
+    const [elementAttachment, setElementAttachment] = useState(null); // {file, preview, uploading, url}
+    const elementFileInputRef = useRef(null);
 
     // Design System, Sections, Components
     const [designSystem, setDesignSystem] = useState(null);
@@ -1272,14 +1274,44 @@ const WebsiteGenerator = () => {
 
     const handleElementSelect = (element) => { setSelectedElement(element); setElementPrompt(''); };
 
+    const handleElementAttach = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/gif'];
+        if (!validTypes.includes(file.type)) { addToast('Only image files (JPG, PNG, WebP, SVG, GIF) are allowed', 'error'); return; }
+        if (file.size > 5 * 1024 * 1024) { addToast('Image must be under 5MB', 'error'); return; }
+        const preview = URL.createObjectURL(file);
+        setElementAttachment({ file, preview, uploading: true, url: null });
+        try {
+            const result = await uploadFile(file, projectId || null, 'image');
+            const absUrl = `${config.apiUrl}${result.url}`;
+            setElementAttachment(prev => ({ ...prev, uploading: false, url: absUrl }));
+        } catch (err) {
+            addToast('Failed to upload image', 'error');
+            URL.revokeObjectURL(preview);
+            setElementAttachment(null);
+        }
+        e.target.value = '';
+    };
+
+    const handleRemoveAttachment = () => {
+        if (elementAttachment?.preview) URL.revokeObjectURL(elementAttachment.preview);
+        setElementAttachment(null);
+    };
+
     const handleElementEdit = async () => {
         if (!selectedElement || !elementPrompt.trim() || isEditingRef.current) return;
+        if (elementAttachment?.uploading) return;
         isEditingRef.current = true;
         setIsEditingElement(true);
         setError(null);
 
         try {
-            const result = await editElement(sessionId, selectedElement, elementPrompt, { html, css }, currentPage);
+            let finalPrompt = elementPrompt;
+            if (elementAttachment?.url) {
+                finalPrompt += `\n\nUse this uploaded image URL: ${elementAttachment.url}`;
+            }
+            const result = await editElement(sessionId, selectedElement, finalPrompt, { html, css }, currentPage);
             if (result.success && !result.manualReplace) {
                 const newHtml = result.website.html;
                 const newCss = result.website.css || css; // Preserve existing CSS if backend returns empty
@@ -1304,7 +1336,8 @@ const WebsiteGenerator = () => {
                 { role: 'user', text: `Edit ${selectedElement.tagName}: ${elementPrompt}`, timestamp: new Date().toLocaleTimeString() },
                 { role: 'assistant', text: 'Element updated!', timestamp: new Date().toLocaleTimeString(), versionIndex: versions.length },
                 ]);
-                setSelectedElement(null); setElementPrompt(''); setEditMode(false);
+                if (elementAttachment?.preview) URL.revokeObjectURL(elementAttachment.preview);
+                setSelectedElement(null); setElementPrompt(''); setEditMode(false); setElementAttachment(null);
                 addToast('Section updated', 'success');
                 // Auto-save to project
                 if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs });
@@ -1320,7 +1353,10 @@ const WebsiteGenerator = () => {
         }
     };
 
-    const handleCancelEdit = () => { setSelectedElement(null); setElementPrompt(''); setEditMode(false); };
+    const handleCancelEdit = () => {
+        if (elementAttachment?.preview) URL.revokeObjectURL(elementAttachment.preview);
+        setSelectedElement(null); setElementPrompt(''); setEditMode(false); setElementAttachment(null);
+    };
 
     // ── Save ────────────────────────────────────────────────────────────
 
@@ -2084,14 +2120,27 @@ const WebsiteGenerator = () => {
                             </div>
                             <button className="gn-icon-btn" onClick={handleCancelEdit}><X size={18} /></button>
                         </div>
+                        {elementAttachment && (
+                            <div className="gn-ep-attachment">
+                                <img src={elementAttachment.preview} alt="Attached" className="gn-ep-attachment-img" />
+                                {elementAttachment.uploading && <span className="gn-ep-attachment-uploading"><span className="gn-spinner" /></span>}
+                                <button className="gn-ep-attachment-remove" onClick={handleRemoveAttachment}><X size={14} /></button>
+                            </div>
+                        )}
                         <div className="gn-ep-body">
+                            <button className="gn-ep-attach-btn" onClick={() => elementFileInputRef.current?.click()}
+                                disabled={isEditingElement} title="Attach image">
+                                <Paperclip size={18} />
+                            </button>
                             <input type="text" className="gn-ep-input" placeholder="Describe what you want to change..."
                                 value={elementPrompt} onChange={(e) => setElementPrompt(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleElementEdit()} disabled={isEditingElement} autoFocus />
-                            <button className="gn-ep-submit" onClick={handleElementEdit} disabled={isEditingElement || !elementPrompt.trim()}>
+                            <button className="gn-ep-submit" onClick={handleElementEdit}
+                                disabled={isEditingElement || !elementPrompt.trim() || elementAttachment?.uploading}>
                                 {isEditingElement ? <span className="gn-spinner" /> : <Send size={18} />}
                             </button>
                         </div>
+                        <input type="file" ref={elementFileInputRef} accept="image/*" style={{display:'none'}} onChange={handleElementAttach} />
                     </div>
                 </>
             )}
