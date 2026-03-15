@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Shield } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
-import { adminGetDomains, adminGetDomainHealth, adminReprovisionSSL } from '../../services/adminApi';
+import { adminGetDomains, adminGetDomainHealth } from '../../services/adminApi';
 
 function formatDate(d) {
     if (!d) return '—';
@@ -15,54 +15,38 @@ export default function DomainsListPage() {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [status, setStatus] = useState('');
-    const [tld, setTld] = useState('');
     const [data, setData] = useState(null);
     const [health, setHealth] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [sslLoading, setSslLoading] = useState(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const [res, h] = await Promise.all([
-                adminGetDomains(page, 20, status || null, tld || null),
+                adminGetDomains(page, 20, status || null),
                 adminGetDomainHealth().catch(() => null),
             ]);
             setData(res);
             setHealth(h);
         } catch (e) { setError(e.message); }
         finally { setLoading(false); }
-    }, [page, status, tld]);
+    }, [page, status]);
 
     useEffect(() => { load(); }, [load]);
-
-    const handleSSL = async (e, domainId) => {
-        e.stopPropagation();
-        setSslLoading(domainId);
-        try { await adminReprovisionSSL(domainId); load(); } catch {}
-        setSslLoading(null);
-    };
 
     const domains = Array.isArray(data) ? data : data?.domains || data?.items || [];
     const total = data?.total || domains.length;
 
     const columns = [
-        { key: 'domain', label: 'Domain', render: (v, row) => v || row.name || '—' },
-        { key: 'user_id', label: 'User', render: (v, row) => row.user_email || v || '—' },
-        { key: 'tld', label: 'TLD', render: v => v || '—' },
+        { key: 'domain', label: 'Domain', render: v => v || '—' },
+        { key: 'site_name', label: 'Site', render: v => v || '—' },
+        { key: 'user_email', label: 'User', render: v => v || '—' },
         { key: 'status', label: 'Status', render: v => <StatusBadge status={v} size="sm" /> },
-        { key: 'ssl_status', label: 'SSL', render: v => <StatusBadge status={v || 'unknown'} size="sm" /> },
-        { key: 'expires_at', label: 'Expires', render: v => <span className="admin-date-cell">{formatDate(v)}</span> },
-        {
-            key: 'actions', label: 'Actions', sortable: false,
-            render: (_, row) => (
-                <button className="admin-btn admin-btn-sm" onClick={(e) => handleSSL(e, row.id)} disabled={sslLoading === row.id}>
-                    <Shield size={12} /> SSL
-                </button>
-            ),
-        },
+        { key: 'ssl_status', label: 'SSL', render: v => <StatusBadge status={v || 'none'} size="sm" /> },
+        { key: 'cloudfront_domain', label: 'CloudFront', render: v => v ? <span style={{ fontSize: '0.75rem' }}>{v}</span> : '—' },
+        { key: 'created_at', label: 'Connected', render: v => <span className="admin-date-cell">{formatDate(v)}</span> },
     ];
 
     if (error) {
@@ -72,19 +56,30 @@ export default function DomainsListPage() {
     return (
         <div>
             <div className="admin-page-header">
-                <h1 className="admin-page-title">All Domains</h1>
+                <h1 className="admin-page-title">Connected Domains</h1>
                 <button className="admin-btn" onClick={load}><RefreshCw size={14} /> Refresh</button>
             </div>
 
-            {/* DNS Health Summary */}
-            {health && (
+            {health && !health.error && (
                 <div className="admin-card" style={{ marginBottom: 24 }}>
-                    <div className="admin-card-title">DNS Health</div>
+                    <div className="admin-card-title">Domain Health</div>
                     <div className="admin-card-stats">
-                        {Object.entries(health).map(([k, v]) => (
+                        <div>
+                            <span className="admin-card-stat-label">Total Domains</span>
+                            <strong>{health.total_domains || 0}</strong>
+                        </div>
+                        <div>
+                            <span className="admin-card-stat-label">SSL Active</span>
+                            <strong>{health.ssl_active || 0}</strong>
+                        </div>
+                        <div>
+                            <span className="admin-card-stat-label">SSL None</span>
+                            <strong>{health.ssl_none || 0}</strong>
+                        </div>
+                        {health.domain_status && Object.entries(health.domain_status).map(([k, v]) => (
                             <div key={k}>
-                                <span className="admin-card-stat-label">{k.replace(/_/g, ' ')}</span>
-                                <strong>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</strong>
+                                <span className="admin-card-stat-label">{k}</span>
+                                <strong>{v}</strong>
                             </div>
                         ))}
                     </div>
@@ -92,21 +87,12 @@ export default function DomainsListPage() {
             )}
 
             <div className="admin-toolbar">
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <select className="admin-search" style={{ width: 'auto' }} value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="pending">Pending</option>
-                        <option value="expired">Expired</option>
-                    </select>
-                    <select className="admin-search" style={{ width: 'auto' }} value={tld} onChange={e => { setTld(e.target.value); setPage(1); }}>
-                        <option value="">All TLDs</option>
-                        <option value=".com">.com</option>
-                        <option value=".ae">.ae</option>
-                        <option value=".net">.net</option>
-                        <option value=".org">.org</option>
-                    </select>
-                </div>
+                <select className="admin-search" style={{ width: 'auto' }} value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="pending_validation">Pending Validation</option>
+                    <option value="pending_deployment">Pending Deployment</option>
+                </select>
                 <span className="admin-count">{total} domains</span>
             </div>
 
@@ -114,7 +100,7 @@ export default function DomainsListPage() {
                 columns={columns}
                 data={domains}
                 loading={loading}
-                emptyMessage="No domains found"
+                emptyMessage="No connected domains"
                 page={page}
                 total={total}
                 limit={20}

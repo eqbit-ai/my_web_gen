@@ -56,7 +56,7 @@ export default function SitesListPage() {
                 <button
                     className="admin-btn admin-btn-sm"
                     onClick={(e) => handleRebuild(e, row.id)}
-                    disabled={rebuilding === row.id}
+                    disabled
                 >
                     <RotateCcw size={12} /> {rebuilding === row.id ? '...' : 'Rebuild'}
                 </button>

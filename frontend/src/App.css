@@ -539,6 +539,26 @@ body {
 .gen-loading p { font-size: 15px; }
 .gn-loading-sub { font-size: 12px; color: var(--text-muted); }
 
+.gn-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.gn-stop-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
 .gen-spinner {
   width: 40px;
   height: 40px;
@@ -1476,6 +1496,7 @@ body {
 .seo-tabs button { flex: 1; padding: 10px; border: none; background: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-bottom: 2px solid transparent; }
 .seo-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
 .seo-error { padding: 8px 12px; background: rgba(239,68,68,0.1); border-radius: 8px; color: #fca5a5; font-size: 0.75rem; margin-bottom: 12px; }
+.seo-success { padding: 8px 12px; background: rgba(34,197,94,0.1); border-radius: 8px; color: #86efac; font-size: 0.75rem; margin-bottom: 12px; }
 .seo-field { margin-bottom: 12px; }
 .seo-field label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
 .seo-field input, .seo-field textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.8125rem; resize: vertical; box-sizing: border-box; }

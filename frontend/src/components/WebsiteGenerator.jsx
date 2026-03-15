@@ -11,7 +11,7 @@ import {
     Save, Search, Palette, RotateCcw, Settings,
     Monitor, Smartphone, ExternalLink, Layers,
     AlertTriangle, CheckCircle, Info, Keyboard, Wifi, WifiOff,
-    ChevronRight, Type, MessageSquare, FileText, Paperclip
+    ChevronRight, Type, MessageSquare, FileText, Paperclip, Square
 } from 'lucide-react';
 import Preview from './Preview';
 import CodeEditor from './CodeEditor';
@@ -1699,12 +1699,39 @@ const WebsiteGenerator = () => {
     };
 
     const handleCardClick = (item) => {
-        // Generate using template as reference + description as prompt
-        handleGenerate(
-            `Create a ${item.name} website. ${item.description || ''}`,
-            item.niche || null,
-            item.id || null,
-        );
+        // Load template directly — no regeneration
+        const preview = templatePreviews[item.id];
+        if (preview && preview.html) {
+            const tHtml = preview.html;
+            const tCss = preview.css || '';
+            const tJs = preview.js || '';
+            setHtml(tHtml);
+            setCss(tCss);
+            setJs(tJs);
+            // niche is read-only state, skip setting
+            setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
+            // Save as first version
+            setVersions([{ html: tHtml, css: tCss, js: tJs, prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
+            setCurrentVersion(0);
+            // Sync session
+            syncSession({ html: tHtml, css: tCss, js: tJs }).catch(() => {});
+        } else {
+            // Fallback: fetch full template then load
+            getTemplateFull(item.id).then(data => {
+                if (data && data.html) {
+                    setHtml(data.html);
+                    setCss(data.css || '');
+                    setJs(data.js || '');
+                    // niche is read-only state, skip setting
+                    setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
+                    setVersions([{ html: data.html, css: data.css || '', js: data.js || '', prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
+                    setCurrentVersion(0);
+                    syncSession({ html: data.html, css: data.css || '', js: data.js || '' }).catch(() => {});
+                }
+            }).catch(() => {
+                setMessages(prev => [...prev, { role: 'assistant', text: 'Failed to load template. Please try again.', timestamp: new Date().toLocaleTimeString(), isError: true }]);
+            });
+        }
     };
 
     // ── Onboarding handlers ────────────────────────────────────────────
@@ -1720,6 +1747,31 @@ const WebsiteGenerator = () => {
     const handleOnboardingSkip = () => {
         setOnboardingStep(-1);
         localStorage.setItem(ONBOARDING_KEY, 'true');
+    };
+
+    // ── Stop generation handler ────────────────────────────────────────
+    const handleStopGeneration = () => {
+        // Abort SSE stream
+        if (streamControllerRef.current) {
+            streamControllerRef.current.abort();
+            streamControllerRef.current = null;
+        }
+        // Cancel job polling
+        if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+        }
+        setActiveJobId(null);
+        setIsLoading(false);
+        setLoadingMessage('');
+        setJobProgress(0);
+        setGenerationProgress({ stage: 0, total: 5, message: '' });
+        isGeneratingRef.current = false;
+        setMessages(prev => [...prev, {
+            role: 'assistant',
+            text: 'Generation stopped. You can start again with a new prompt or pick a template.',
+            timestamp: new Date().toLocaleTimeString(),
+        }]);
     };
 
     // ── Error retry handler ─────────────────────────────────────────────
@@ -2087,9 +2139,17 @@ const WebsiteGenerator = () => {
                                     </div>
                                     <span className="gn-job-progress-text">{Math.round(jobProgress)}%</span>
                                 </div>
+                                <button className="gn-stop-btn" onClick={handleStopGeneration}>
+                                    <Square size={14} fill="currentColor" /> Stop Generation
+                                </button>
                             </div>
                         ) : (
-                            <GenerationProgress currentStage={generationProgress.stage} message={loadingMessage} />
+                            <div className="gen-loading">
+                                <GenerationProgress currentStage={generationProgress.stage} message={loadingMessage} />
+                                <button className="gn-stop-btn" onClick={handleStopGeneration}>
+                                    <Square size={14} fill="currentColor" /> Stop Generation
+                                </button>
+                            </div>
                         )
                     ) : (
                         <div className={`gn-preview-wrap ${previewDevice === 'mobile' ? 'mobile-view' : ''}`}>

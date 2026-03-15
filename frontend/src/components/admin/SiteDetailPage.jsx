@@ -61,7 +61,7 @@ export default function SiteDetailPage() {
                     <h1 className="admin-page-title" style={{ marginBottom: 0 }}>Site #{id}</h1>
                     <StatusBadge status={site.status} />
                 </div>
-                <button className="admin-btn admin-btn-primary" onClick={handleRebuild} disabled={rebuilding}>
+                <button className="admin-btn admin-btn-primary" onClick={handleRebuild} disabled>
                     <RotateCcw size={14} /> {rebuilding ? 'Rebuilding...' : 'Rebuild'}
                 </button>
             </div>

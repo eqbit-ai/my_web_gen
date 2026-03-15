@@ -1114,7 +1114,7 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
             "<!-- WHATSAPP_FLOAT -->\n"
             f'<a href="https://wa.me/{number}" target="_blank" rel="noopener noreferrer" '
             'class="whatsapp-float" '
-            'style="position:fixed;bottom:24px;right:24px;z-index:9999;width:56px;height:56px;'
+            'style="position:fixed;bottom:32px;left:32px;z-index:9990;width:56px;height:56px;'
             "background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;"
             'box-shadow:0 4px 12px rgba(0,0,0,0.15);text-decoration:none;" aria-label="Chat on WhatsApp">'
             '<svg width="28" height="28" viewBox="0 0 24 24" fill="white">'

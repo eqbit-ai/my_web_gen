@@ -95,7 +95,7 @@ html{scroll-behavior:smooth}
 .whatsapp-float svg{width:28px;height:28px}
 @keyframes whatsappPulse{0%,100%{box-shadow:0 4px 16px -2px rgba(37,211,102,.45)}50%{box-shadow:0 4px 28px 2px rgba(37,211,102,.3),0 0 0 8px rgba(37,211,102,.08)}}
 /* Back-to-Top */
-.back-to-top{position:fixed;bottom:32px;right:32px;width:48px;height:48px;border-radius:50%;background:var(--primary,#6366f1);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s,transform .35s cubic-bezier(.22,1,.36,1),background .2s ease;z-index:9990;box-shadow:0 4px 16px -4px rgba(99,102,241,.4)}
+.back-to-top{position:fixed;bottom:88px;right:24px;width:48px;height:48px;border-radius:50%;background:var(--primary,#6366f1);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .35s cubic-bezier(.22,1,.36,1),visibility .35s,transform .35s cubic-bezier(.22,1,.36,1),background .2s ease;z-index:9990;box-shadow:0 4px 16px -4px rgba(99,102,241,.4)}
 .back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
 .back-to-top:hover{background:var(--accent,#a78bfa);transform:translateY(-3px)}
 .back-to-top svg{width:20px;height:20px}
@@ -1011,7 +1011,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             <iframe
                 ref={iframeRef}
                 title="Website Preview"
-                sandbox="allow-scripts allow-same-origin"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 className="preview-iframe"
                 srcDoc="<!DOCTYPE html><html><body></body></html>"
             />

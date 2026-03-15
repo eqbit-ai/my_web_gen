@@ -20,6 +20,7 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [tab, setTab] = useState('seo'); // seo | contact | whatsapp
 
     const handleFaviconUpload = async (e) => {
@@ -45,6 +46,7 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     const handleSaveMeta = async () => {
         setSaving(true);
         setError('');
+        setSuccess('');
         try {
             const result = await updateSiteMeta(sessionId, {
                 title: meta.title,
@@ -53,7 +55,11 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
                 faviconUrl,
                 whatsappNumber: whatsapp,
             });
-            if (result.success && onUpdate) onUpdate(result.html, result.css, result.js);
+            if (result.success && onUpdate) {
+                onUpdate(result.html, result.css, result.js);
+                setSuccess('Settings saved successfully!');
+                setTimeout(() => setSuccess(''), 3000);
+            }
         } catch (err) {
             setError('Failed to save: ' + err.message);
         }
@@ -63,9 +69,14 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     const handleSaveContact = async () => {
         setSaving(true);
         setError('');
+        setSuccess('');
         try {
             const result = await updateContactConfig(sessionId, contact);
-            if (result.success && onUpdate) onUpdate(result.html, result.css, result.js);
+            if (result.success && onUpdate) {
+                onUpdate(result.html, result.css, result.js);
+                setSuccess('Contact form settings saved!');
+                setTimeout(() => setSuccess(''), 3000);
+            }
         } catch (err) {
             setError('Failed to save: ' + err.message);
         }
@@ -96,6 +107,7 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
 
                 <div className="seo-body">
                     {error && <div className="seo-error">{error}</div>}
+                    {success && <div className="seo-success">{success}</div>}
 
                     {tab === 'seo' && (
                         <>
