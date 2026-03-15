@@ -8,7 +8,7 @@ import JSZip from 'jszip';
 import {
     Download, Code, Eye, RefreshCw, Rocket, Sparkles,
     MousePointer2, X, Send, ArrowLeft, Undo2, Redo2,
-    Save, Search, Palette, RotateCcw,
+    Save, Search, Palette, RotateCcw, Settings,
     Monitor, Smartphone, ExternalLink, Layers,
     AlertTriangle, CheckCircle, Info, Keyboard, Wifi, WifiOff,
     ChevronRight, Type, MessageSquare, FileText, Paperclip
@@ -16,8 +16,8 @@ import {
 import Preview from './Preview';
 import CodeEditor from './CodeEditor';
 import DeployModal from './DeployModal';
-import DesignSystemPanel from './DesignSystemPanel';
 import SectionEditor from './SectionEditor';
+import SeoEditor from './SeoEditor';
 import {
     generateWebsiteStream, clearSession, editElement, uploadFile,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
@@ -504,10 +504,9 @@ const WebsiteGenerator = () => {
     const [elementAttachment, setElementAttachment] = useState(null); // {file, preview, uploading, url}
     const elementFileInputRef = useRef(null);
 
-    // Design System, Sections, Components
-    const [designSystem, setDesignSystem] = useState(null);
+    // Sections, Components
     const [sections, setSections] = useState([]);
-    const [showDesignSystem, setShowDesignSystem] = useState(false);
+    const [showSiteSettings, setShowSiteSettings] = useState(false);
     const [showSectionEditor, setShowSectionEditor] = useState(false);
     // Templates (for empty state marketplace)
     const [templates, setTemplates] = useState([]);
@@ -577,6 +576,11 @@ const WebsiteGenerator = () => {
     const [isMultipage, setIsMultipage] = useState(false);
     const [pages, setPages] = useState({}); // { slug: { html, css } }
     const [currentPage, setCurrentPage] = useState('index'); // active page slug
+    // Refs for latest values (avoids stale closures in auto-save, page switch, etc.)
+    const pagesRef = useRef(pages);
+    pagesRef.current = pages;
+    const currentPageRef = useRef(currentPage);
+    currentPageRef.current = currentPage;
 
     // ── UX Enhancement State ────────────────────────────────────────────
     const [showShortcuts, setShowShortcuts] = useState(false);
@@ -655,18 +659,32 @@ const WebsiteGenerator = () => {
             if (pd.name) setProjectName(pd.name);
             // Restore multipage data from metadata
             const meta = pd.metadata || {};
-            if (meta.isMultipage && meta.pages) {
+            let restoreHtml = pd.html || '';
+            let restoreCss = pd.css || '';
+            if (meta.isMultipage && meta.pages && Object.keys(meta.pages).length > 0) {
                 setIsMultipage(true);
                 setPages(meta.pages);
-                setCurrentPage(meta.currentPage || 'index');
-                // Load the saved current page's html/css
-                const savedPage = meta.pages[meta.currentPage || 'index'];
+                const targetPage = meta.currentPage || 'index';
+                setCurrentPage(targetPage);
+                // Load the saved current page's html/css — fallback through page data → top-level → index page
+                const savedPage = meta.pages[targetPage] || meta.pages['index'];
                 if (savedPage) {
-                    setHtml(savedPage.html || pd.html || '');
-                    setCss(savedPage.css || pd.css || '');
+                    restoreHtml = savedPage.html || pd.html || '';
+                    restoreCss = savedPage.css || pd.css || '';
+                }
+                // If current page CSS is empty, try index page CSS, then any page with CSS
+                if (!restoreCss) {
+                    restoreCss = meta.pages['index']?.css || '';
+                    if (!restoreCss) {
+                        // Last resort: grab CSS from any page that has it
+                        for (const slug of Object.keys(meta.pages)) {
+                            if (meta.pages[slug]?.css) { restoreCss = meta.pages[slug].css; break; }
+                        }
+                    }
                 }
             }
-            const v = { html: pd.html, css: pd.css, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: meta.pages || {} };
+            setHtml(restoreHtml); setCss(restoreCss);
+            const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: meta.pages || {} };
             setVersions([v]); setCurrentVersion(0);
             // Restore chat history from metadata if available, otherwise show default message
             if (!pd.isTemplate && meta.messages && meta.messages.length > 0) {
@@ -676,10 +694,14 @@ const WebsiteGenerator = () => {
             }
 
             // Hydrate backend session so chat, sections, design system all work
-            restoreSession(pd.html || '', pd.css || '', pd.js || '', pd.id || null)
+            restoreSession(restoreHtml, restoreCss, pd.js || '', pd.id || null)
                 .then(data => {
                     setSessionId(data.sessionId);
                     if (data.sections) setSections(data.sections);
+                    // Sync multipage data to backend session
+                    if (meta.isMultipage && meta.pages && data.sessionId) {
+                        syncSession(data.sessionId, restoreHtml, restoreCss, pd.js || '', meta.currentPage || 'index').catch(() => {});
+                    }
                 })
                 .catch(err => console.error('Failed to restore session:', err));
         } else if (hasInitialPrompt && !hasAutoGenerated.current && !sessionStorage.getItem(SESSION_STORAGE_KEY)) {
@@ -758,12 +780,18 @@ const WebsiteGenerator = () => {
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = setTimeout(() => {
             setSaveStatus('saving');
-            const allPages = isMultipage ? { ...pages, [currentPage]: { html, css } } : {};
-            const metadata = JSON.stringify({ isMultipage, currentPage, pages: allPages, messages: messages.slice(-50) });
+            // Use refs to get latest pages/currentPage (avoids stale closure)
+            const latestPages = pagesRef.current;
+            const latestCurrentPage = currentPageRef.current;
+            const allPages = isMultipage ? { ...latestPages, [latestCurrentPage]: { html, css } } : {};
+            const metadata = JSON.stringify({ isMultipage, currentPage: latestCurrentPage, pages: allPages, messages: messages.slice(-50) });
+            // For multipage, always save index page as top-level html/css for reliable restore
+            const saveHtml = isMultipage && allPages['index']?.html ? allPages['index'].html : html;
+            const saveCss = isMultipage && allPages['index']?.css ? allPages['index'].css : css;
             saveProject({
                 project_id: projectId,
                 name: projectName || 'Untitled Project',
-                html, css, js,
+                html: saveHtml, css: saveCss, js,
                 prompt: messages.filter(m => m.role === 'user').pop()?.text || '',
                 metadata,
             }).then(res => {
@@ -911,7 +939,7 @@ const WebsiteGenerator = () => {
                     setSessionId(job.sessionId || jobId);
                     setIsNewDesign(true);
                     if (result.meta) setSiteMeta(result.meta);
-                    if (result.designSystem) setDesignSystem(result.designSystem);
+
                     if (result.sections) setSections(result.sections);
 
                     // Multi-page support for async jobs
@@ -1050,7 +1078,7 @@ const WebsiteGenerator = () => {
                     setSessionId(result.sessionId);
                     setIsNewDesign(result.isNewDesign !== false);
                     if (result.meta) setSiteMeta(result.meta);
-                    if (result.designSystem) setDesignSystem(result.designSystem);
+
                     if (result.sections) setSections(result.sections);
 
                     // Multi-page support
@@ -1379,18 +1407,24 @@ const WebsiteGenerator = () => {
         if (!h) return;
         setSaveStatus('saving');
         // For multipage: save all pages (with current page's live html/css) in metadata
-        const allPages = isMultipage ? { ...pages, [currentPage]: { html: h, css: c } } : {};
+        // Use refs for latest pages/currentPage to avoid stale closure
+        const latestPages = pagesRef.current;
+        const latestCurrentPage = currentPageRef.current;
+        const allPages = isMultipage ? { ...latestPages, [latestCurrentPage]: { html: h, css: c } } : {};
         const metadata = JSON.stringify({
             isMultipage,
-            currentPage,
+            currentPage: latestCurrentPage,
             pages: allPages,
             messages: messages.slice(-50), // persist last 50 chat messages
         });
         try {
+            // For multipage, save index page as top-level for reliable restore
+            const saveHtml = isMultipage && allPages['index']?.html ? allPages['index'].html : h;
+            const saveCss = isMultipage && allPages['index']?.css ? allPages['index'].css : c;
             const result = await saveProject({
                 project_id: projectId || undefined,
                 name,
-                html: h, css: c, js: j,
+                html: saveHtml, css: saveCss, js: j,
                 prompt: messages.filter(m => m.role === 'user').pop()?.text || '',
                 metadata,
             });
@@ -1570,14 +1604,10 @@ const WebsiteGenerator = () => {
     };
 
     // ── Multi-page: switch active page ────────────────────────────────
-    const pagesRef = useRef(pages);
-    pagesRef.current = pages;
     const htmlRef = useRef(html);
     htmlRef.current = html;
     const cssRef = useRef(css);
     cssRef.current = css;
-    const currentPageRef = useRef(currentPage);
-    currentPageRef.current = currentPage;
     const jsRef = useRef(js);
     jsRef.current = js;
     const sessionIdRef = useRef(sessionId);
@@ -1668,11 +1698,6 @@ const WebsiteGenerator = () => {
         if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs || js });
     };
 
-    const handleDesignSystemUpdate = (newDs, newCss) => {
-        setDesignSystem(newDs);
-        if (newCss) setCss(newCss);
-    };
-
     const handleCardClick = (item) => {
         // Generate using template as reference + description as prompt
         handleGenerate(
@@ -1711,8 +1736,30 @@ const WebsiteGenerator = () => {
     // RENDER
     // ═══════════════════════════════════════════════════════════════════
 
+    const impersonateInfo = (() => { try { const v = localStorage.getItem('impersonating'); return v ? JSON.parse(v) : null; } catch { return null; } })();
+
     return (
         <div className="gn-layout">
+            {impersonateInfo && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+                    background: '#f59e0b', color: '#000', padding: '8px 16px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                    fontSize: 14, fontWeight: 600,
+                }}>
+                    <span>Viewing as: {impersonateInfo.email} (read-only)</span>
+                    <button onClick={() => {
+                        const adminToken = localStorage.getItem('admin_token_backup');
+                        if (adminToken) localStorage.setItem('token', adminToken);
+                        localStorage.removeItem('admin_token_backup');
+                        localStorage.removeItem('impersonating');
+                        window.location.href = '/admin';
+                    }} style={{
+                        background: '#000', color: '#fff', border: 'none', borderRadius: 4,
+                        padding: '4px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    }}>Stop Impersonating</button>
+                </div>
+            )}
             {/* ─── LEFT: Chat Sidebar ─── */}
             <aside ref={sidebarRef} className={`gn-chat-sidebar ${isMobile && mobileTab !== 'chat' ? 'gn-hidden' : ''}`} style={!isMobile ? { width: sidebarWidth, minWidth: sidebarWidth } : undefined}>
                 {/* Chat header */}
@@ -1909,8 +1956,8 @@ const WebsiteGenerator = () => {
                             <button className={`gn-tb-btn ${showSectionEditor ? 'active' : ''}`} onClick={() => setShowSectionEditor(!showSectionEditor)} title="Sections">
                                 <Layers size={15} /> Sections
                             </button>
-                            <button className={`gn-tb-btn ${showDesignSystem ? 'active' : ''}`} onClick={() => setShowDesignSystem(!showDesignSystem)} title="Design System">
-                                <Palette size={15} />
+                            <button className={`gn-tb-btn ${showSiteSettings ? 'active' : ''}`} onClick={() => setShowSiteSettings(!showSiteSettings)} title="Site Settings (SEO, WhatsApp, Contact)">
+                                <Settings size={15} />
                             </button>
                             <button className={`gn-tb-btn ${editMode ? 'active' : ''}`} onClick={() => { setEditMode(!editMode); if (!editMode) setCmsMode(false); if (editMode) handleCancelEdit(); }} title="Click to Edit">
                                 <MousePointer2 size={15} />
@@ -2078,9 +2125,6 @@ const WebsiteGenerator = () => {
                         <button className="gn-mobile-tool-btn" onClick={() => { setShowSectionEditor(true); setMobileTab('preview'); }}>
                             <Layers size={18} /> Sections
                         </button>
-                        <button className="gn-mobile-tool-btn" onClick={() => { setShowDesignSystem(true); setMobileTab('preview'); }}>
-                            <Palette size={18} /> Design System
-                        </button>
                         <button className="gn-mobile-tool-btn" onClick={handleSaveProject}>
                             <Save size={18} /> Save Project
                         </button>
@@ -2156,15 +2200,19 @@ const WebsiteGenerator = () => {
                 </>
             )}
 
-            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} html={html} css={css} js={js} />
+            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} />
 
-            {/* Design System Panel */}
-            <DesignSystemPanel
-                isOpen={showDesignSystem}
-                onClose={() => setShowDesignSystem(false)}
-                designSystem={designSystem}
+            {/* Site Settings (SEO, WhatsApp, Contact) */}
+            <SeoEditor
+                isOpen={showSiteSettings}
+                onClose={() => setShowSiteSettings(false)}
                 sessionId={sessionId}
-                onUpdate={handleDesignSystemUpdate}
+                siteMeta={siteMeta}
+                onUpdate={(newHtml, newCss, newJs) => {
+                    setHtml(newHtml);
+                    if (newCss) setCss(newCss);
+                    if (newJs) setJs(newJs);
+                }}
             />
 
             {/* Section Editor Panel */}

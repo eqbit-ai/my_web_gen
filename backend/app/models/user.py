@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -21,3 +21,12 @@ class User(Base):
     is_active = Column(Boolean, default=True, server_default="true", nullable=False)
     last_login = Column(DateTime(timezone=True), nullable=True)
     generation_count = Column(Integer, default=0, server_default="0", nullable=False)
+
+    # Token budget tracking
+    token_balance = Column(BigInteger, default=1_000_000, server_default="1000000", nullable=False)
+    tokens_used = Column(BigInteger, default=0, server_default="0", nullable=False)
+
+    # Licence verification
+    licence_verified = Column(Boolean, default=False, server_default="false", nullable=False)
+    licence_verified_at = Column(DateTime(timezone=True), nullable=True)
+    licence_verified_by = Column(Integer, nullable=True)

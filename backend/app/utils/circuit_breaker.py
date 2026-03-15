@@ -81,10 +81,10 @@ class _CircuitBreaker:
     """Per-provider circuit breaker state."""
 
     provider: str
-    failure_threshold: int = 5
-    recovery_timeout: float = 60.0
-    success_threshold: int = 2
-    max_retries: int = 2
+    failure_threshold: int = 10
+    recovery_timeout: float = 30.0
+    success_threshold: int = 3
+    max_retries: int = 3
     base_backoff: float = 1.0
 
     # Internal state
@@ -210,9 +210,9 @@ _registry_lock = asyncio.Lock()
 
 async def _get_circuit(
     provider: str,
-    failure_threshold: int = 5,
-    recovery_timeout: float = 60.0,
-    success_threshold: int = 2,
+    failure_threshold: int = 10,
+    recovery_timeout: float = 30.0,
+    success_threshold: int = 3,
 ) -> _CircuitBreaker:
     """Get or create a circuit breaker for the given provider."""
     if provider not in _circuits:
@@ -240,9 +240,9 @@ def _get_circuit_sync(provider: str) -> _CircuitBreaker | None:
 
 def circuit_protected(
     provider: str,
-    failure_threshold: int = 5,
-    recovery_timeout: float = 60.0,
-    success_threshold: int = 2,
+    failure_threshold: int = 10,
+    recovery_timeout: float = 30.0,
+    success_threshold: int = 3,
 ) -> Callable:
     """
     Decorator that wraps an async function with circuit breaker protection.

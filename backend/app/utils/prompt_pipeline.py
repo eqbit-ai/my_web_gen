@@ -98,7 +98,7 @@ RULES:
 - Write in directive style ("The website should...", "Include a section for...")
 - Do NOT generate HTML, CSS, or JSON — just the text brief
 - Do NOT use generic phrases: "cutting-edge", "world-class", "innovative", "seamless"
-- If multipage, suggest 4-6 pages MAX
+- If multipage, suggest 4-5 pages MAX (Home + 3-4 subpages). NEVER exceed 5 pages.
 
 YOUR BRIEF MUST INCLUDE:
 1. **Aesthetic direction**: Name the specific design style (from list above or your own bold choice)
@@ -523,7 +523,7 @@ MULTI-PAGE MODE:
 The user has requested a multi-page website. Instead of a flat "sections" array, output a "pages" array.
 
 RULES FOR MULTI-PAGE:
-- Maximum 8 pages (Home + up to 7 subpages)
+- Maximum 5 pages (Home + up to 4 subpages). NEVER create more than 5 pages.
 - Each page has: slug, title, sections[]
 - Navbar and footer are SHARED across all pages — define them ONCE in "shared_sections"
 - Navbar links should use real page hrefs: "/" for home, "/about.html" for about, "/services.html" for services, etc. Always use .html extension.
@@ -572,9 +572,13 @@ COMMON PAGE COMBINATIONS (pick what fits the business — use as many pages as t
 - Sports Club: Home, Team, Fixtures, News, Membership, Contact
 - School/Academy: Home, Programs, Faculty, Admissions, Events, Contact
 
-Use 4-8 pages depending on the scope of the user's request. More complex businesses need more pages.
+Use 4-5 pages depending on the scope of the user's request. Keep it focused — 5 pages max.
 
-Each subpage MUST start with a hero variant (hero_center or hero_full_image work best for subpages) followed by relevant content sections.
+Each subpage MUST start with a VISUALLY STRIKING hero section. Use hero_full_image or hero_center with a background image. The hero must have:
+- A full-width background image (via image_query) or animated gradient — NEVER just text on a plain dark/empty background
+- Minimum visual height equivalent to 60vh
+- Clear headline, subtitle, and CTA button
+- An overlay for readability if using a background image
 
 CRITICAL — IMAGES ON EVERY PAGE:
 - EVERY page's hero section MUST include "image_query" with specific, descriptive keywords relevant to that page's content
@@ -883,7 +887,18 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
     )
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
 
-    return base_prompt + nav_context
+    # Enforce strong hero sections on every page
+    hero_rules = """
+SUBPAGE HERO RULES (CRITICAL):
+- EVERY page MUST start with a visually striking hero section immediately after the navbar.
+- The hero MUST have a full-width background image (from Unsplash) or a bold gradient background — NEVER just text on a plain dark background.
+- Use hero patterns like: hero-bg-cover with overlay, hero-animated-bg with gradient, or a split hero with a large image.
+- The hero must have a clear heading, subtitle, and at least one CTA button.
+- Minimum hero height: 60vh on desktop.
+- ALL CSS for this page must be in the SINGLE <style> block — include navbar styles, hero styles, section styles, footer styles — everything needed to render this page standalone.
+"""
+
+    return base_prompt + nav_context + hero_rules
 
 
 def is_multipage_request(prompt: str) -> bool:
@@ -908,7 +923,14 @@ def is_multipage_request(prompt: str) -> bool:
         "home page and",
         "homepage and",
         "pages for",
+        "with pages",
+        "pages total",
+        "pages:",
     ]
+    # Also check for "N pages" patterns like "5 pages", "4-page"
+    import re
+    if re.search(r'\b\d+[\s-]*pages?\b', prompt_lower):
+        return True
     return any(signal in prompt_lower for signal in multipage_signals)
 
 
@@ -943,38 +965,79 @@ _PAGE_TYPES = {
 }
 
 
-def detect_add_page_request(prompt: str) -> dict | None:
-    """Detect if the user wants to add a new page (not a section).
+def _resolve_page_name(raw: str) -> dict | None:
+    """Resolve a raw page name to {slug, title}, or None if invalid."""
+    raw = re.sub(r"^(a|an|the|new|another)\s+", "", raw).strip()
+    if not raw or len(raw) > 40:
+        return None
+    if raw in _PAGE_TYPES:
+        slug = _PAGE_TYPES[raw]
+        return {"slug": slug, "title": slug.replace("-", " ").title()}
+    slug = re.sub(r"[^a-z0-9]+", "-", raw).strip("-")
+    if slug and len(slug) < 30:
+        return {"slug": slug, "title": raw.title()}
+    return None
 
-    Returns {"slug": "services", "title": "Services"} or None.
-    Only matches explicit "add/create … page" patterns to avoid
-    false positives with section edits.
+
+def detect_add_page_request(prompt: str) -> list[dict] | None:
+    """Detect if the user wants to add new page(s).
+
+    Returns a list of {"slug": "...", "title": "..."} dicts, or None.
+    Handles single and multiple page requests:
+      - "add a services page"
+      - "add trainers and classes pages"
+      - "add 2 new pages trainers and classes"
+      - "create pages: about, contact, pricing"
     """
     p = prompt.lower().strip()
 
-    # Patterns: "add a services page", "create about page", "add new pricing page"
-    add_page_patterns = [
-        r"\b(?:add|create|make|build|generate|include)\b.*?\b(\w[\w\s]*?)\s+page\b",
-    ]
+    # Must contain an add-verb
+    if not re.search(r"\b(?:add|create|make|build|generate|include)\b", p):
+        return None
+    # Must contain "page" or "pages"
+    if not re.search(r"\bpages?\b", p):
+        return None
 
-    for pattern in add_page_patterns:
-        m = re.search(pattern, p)
-        if m:
-            raw = m.group(1).strip()
-            # Strip filler words
-            raw = re.sub(r"^(a|an|the|new|another)\s+", "", raw).strip()
-            # Look up in known page types
-            if raw in _PAGE_TYPES:
-                slug = _PAGE_TYPES[raw]
-                title = slug.replace("-", " ").title()
-                return {"slug": slug, "title": title}
-            # Accept unknown types too — slugify them
-            if raw and len(raw) < 30:
-                slug = re.sub(r"[^a-z0-9]+", "-", raw).strip("-")
-                if slug:
-                    title = raw.title()
-                    return {"slug": slug, "title": title}
-    return None
+    results = []
+
+    # ── Pattern 1: "add X and Y pages" / "add X, Y, and Z pages"
+    # (page names BEFORE "pages")
+    m = re.search(
+        r"\b(?:add|create|make|build|generate|include)\b.*?\b(\d+\s+(?:new\s+)?)?pages?\s*[:\-]?\s*([\w\s,&]+)",
+        p,
+    )
+    if m:
+        names_str = m.group(2).strip()
+        # Split by comma, "and", "&"
+        names = re.split(r"\s*(?:,|&|\band\b)\s*", names_str)
+        for name in names:
+            name = name.strip()
+            if name and name not in ("page", "pages", "new", "for", "to", "the", "my", "website"):
+                resolved = _resolve_page_name(name)
+                if resolved:
+                    results.append(resolved)
+        if results:
+            return results
+
+    # ── Pattern 2: "add X page" / "add X and Y page(s)"
+    # (names between verb and "page(s)")
+    m = re.search(
+        r"\b(?:add|create|make|build|generate|include)\b\s+(?:a\s+|an\s+|new\s+|the\s+|\d+\s+)*(.+?)\s+pages?\b",
+        p,
+    )
+    if m:
+        names_str = m.group(1).strip()
+        names = re.split(r"\s*(?:,|&|\band\b)\s*", names_str)
+        for name in names:
+            name = re.sub(r"^(a|an|the|new|another|\d+)\s+", "", name).strip()
+            if name and name not in ("page", "pages", "new", "for", "to", "the", "my"):
+                resolved = _resolve_page_name(name)
+                if resolved:
+                    results.append(resolved)
+        if results:
+            return results
+
+    return None if not results else results
 
 
 # ── Prompt for generating a new page from reference ──────────────────
@@ -1265,6 +1328,8 @@ SECTION SIZE CONSTRAINTS (CRITICAL):
 - Hero sections: max height 80vh. NEVER make a hero taller than viewport.
 - All other sections: keep the same visual size as the original.
 - Do NOT add excessive padding/margins that make the section abnormally tall.
+
+{animation_ref}
 
 IMAGE HANDLING FOR EDITS:
 - "Add background image" = CSS background-image ONLY. Do NOT also add a foreground <img> tag.

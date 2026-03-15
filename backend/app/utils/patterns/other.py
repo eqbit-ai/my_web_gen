@@ -212,6 +212,220 @@ PATTERNS = {
     </div>
   </div>
   NOTE: 3-5 badges. Pick industry-relevant certifications: GDPR, HIPAA, SOC2, ISO, PCI-DSS, DED Licensed, TDRA Approved, etc. Compact section — use minimal vertical padding.""",
+    "pricing_toggle": """pricing_toggle pattern:
+  <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
+  <!-- Monthly/Annual toggle -->
+  <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2.5rem;">
+    <span style="font-weight: 600; font-size: 0.9rem;" class="pricing-label active" data-period="monthly">Monthly</span>
+    <label style="position: relative; display: inline-block; width: 52px; height: 28px; cursor: pointer;">
+      <input type="checkbox" class="pricing-toggle" style="opacity: 0; width: 0; height: 0;">
+      <span style="position: absolute; inset: 0; background: var(--primary); border-radius: 28px; transition: 0.3s;"></span>
+      <span class="toggle-knob" style="position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: 0.3s;"></span>
+    </label>
+    <span style="font-weight: 600; font-size: 0.9rem;" class="pricing-label" data-period="annual">Annual <span style="background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary); padding: 0.15rem 0.5rem; border-radius: 50px; font-size: 0.7rem; margin-left: 0.25rem;">Save 20%</span></span>
+  </div>
+  <div class="container grid-3" style="align-items: start;">
+    <div class="pricing-card card" data-aos="zoom-in" data-aos-delay="100">
+      <h3 class="card-title">Starter</h3>
+      <div class="plan-price-wrap">
+        <span class="plan-price" data-monthly="29" data-annual="23">$29</span><span class="plan-period">/mo</span>
+      </div>
+      <ul class="plan-features">
+        <li class="plan-feature"><i class="fa-solid fa-check check-icon"></i> Feature</li>
+      </ul>
+      <a href="#" class="btn-secondary" style="display: block; width: 100%; text-align: center;">Get Started</a>
+    </div>
+    <div class="pricing-card featured card" style="border: 2px solid var(--primary);">
+      <div class="popular-badge">Most Popular</div>
+      <h3 class="card-title">Professional</h3>
+      <div class="plan-price-wrap">
+        <span class="plan-price" data-monthly="79" data-annual="63">$79</span><span class="plan-period">/mo</span>
+      </div>
+      <ul class="plan-features">
+        <li class="plan-feature"><i class="fa-solid fa-check check-icon"></i> Feature</li>
+      </ul>
+      <a href="#" class="btn-primary" style="display: block; width: 100%; text-align: center;">Get Started</a>
+    </div>
+    <div class="pricing-card card" data-aos="zoom-in" data-aos-delay="300">
+      <h3 class="card-title">Enterprise</h3>
+      <div class="plan-price-wrap">
+        <span class="plan-price" data-monthly="199" data-annual="159">$199</span><span class="plan-period">/mo</span>
+      </div>
+      <ul class="plan-features">
+        <li class="plan-feature"><i class="fa-solid fa-check check-icon"></i> Feature</li>
+      </ul>
+      <a href="#" class="btn-secondary" style="display: block; width: 100%; text-align: center;">Contact Sales</a>
+    </div>
+  </div>
+  NOTE: Toggle switches between monthly/annual prices. JS: on toggle change, update .plan-price text from data-monthly/data-annual attributes. Move .toggle-knob left/right. Switch active class on .pricing-label elements. The "Save 20%" badge on Annual is always visible.""",
+
+    "pricing_comparison": """pricing_comparison pattern:
+  <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
+  <div class="container" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: var(--radius); overflow: hidden;">
+      <thead>
+        <tr style="background: var(--bg-surface);">
+          <th style="padding: 1.25rem; text-align: left; font-weight: 600; width: 30%;">Features</th>
+          <th style="padding: 1.25rem; text-align: center; font-weight: 600;">Basic<br><span style="font-size: 1.5rem; color: var(--primary);">$29</span><span style="font-size: 0.8rem; color: var(--text-muted);">/mo</span></th>
+          <th style="padding: 1.25rem; text-align: center; font-weight: 600; background: color-mix(in srgb, var(--primary) 8%, var(--bg-surface)); border-top: 3px solid var(--primary);">Pro<br><span style="font-size: 1.5rem; color: var(--primary);">$79</span><span style="font-size: 0.8rem; color: var(--text-muted);">/mo</span></th>
+          <th style="padding: 1.25rem; text-align: center; font-weight: 600;">Enterprise<br><span style="font-size: 1.5rem; color: var(--primary);">$199</span><span style="font-size: 0.8rem; color: var(--text-muted);">/mo</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 1rem 1.25rem;">Feature Name</td>
+          <td style="padding: 1rem; text-align: center;"><i class="fa-solid fa-check" style="color: var(--primary);"></i></td>
+          <td style="padding: 1rem; text-align: center; background: color-mix(in srgb, var(--primary) 4%, transparent);"><i class="fa-solid fa-check" style="color: var(--primary);"></i></td>
+          <td style="padding: 1rem; text-align: center;"><i class="fa-solid fa-check" style="color: var(--primary);"></i></td>
+        </tr>
+        <!-- Repeat 6-8 feature rows -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <td></td>
+          <td style="padding: 1.25rem; text-align: center;"><a href="#" class="btn-secondary" style="font-size: 0.875rem;">Choose Basic</a></td>
+          <td style="padding: 1.25rem; text-align: center; background: color-mix(in srgb, var(--primary) 4%, transparent);"><a href="#" class="btn-primary" style="font-size: 0.875rem;">Choose Pro</a></td>
+          <td style="padding: 1.25rem; text-align: center;"><a href="#" class="btn-secondary" style="font-size: 0.875rem;">Contact Sales</a></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  NOTE: Full comparison table with highlighted "Pro" column. Use fa-check for included, fa-xmark for excluded. Some cells can have text values. The Pro column has a subtle tinted background to stand out.""",
+
+    "contact_map_split": """contact_map_split pattern:
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <span class="section-label"><span class="label-line"></span>CONTACT US<span class="label-line"></span></span>
+      <h2 class="section-title">Get In Touch</h2>
+      <p class="section-subtitle">We'd love to hear from you.</p>
+    </div>
+    <div class="grid-2" style="gap: 0; border-radius: var(--radius); overflow: hidden;">
+      <!-- Map/Image side -->
+      <div style="min-height: 450px; position: relative;">
+        <img src="{{IMG:office building exterior modern}}" alt="Our office" class="img-cover" style="position: absolute; inset: 0;">
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem; background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+          <p style="color: white; font-weight: 600; margin: 0;"><i class="fa-solid fa-location-dot" style="margin-right: 0.5rem;"></i>123 Business St, Dubai, UAE</p>
+        </div>
+      </div>
+      <!-- Form side -->
+      <div style="background: var(--bg-surface); padding: 2.5rem;">
+        <h3 style="margin-bottom: 1.5rem;">Send Us a Message</h3>
+        <form class="contact-form">
+          <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+            <input type="text" placeholder="First Name" required class="form-input">
+            <input type="text" placeholder="Last Name" required class="form-input">
+          </div>
+          <input type="email" placeholder="Email Address" required class="form-input" style="margin-bottom: 1rem;">
+          <input type="tel" placeholder="Phone Number" class="form-input" style="margin-bottom: 1rem;">
+          <textarea placeholder="Your Message" rows="4" required class="form-input form-textarea" style="margin-bottom: 1.5rem;"></textarea>
+          <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  NOTE: Left side is a full-bleed image (office/map) with address overlay. Right side is a detailed contact form. No gap between halves — they merge into one card. On mobile: image stacks on top of form.""",
+
+    "contact_minimal": """contact_minimal pattern:
+  <div class="container-narrow" style="text-align: center;">
+    <span class="section-label"><span class="label-line"></span>CONTACT<span class="label-line"></span></span>
+    <h2 class="section-title">Let's Work Together</h2>
+    <p class="section-subtitle" style="margin-bottom: 2.5rem;">Drop us a line and we'll get back to you within 24 hours.</p>
+    <form class="contact-form" style="max-width: 500px; margin: 0 auto;">
+      <input type="text" placeholder="Your Name" required class="form-input" style="margin-bottom: 1rem;">
+      <input type="email" placeholder="Email Address" required class="form-input" style="margin-bottom: 1rem;">
+      <textarea placeholder="Tell us about your project..." rows="5" required class="form-input form-textarea" style="margin-bottom: 1.5rem;"></textarea>
+      <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
+    </form>
+    <div style="display: flex; justify-content: center; gap: 2.5rem; margin-top: 3rem; flex-wrap: wrap;">
+      <a href="mailto:hello@company.com" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);"><i class="fa-solid fa-envelope" style="color: var(--primary);"></i> hello@company.com</a>
+      <a href="tel:+971000000000" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);"><i class="fa-solid fa-phone" style="color: var(--primary);"></i> +971 00 000 0000</a>
+      <span style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> Dubai, UAE</span>
+    </div>
+  </div>
+  NOTE: Minimal centered contact section. Form is narrow and clean. Contact details appear below as icon links. Perfect for modern/minimal sites.""",
+
+    "marquee_text": """marquee_text pattern:
+  <!-- Full-width scrolling text band — no container needed -->
+  <div style="overflow: hidden; padding: 1.5rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="marquee-track" style="display: flex; gap: 3rem; align-items: center; animation: marqueeLeft 20s linear infinite; white-space: nowrap;">
+      <span style="font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">KEYWORD ONE</span>
+      <span style="color: var(--primary); font-size: 1.5rem;">&bull;</span>
+      <span style="font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">KEYWORD TWO</span>
+      <span style="color: var(--primary); font-size: 1.5rem;">&bull;</span>
+      <span style="font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">KEYWORD THREE</span>
+      <span style="color: var(--primary); font-size: 1.5rem;">&bull;</span>
+      <span style="font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">KEYWORD FOUR</span>
+      <span style="color: var(--primary); font-size: 1.5rem;">&bull;</span>
+      <!-- DUPLICATE all items above for seamless loop -->
+    </div>
+  </div>
+  NOTE: Infinite scrolling text marquee. Use brand keywords, services, or taglines as the text items. Must duplicate all items for seamless loop. Add @keyframes marqueeLeft in style block. Use between major sections as a visual divider. Very trendy — seen on Framer, Linear, Vercel sites.""",
+
+    "before_after": """before_after pattern:
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <span class="section-label"><span class="label-line"></span>RESULTS<span class="label-line"></span></span>
+      <h2 class="section-title">Before & After</h2>
+      <p class="section-subtitle">See the transformation.</p>
+    </div>
+    <div class="grid-2" style="gap: 2rem;">
+      <!-- Before -->
+      <div class="card fade-up" style="overflow: hidden; padding: 0;">
+        <div style="padding: 0.75rem 1.25rem; background: color-mix(in srgb, var(--primary) 8%, var(--bg-surface)); display: flex; align-items: center; gap: 0.5rem;">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted);"></span>
+          <span style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Before</span>
+        </div>
+        <div class="img-wrapper" style="aspect-ratio: 16/10;">
+          <img src="{{IMG:before renovation old worn}}" alt="Before" class="img-cover">
+        </div>
+      </div>
+      <!-- After -->
+      <div class="card fade-up" style="overflow: hidden; padding: 0;">
+        <div style="padding: 0.75rem 1.25rem; background: color-mix(in srgb, var(--primary) 8%, var(--bg-surface)); display: flex; align-items: center; gap: 0.5rem;">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary);"></span>
+          <span style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">After</span>
+        </div>
+        <div class="img-wrapper" style="aspect-ratio: 16/10;">
+          <img src="{{IMG:after renovation modern beautiful}}" alt="After" class="img-cover">
+        </div>
+      </div>
+    </div>
+  </div>
+  NOTE: Side-by-side before/after comparison. Each card has a labeled header with a status dot. Can be repeated for multiple before/after pairs. Great for renovation, design, fitness, consulting, etc.""",
+
+    "vertical_tabs": """vertical_tabs pattern:
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <span class="section-label"><span class="label-line"></span>SERVICES<span class="label-line"></span></span>
+      <h2 class="section-title">What We Offer</h2>
+    </div>
+    <div class="grid-2" style="gap: 0; min-height: 450px;">
+      <!-- Tab navigation (left) -->
+      <div style="border-right: 1px solid var(--border);">
+        <button class="vtab-btn active" data-vtab="vtab-1" style="display: flex; align-items: center; gap: 1rem; width: 100%; padding: 1.25rem 1.5rem; border: none; background: none; cursor: pointer; text-align: left; border-left: 3px solid transparent; transition: all 0.3s;">
+          <div class="icon-box" style="background: color-mix(in srgb, var(--primary) 12%, transparent); flex-shrink: 0;"><i class="fa-solid fa-xxx"></i></div>
+          <div>
+            <h4 style="margin: 0; font-size: 1rem;">Tab Title</h4>
+            <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted);">Brief one-liner</p>
+          </div>
+        </button>
+        <!-- Repeat 3-5 tab buttons -->
+      </div>
+      <!-- Tab content (right) -->
+      <div style="padding: 2rem;">
+        <div id="vtab-1" class="vtab-content active">
+          <h3 style="margin-bottom: 1rem;">Service Title</h3>
+          <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Detailed description of this service, including benefits, process, and outcomes.</p>
+          <div class="img-wrapper" style="border-radius: var(--radius); overflow: hidden; aspect-ratio: 16/9;">
+            <img src="{{IMG:service specific visual}}" alt="Service" class="img-cover">
+          </div>
+        </div>
+        <!-- Repeat content panels (hidden by default except active) -->
+      </div>
+    </div>
+  </div>
+  NOTE: Left side has clickable tabs, right side shows corresponding content. JS: clicking tab sets active class on button (border-left: 3px solid var(--primary)) and shows matching content panel. Only one panel visible at a time. On mobile: tabs stack on top of content.""",
+
     "contact_split": """contact_split pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-2">

@@ -9,21 +9,21 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+asyncpg://meydan:meydan123@postgres:5432/meydan_db
-      - WORKERS=4
+      - WORKERS=6
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
     deploy:
-      replicas: 2
+      replicas: 3
       resources:
         limits:
-          memory: 1G
-          cpus: "1.0"
+          memory: 2G
+          cpus: "1.5"
         reservations:
-          memory: 256M
-          cpus: "0.25"
+          memory: 512M
+          cpus: "0.5"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 15s
@@ -41,20 +41,21 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+asyncpg://meydan:meydan123@postgres:5432/meydan_db
+      - WORKER_CONCURRENCY=3
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
     deploy:
-      replicas: 4
+      replicas: 6
       resources:
         limits:
-          memory: 768M
-          cpus: "0.75"
+          memory: 1536M
+          cpus: "1.0"
         reservations:
-          memory: 128M
-          cpus: "0.1"
+          memory: 256M
+          cpus: "0.25"
     restart: unless-stopped
 
   # ── React Frontend ─────────────────────────────────────────────────
@@ -75,7 +76,7 @@ services:
   # ── Redis ──────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly yes
     ports:
       - "6379:6379"
     volumes:
@@ -88,7 +89,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 300M
+          memory: 600M
     restart: unless-stopped
 
   # ── PostgreSQL ─────────────────────────────────────────────────────
@@ -101,7 +102,7 @@ services:
       POSTGRES_DB: meydan_db
     command: >
       postgres
-      -c max_connections=200
+      -c max_connections=500
       -c shared_buffers=256MB
       -c effective_cache_size=512MB
       -c work_mem=4MB

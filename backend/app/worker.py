@@ -138,40 +138,72 @@ async def process_generate_job(job_id: str, payload: dict):
     return result
 
 
+WORKER_CONCURRENCY = int(os.getenv("WORKER_CONCURRENCY", "1"))
+
+
+async def _handle_job(job_id: str, semaphore: asyncio.Semaphore):
+    """Process a single job within the concurrency semaphore."""
+    async with semaphore:
+        job = await get_job(job_id)
+        if not job:
+            logger.warning("job_not_found", extra={"job_id": job_id})
+            return
+        if job["status"] != "pending":
+            logger.info("job_skipped", extra={"job_id": job_id, "status": job["status"]})
+            return
+
+        payload = job["payload"] if isinstance(job["payload"], dict) else json.loads(job["payload"])
+
+        try:
+            await process_generate_job(job_id, payload)
+            logger.info("job_completed", extra={"job_id": job_id})
+        except Exception as e:
+            logger.error("job_failed", extra={"job_id": job_id, "error": str(e)}, exc_info=True)
+            await update_job(job_id, status="failed", progress=0, progress_message="Failed", error=str(e))
+
+
 async def worker_loop():
-    """Main worker loop — blocks waiting on the Redis queue."""
+    """Main worker loop — processes up to WORKER_CONCURRENCY jobs in parallel."""
     r = await get_redis()
-    logger.info("worker_started", extra={"pipeline": "Plan → HTML+Tailwind → JS", "queue": "queue:generate"})
+    concurrency = max(1, WORKER_CONCURRENCY)
+    semaphore = asyncio.Semaphore(concurrency)
+    active_tasks: set[asyncio.Task] = set()
+
+    logger.info("worker_started", extra={
+        "pipeline": "Plan → HTML+Tailwind → JS",
+        "queue": "queue:generate",
+        "concurrency": concurrency,
+    })
 
     while True:
         try:
+            # Clean up finished tasks
+            done = {t for t in active_tasks if t.done()}
+            for t in done:
+                if t.exception():
+                    logger.error("task_exception", extra={"error": str(t.exception())})
+            active_tasks -= done
+
+            # Wait for a slot before pulling next job
+            if len(active_tasks) >= concurrency:
+                await asyncio.sleep(0.5)
+                continue
+
             item = await r.brpop("queue:generate", timeout=5)
             if item is None:
                 continue
 
             _, job_id = item
-            logger.info("job_received", extra={"job_id": job_id})
+            logger.info("job_received", extra={"job_id": job_id, "active_jobs": len(active_tasks)})
 
-            job = await get_job(job_id)
-            if not job:
-                logger.warning("job_not_found", extra={"job_id": job_id})
-                continue
-
-            if job["status"] != "pending":
-                logger.info("job_skipped", extra={"job_id": job_id, "status": job["status"]})
-                continue
-
-            payload = job["payload"] if isinstance(job["payload"], dict) else json.loads(job["payload"])
-
-            try:
-                await process_generate_job(job_id, payload)
-                logger.info("job_completed", extra={"job_id": job_id})
-            except Exception as e:
-                logger.error("job_failed", extra={"job_id": job_id, "error": str(e)}, exc_info=True)
-                await update_job(job_id, status="failed", progress=0, progress_message="Failed", error=str(e))
+            task = asyncio.create_task(_handle_job(job_id, semaphore))
+            active_tasks.add(task)
 
         except asyncio.CancelledError:
-            logger.info("worker_shutdown")
+            logger.info("worker_shutdown — waiting for %d active jobs", len(active_tasks))
+            for t in active_tasks:
+                t.cancel()
+            await asyncio.gather(*active_tasks, return_exceptions=True)
             break
         except Exception as e:
             logger.error("worker_loop_error", extra={"error": str(e)})

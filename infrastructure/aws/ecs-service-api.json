@@ -2,7 +2,7 @@
   "serviceName": "meydan-api",
   "cluster": "meydan-production",
   "taskDefinition": "meydan-api",
-  "desiredCount": 2,
+  "desiredCount": 4,
   "launchType": "FARGATE",
   "platformVersion": "LATEST",
 
@@ -40,8 +40,8 @@
 
   "_comment_autoscaling": "Auto-scaling configured separately via AWS Application Auto Scaling",
   "_autoscaling": {
-    "minCapacity": 2,
-    "maxCapacity": 10,
+    "minCapacity": 4,
+    "maxCapacity": 20,
     "policies": [
       {
         "policyName": "cpu-target-tracking",

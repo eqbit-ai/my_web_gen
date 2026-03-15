@@ -37,6 +37,16 @@ RULES:
 - Include ALL sections from the plan
 - Do NOT include any JavaScript
 - Do NOT include any explanation, just the html code block
+- CRITICAL: Use ONLY the CSS classes defined in the style block below and in the pattern templates. Do NOT invent extra decorative classes (no parallax-bg, gradient-mesh, concrete-texture, glass-card, neon-glow, magnetic-btn, etc.). If a class is not in the provided CSS framework or pattern template, do NOT use it.
+- HERO TEXT VISIBILITY: The hero headline MUST be clearly readable against its background. CRITICAL RULES:
+  1. Do NOT use gradient-text, -webkit-text-fill-color: transparent, or background-clip: text on hero headings — these make text invisible.
+  2. When using a background image hero (.hero-bg-cover), ALL text MUST be white (#fff or white) and the overlay MUST have minimum 0.5 opacity. Use the provided .hero-overlay-left or .hero-overlay-center classes — do NOT create custom overlays with lower opacity.
+  3. Do NOT override .hero-overlay opacity in your <style> block. The provided overlay classes are already optimized.
+  4. NEVER use dark text (var(--text) or dark colors) on a hero with a background image — it will be invisible if the image is dark.
+- NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
+- HERO NAVBAR CLEARANCE: The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. Use the .hero-section class which has padding-top: 7rem (8rem on desktop). For full-bleed heroes with background images, use .hero-bg-cover which includes padding-top: 80px. NEVER let hero content start at the very top of the viewport.
+- HERO IMAGES: EVERY page's hero section MUST include a high-quality image — either as a background image (using .hero-bg-cover with background-image) or as a side image in a split layout (using .hero-split-grid). No hero section should be text-only without any imagery. Use relevant Unsplash/Pexels images.
+- Follow pattern templates EXACTLY — use the same class names, same HTML structure, same nesting. Do not rename or add wrapper classes.
 
 STYLE BLOCK — output this FIRST before any HTML elements.
 The <style> block must contain ALL CSS for the entire page. This is a COMPLETE website — every element must be styled.
@@ -152,6 +162,7 @@ section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--pri
 
 /* ═══ Navbar ═══ */
 .navbar {{ position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(12px); transition: var(--transition); padding: 1rem 0; }}
+body {{ padding-top: 80px; }}
 .navbar-light {{ background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.06); }}
 .navbar-dark {{ background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.08); }}
 nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }}
@@ -174,27 +185,32 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 }}
 
 /* ═══ Hero ═══ */
-.hero-section {{ padding: 4rem 0; position: relative; overflow: hidden; }}
-@media (min-width: 769px) {{ .hero-section {{ padding: 6rem 0; }} }}
-.hero-section.hero-edge {{ margin-top: -80px; padding: 0; }}
-.hero-heading {{ font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; }}
+.hero-section {{ padding: 7rem 0 4rem; position: relative; overflow: hidden; min-height: 85vh; display: flex; align-items: center; }}
+@media (min-width: 769px) {{ .hero-section {{ padding: 8rem 0 4rem; }} }}
+.hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0; min-height: 100vh; }}
+.hero-heading {{ font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; color: var(--text); }}
 .hero-subtitle {{ font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
 .trust-line {{ font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }}
-.hero-split-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }}
-@media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; }} }}
+.hero-split-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; min-height: 70vh; }}
+.hero-split-asymmetric {{ grid-template-columns: 55% 45%; }}
+@media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; min-height: auto; }} }}
 .hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; }}
-.hero-bg-cover {{ position: relative; min-height: 85vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; padding-top: 80px; }}
-.hero-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; }}
-.hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.4), transparent); }}
-.hero-overlay-center {{ background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.4), rgba(0,0,0,0.6)); }}
-.hero-animated-bg {{ min-height: 85vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }}
+.hero-bg-cover {{ position: relative; min-height: 100vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; padding-top: 80px; }}
+.hero-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }}
+.hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.5), rgba(0,0,0,0.2)); }}
+.hero-overlay-center {{ background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.5), rgba(0,0,0,0.7)); }}
+.hero-overlay-modern {{ background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.4)); }}
+.hero-bg-cover > *:not(.hero-overlay) {{ position: relative; z-index: 2; }}
+.text-light {{ color: #fff !important; }}
+.hero-animated-bg {{ min-height: 100vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }}
 .text-light {{ color: white; }}
 .text-light .hero-heading {{ color: white; }}
 .text-light .hero-subtitle {{ color: rgba(255,255,255,0.85); }}
 .text-light .trust-line {{ color: rgba(255,255,255,0.7); }}
 .text-light .section-label {{ color: rgba(255,255,255,0.8); }}
 .text-light .label-line {{ background: rgba(255,255,255,0.6); }}
-.bg-number {{ position: absolute; right: 5%; top: 10%; font-size: clamp(120px, 22vw, 320px); font-weight: 700; opacity: 0.04; pointer-events: none; user-select: none; line-height: 1; }}
+.bg-number {{ display: none !important; }}
+.hero-section > .container, .hero-section > .container-wide, .hero-section > .container-narrow {{ position: relative; z-index: 1; }}
 .section-label {{ display: inline-flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.25em; font-weight: 600; color: var(--accent); margin-bottom: 1.5rem; }}
 .label-line {{ width: 2.5rem; height: 2px; background: var(--accent); display: inline-block; }}
 .floating-card {{ position: absolute; bottom: -1.25rem; left: -1.25rem; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-hover); display: flex; align-items: center; gap: 0.75rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }}
@@ -362,9 +378,9 @@ footer {{ margin-top: 4rem; }}
 {style_additions}
 .typed-cursor {{ color: var(--primary); font-weight: 100; }}
 .search-dropdown.active {{ display: block; }}
-#back-to-top {{ position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 50; }}
+#back-to-top {{ position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 50; }}
 #back-to-top.visible {{ opacity: 1; pointer-events: auto; }}
-.whatsapp-float {{ animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }}
+.whatsapp-float {{ position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50; animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }}
 [data-splitting] .char {{ display: inline-block; opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }}
 [data-splitting].visible .char {{ opacity: 1; transform: translateY(0); }}
 @media (max-width: 768px) {{ .steps-container::before {{ left: 24px; }} .timeline-container::before {{ left: 98px; }} }}
@@ -408,11 +424,12 @@ TYPED.JS HERO EFFECT — adds a typewriter animation to the hero headline. Use f
 HERO DEPTH ELEMENTS — add at least 2 of these to every hero section for visual richness:
   1. Giant faded decorative text: <span class="bg-number" style="font-family: var(--font-heading)">01</span>
   2. Section label above headline: <span class="section-label"><span class="label-line"></span>LABEL TEXT</span>
-  3. Staggered entrance: add class="hero-stagger" on headline, subheadline, and CTA wrapper
-  4. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom
+  3. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom
+  Do NOT add custom animation classes (no hero-stagger, no hero-anim, no fade-in-up). AOS handles animations.
 
 HERO HEADLINE SIZE — hero-heading class gives clamp(2.5rem, 6vw, 4.5rem). For display fonts (Oswald, Bebas Neue), add style="font-size: clamp(3rem, 7vw, 5.5rem)" inline.
   Use line-height: 1.05 on hero headlines (tight = more impact).
+  NEVER use gradient-text, -webkit-text-fill-color: transparent, or background-clip: text on hero headings.
 
 SECTION PATTERNS (use ONLY these — match each section's "pattern" field exactly):
 
@@ -450,10 +467,10 @@ ADDITIONAL HTML RULES:
 
 NAVBAR SEARCH — add a search toggle button in nav-links with a dropdown input. Class: search-toggle, search-dropdown.
 
-WHATSAPP FLOAT — ALWAYS add: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
+WHATSAPP FLOAT — ALWAYS add on the RIGHT side: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
 
-BACK-TO-TOP — add ABOVE the WhatsApp button (NOT beside it): <button id="back-to-top" style="position:fixed;bottom:5.5rem;right:1.5rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
-IMPORTANT: Back-to-top MUST be at bottom:5.5rem;right:1.5rem (stacked ABOVE WhatsApp). Do NOT place them side-by-side or overlapping.
+BACK-TO-TOP — add on the LEFT side (opposite to WhatsApp): <button id="back-to-top" style="position:fixed;bottom:1.5rem;left:1.5rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
+IMPORTANT: WhatsApp button goes bottom-RIGHT, Back-to-top goes bottom-LEFT. They must be on OPPOSITE sides of the screen.
 
 IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add loading="lazy" (except hero images — hero loads eagerly)

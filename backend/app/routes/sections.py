@@ -525,6 +525,8 @@ CURRENT SECTION HTML:
 
 IMPORTANT: Output ONLY the section HTML with added data-detail-* attributes in a ```html code block. Do NOT restructure or redesign the section. Do NOT add <script> or <style> tags. ONLY add data attributes."""
     else:
+        from app.utils.animations import get_animation_prompt_compact
+        _anim_ref = get_animation_prompt_compact()
         system_prompt = f"""You are an expert frontend developer editing a section of a website.
 
 TASK: Apply the user's requested changes to this {section_type} section.
@@ -532,6 +534,8 @@ TASK: Apply the user's requested changes to this {section_type} section.
 - If the user asks to change CONTENT or TEXT → change only the text they mention.
 - If the user asks to "regenerate" or "rewrite" → then write fresh content.
 - DEFAULT: Keep existing content unchanged unless the user explicitly asks to change it.
+
+{_anim_ref}
 
 TOKEN BUDGET: You have limited output tokens. Be CONCISE:
 - For modals/popups: use a SINGLE reusable modal container + JS to populate it dynamically. Do NOT create 6 separate modal HTML blocks.
@@ -1109,6 +1113,7 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
         wa_block = (
             "<!-- WHATSAPP_FLOAT -->\n"
             f'<a href="https://wa.me/{number}" target="_blank" rel="noopener noreferrer" '
+            'class="whatsapp-float" '
             'style="position:fixed;bottom:24px;right:24px;z-index:9999;width:56px;height:56px;'
             "background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;"
             'box-shadow:0 4px 12px rgba(0,0,0,0.15);text-decoration:none;" aria-label="Chat on WhatsApp">'
@@ -1118,13 +1123,36 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
             "</svg></a>\n"
             "<!-- END_WHATSAPP_FLOAT -->"
         )
-        wa_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->", re.DOTALL)
-        if wa_pattern.search(html):
-            html = wa_pattern.sub(wa_block, html)
-        elif "</body>" in html:
-            html = html.replace("</body>", wa_block + "\n</body>")
+        # Remove any AI-generated WhatsApp buttons first (without our markers)
+        # Match <a> tags with wa.me links that are NOT inside our markers
+        ai_wa_pattern = re.compile(
+            r'<a\s[^>]*href=["\']https?://wa\.me/[^"\']*["\'][^>]*>.*?</a>',
+            re.DOTALL | re.IGNORECASE,
+        )
+        # Remove AI-generated WhatsApp buttons (those outside our markers)
+        wa_marker_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->", re.DOTALL)
+        marker_match = wa_marker_pattern.search(html)
+        if marker_match:
+            # Replace existing marked block
+            html = wa_marker_pattern.sub(wa_block, html)
+            # Also remove any AI-generated duplicates outside the block
+            before = html[:html.index("<!-- WHATSAPP_FLOAT -->")]
+            after_end = html.index("<!-- END_WHATSAPP_FLOAT -->") + len("<!-- END_WHATSAPP_FLOAT -->")
+            after = html[after_end:]
+            before = ai_wa_pattern.sub("", before)
+            after = ai_wa_pattern.sub("", after)
+            html = before + html[html.index("<!-- WHATSAPP_FLOAT -->"):after_end] + after
         else:
-            html = html + "\n" + wa_block
+            # Remove any AI-generated WhatsApp buttons, then inject ours
+            html = ai_wa_pattern.sub("", html)
+            if "</body>" in html:
+                html = html.replace("</body>", wa_block + "\n</body>")
+            else:
+                html = html + "\n" + wa_block
+    else:
+        # No WhatsApp number — remove any existing WhatsApp buttons
+        wa_marker_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->\n?", re.DOTALL)
+        html = wa_marker_pattern.sub("", html)
 
     _set_page_html(session, html, req.pageSlug)
     await redis_save_session(req.sessionId, session)

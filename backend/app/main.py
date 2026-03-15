@@ -33,6 +33,8 @@ from app.middleware.security import SecurityHeadersMiddleware
 from app.routes import admin as admin_routes
 from app.routes import auth as auth_routes
 from app.routes import components as component_routes
+from app.routes import deploy as deploy_routes
+from app.routes import dns as dns_routes
 from app.routes import generator as generator_routes
 from app.routes import health, metrics_route
 from app.routes import images as image_routes
@@ -151,6 +153,8 @@ app.include_router(image_routes.router, prefix="/api/images", tags=["Images"])
 app.include_router(component_routes.router, prefix="/api/components", tags=["Components"])
 app.include_router(section_routes.router, prefix="/api/sections", tags=["Sections"])
 app.include_router(job_routes.router, prefix="/api/jobs", tags=["Jobs"])
+app.include_router(deploy_routes.router, prefix="/api/deploy", tags=["Deploy"])
+app.include_router(dns_routes.router, prefix="/api/dns", tags=["DNS"])
 app.include_router(template_routes.router, prefix="/api/templates", tags=["Templates"])
 app.include_router(upload_routes.router, prefix="/api/uploads", tags=["Uploads"])
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])

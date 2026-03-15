@@ -32,6 +32,10 @@ import httpx
 UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY", "")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 
+# Circuit breaker: skip Unsplash after consecutive 403s
+_unsplash_fail_count = 0
+_UNSPLASH_FAIL_THRESHOLD = 3  # After 3 consecutive 403s, skip Unsplash entirely
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # IMAGE CACHE
@@ -416,7 +420,12 @@ async def search_unsplash_ranked(
     niche_key: str = None,
 ) -> str | None:
     """Search Unsplash with multiple query variations, rank results, return best."""
+    global _unsplash_fail_count
     if not UNSPLASH_ACCESS_KEY:
+        return None
+
+    # Circuit breaker: skip if too many consecutive 403s
+    if _unsplash_fail_count >= _UNSPLASH_FAIL_THRESHOLD:
         return None
 
     # Unsplash API orientation param: "landscape", "portrait", or "squarish"
@@ -437,8 +446,14 @@ async def search_unsplash_ranked(
                 timeout=10,
             )
             if resp.status_code == 200:
+                _unsplash_fail_count = 0  # Reset on success
                 results = resp.json().get("results", [])
                 all_photos.extend(results)
+            elif resp.status_code == 403:
+                _unsplash_fail_count += 1
+                if _unsplash_fail_count >= _UNSPLASH_FAIL_THRESHOLD:
+                    print(f"[Images] Unsplash returning 403 — switching to Pexels only", flush=True)
+                    return None
         except Exception:
             continue
 

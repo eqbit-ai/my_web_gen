@@ -2,8 +2,8 @@
   "family": "meydan-api",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "1024",
-  "memory": "2048",
+  "cpu": "2048",
+  "memory": "4096",
   "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-execution-role",
   "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-task-role",
   "containerDefinitions": [
@@ -28,7 +28,7 @@
         },
         {
           "name": "WORKERS",
-          "value": "4"
+          "value": "8"
         }
       ],
       "secrets": [

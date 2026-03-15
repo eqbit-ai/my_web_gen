@@ -6,6 +6,7 @@ Usage:
 """
 
 import multiprocessing
+import os
 
 # ---------------------------------------------------------------------------
 # Server socket
@@ -15,7 +16,8 @@ bind = "0.0.0.0:8000"
 # ---------------------------------------------------------------------------
 # Workers
 # ---------------------------------------------------------------------------
-workers = min(multiprocessing.cpu_count() * 2 + 1, 8)
+_env_workers = int(os.environ.get("WORKERS", 0))
+workers = _env_workers if _env_workers > 0 else min(multiprocessing.cpu_count() * 2 + 1, 12)
 worker_class = "uvicorn.workers.UvicornWorker"
 
 # ---------------------------------------------------------------------------

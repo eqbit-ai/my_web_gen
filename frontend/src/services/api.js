@@ -726,6 +726,220 @@ export const updateContactConfig = async (sessionId, config) => {
     } catch (error) { console.error('API Error:', error); throw error; }
 };
 
+// ── Deploy & Domains ──────────────────────────────────────────────────
+
+export const deleteDeployedSite = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/deploy/${siteId}`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to delete site');
+    return data;
+};
+
+export const listDeployedSites = async () => {
+    const response = await fetch(`${API_BASE_URL}/deploy`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to list sites');
+    return data;
+};
+
+export const connectDomain = async (siteId, domainName) => {
+    const response = await fetch(`${API_BASE_URL}/deploy/${siteId}/connect-domain`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ domain_name: domainName }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to connect domain');
+    return data;
+};
+
+export const getDomainStatus = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/deploy/${siteId}/domain-status`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get domain status');
+    return data;
+};
+
+export const disconnectDomain = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/deploy/${siteId}/disconnect-domain`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to disconnect domain');
+    return data;
+};
+
+export const listDnsRecords = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/dns/${siteId}/records`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to list DNS records');
+    return data;
+};
+
+export const addDnsRecord = async (siteId, record) => {
+    const response = await fetch(`${API_BASE_URL}/dns/${siteId}/records`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify(record),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to add DNS record');
+    return data;
+};
+
+export const deleteDnsRecord = async (siteId, record) => {
+    const response = await fetch(`${API_BASE_URL}/dns/${siteId}/records`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+        body: JSON.stringify(record),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to delete DNS record');
+    return data;
+};
+
+export const getDnsNameservers = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/dns/${siteId}/nameservers`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get nameservers');
+    return data;
+};
+
+// ── Password Reset ─────────────────────────────────────────────────────
+
+export const forgotPassword = async (email) => {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Request failed');
+    return data;
+};
+
+export const resetPassword = async (token, newPassword) => {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Reset failed');
+    return data;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Change failed');
+    return data;
+};
+
+// ── Admin ──────────────────────────────────────────────────────────────
+
+export const adminGetStats = async () => {
+    const response = await fetch(`${API_BASE_URL}/admin/stats`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetTokenStats = async () => {
+    const response = await fetch(`${API_BASE_URL}/admin/token-stats`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminListUsers = async (limit = 50, offset = 0) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users?limit=${limit}&offset=${offset}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminDisableUser = async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/disable`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminEnableUser = async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/enable`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGrantTokens = async (userId, amount) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/grant-tokens`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ amount }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminResetPassword = async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/reset-password`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetSystemInfo = async () => {
+    const response = await fetch(`${API_BASE_URL}/admin/system`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetGenerations = async (limit = 50, offset = 0) => {
+    const response = await fetch(`${API_BASE_URL}/admin/generations?limit=${limit}&offset=${offset}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetModeration = async (limit = 50) => {
+    const response = await fetch(`${API_BASE_URL}/admin/moderation?limit=${limit}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminResetCircuit = async (provider) => {
+    const response = await fetch(`${API_BASE_URL}/admin/circuit/${provider}/reset`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetAnalytics = async (days = 30) => {
+    const response = await fetch(`${API_BASE_URL}/admin/analytics?days=${days}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
+export const adminGetUserDetail = async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed');
+    return data;
+};
+
 const api = {
     generateWebsite, getSession, getSessionVersions, rollbackSession, clearSession,
     editElement, getNiches, getTemplates,
@@ -740,5 +954,12 @@ const api = {
     restoreSession, syncSession,
     uploadFile, listUploads, deleteUpload, saveStockPhoto, transformImage,
     updateNavConfig, updateFooterConfig, updateSiteMeta, updateContactConfig,
+    forgotPassword, resetPassword, changePassword,
+    listDeployedSites, connectDomain, getDomainStatus, disconnectDomain,
+    listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers,
+    adminGetStats, adminGetTokenStats, adminListUsers, adminDisableUser,
+    adminEnableUser, adminGrantTokens, adminResetPassword,
+    adminGetSystemInfo, adminGetGenerations, adminGetModeration,
+    adminResetCircuit, adminGetUserDetail, adminGetAnalytics,
 };
 export default api;

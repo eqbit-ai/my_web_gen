@@ -9,6 +9,7 @@ CSS is semantic classes in a <style> block (layout, components, responsive).
 """
 
 import asyncio
+import contextvars
 import difflib
 import json
 import logging
@@ -69,10 +70,129 @@ from app.utils.session_store import (
 from app.utils.session_store import (
     session_exists as redis_session_exists,
 )
+from app.utils.redis_client import get_redis as get_redis_client, update_job
+from app.utils.token_tracker import check_budget, deduct_tokens
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Context variable to pass user_id into nested functions without changing signatures
+_current_user_id: contextvars.ContextVar[int | None] = contextvars.ContextVar("current_user_id", default=None)
+
+
+async def _track_job(session_id: str, user_id: str, job_type: str = "generate") -> str:
+    """Create a lightweight job record for admin visibility (no queue push)."""
+    r = await get_redis_client()
+    now = time.time()
+    job_id = session_id  # Reuse session_id as job_id for easy correlation
+    job_data = {
+        "id": job_id,
+        "type": job_type,
+        "status": "processing",
+        "payload": "",
+        "result": "",
+        "error": "",
+        "user_id": str(user_id),
+        "created_at": now,
+        "updated_at": now,
+        "progress": 0,
+        "progress_message": "Starting...",
+    }
+    pipe = r.pipeline()
+    pipe.hset(f"job:{job_id}", mapping=job_data)
+    pipe.expire(f"job:{job_id}", 7200)  # 2h TTL
+    await pipe.execute()
+    return job_id
+
+
+async def _update_job_progress(job_id: str, progress: int, message: str):
+    """Fire-and-forget job progress update."""
+    try:
+        await update_job(job_id, progress=progress, progress_message=message, status="processing")
+    except Exception:
+        pass
+
+
+async def _complete_job(job_id: str, status: str = "completed", error: str = ""):
+    """Mark job as completed or failed."""
+    try:
+        fields = {"status": status, "progress": 100 if status == "completed" else 0, "progress_message": "Done" if status == "completed" else error}
+        if error:
+            fields["error"] = error
+        await update_job(job_id, **fields)
+    except Exception:
+        pass
+
+
+def _deduct_bg(user_id: int, usage: dict, provider: str, model: str, operation: str):
+    """Fire-and-forget token deduction."""
+    if usage.get("input_tokens") or usage.get("output_tokens"):
+        asyncio.create_task(deduct_tokens(
+            user_id, usage.get("input_tokens", 0), usage.get("output_tokens", 0),
+            provider, model, operation
+        ))
+
+
+def _log_generation_bg(
+    user_id: int,
+    prompt: str,
+    status: str = "completed",
+    session_id: str | None = None,
+    html_size: int | None = None,
+    duration_ms: int | None = None,
+    is_multipage: bool = False,
+    page_count: int = 1,
+    performance_score: int | None = None,
+    seo_score: int | None = None,
+    stage_failed: str | None = None,
+    error_message: str | None = None,
+):
+    """Fire-and-forget GenerationLog insert for admin dashboard."""
+    import traceback as _tb
+    from datetime import UTC as _UTC, datetime as _dt
+    from app.database import async_session as _async_session
+    from app.models.generation_log import GenerationLog
+
+    async def _insert():
+        try:
+            from sqlalchemy import update as _update
+            from app.models.user import User as _User
+
+            async with _async_session() as session:
+                log = GenerationLog(
+                    user_id=user_id,
+                    session_id=session_id,
+                    prompt=prompt[:2000] if prompt else "",
+                    status=status,
+                    html_size=html_size,
+                    duration_ms=duration_ms,
+                    is_multipage=is_multipage,
+                    page_count=page_count,
+                    performance_score=performance_score,
+                    seo_score=seo_score,
+                    stage_failed=stage_failed,
+                    error_message=error_message[:500] if error_message else None,
+                    completed_at=_dt.now(_UTC) if status in ("completed", "failed") else None,
+                )
+                session.add(log)
+                # Increment user.generation_count on successful generations
+                if status == "completed":
+                    await session.execute(
+                        _update(_User).where(_User.id == user_id).values(
+                            generation_count=_User.generation_count + 1
+                        )
+                    )
+                await session.commit()
+        except Exception as e:
+            print(f"[GenerationLog] Failed to log ({status}): {e}", flush=True)
+            _tb.print_exc()
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_insert())
+    except RuntimeError:
+        pass
 
 
 def _verify_session_ownership(session: dict, user: dict) -> None:
@@ -560,12 +680,13 @@ def format_conversation_history(session: dict, max_entries: int = 5) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3) -> str:
-    """Call Claude with streaming, circuit breaker protection, and retry on failure."""
+async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3) -> tuple[str, dict]:
+    """Call Claude with streaming. Returns (text, {"input_tokens": N, "output_tokens": N})."""
 
     @circuit_protected(provider="anthropic")
     async def _inner_call():
         collected = []
+        usage = {"input_tokens": 0, "output_tokens": 0}
         async with client.messages.stream(
             model=model,
             max_tokens=max_tokens,
@@ -575,22 +696,36 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
         ) as stream:
             async for text in stream.text_stream:
                 collected.append(text)
+            # Get final message for usage stats
+            try:
+                final = await stream.get_final_message()
+                usage["input_tokens"] = final.usage.input_tokens
+                usage["output_tokens"] = final.usage.output_tokens
+            except Exception:
+                pass
         result = "".join(collected)
         if not result.strip():
             raise ValueError("Empty response from Claude")
-        return result
+        return result, usage
 
     last_error = None
     for attempt in range(1, retries + 1):
         try:
-            return await _inner_call()
+            result_text, usage = await _inner_call()
+            # Auto-deduct tokens via contextvar
+            uid = _current_user_id.get()
+            if uid:
+                _deduct_bg(uid, usage, "anthropic", model, "claude_stream")
+            return result_text, usage
         except CircuitOpenError:
             raise  # Don't retry if circuit is open
         except Exception as e:
             last_error = e
+            is_rate_limit = "429" in str(e) or "rate_limit" in str(e).lower()
             if attempt < retries:
-                logger.warning(f"[RETRY] Claude attempt {attempt} failed: {e}")
-                await asyncio.sleep(1)
+                wait = 30 if is_rate_limit else 2
+                logger.warning(f"[RETRY] Claude attempt {attempt} failed: {e} — waiting {wait}s")
+                await asyncio.sleep(wait)
             else:
                 logger.error(f"[RETRY] Claude exhausted after {retries} attempts: {e}")
     raise last_error
@@ -623,6 +758,10 @@ async def enhance_prompt(raw_prompt: str) -> str:
             max_tokens=800,
         )
         enhanced = response.choices[0].message.content.strip()
+        # Track token usage
+        uid = _current_user_id.get()
+        if uid and response.usage:
+            _deduct_bg(uid, {"input_tokens": response.usage.prompt_tokens, "output_tokens": response.usage.completion_tokens}, "openai", "gpt-4.1-mini", "enhance")
         duration = int((time.time() - t0) * 1000)
         log_stage("Enhance", duration, len(enhanced), True, f"{len(raw_prompt)} → {len(enhanced)} chars")
         logger.info(
@@ -703,6 +842,10 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
             ],
             max_tokens=plan_max_tokens,
         )
+        # Track token usage
+        uid = _current_user_id.get()
+        if uid and response.usage:
+            _deduct_bg(uid, {"input_tokens": response.usage.prompt_tokens, "output_tokens": response.usage.completion_tokens}, "openai", "gpt-4.1", "plan")
         return response.choices[0].message.content
 
     plan = {}
@@ -903,10 +1046,10 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
             if len(page["sections"]) > 8:
                 logger.info(f"[PLAN] trimmed page '{page.get('slug', '?')}' sections: {len(page['sections'])} → 8")
                 page["sections"] = page["sections"][:8]
-        # Clamp page count to 8
-        if len(plan["pages"]) > 8:
-            logger.info(f"[PLAN] trimmed pages: {len(plan['pages'])} → 8")
-            plan["pages"] = plan["pages"][:8]
+        # Clamp page count to 5 (Home + 4 subpages max — quality drops with too many)
+        if len(plan["pages"]) > 5:
+            logger.info(f"[PLAN] trimmed pages: {len(plan['pages'])} → 5")
+            plan["pages"] = plan["pages"][:5]
 
         # ── Plan validation for multipage (hero images, item counts, content fields) ──
         logger.info("⚙️ Running Plan Validator (multipage) → checking hero images, item counts, content fields...")
@@ -1002,7 +1145,7 @@ REFERENCE DESIGN SYSTEM (use as quality inspiration — adapt colors/spacing to 
 Study this reference's design quality: variable naming, spacing values, shadow depths, and transitions. Apply similar polish to the generated HTML.
 """
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         16000,
@@ -1048,7 +1191,7 @@ async def stage_2_html_from_template(
     system = build_template_customize_prompt(template_html, plan)
     logger.info(f"⚙️ Template Customize Prompt → {len(system):,} chars (vs ~72K for from-scratch)")
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         16000,
@@ -1121,7 +1264,7 @@ def _ensure_section_types(html: str) -> str:
 
 
 def extract_style_block(html: str) -> tuple[str, str]:
-    """Extract <style> block from HTML, return (css, html_without_style).
+    """Extract ALL <style> blocks from HTML, merge them, return (css, html_without_styles).
 
     The HTML stage now outputs a <style> block + body content.
     We extract the <style> contents into the css field so the frontend
@@ -1129,13 +1272,21 @@ def extract_style_block(html: str) -> tuple[str, str]:
     """
     import re
 
-    match = re.search(r"<style[^>]*>(.*?)</style>", html, re.DOTALL)
-    if match:
-        css = match.group(1).strip()
-        html_clean = html[: match.start()] + html[match.end() :]
-        html_clean = html_clean.strip()
-        return css, html_clean
-    return "", html
+    matches = list(re.finditer(r"<style[^>]*>(.*?)</style>", html, re.DOTALL))
+    if not matches:
+        return "", html
+
+    # Merge all style blocks
+    css_parts = [m.group(1).strip() for m in matches]
+    css = "\n\n".join(css_parts)
+
+    # Remove all style blocks from HTML
+    html_clean = html
+    for m in reversed(matches):  # reverse to preserve offsets
+        html_clean = html_clean[:m.start()] + html_clean[m.end():]
+    html_clean = html_clean.strip()
+
+    return css, html_clean
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1157,7 +1308,7 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
     )
     logger.info(f"⚙️ JS Prompt Built → {len(system):,} chars, sending to Claude Sonnet...")
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         4000,
@@ -1214,7 +1365,7 @@ Apply similar polish, spacing, and shadow quality to this page.
 """
 
         client = get_anthropic_client()
-        text = await _claude_stream(
+        text, _usage = await _claude_stream(
             client,
             "claude-sonnet-4-20250514",
             16000,
@@ -1233,9 +1384,17 @@ Apply similar polish, spacing, and shadow quality to this page.
         save_debug(session_id, f"html_{slug}", html)
         return slug, html
 
-    # Generate all pages in parallel
-    tasks = [generate_one_page(page) for page in pages]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Generate pages in parallel batches of 3 to balance speed vs rate limits
+    BATCH_SIZE = 3
+    results = []
+    for batch_start in range(0, len(pages), BATCH_SIZE):
+        batch = pages[batch_start:batch_start + BATCH_SIZE]
+        batch_coros = [generate_one_page(p) for p in batch]
+        batch_results = await asyncio.gather(*batch_coros, return_exceptions=True)
+        results.extend(batch_results)
+        # Small delay between batches (not between individual pages)
+        if batch_start + BATCH_SIZE < len(pages):
+            await asyncio.sleep(3)
 
     pages_html = {}
     for result in results:
@@ -1308,6 +1467,10 @@ async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
             ],
             max_tokens=200,
         )
+        # Track token usage
+        uid = _current_user_id.get()
+        if uid and response.usage:
+            _deduct_bg(uid, {"input_tokens": response.usage.prompt_tokens, "output_tokens": response.usage.completion_tokens}, "openai", "gpt-4.1-mini", "route_edit")
         raw = response.choices[0].message.content.strip()
         logger.info(f"📦 Router Raw Response → {raw}")
         # Parse JSON array from response
@@ -1347,15 +1510,17 @@ async def edit_single_component(section_html: str, section_type: str, css_vars: 
     t0 = time.time()
     client = get_anthropic_client()
 
+    from app.utils.animations import get_animation_prompt_compact
     system = COMPONENT_EDIT_PROMPT.format(
         css_vars=css_vars,
         section_type=section_type,
         section_html=section_html,
         prompt=prompt,
+        animation_ref=get_animation_prompt_compact(),
     )
     logger.info(f"⚙️ Edit Prompt Built → {len(system):,} chars (section HTML + CSS vars + rules), sending to Claude...")
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         8000,
@@ -1389,7 +1554,7 @@ async def edit_style_block(css: str, section_types: str, prompt: str) -> str:
         prompt=prompt,
     )
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         12000,
@@ -1794,6 +1959,175 @@ def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) ->
     return pages_dict
 
 
+def _rebuild_multipage_navbars(pages_dict: dict) -> dict:
+    """Full navbar rebuild for all pages — used after single→multipage conversion.
+
+    Unlike _update_all_page_navbars (incremental, one page at a time), this function:
+    1. Builds the canonical nav link list from ALL pages in pages_dict
+    2. Replaces the entire nav-links content in every page
+    3. Keeps CTA buttons intact
+    4. Rebuilds footer quick links too
+
+    This ensures every page has consistent, working inter-page navigation.
+    """
+    # Build canonical page list: Home first, then subpages alphabetically
+    page_links = [{"slug": "index", "title": "Home", "href": "/"}]
+    for slug in sorted(pages_dict.keys()):
+        if slug == "index":
+            continue
+        # Derive title from slug
+        title = slug.replace("-", " ").replace("_", " ").title()
+        page_links.append({"slug": slug, "title": title, "href": f"/{slug}.html"})
+
+    logger.info(f'[NAV REBUILD] Building navbar with {len(page_links)} pages: {[p["title"] for p in page_links]}')
+
+    for current_slug, page_data in pages_dict.items():
+        page_html = page_data.get("html", "")
+        if not page_html:
+            continue
+
+        updated = _rebuild_page_nav(page_html, page_links, current_slug)
+        updated = _rebuild_footer_links(updated, page_links)
+        if updated != page_html:
+            pages_dict[current_slug] = {**page_data, "html": updated}
+            logger.info(f'[NAV REBUILD] Rebuilt navbar + footer in "{current_slug}"')
+
+    return pages_dict
+
+
+def _rebuild_page_nav(html: str, page_links: list[dict], current_slug: str) -> str:
+    """Replace the entire nav-links content with canonical inter-page links.
+
+    - Index page: keeps its original anchor links (#about, #services) + adds new page links
+    - Subpages: replaces all anchor links with inter-page links; any leftover #anchors → /#anchor (homepage)
+    Preserves CTA buttons and the nav container structure.
+    """
+    is_index = current_slug == "index"
+
+    # --- Format A: <ul class="nav-links"> ---
+    ul_pattern = re.compile(
+        r'(<ul\s+class="nav-links"[^>]*>)(.*?)(</ul>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    ul_match = ul_pattern.search(html)
+    if ul_match:
+        old_content = ul_match.group(2)
+        old_items = _extract_nav_items(old_content, "li")
+        cta_items = [it for it in old_items if it["is_cta"]]
+
+        new_items = []
+        if is_index:
+            # Keep existing anchor links (they still work on index page)
+            for item in old_items:
+                if item["is_cta"]:
+                    continue
+                if item["href"].startswith("#"):
+                    new_items.append(item["full"])
+            # Add page links for subpages (not Home, since we're already on index)
+            for link in page_links:
+                if link["slug"] == "index":
+                    continue
+                new_items.append(f'<li><a href="{link["href"]}">{link["title"]}</a></li>')
+        else:
+            # Subpage: full inter-page nav, convert leftover anchors to homepage
+            for link in page_links:
+                if link["slug"] == current_slug:
+                    new_items.append(f'<li><a href="#" class="active">{link["title"]}</a></li>')
+                else:
+                    new_items.append(f'<li><a href="{link["href"]}">{link["title"]}</a></li>')
+
+        # Add CTA buttons back at the end
+        for cta in cta_items:
+            new_items.append(cta["full"])
+
+        new_content = "\n      " + "\n      ".join(new_items) + "\n    "
+        html = html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
+        return html
+
+    # --- Format B: <div class="nav-links"> ---
+    div_pattern = re.compile(
+        r'(<div\s+class="nav-links"[^>]*>)(.*?)(</div>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    div_match = div_pattern.search(html)
+    if div_match:
+        old_content = div_match.group(2)
+        old_items = _extract_nav_items(old_content, "a")
+        cta_items = [it for it in old_items if it["is_cta"]]
+
+        new_items = []
+        if is_index:
+            for item in old_items:
+                if item["is_cta"]:
+                    continue
+                if item["href"].startswith("#"):
+                    new_items.append(item["full"])
+            for link in page_links:
+                if link["slug"] == "index":
+                    continue
+                new_items.append(f'<a href="{link["href"]}">{link["title"]}</a>')
+        else:
+            for link in page_links:
+                if link["slug"] == current_slug:
+                    new_items.append(f'<a href="#" class="active">{link["title"]}</a>')
+                else:
+                    new_items.append(f'<a href="{link["href"]}">{link["title"]}</a>')
+
+        for cta in cta_items:
+            new_items.append(cta["full"])
+
+        new_content = "\n      " + "\n      ".join(new_items) + "\n    "
+        html = html[:div_match.start(2)] + new_content + html[div_match.end(2):]
+        return html
+
+    logger.warning(f"[NAV REBUILD] Could not find nav-links in page '{current_slug}'")
+    return html
+
+
+def _rebuild_footer_links(html: str, page_links: list[dict]) -> str:
+    """Rebuild footer Quick Links section with canonical inter-page links."""
+    footer_match = re.search(r'<footer[\s>]', html, re.IGNORECASE)
+    if not footer_match:
+        return html
+    footer_start = footer_match.start()
+
+    quick_link_headings = re.compile(
+        r'<h[3-6][^>]*class="footer-heading"[^>]*>\s*'
+        r'(Quick\s*Links?|Navigation|Pages|Explore|Site\s*Map|Menu|Links)\s*'
+        r'</h[3-6]>',
+        re.IGNORECASE,
+    )
+    heading_match = quick_link_headings.search(html, footer_start)
+    if not heading_match:
+        return html
+
+    search_start = heading_match.end()
+
+    # Try <ul class="footer-links">
+    ul_pattern = re.compile(
+        r'(<ul\s+class="footer-links"[^>]*>)(.*?)(</ul>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    ul_match = ul_pattern.search(html, search_start)
+    if ul_match and ul_match.start() - search_start < 200:
+        new_items = [f'<li><a href="{p["href"]}">{p["title"]}</a></li>' for p in page_links]
+        new_content = "\n          " + "\n          ".join(new_items) + "\n        "
+        return html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
+
+    # Try <div class="footer-links">
+    div_pattern = re.compile(
+        r'(<div\s+class="footer-links"[^>]*>)(.*?)(</div>)',
+        re.IGNORECASE | re.DOTALL,
+    )
+    div_match = div_pattern.search(html, search_start)
+    if div_match and div_match.start() - search_start < 200:
+        new_items = [f'<a href="{p["href"]}">{p["title"]}</a>' for p in page_links]
+        new_content = "\n          " + "\n          ".join(new_items) + "\n        "
+        return html[:div_match.start(2)] + new_content + html[div_match.end(2):]
+
+    return html
+
+
 async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: str) -> dict[str, str]:
     """Generate a brand-new page using the existing homepage as a design reference.
 
@@ -1833,7 +2167,7 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     )
 
     client = get_anthropic_client()
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         8000,
@@ -1924,7 +2258,7 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
     t0 = time.time()
 
     try:
-        raw = await _claude_stream(
+        raw, _usage = await _claude_stream(
             client,
             "claude-sonnet-4-20250514",
             4000,
@@ -2036,7 +2370,7 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
     )
     logger.info(f"🚀 Executing Step → Sending full page + edit request to Claude Sonnet ({len(system):,} chars prompt)")
 
-    text = await _claude_stream(
+    text, _usage = await _claude_stream(
         client,
         "claude-sonnet-4-20250514",
         max_tokens,
@@ -2238,6 +2572,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
 
+    # ── Check token budget ──────────────────────────────────────────
+    budget = await check_budget(user["user_id"])
+    if not budget["ok"]:
+        raise HTTPException(status_code=402, detail="[RESTRICTED] Token budget exhausted. Contact admin for more tokens.")
+    _current_user_id.set(user["user_id"])
+
     is_new = req.sessionId is None or not await redis_session_exists(req.sessionId)
     session_id = req.sessionId if not is_new else str(uuid.uuid4())
 
@@ -2254,6 +2594,13 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     logger.info(
         f'{"🆕" if is_new else "✏️"} [{mode}] session={session_id[:8]}... prompt="{req.prompt[:80]}{"..." if len(req.prompt) > 80 else ""}"'
     )
+
+    # ── Track job for admin visibility ──────────────────────────────
+    job_id = await _track_job(session_id, user["user_id"], "generate" if is_new else "edit")
+
+    # ── Save initial session so it shows as "active" in admin ─────
+    if is_new:
+        await redis_save_session(session_id, {"prompt": req.prompt[:500], "status": "generating"})
 
     async def event_stream():
         def sse(event: str, data: dict):
@@ -2275,6 +2622,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 )
 
                 enhanced_prompt = await enhance_prompt(req.prompt)
+                await _update_job_progress(job_id, 10, "Prompt enhanced")
 
                 yield sse(
                     "stage",
@@ -2315,7 +2663,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     if reference_html:
                         logger.info(f"[TEMPLATE] auto-matched niche '{niche_key}' → reference template ({len(reference_html):,} chars)")
 
-                # ── Detect multi-page request (only from user's ORIGINAL prompt, not the enhanced brief) ──
+                # ── Detect multi-page request (only check ORIGINAL prompt, not enhanced) ──
+                # Enhanced prompt often mentions "Contact page", "Blog" etc. which falsely triggers multipage
                 multipage_requested = is_multipage_request(req.prompt)
 
                 # ── Stage 1: Plan ──────────────────────────────────────
@@ -2367,6 +2716,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                             "detail": f"{n_sections} sections planned",
                         },
                     )
+
+                await _update_job_progress(job_id, 30, "Plan ready, generating HTML...")
 
                 # ── Stage 2: HTML + Image Resolution ──────────────────
                 pages_dict = None  # Will hold {slug: {html, css}} for multipage
@@ -2471,6 +2822,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         "stage",
                         {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
                     )
+
+                await _update_job_progress(job_id, 60, "HTML & CSS ready, generating JS...")
 
                 # ── Stage 3: JS (shared across all pages) ───────────
                 yield sse("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
@@ -2641,75 +2994,231 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     yield sse("error", {"message": "Session not found"})
                     return
 
-                # ── Check for "add page" request BEFORE normal routing ──
-                add_page_info = detect_add_page_request(req.prompt)
-                existing_pages = session.get("pages", {})
-                # Only treat as add-page if slug doesn't already exist
-                if add_page_info and add_page_info["slug"] not in existing_pages and add_page_info["slug"] != "index":
-                    page_count = len(existing_pages) if existing_pages else 1  # 1 = current single page
-                    if page_count >= 5:
-                        yield sse(
-                            "error", {"message": "Maximum 5 pages reached. Remove a page before adding a new one."}
+                # ── Check for "add WhatsApp button" BEFORE normal routing ──
+                prompt_lower = req.prompt.lower()
+                if re.search(r'\b(?:add|enable|include|put|show|want)\b.*\bwhats\s*app\b', prompt_lower):
+                    html = session["html"]
+                    if "whatsapp-float" not in html and "wa.me" not in html:
+                        wa_html = (
+                            '\n<!-- WHATSAPP_FLOAT -->\n'
+                            '<a href="https://wa.me/971XXXXXXXXX" target="_blank" rel="noopener" '
+                            'class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;'
+                            'width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;'
+                            'align-items:center;justify-content:center;color:white;font-size:1.5rem;'
+                            'box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s;'
+                            'text-decoration:none;" aria-label="Chat on WhatsApp">'
+                            '<i class="fa-brands fa-whatsapp"></i></a>\n'
+                            '<!-- END_WHATSAPP_FLOAT -->\n'
                         )
-                        return
+                        # Insert before closing </footer> or at end of HTML
+                        if '</footer>' in html:
+                            html = html.replace('</footer>', '</footer>' + wa_html, 1)
+                        else:
+                            html = html + wa_html
+                        session["html"] = html
 
-                    page_slug = add_page_info["slug"]
-                    page_title = add_page_info["title"]
+                        # Also update in pages dict if multipage
+                        if session.get("multipage") and session.get("pages"):
+                            for slug in session["pages"]:
+                                pg_html = session["pages"][slug]["html"]
+                                if "whatsapp-float" not in pg_html:
+                                    if '</footer>' in pg_html:
+                                        pg_html = pg_html.replace('</footer>', '</footer>' + wa_html, 1)
+                                    else:
+                                        pg_html = pg_html + wa_html
+                                    session["pages"][slug]["html"] = pg_html
 
-                    yield sse(
-                        "stage",
-                        {"stage": 0, "name": "route", "status": "running", "message": f"Adding {page_title} page..."},
-                    )
-                    yield sse(
-                        "stage",
-                        {"stage": 0, "name": "route", "status": "done", "message": f"Target: new {page_title} page"},
-                    )
+                        code = {"html": html, "css": session["css"], "js": session.get("js", "")}
+                        plan = session.get("plan") or {}
 
-                    yield sse(
-                        "stage",
-                        {
-                            "stage": 1,
-                            "name": "edit",
-                            "status": "running",
-                            "message": f"Generating {page_title} page (matching existing design)...",
-                        },
-                    )
+                        yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": "Adding WhatsApp button"})
+                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button added — update the phone number in site settings"})
 
-                    new_page_code = await _add_new_page(req.prompt, session, page_slug, page_title)
+                        # Skip to finalization (don't go through router/LLM)
+                        # Save session and emit complete
+                        await redis_save_session(session_id, {**session, "html": html})
 
-                    if not new_page_code.get("html"):
-                        yield sse("error", {"message": f"Failed to generate {page_title} page"})
-                        return
-
-                    # Build pages dict: keep homepage untouched, add new page
-                    if not existing_pages:
-                        # Converting single-page → multipage
-                        pages_dict = {
-                            "index": {"html": session["html"], "css": session["css"]},
-                            page_slug: {"html": new_page_code["html"], "css": new_page_code["css"]},
+                        sections_list = parse_sections(html)
+                        complete_payload = {
+                            "success": True,
+                            "website": {"html": html, "css": session["css"], "js": session.get("js", "")},
+                            "sessionId": session_id,
+                            "isNewDesign": False,
+                            "sections": sections_list,
                         }
+                        if session.get("multipage"):
+                            complete_payload["isMultipage"] = True
+                            complete_payload["pages"] = session.get("pages", {})
+                        yield sse("complete", complete_payload)
+                        return
                     else:
-                        pages_dict = {**existing_pages}
-                        pages_dict[page_slug] = {"html": new_page_code["html"], "css": new_page_code["css"]}
+                        yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": "WhatsApp button already exists"})
+                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button is already on the page — update number in site settings"})
+                        code = {"html": html, "css": session["css"], "js": session.get("js", "")}
+                        plan = session.get("plan") or {}
+                        sections_list = parse_sections(html)
+                        yield sse("complete", {
+                            "success": True,
+                            "website": {"html": html, "css": session["css"], "js": session.get("js", "")},
+                            "sessionId": session_id,
+                            "isNewDesign": False,
+                            "sections": sections_list,
+                        })
+                        return
 
-                    # Update navbars + footer quick links in ALL pages (including new page)
-                    pages_dict = _update_all_page_navbars(pages_dict, page_slug, page_title)
-                    # Also update session["html"] if index was modified
+                # ── Check for "add page" request → triggers full multipage regeneration ──
+                add_page_list = detect_add_page_request(req.prompt)
+                existing_pages = session.get("pages", {})
+                is_already_multipage = session.get("multipage", False)
+
+                # Filter out pages that already exist or use reserved slug
+                if add_page_list:
+                    add_page_list = [
+                        p for p in add_page_list
+                        if p["slug"] not in existing_pages and p["slug"] != "index"
+                    ]
+
+                if add_page_list and not is_already_multipage:
+                    # ── SINGLE→MULTI: Full regeneration as multipage website ──
+                    # Keep the same design/brand but regenerate everything with multiple pages
+                    page_names = ", ".join(p["title"] for p in add_page_list[:4])
+
+                    yield sse(
+                        "stage",
+                        {"stage": 0, "name": "plan", "status": "running", "message": f"Converting to multipage: {page_names}..."},
+                    )
+
+                    # Build a new prompt that includes the original + page requests
+                    original_plan = session.get("plan", {})
+                    original_prompt = session.get("original_prompt", req.prompt)
+                    brand_name = original_plan.get("brand", {}).get("name", "")
+                    niche_key = original_plan.get("niche", "") or detect_niche(original_prompt)
+
+                    # Build multipage prompt from original context
+                    multipage_prompt = f"{original_prompt}. Make this a multipage website with pages: Home, {page_names}"
+
+                    # Re-plan as multipage
+                    plan_task = asyncio.create_task(
+                        stage_1_plan(multipage_prompt, session_id, niche_key=niche_key, multipage=True)
+                    )
+                    while not plan_task.done():
+                        await asyncio.sleep(8)
+                        if not plan_task.done():
+                            yield ": keepalive\n\n"
+                    plan = plan_task.result()
+
+                    n_pages = len(plan.get("pages", []))
+                    yield sse(
+                        "stage",
+                        {"stage": 0, "name": "plan", "status": "done", "message": f"Plan ready: {brand_name or 'Multipage'} ({n_pages} pages)"},
+                    )
+
+                    # Generate all pages
+                    yield sse(
+                        "stage",
+                        {"stage": 1, "name": "html", "status": "running", "message": f"Building {n_pages} pages..."},
+                    )
+
+                    reference_html = session.get("html", "")  # Use current homepage as design reference
+                    html_task = asyncio.create_task(
+                        generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
+                    )
+                    while not html_task.done():
+                        await asyncio.sleep(8)
+                        if not html_task.done():
+                            yield ": keepalive\n\n"
+                    pages_html = html_task.result()
+
+                    total_html_chars = sum(len(h) for h in pages_html.values())
+                    yield sse(
+                        "stage",
+                        {"stage": 1, "name": "html", "status": "done", "message": f"{len(pages_html)} pages generated ({total_html_chars:,} chars)"},
+                    )
+
+                    # Extract CSS from each page
+                    theme = plan.get("design", {}).get("theme", "light")
+                    pages_dict = {}
+                    for slug, page_html in pages_html.items():
+                        page_css, page_html_clean = extract_style_block(page_html)
+                        page_html_clean = post_process_html(page_html_clean, theme=theme)
+                        pages_dict[slug] = {"html": page_html_clean, "css": page_css}
+
+                    # Generate JS
+                    yield sse(
+                        "stage",
+                        {"stage": 2, "name": "js", "status": "running", "message": "Generating interactions..."},
+                    )
+                    index_html = pages_dict.get("index", {}).get("html", "")
+                    index_css = pages_dict.get("index", {}).get("css", "")
+                    js_task = asyncio.create_task(
+                        stage_3_js(index_html, index_css, plan, session_id)
+                    )
+                    while not js_task.done():
+                        await asyncio.sleep(5)
+                        if not js_task.done():
+                            yield ": keepalive\n\n"
+                    js_code = js_task.result()
+
+                    yield sse(
+                        "stage",
+                        {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js_code):,} chars)"},
+                    )
+
+                    # Save to session
+                    session["html"] = index_html
+                    session["css"] = index_css
+                    session["js"] = js_code
+                    session["plan"] = plan
+                    session["multipage"] = True
+                    session["pages"] = pages_dict
+
+                    code = {"html": index_html, "css": index_css, "js": js_code}
+
+                elif add_page_list and is_already_multipage:
+                    # ── ALREADY MULTIPAGE: add individual pages ──
+                    page_count = len(existing_pages)
+                    available_slots = 5 - page_count
+                    if available_slots <= 0:
+                        yield sse("error", {"message": "Maximum 5 pages reached."})
+                        return
+
+                    pages_to_add = add_page_list[:available_slots]
+                    page_names = ", ".join(p["title"] for p in pages_to_add)
+
+                    yield sse("stage", {"stage": 0, "name": "route", "status": "running", "message": f"Adding pages: {page_names}..."})
+                    yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": f"Target: {len(pages_to_add)} new page(s)"})
+
+                    pages_dict = {**existing_pages}
+                    last_slug = None
+
+                    for i, page_info in enumerate(pages_to_add):
+                        page_slug = page_info["slug"]
+                        page_title = page_info["title"]
+
+                        yield sse("stage", {"stage": 1, "name": "edit", "status": "running", "message": f"Generating {page_title} page ({i+1}/{len(pages_to_add)})..."})
+
+                        new_page_code = await _add_new_page(req.prompt, session, page_slug, page_title)
+
+                        if not new_page_code.get("html"):
+                            yield sse("error", {"message": f"Failed to generate {page_title} page"})
+                            return
+
+                        pages_dict[page_slug] = {"html": new_page_code["html"], "css": new_page_code["css"]}
+                        last_slug = page_slug
+
+                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": f"{page_title} page created ({i+1}/{len(pages_to_add)})"})
+
+                    pages_dict = _rebuild_multipage_navbars(pages_dict)
+
                     if "index" in pages_dict:
                         session["html"] = pages_dict["index"]["html"]
 
-                    # code dict = the new page FROM pages_dict (post-nav-sync, not pre-sync)
-                    code = pages_dict[page_slug]
+                    code = {**pages_dict[last_slug], "js": session.get("js", "")}
                     plan = session.get("plan") or {}
 
-                    # Save multipage state to session
                     session["multipage"] = True
                     session["pages"] = pages_dict
-                    session["_added_page"] = page_slug  # Signal for SSE payload
-
-                    yield sse(
-                        "stage", {"stage": 1, "name": "edit", "status": "done", "message": f"{page_title} page created"}
-                    )
+                    session["_added_page"] = last_slug
 
                 else:
                     # ── Normal edit flow (existing logic unchanged) ────
@@ -2807,11 +3316,22 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
             # Include multipage data in session
             added_page_slug = session.get("_added_page") if not is_new else None
+            converted_to_multipage = not is_new and session.get("multipage") and session.get("pages") and not added_page_slug and not existing.get("multipage")
             if is_new and is_multipage and pages_dict:
                 session_data["multipage"] = True
                 session_data["pages"] = {
                     slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()
                 }
+            elif converted_to_multipage:
+                # Single→multipage full regeneration
+                session_data["multipage"] = True
+                session_data["pages"] = session["pages"]
+                session_data["plan"] = session.get("plan", plan)
+                session_data["js"] = session.get("js", code.get("js", ""))
+                index_data = session_data["pages"].get("index")
+                if index_data:
+                    session_data["html"] = index_data["html"]
+                    session_data["css"] = index_data["css"]
             elif added_page_slug:
                 # "Add page" operation — session["pages"] was already built in the iteration block
                 session_data["multipage"] = True
@@ -2886,15 +3406,57 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 complete_payload["isMultipage"] = True
                 complete_payload["pages"] = session_data.get("pages", {})
 
+            await _complete_job(job_id, "completed")
+
+            # Log generation to admin dashboard (fire-and-forget)
+            if is_new:
+                _page_count = len(pages_dict) if is_multipage and pages_dict else 1
+                _log_generation_bg(
+                    user_id=user["user_id"],
+                    prompt=req.prompt,
+                    status="completed",
+                    session_id=session_id,
+                    html_size=len(code.get("html", "")),
+                    duration_ms=int(generation_ms),
+                    is_multipage=is_multipage,
+                    page_count=_page_count,
+                    performance_score=quality_scores.get("performance_score"),
+                    seo_score=quality_scores.get("seo_score"),
+                )
+
             yield sse("complete", complete_payload)
 
         except CircuitOpenError:
             metrics_increment("generation_errors")
+            await _complete_job(job_id, "failed", "AI service temporarily unavailable")
+            _log_generation_bg(
+                user_id=user["user_id"],
+                prompt=req.prompt,
+                status="failed",
+                session_id=session_id,
+                duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
+                error_message="AI service temporarily unavailable (circuit open)",
+            )
             yield sse("error", {"message": "AI service is temporarily unavailable. Please try again in a few minutes."})
+        except (BrokenPipeError, ConnectionResetError, asyncio.CancelledError):
+            logger.info(f"[STREAM] Client disconnected (session={session_id[:8]})")
+            await _complete_job(job_id, "failed", "Client disconnected")
         except Exception as e:
             metrics_increment("generation_errors")
             logger.error(f"[STREAM ERROR] {e}", exc_info=True)
-            yield sse("error", {"message": str(e)})
+            await _complete_job(job_id, "failed", str(e)[:200])
+            _log_generation_bg(
+                user_id=user["user_id"],
+                prompt=req.prompt,
+                status="failed",
+                session_id=session_id,
+                duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
+                error_message=str(e)[:500],
+            )
+            try:
+                yield sse("error", {"message": str(e)})
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     return StreamingResponse(
         event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
@@ -2916,6 +3478,12 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
     moderation = await moderate_prompt(req.prompt)
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
+
+    # ── Check token budget ──────────────────────────────────────────
+    budget = await check_budget(user["user_id"])
+    if not budget["ok"]:
+        raise HTTPException(status_code=402, detail="[RESTRICTED] Token budget exhausted. Contact admin for more tokens.")
+    _current_user_id.set(user["user_id"])
 
     is_new = req.sessionId is None or not await redis_session_exists(req.sessionId)
     session_id = req.sessionId if not is_new else str(uuid.uuid4())
@@ -3156,6 +3724,21 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
         if is_new and is_multipage_gen and pages_dict:
             result["isMultipage"] = True
             result["pages"] = {slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()}
+
+        # Log generation to admin dashboard (fire-and-forget)
+        if is_new:
+            _page_count = len(pages_dict) if is_multipage_gen and pages_dict else 1
+            _log_generation_bg(
+                user_id=user["user_id"],
+                prompt=req.prompt,
+                status="completed",
+                session_id=session_id,
+                html_size=len(code.get("html", "")),
+                duration_ms=int(generation_ms),
+                is_multipage=is_multipage_gen,
+                page_count=_page_count,
+            )
+
         return result
 
     except HTTPException:
@@ -3163,12 +3746,28 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
         raise
     except CircuitOpenError as e:
         metrics_increment("generation_errors")
+        _log_generation_bg(
+            user_id=user["user_id"],
+            prompt=req.prompt,
+            status="failed",
+            session_id=session_id,
+            duration_ms=int((time.time() - generation_start) * 1000),
+            error_message="AI service temporarily unavailable (circuit open)",
+        )
         raise HTTPException(
             status_code=503,
             detail="AI service is temporarily unavailable. Please try again in a few minutes.",
         ) from e
     except Exception as e:
         metrics_increment("generation_errors")
+        _log_generation_bg(
+            user_id=user["user_id"],
+            prompt=req.prompt,
+            status="failed",
+            session_id=session_id,
+            duration_ms=int((time.time() - generation_start) * 1000),
+            error_message=str(e)[:500],
+        )
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -3228,16 +3827,7 @@ TYPOGRAPHY & STYLING (when changing text appearance):
   Popular: Inter, Poppins, Playfair Display, Space Grotesk, DM Sans, Outfit, Sora, Crimson Text, Lora
 - Letter spacing: e.g. letter-spacing: 0.05em, 0.1em | Text transform: uppercase, lowercase, capitalize
 
-ANIMATIONS & EFFECTS:
-- Scroll reveal: add data-aos="fade-up|fade-down|fade-left|fade-right|zoom-in|zoom-out|flip-up|slide-up"
-  Optional: data-aos-delay="100"-"600", data-aos-duration="600"-"1200"
-- Hover: use inline transition + transform, e.g. style="transition: transform 0.3s" → scale(1.05), translateY(-5px)
-- Tilt (cards): data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
-- Typed.js (hero): <span class="typed-text" data-typed='["Phrase 1", "Phrase 2"]'></span>
-- Text split (creative): add data-splitting on headings
-- Gradient text: background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent
-- Glass effect: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
-- Box shadow: 0 4px 15px rgba(0,0,0,0.1) (subtle) | 0 10px 30px rgba(0,0,0,0.3) (heavy)
+{animation_ref}
 
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
@@ -3297,12 +3887,7 @@ TYPOGRAPHY & STYLING (when changing text appearance):
 - Font family: var(--font-heading), var(--font-body), or Google Fonts family inline (e.g. 'Playfair Display', serif)
 - Letter spacing, text-transform: via inline style
 
-ANIMATIONS & EFFECTS:
-- Scroll reveal: data-aos="fade-up|zoom-in|slide-up|fade-left" + data-aos-delay, data-aos-duration
-- Tilt (cards): data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15"
-- Gradient text: background: linear-gradient(...); -webkit-background-clip: text; -webkit-text-fill-color: transparent
-- Glass: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
-- Hover transitions: inline transition + transform (scale, translateY, shadow)
+{animation_ref}
 
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
@@ -3426,6 +4011,12 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
 
+    # ── Check token budget ──────────────────────────────────────────
+    budget = await check_budget(user["user_id"])
+    if not budget["ok"]:
+        raise HTTPException(status_code=402, detail="[RESTRICTED] Token budget exhausted. Contact admin for more tokens.")
+    _current_user_id.set(user["user_id"])
+
     log_event_bg(
         user_id=str(user["user_id"]),
         action="edit_website",
@@ -3478,6 +4069,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             section_id = target_section["id"]
             logger.info(f'🖱️ [ELEMENT EDIT] Structural edit in section "{section_id}" ({section_type})')
 
+            from app.utils.animations import get_animation_prompt_compact as _anim_compact
             system = ELEMENT_EDIT_PROMPT_SECTION.format(
                 css_vars=css_vars,
                 section_type=section_type,
@@ -3486,9 +4078,10 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 element_path=req.elementPath,
                 element_html=req.elementHtml,
                 prompt=req.prompt,
+                animation_ref=_anim_compact(),
             )
 
-            text = await _claude_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
+            text, _ = await _claude_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
             edited_section = parse_single_code_block(text, "html")
             if not edited_section:
                 logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed from section edit")
@@ -3510,6 +4103,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 context_parts.append(f"ELEMENT AFTER (sibling):\n{req.contextAfter}")
             context_block = "\n\n".join(context_parts) if context_parts else ""
 
+            from app.utils.animations import get_animation_prompt_compact as _anim_compact2
             system = ELEMENT_EDIT_PROMPT_PRECISE.format(
                 css_vars=css_vars,
                 section_type=section_type,
@@ -3519,10 +4113,11 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 context_block=context_block,
                 element_html=req.elementHtml,
                 prompt=req.prompt,
+                animation_ref=_anim_compact2(),
             )
             logger.info(f"🖱️ [ELEMENT EDIT] Precise prompt: {len(system):,} chars")
 
-            text = await _claude_stream(
+            text, _ = await _claude_stream(
                 client, "claude-sonnet-4-20250514", 4000, system,
                 f"Edit this element: {req.prompt}"
             )
@@ -3567,7 +4162,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 html=full_html, css=css,
                 element_path=req.elementPath, element_html=req.elementHtml, prompt=req.prompt,
             )
-            text = await _claude_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
+            text, _ = await _claude_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
             code = parse_code_blocks(text)
             if not code["html"]:
                 raise HTTPException(status_code=500, detail="Failed to parse edited code")
@@ -3702,13 +4297,13 @@ async def rollback_session(session_id: str, version: int, user: dict = Depends(r
 
 
 @router.delete("/session/{session_id}")
-async def delete_session_endpoint(session_id: str, user: dict = Depends(require_auth)):
+async def delete_session_endpoint(session_id: str, _user: dict = Depends(require_auth)):
     await redis_delete_session(session_id)
     return {"success": True}
 
 
 @router.get("/niches")
-async def get_niches(user: dict = Depends(require_auth)):
+async def get_niches(_user: dict = Depends(require_auth)):
     """Return available niche categories."""
     from app.utils.niches import NICHES
     return {

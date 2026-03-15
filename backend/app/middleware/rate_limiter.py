@@ -9,6 +9,12 @@ from app.utils.redis_client import get_redis
 
 RATE_LIMIT_RULES = [
     {
+        "prefixes": ["/api/deploy"],
+        "limit": 30,
+        "window": 60,
+        "key_prefix": "rl:deploy",
+    },
+    {
         "prefixes": ["/api/generator/iterate", "/api/sections/"],
         "limit": 20,
         "window": 60,
@@ -16,7 +22,7 @@ RATE_LIMIT_RULES = [
     },
     {
         "prefixes": ["/api/generator/"],
-        "limit": 5,
+        "limit": 10,
         "window": 60,
         "key_prefix": "rl:gen",
     },
@@ -29,7 +35,7 @@ RATE_LIMIT_RULES = [
     },
     {
         "prefixes": ["/api/"],
-        "limit": 300,
+        "limit": 500,
         "window": 60,
         "key_prefix": "rl:api",
     },
@@ -58,6 +64,12 @@ class RateLimitMiddleware:
 
         rule = self._match_rule(path)
         if rule is None:
+            await self.app(scope, receive, send)
+            return
+
+        # Skip strict deploy rate limit for GET/DELETE requests (reads & status checks)
+        method = scope.get("method", "GET")
+        if rule.get("key_prefix") == "rl:deploy" and method in ("GET", "DELETE"):
             await self.app(scope, receive, send)
             return
 

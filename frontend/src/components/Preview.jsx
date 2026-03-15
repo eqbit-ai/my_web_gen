@@ -703,6 +703,26 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
     ${editModeStyles}
     ${html && html.includes('data-detail-title') ? DETAIL_MODAL_CSS : ''}
   </style>
+  <script>
+    // Early navigation interceptor — prevents iframe from navigating to app routes
+    document.addEventListener('click', function(e) {
+      var link = e.target.closest('a[href]');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel') || href.startsWith('javascript')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Map href to page slug
+      var slug = 'index';
+      if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index' || href === '/home' || href === '/home.html') {
+        slug = 'index';
+      } else {
+        var m = href.match(/^\\/?([a-z0-9][a-z0-9_-]*?)(?:\\.html)?$/i);
+        if (m) slug = m[1];
+      }
+      window.parent.postMessage({ type: 'page-navigate', slug: slug }, '*');
+    }, true);
+  <\/script>
 </head>
 <body>
   <div id="__cms_root__" style="display:contents">${cleanHtmlBody || '<p style="padding: 20px; color: #666; font-family: sans-serif;">Enter a prompt to generate your website...</p>'}</div>
@@ -952,14 +972,14 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             // Scroll to top on content change
             try { iframe.contentWindow.scrollTo(0, 0); } catch(e) {}
 
-            // Inject user JS via DOM — use eval to gracefully handle syntax errors
+            // Inject user JS via DOM — wrap in IIFE to avoid scope conflicts with builtins
             if (js) {
                 try {
                     // Test if JS parses without errors before injecting
                     new Function(js); // eslint-disable-line no-new-func
-                    // It parses — inject as a script element
+                    // Wrap in IIFE to isolate scope (prevents const/let redeclaration errors)
                     const script = doc.createElement('script');
-                    script.textContent = js;
+                    script.textContent = `(function(){${js}})();`;
                     doc.body.appendChild(script);
                     // Re-dispatch DOMContentLoaded + load so listeners in generated JS fire
                     doc.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));

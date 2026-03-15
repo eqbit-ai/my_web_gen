@@ -1151,6 +1151,31 @@ def get_animation_prompt() -> str:
     return ANIMATION_PROMPT_SECTION
 
 
+def get_animation_prompt_compact() -> str:
+    """Return a compact animation reference for edit prompts (much shorter than full prompt)."""
+    return """ANIMATIONS & EFFECTS (pre-loaded CSS+JS — just add the classes/attributes):
+
+SCROLL REVEAL: .fade-up, .fade-in, .scale-in (auto-animate on scroll via IntersectionObserver)
+STAGGER: .stagger-reveal on container + .stagger-child on children (sequential fade-in)
+IMAGE REVEAL: .image-reveal, .image-fade-zoom, .image-slide-up, .image-blur-in (wrap around <img>)
+HOVER: .card-lift (lift+shadow), .magnetic-btn (cursor follow), .btn-gradient-shift (gradient animate), .nav-link-slide (underline slide)
+ENTRANCE: .hero-stagger (word-by-word reveal), .logo-reveal, .navbar-slidedown
+BACKGROUND FX: .gradient-mesh (animated mesh), .floating-shapes + .shape children (blobs), .aurora-glow (conic glow), .grain-overlay (noise texture), .parallax-bg (parallax scroll)
+COUNTER: .counter data-target="500" data-suffix="+" (animated count-up on scroll)
+TYPED TEXT: <span class="typed-text" data-typed='["Phrase 1","Phrase 2"]'></span> (typewriter effect, requires Typed.js CDN)
+TILT: data-tilt data-tilt-max="8" data-tilt-glare data-tilt-max-glare="0.15" (3D tilt on hover, requires vanilla-tilt CDN)
+TEXT SPLIT: data-splitting on headings (per-char animation, requires Splitting.js CDN)
+SCROLL PROGRESS: <div id="scroll-progress"></div> as first body child
+BACK TO TOP: <button class="back-to-top"> with progress ring SVG
+FLOAT INPUT: .float-input wrapper with input + label for floating labels
+TOAST: showToast("message", "success|error|info") in JS
+WHATSAPP: .whatsapp-float (fixed bottom-left, pulse animation)
+GLASS: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
+GRADIENT TEXT: background: linear-gradient(...); -webkit-background-clip: text; -webkit-text-fill-color: transparent
+
+MIX animations for premium feel — e.g. .stagger-reveal + .card-lift on feature cards, .parallax-bg + .hero-stagger on hero."""
+
+
 def get_animations_for_section(section_type: str) -> str:
     """Return a concise recommendation of animations for a given section type.
 

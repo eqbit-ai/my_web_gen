@@ -22,8 +22,8 @@ Parameters:
 
   DBInstanceClass:
     Type: String
-    Default: db.t3.medium
-    Description: RDS instance class
+    Default: db.r6g.large
+    Description: RDS instance class (r6g.large supports 1000+ connections)
 
   DBMasterUsername:
     Type: String
@@ -39,18 +39,18 @@ Parameters:
 
   RedisNodeType:
     Type: String
-    Default: cache.t3.small
-    Description: ElastiCache Redis node type
+    Default: cache.r6g.large
+    Description: ElastiCache Redis node type (r6g.large for 1000+ concurrent ops)
 
   ApiDesiredCount:
     Type: Number
-    Default: 2
-    Description: Desired number of API tasks
+    Default: 4
+    Description: Desired number of API tasks (baseline for 1000+ users)
 
   WorkerDesiredCount:
     Type: Number
-    Default: 4
-    Description: Desired number of worker tasks
+    Default: 8
+    Description: Desired number of worker tasks (baseline for 1000+ users)
 
 # ==============================================================================
 # Resources
@@ -561,8 +561,8 @@ Resources:
       Family: !Sub meydan-api-${Environment}
       NetworkMode: awsvpc
       RequiresCompatibilities: [FARGATE]
-      Cpu: '1024'
-      Memory: '2048'
+      Cpu: '2048'
+      Memory: '4096'
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       TaskRoleArn: !GetAtt ECSTaskRole.Arn
       ContainerDefinitions:
@@ -578,7 +578,7 @@ Resources:
             - Name: PORT
               Value: '8000'
             - Name: WORKERS
-              Value: '4'
+              Value: '8'
           Secrets:
             - Name: DATABASE_URL
               ValueFrom: !Ref DatabaseURLSecret
@@ -609,8 +609,8 @@ Resources:
       Family: !Sub meydan-worker-${Environment}
       NetworkMode: awsvpc
       RequiresCompatibilities: [FARGATE]
-      Cpu: '512'
-      Memory: '1024'
+      Cpu: '1024'
+      Memory: '2048'
       ExecutionRoleArn: !GetAtt ECSExecutionRole.Arn
       TaskRoleArn: !GetAtt ECSTaskRole.Arn
       ContainerDefinitions:
@@ -622,7 +622,7 @@ Resources:
             - Name: ENVIRONMENT
               Value: !Ref Environment
             - Name: WORKER_CONCURRENCY
-              Value: '3'
+              Value: '5'
           Secrets:
             - Name: DATABASE_URL
               ValueFrom: !Ref DatabaseURLSecret
@@ -702,8 +702,8 @@ Resources:
   APIScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MaxCapacity: 10
-      MinCapacity: 2
+      MaxCapacity: 20
+      MinCapacity: 4
       ResourceId: !Sub service/${ECSCluster}/${APIService.Name}
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
@@ -738,8 +738,8 @@ Resources:
   WorkerScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MaxCapacity: 20
-      MinCapacity: 2
+      MaxCapacity: 50
+      MinCapacity: 8
       ResourceId: !Sub service/${ECSCluster}/${WorkerService.Name}
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs

@@ -2,7 +2,7 @@
   "serviceName": "meydan-worker",
   "cluster": "meydan-production",
   "taskDefinition": "meydan-worker",
-  "desiredCount": 4,
+  "desiredCount": 8,
   "launchType": "FARGATE",
   "platformVersion": "LATEST",
 
@@ -30,8 +30,8 @@
 
   "_comment_autoscaling": "Auto-scaling based on Redis queue depth via custom CloudWatch metric",
   "_autoscaling": {
-    "minCapacity": 2,
-    "maxCapacity": 20,
+    "minCapacity": 8,
+    "maxCapacity": 50,
     "policies": [
       {
         "policyName": "queue-depth-scaling",

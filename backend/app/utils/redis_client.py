@@ -22,7 +22,13 @@ _pool: aioredis.Redis | None = None
 async def get_redis() -> aioredis.Redis:
     global _pool
     if _pool is None:
-        _pool = aioredis.from_url(REDIS_URL, decode_responses=True)
+        _pool = aioredis.from_url(
+            REDIS_URL,
+            decode_responses=True,
+            max_connections=200,
+            socket_connect_timeout=5,
+            socket_timeout=10,
+        )
     return _pool
 
 
@@ -37,6 +43,13 @@ async def close_redis():
 
 JOB_PREFIX = "job:"
 JOB_TTL = 3600  # Jobs expire after 1 hour
+MAX_QUEUE_DEPTH = 500  # Reject new jobs when queue exceeds this
+
+
+async def get_queue_depth() -> int:
+    """Return current number of jobs in the queue."""
+    r = await get_redis()
+    return await r.llen("queue:generate")
 
 
 async def create_job(
@@ -44,8 +57,15 @@ async def create_job(
     payload: dict,
     user_id: str,
 ) -> str:
-    """Create a new job and push it to the queue. Returns job_id."""
+    """Create a new job and push it to the queue. Returns job_id.
+    Raises ValueError if queue is at capacity."""
     r = await get_redis()
+
+    # Backpressure: reject if queue is overloaded
+    depth = await r.llen("queue:generate")
+    if depth >= MAX_QUEUE_DEPTH:
+        raise ValueError(f"Queue is full ({depth} jobs pending). Please try again later.")
+
     job_id = str(uuid.uuid4())
     now = time.time()
 

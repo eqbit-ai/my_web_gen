@@ -42,4 +42,63 @@ PATTERNS = {
       </div>
     </div>
   </div>""",
+
+    "testimonial_video": """testimonial_video pattern:
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <span class="section-label"><span class="label-line"></span>TESTIMONIALS<span class="label-line"></span></span>
+      <h2 class="section-title">What Our Clients Say</h2>
+    </div>
+    <div class="grid-2" style="gap: 2rem; align-items: center;">
+      <!-- Video/image side with play button overlay -->
+      <div class="fade-up" style="position: relative; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16/9;">
+        <img src="{{IMG:professional person speaking interview}}" alt="Client testimonial" class="img-cover">
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); cursor: pointer;">
+          <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; transition: transform 0.3s;">
+            <i class="fa-solid fa-play" style="color: white; font-size: 1.5rem; margin-left: 4px;"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Quote side -->
+      <div class="fade-up">
+        <div style="font-size: 3rem; color: var(--primary); line-height: 1; margin-bottom: 1rem;">&ldquo;</div>
+        <blockquote style="font-size: 1.25rem; font-style: italic; line-height: 1.7; margin-bottom: 1.5rem;">"Detailed testimonial quote that feels genuine and speaks to specific results achieved."</blockquote>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">JD</div>
+          <div>
+            <strong style="display: block;">Client Name</strong>
+            <span style="color: var(--text-muted); font-size: 0.875rem;">CEO, Company Name</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  NOTE: Left side is a testimonial image with a decorative play button overlay (does not play actual video — purely visual). Right side is a large quote with author avatar initials. Creates a high-end editorial feel.""",
+
+    "testimonial_marquee": """testimonial_marquee pattern:
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <span class="section-label"><span class="label-line"></span>REVIEWS<span class="label-line"></span></span>
+    <h2 class="section-title">Trusted by Hundreds</h2>
+  </div>
+  <!-- Scrolling row 1 (left to right) -->
+  <div style="overflow: hidden; margin-bottom: 1.5rem;">
+    <div class="marquee-track" style="display: flex; gap: 1.5rem; animation: marqueeLeft 30s linear infinite;">
+      <div class="card" style="min-width: 350px; max-width: 350px; padding: 1.5rem; flex-shrink: 0;">
+        <div class="stars" style="margin-bottom: 0.75rem;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">"Short punchy testimonial quote."</p>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 700;">AB</div>
+          <div><strong style="font-size: 0.85rem;">Name</strong><br><span style="font-size: 0.75rem; color: var(--text-muted);">Role</span></div>
+        </div>
+      </div>
+      <!-- Repeat 4-6 cards, then DUPLICATE the entire set for seamless loop -->
+    </div>
+  </div>
+  <!-- Scrolling row 2 (right to left) -->
+  <div style="overflow: hidden;">
+    <div class="marquee-track" style="display: flex; gap: 1.5rem; animation: marqueeRight 35s linear infinite;">
+      <!-- Same structure, different testimonials, duplicated for loop -->
+    </div>
+  </div>
+  NOTE: Two rows scrolling in opposite directions. Each row has 4-6 cards duplicated for seamless infinite loop. Add @keyframes marqueeLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } } and marqueeRight (opposite) in the style block. Cards must be duplicated (content repeated twice) for seamless scrolling.""",
 }

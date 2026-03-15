@@ -2,8 +2,8 @@
   "family": "meydan-worker",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
+  "cpu": "1024",
+  "memory": "2048",
   "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-execution-role",
   "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-task-role",
   "containerDefinitions": [
@@ -19,7 +19,7 @@
         },
         {
           "name": "WORKER_CONCURRENCY",
-          "value": "3"
+          "value": "5"
         }
       ],
       "secrets": [

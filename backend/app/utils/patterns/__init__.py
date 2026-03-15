@@ -10,7 +10,7 @@ import json
 import os
 import random
 
-from . import cta, features, hero, navigation, other, team, testimonials
+from . import about, cta, features, hero, navigation, other, portfolio, team, testimonials
 
 # ─── Pattern Registry ───────────────────────────────────────────────
 # Maps pattern_name -> (module, template_string)
@@ -25,6 +25,9 @@ _PATTERN_MODULES = {
     "hero_product_mockup": hero,
     "hero_mockup_center": hero,
     "hero_asymmetric": hero,
+    "hero_parallax_layers": hero,
+    "hero_text_reveal": hero,
+    "hero_scroll_morph": hero,
     # Features
     "card_grid": features,
     "icon_grid": features,
@@ -32,10 +35,15 @@ _PATTERN_MODULES = {
     "feature_cards": features,
     "feature_stacked": features,
     "feature_steps": features,
+    "feature_bento_grid": features,
+    "feature_hover_cards": features,
+    "feature_accordion_visual": features,
     # Testimonials
     "testimonial_cards": testimonials,
     "testimonial_slider": testimonials,
     "testimonial_split": testimonials,
+    "testimonial_video": testimonials,
+    "testimonial_marquee": testimonials,
     # Team
     "team_grid": team,
     "team_cards": team,
@@ -45,6 +53,8 @@ _PATTERN_MODULES = {
     "cta_split": cta,
     "cta_gradient": cta,
     "cta_centered": cta,
+    "cta_sticky_reveal": cta,
+    "cta_parallax": cta,
     # Navigation
     "navbar": navigation,
     "footer_columns": navigation,
@@ -62,6 +72,21 @@ _PATTERN_MODULES = {
     "logo_carousel": other,
     "trust_badges": other,
     "contact_split": other,
+    "pricing_toggle": other,
+    "pricing_comparison": other,
+    "contact_map_split": other,
+    "contact_minimal": other,
+    "marquee_text": other,
+    "before_after": other,
+    "vertical_tabs": other,
+    # About
+    "about_split_scroll": about,
+    "about_timeline_visual": about,
+    "about_numbers": about,
+    # Portfolio
+    "portfolio_case_study": portfolio,
+    "portfolio_hover_reveal": portfolio,
+    "portfolio_filterable": portfolio,
 }
 
 # All valid pattern names
@@ -131,6 +156,8 @@ def get_style_additions_for_plan(plan: dict) -> str:
         additions.append(other.LOGO_CAROUSEL_STYLE)
     if needed & {"comparison_table"}:
         additions.append(other.COMPARISON_STYLE)
+    if needed & {"portfolio_filterable"}:
+        additions.append(portfolio.FILTERABLE_STYLE)
 
     return "\n".join(additions)
 
@@ -152,6 +179,9 @@ CATEGORY_PATTERNS = {
         "hero_product_mockup",
         "hero_mockup_center",
         "hero_asymmetric",
+        "hero_parallax_layers",
+        "hero_text_reveal",
+        "hero_scroll_morph",
     ],
     "features": [
         "card_grid",
@@ -160,14 +190,21 @@ CATEGORY_PATTERNS = {
         "feature_cards",
         "feature_stacked",
         "feature_steps",
+        "feature_bento_grid",
+        "feature_hover_cards",
+        "feature_accordion_visual",
     ],
     "testimonials": [
         "testimonial_cards",
         "testimonial_slider",
         "testimonial_split",
+        "testimonial_video",
+        "testimonial_marquee",
     ],
     "team": ["team_grid", "team_cards", "team_masonry"],
-    "cta": ["cta_banner", "cta_split", "cta_gradient", "cta_centered"],
+    "cta": ["cta_banner", "cta_split", "cta_gradient", "cta_centered", "cta_sticky_reveal", "cta_parallax"],
+    "about": ["about_split_scroll", "about_timeline_visual", "about_numbers"],
+    "portfolio": ["portfolio_case_study", "portfolio_hover_reveal", "portfolio_filterable"],
 }
 
 
@@ -251,7 +288,7 @@ STYLE_PRESETS = {
     "apple": {
         "description": "Ultra-clean minimalism inspired by Apple. Massive whitespace, SF Pro/Inter typography, "
         "subtle shadows, rounded corners, mono-color palette with one accent. Content-first layout.",
-        "preferred_patterns": ["hero_minimal", "icon_grid", "feature_split", "cta_centered", "stats_row"],
+        "preferred_patterns": ["hero_minimal", "hero_text_reveal", "icon_grid", "feature_bento_grid", "feature_split", "cta_centered", "stats_row", "about_numbers", "contact_minimal"],
         "avoid_patterns": ["hero_full_image", "hero_video_bg", "cta_gradient"],
         "design_hints": {
             "spacing": "spacious",
@@ -264,7 +301,7 @@ STYLE_PRESETS = {
     "stripe": {
         "description": "Stripe-style design. Clean gradients, vibrant blues/purples, code-friendly typography, "
         "diagonal gradient backgrounds, frosted glass cards, technical yet approachable.",
-        "preferred_patterns": ["hero_split", "card_grid", "feature_split", "pricing_table", "cta_gradient"],
+        "preferred_patterns": ["hero_split", "card_grid", "feature_bento_grid", "feature_split", "pricing_toggle", "cta_gradient"],
         "avoid_patterns": ["hero_full_image", "team_masonry"],
         "design_hints": {
             "spacing": "normal",
@@ -279,9 +316,11 @@ STYLE_PRESETS = {
         "subtle glow effects, card-based layout with sharp edges.",
         "preferred_patterns": [
             "hero_mockup_center",
+            "hero_text_reveal",
             "icon_grid",
+            "feature_bento_grid",
             "feature_stacked",
-            "comparison_table",
+            "pricing_comparison",
             "cta_centered",
         ],
         "avoid_patterns": ["hero_full_image", "team_masonry", "gallery_grid"],
@@ -297,7 +336,7 @@ STYLE_PRESETS = {
     "framer": {
         "description": "Framer-style design. Bold typography, playful animations, asymmetric layouts, "
         "black + bright accent color, oversized headings, creative grid breaking.",
-        "preferred_patterns": ["hero_asymmetric", "feature_cards", "testimonial_split", "cta_split"],
+        "preferred_patterns": ["hero_asymmetric", "hero_parallax_layers", "feature_hover_cards", "testimonial_marquee", "cta_split", "marquee_text"],
         "avoid_patterns": ["hero_minimal", "icon_grid", "cta_centered"],
         "design_hints": {
             "spacing": "spacious",
@@ -310,7 +349,7 @@ STYLE_PRESETS = {
     "luxury": {
         "description": "High-end luxury aesthetic. Dark backgrounds (#1a1a2e), gold/champagne accents, "
         "serif headings (Playfair Display), dramatic imagery, generous negative space.",
-        "preferred_patterns": ["hero_full_image", "feature_split", "testimonial_split", "gallery_grid", "cta_gradient"],
+        "preferred_patterns": ["hero_full_image", "hero_scroll_morph", "feature_accordion_visual", "testimonial_video", "gallery_grid", "cta_parallax", "about_split_scroll", "portfolio_case_study"],
         "avoid_patterns": ["icon_grid", "comparison_table", "pricing_table"],
         "design_hints": {
             "theme": "dark",
@@ -329,8 +368,10 @@ STYLE_PRESETS = {
             "card_grid",
             "stats_row",
             "testimonial_cards",
-            "pricing_table",
+            "pricing_comparison",
             "cta_banner",
+            "about_numbers",
+            "vertical_tabs",
         ],
         "avoid_patterns": ["hero_asymmetric", "team_masonry", "gallery_grid"],
         "design_hints": {

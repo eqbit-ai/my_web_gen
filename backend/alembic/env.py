@@ -19,12 +19,21 @@ config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", config.get_ma
 
 from app.database import Base
 
+# Import all models so Alembic can detect schema changes
 try:
-    from app.models.audit import AuditLog  # noqa: F401
-except ImportError:
-    pass
-try:
-    from app.models.media import Media  # noqa: F401
+    from app.models import (  # noqa: F401
+        User,
+        AuditLog,
+        Media,
+        PasswordResetToken,
+        GenerationLog,
+        Site,
+        Domain,
+        TokenTransaction,
+        Announcement,
+        PromptVersion,
+        LoginEvent,
+    )
 except ImportError:
     pass
 

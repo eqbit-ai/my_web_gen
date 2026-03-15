@@ -1,0 +1,633 @@
+"""
+Admin user management endpoints.
+"""
+
+import csv
+import io
+import logging
+import secrets
+from datetime import UTC, datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sqlalchemy import func, select, text, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.models.audit import AuditLog
+from app.models.login_event import LoginEvent
+from app.models.user import User
+from app.utils.audit_log import log_event_bg
+from app.utils.auth import hash_password
+
+from .deps import _safe_getattr, _serialize_datetime, _user_to_dict, require_admin
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(tags=["Admin - Users"])
+
+
+# ── Schemas ──────────────────────────────────────────────────────────
+
+
+class GrantTokensRequest(BaseModel):
+    amount: int
+
+
+class BulkActionRequest(BaseModel):
+    action: str  # grant_tokens, disable, enable
+    user_ids: list[int]
+    params: dict = {}
+
+
+class LicenceVerifyRequest(BaseModel):
+    licence_verified: bool
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+# ── Endpoints ────────────────────────────────────────────────────────
+
+
+@router.get("/users")
+async def list_users(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    search: str = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all users with pagination and optional filters."""
+    query = select(User)
+
+    if search:
+        like = f"%{search}%"
+        query = query.where(
+            (User.email.ilike(like))
+            | (User.full_name.ilike(like))
+            | (User.company_name.ilike(like))
+            | (User.license_number.ilike(like))
+        )
+
+    if is_active is not None:
+        query = query.where(User.is_active == is_active)
+
+    count_query = select(func.count()).select_from(query.subquery())
+    count_result = await db.execute(count_query)
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        query.order_by(User.id.desc()).limit(limit).offset(offset)
+    )
+    users = result.scalars().all()
+
+    return {
+        "users": [_user_to_dict(u) for u in users],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/users/export")
+async def export_users_csv(
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export all users as a CSV file."""
+    result = await db.execute(select(User).order_by(User.id))
+    users = result.scalars().all()
+
+    def generate():
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "id", "email", "full_name", "company_name", "license_number",
+            "is_active", "is_admin", "token_balance", "tokens_used",
+            "generation_count", "created_at", "last_login",
+        ])
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        for u in users:
+            writer.writerow([
+                u.id, u.email, u.full_name, u.company_name, u.license_number,
+                _safe_getattr(u, "is_active", True),
+                _safe_getattr(u, "is_admin", False),
+                _safe_getattr(u, "token_balance", 0),
+                _safe_getattr(u, "tokens_used", 0),
+                _safe_getattr(u, "generation_count", 0),
+                _serialize_datetime(_safe_getattr(u, "created_at")),
+                _serialize_datetime(_safe_getattr(u, "last_login")),
+            ])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"},
+    )
+
+
+@router.get("/users/{user_id}")
+async def get_user_detail(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get detailed info for a specific user, including sites, domains, token transactions, and login events."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = _user_to_dict(user)
+
+    # Projects count from tenant schema
+    projects_count = 0
+    if user.db_schema:
+        try:
+            result = await db.execute(
+                text(f'SELECT count(*) FROM "{user.db_schema}".projects')
+            )
+            projects_count = result.scalar() or 0
+        except Exception:
+            pass
+    user_data["projects_count"] = projects_count
+
+    # Sites
+    try:
+        from app.models.site import Site
+
+        result = await db.execute(
+            select(Site).where(Site.user_id == user_id).order_by(Site.created_at.desc()).limit(20)
+        )
+        sites = result.scalars().all()
+        user_data["sites"] = [
+            {
+                "id": str(s.id),
+                "name": s.name,
+                "domain": s.domain,
+                "status": s.status,
+                "is_multipage": s.is_multipage,
+                "created_at": _serialize_datetime(s.created_at),
+            }
+            for s in sites
+        ]
+    except Exception:
+        user_data["sites"] = []
+
+    # Domains
+    try:
+        from app.models.domain import Domain
+
+        result = await db.execute(
+            select(Domain).where(Domain.user_id == user_id).order_by(Domain.created_at.desc()).limit(20)
+        )
+        domains = result.scalars().all()
+        user_data["domains"] = [
+            {
+                "id": str(d.id),
+                "domain_name": d.domain_name,
+                "status": d.status,
+                "ssl_status": d.ssl_status,
+                "expires_at": _serialize_datetime(d.expires_at),
+            }
+            for d in domains
+        ]
+    except Exception:
+        user_data["domains"] = []
+
+    # Recent token transactions
+    try:
+        from app.models.token_transaction import TokenTransaction
+
+        result = await db.execute(
+            select(TokenTransaction)
+            .where(TokenTransaction.user_id == user_id)
+            .order_by(TokenTransaction.created_at.desc())
+            .limit(20)
+        )
+        txns = result.scalars().all()
+        user_data["token_transactions"] = [
+            {
+                "id": str(t.id),
+                "type": t.type,
+                "amount": t.amount,
+                "balance_after": t.balance_after,
+                "reason": t.reason,
+                "created_at": _serialize_datetime(t.created_at),
+            }
+            for t in txns
+        ]
+    except Exception:
+        user_data["token_transactions"] = []
+
+    # Recent login events
+    try:
+        result = await db.execute(
+            select(LoginEvent)
+            .where(LoginEvent.user_id == user_id)
+            .order_by(LoginEvent.created_at.desc())
+            .limit(20)
+        )
+        events = result.scalars().all()
+        user_data["login_events"] = [
+            {
+                "id": str(e.id),
+                "event_type": e.event_type,
+                "ip_address": e.ip_address,
+                "user_agent": e.user_agent,
+                "created_at": _serialize_datetime(e.created_at),
+            }
+            for e in events
+        ]
+    except Exception:
+        user_data["login_events"] = []
+
+    return user_data
+
+
+@router.get("/users/{user_id}/audit")
+async def get_user_audit(
+    user_id: int,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get audit trail for a specific user."""
+    try:
+        count_result = await db.execute(
+            select(func.count(AuditLog.id)).where(AuditLog.user_id == str(user_id))
+        )
+        total = count_result.scalar() or 0
+
+        result = await db.execute(
+            select(AuditLog)
+            .where(AuditLog.user_id == str(user_id))
+            .order_by(AuditLog.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        logs = result.scalars().all()
+
+        return {
+            "audit_logs": [
+                {
+                    "id": str(log.id),
+                    "action": log.action,
+                    "resource_type": log.resource_type,
+                    "resource_id": log.resource_id,
+                    "details": log.details,
+                    "ip_address": log.ip_address,
+                    "created_at": _serialize_datetime(log.created_at),
+                }
+                for log in logs
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+    except Exception as e:
+        logger.warning("Failed to fetch user audit logs: %s", e)
+        return {"audit_logs": [], "total": 0, "limit": limit, "offset": offset}
+
+
+@router.get("/users/{user_id}/logins")
+async def get_user_logins(
+    user_id: int,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get login event history for a specific user."""
+    try:
+        count_result = await db.execute(
+            select(func.count(LoginEvent.id)).where(LoginEvent.user_id == user_id)
+        )
+        total = count_result.scalar() or 0
+
+        result = await db.execute(
+            select(LoginEvent)
+            .where(LoginEvent.user_id == user_id)
+            .order_by(LoginEvent.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        events = result.scalars().all()
+
+        return {
+            "login_events": [
+                {
+                    "id": str(e.id),
+                    "event_type": e.event_type,
+                    "ip_address": e.ip_address,
+                    "user_agent": e.user_agent,
+                    "created_at": _serialize_datetime(e.created_at),
+                }
+                for e in events
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+    except Exception as e:
+        logger.warning("Failed to fetch login events: %s", e)
+        return {"login_events": [], "total": 0, "limit": limit, "offset": offset}
+
+
+@router.post("/users/{user_id}/impersonate")
+async def impersonate_user(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate a read-only JWT for impersonating a user (30 min expiry)."""
+    from jose import jwt as jose_jwt
+
+    from app.utils.auth import JWT_ALGORITHM, JWT_SECRET
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    expire = datetime.now(UTC) + timedelta(minutes=30)
+    payload = {
+        "sub": str(user.id),
+        "exp": expire,
+        "license_number": user.license_number,
+        "db_schema": user.db_schema,
+        "impersonating": True,
+        "read_only": True,
+        "impersonated_by": admin.get("user_id"),
+    }
+    token = jose_jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="impersonate_user",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"target_email": user.email},
+    )
+
+    return {
+        "token": token,
+        "user": _user_to_dict(user),
+        "expires_in_minutes": 30,
+        "read_only": True,
+    }
+
+
+@router.post("/users/bulk")
+async def bulk_user_action(
+    req: BulkActionRequest,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Perform bulk actions on multiple users: grant_tokens, disable, enable."""
+    if not req.user_ids:
+        raise HTTPException(status_code=400, detail="user_ids must not be empty")
+
+    if req.action == "grant_tokens":
+        amount = req.params.get("amount", 0)
+        if not isinstance(amount, int) or amount <= 0:
+            raise HTTPException(status_code=400, detail="params.amount must be a positive integer")
+
+        await db.execute(
+            update(User)
+            .where(User.id.in_(req.user_ids))
+            .values(token_balance=User.token_balance + amount)
+        )
+        await db.commit()
+
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_grant_tokens",
+            resource_type="user",
+            details={"user_ids": req.user_ids, "amount": amount},
+        )
+        return {"message": f"Granted {amount:,} tokens to {len(req.user_ids)} users"}
+
+    elif req.action == "disable":
+        await db.execute(
+            update(User).where(User.id.in_(req.user_ids)).values(is_active=False)
+        )
+        await db.commit()
+
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_disable_users",
+            resource_type="user",
+            details={"user_ids": req.user_ids},
+        )
+        return {"message": f"Disabled {len(req.user_ids)} users"}
+
+    elif req.action == "enable":
+        await db.execute(
+            update(User).where(User.id.in_(req.user_ids)).values(is_active=True)
+        )
+        await db.commit()
+
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_enable_users",
+            resource_type="user",
+            details={"user_ids": req.user_ids},
+        )
+        return {"message": f"Enabled {len(req.user_ids)} users"}
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown action '{req.action}'. Supported: grant_tokens, disable, enable",
+        )
+
+
+@router.patch("/users/{user_id}/licence")
+async def set_licence_verified(
+    user_id: int,
+    req: LicenceVerifyRequest,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Set licence verification status for a user."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        await db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(licence_verified=req.licence_verified)
+        )
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update licence status (column may not exist): {e}",
+        ) from e
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="set_licence_verified",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"licence_verified": req.licence_verified, "email": user.email},
+    )
+
+    return {"message": f"Licence verified={req.licence_verified} for {user.email}"}
+
+
+@router.post("/users/{user_id}/disable", response_model=MessageResponse)
+async def disable_user(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Disable a user account."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        await db.execute(update(User).where(User.id == user_id).values(is_active=False))
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to disable user: {e}",
+        ) from e
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="disable_user",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"email": user.email},
+    )
+
+    return {"message": f"User {user.email} has been disabled"}
+
+
+@router.post("/users/{user_id}/enable", response_model=MessageResponse)
+async def enable_user(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-enable a user account."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        await db.execute(update(User).where(User.id == user_id).values(is_active=True))
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to enable user: {e}",
+        ) from e
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="enable_user",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"email": user.email},
+    )
+
+    return {"message": f"User {user.email} has been re-enabled"}
+
+
+@router.post("/users/{user_id}/grant-tokens", response_model=MessageResponse)
+async def grant_tokens(
+    user_id: int,
+    req: GrantTokensRequest,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Grant additional tokens to a user."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    try:
+        await db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(token_balance=User.token_balance + req.amount)
+        )
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to grant tokens: {e}") from e
+
+    new_balance = _safe_getattr(user, "token_balance", 0) + req.amount
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="grant_tokens",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"amount": req.amount, "new_balance": new_balance, "email": user.email},
+    )
+
+    return {"message": f"Granted {req.amount:,} tokens to {user.email}. New balance: {new_balance:,}"}
+
+
+@router.post("/users/{user_id}/reset-password")
+async def admin_reset_password(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin-initiated password reset -- generates a temporary password."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    temp_password = secrets.token_urlsafe(12)
+
+    await db.execute(
+        update(User)
+        .where(User.id == user_id)
+        .values(hashed_password=hash_password(temp_password))
+    )
+    await db.commit()
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="admin_reset_password",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"email": user.email},
+    )
+
+    return {
+        "message": f"Password reset for {user.email}",
+        "temporary_password": temp_password,
+    }

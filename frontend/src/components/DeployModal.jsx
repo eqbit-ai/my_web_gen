@@ -1,98 +1,120 @@
-// src/components/DeployModal.jsx
 import config from '../config';
-
 import React, { useState } from 'react';
-import { X, Rocket, Globe, Check, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { X, Rocket, Check, Loader2, ExternalLink, Copy, AlertCircle, RefreshCw } from 'lucide-react';
 
-const DeployModal = ({ isOpen, onClose, html, css, js }) => {
-    const [step, setStep] = useState(1); // 1: Deploy, 2: Domain
+const DeployModal = ({ isOpen, onClose, sessionId, html, css, js }) => {
     const [isDeploying, setIsDeploying] = useState(false);
-    const [deployedUrl, setDeployedUrl] = useState(null);
-    const [projectName, setProjectName] = useState('');
+    const [deployed, setDeployed] = useState(null);
+    const [siteName, setSiteName] = useState('');
     const [error, setError] = useState(null);
-
-    // Domain related state
-    const [domainSearch, setDomainSearch] = useState('');
-    const [domainResults, setDomainResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [copied, setCopied] = useState(false);
 
     if (!isOpen) return null;
 
     const handleDeploy = async () => {
-        // Deployment feature is not yet available
-        setError('Deployment is coming soon. For now, use the Export button to download your website.');
-    };
+        if (!sessionId) {
+            setError('No active session. Please generate a website first.');
+            return;
+        }
 
-    const handleSearchDomain = async () => {
-        // Domain search feature is not yet available
-        setDomainResults([]);
+        setIsDeploying(true);
+        setError(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`${config.apiUrl}/api/deploy`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    site_name: siteName.trim() || '',
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                throw new Error(data.detail || 'Deployment failed');
+            }
+
+            setDeployed(data);
+        } catch (err) {
+            setError(err.message || 'Deployment failed. Please try again.');
+        } finally {
+            setIsDeploying(false);
+        }
     };
 
     const handleCopyUrl = () => {
-        navigator.clipboard.writeText(deployedUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const handlePurchaseDomain = (domain) => {
-        // Redirect to domain registrar
-        const namecheapUrl = `https://www.namecheap.com/domains/registration/results/?domain=${domain.name}`;
-        // eslint-disable-next-line no-console
-        console.log('Opening Namecheap:', namecheapUrl);
-
-        // Use window.location for more reliable opening (bypasses popup blockers)
-        const newWindow = window.open(namecheapUrl, '_blank', 'noopener,noreferrer');
-
-        // Fallback if popup blocked
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-            console.warn('Popup blocked, using fallback');
-            window.location.href = namecheapUrl;
+        if (deployed?.url) {
+            navigator.clipboard.writeText(deployed.url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
     const handleClose = () => {
-        // Reset state when closing
-        setStep(1);
-        setDeployedUrl(null);
-        setProjectName('');
+        setDeployed(null);
+        setSiteName('');
         setError(null);
-        setDomainSearch('');
-        setDomainResults([]);
         onClose();
     };
 
     return (
         <div className="modal-overlay" onClick={handleClose}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-content deploy-modal" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={handleClose}>
                     <X size={20} />
                 </button>
 
-                {step === 1 && (
+                {!deployed ? (
                     <>
                         <div className="modal-header">
                             <Rocket className="modal-icon" size={32} />
                             <h2>Deploy Your Website</h2>
-                            <p>Make your website live in seconds</p>
+                            <p>Make your website live on the internet in seconds</p>
                         </div>
 
                         <div className="modal-body">
                             <div className="input-group">
-                                <label>Project Name</label>
+                                <label>Site Name</label>
                                 <input
                                     type="text"
-                                    value={projectName}
-                                    onChange={(e) => setProjectName(e.target.value)}
+                                    value={siteName}
+                                    onChange={(e) => setSiteName(e.target.value)}
                                     placeholder="my-awesome-website"
                                     className="modal-input"
+                                    disabled={isDeploying}
                                 />
                                 <span className="input-hint">
-                                    Your site will be at: {projectName || 'your-project'}.vercel.app
+                                    Your site will be deployed to AWS S3
                                 </span>
                             </div>
 
-                            {error && <div className="modal-error">{error}</div>}
+                            <div className="deploy-info">
+                                <div className="deploy-info-item">
+                                    <Check size={14} />
+                                    <span>Hosted on AWS S3</span>
+                                </div>
+                                <div className="deploy-info-item">
+                                    <Check size={14} />
+                                    <span>Fast and reliable static hosting</span>
+                                </div>
+                                <div className="deploy-info-item">
+                                    <Check size={14} />
+                                    <span>Instant deployment</span>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="modal-error">
+                                    <AlertCircle size={16} />
+                                    {error}
+                                </div>
+                            )}
 
                             <button
                                 className="deploy-button"
@@ -102,7 +124,7 @@ const DeployModal = ({ isOpen, onClose, html, css, js }) => {
                                 {isDeploying ? (
                                     <>
                                         <Loader2 className="spinning" size={20} />
-                                        Deploying...
+                                        Deploying to AWS...
                                     </>
                                 ) : (
                                     <>
@@ -113,85 +135,44 @@ const DeployModal = ({ isOpen, onClose, html, css, js }) => {
                             </button>
                         </div>
                     </>
-                )}
-
-                {step === 2 && (
+                ) : (
                     <>
                         <div className="modal-header success">
                             <Check className="modal-icon success" size={32} />
-                            <h2>Website Deployed!</h2>
-                            <p>Your website is now live</p>
+                            <h2>Website is Live!</h2>
+                            <p>Your website has been deployed successfully</p>
                         </div>
 
                         <div className="modal-body">
                             <div className="deployed-url-box">
-                                <a href={deployedUrl} target="_blank" rel="noopener noreferrer">
-                                    {deployedUrl}
+                                <a href={deployed.url} target="_blank" rel="noopener noreferrer">
+                                    {deployed.url}
                                     <ExternalLink size={16} />
                                 </a>
-                                <button className="copy-button" onClick={handleCopyUrl}>
+                                <button className="copy-button" onClick={handleCopyUrl} title="Copy URL">
                                     {copied ? <Check size={16} /> : <Copy size={16} />}
                                 </button>
                             </div>
 
-                            <div className="divider">
-                                <span>Want a custom domain?</span>
-                            </div>
-
-                            <div className="domain-search">
-                                <div className="search-input-group">
-                                    <Globe size={20} />
-                                    <input
-                                        type="text"
-                                        value={domainSearch}
-                                        onChange={(e) => setDomainSearch(e.target.value)}
-                                        placeholder="Search for a domain..."
-                                        className="domain-input"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSearchDomain()}
-                                    />
-                                    <button
-                                        className="search-button"
-                                        onClick={handleSearchDomain}
-                                        disabled={isSearching}
-                                    >
-                                        {isSearching ? <Loader2 className="spinning" size={18} /> : 'Search'}
-                                    </button>
+                            {deployed.is_multipage && (
+                                <div className="deploy-meta">
+                                    {deployed.page_count} pages deployed
                                 </div>
+                            )}
 
-                                {domainResults.length > 0 && (
-                                    <div className="domain-results">
-                                        {domainResults.map((domain, index) => (
-                                            <div
-                                                key={index}
-                                                className={`domain-result ${domain.available ? 'available' : 'taken'}`}
-                                            >
-                                                <div className="domain-info">
-                                                    <span className="domain-name">{domain.name}</span>
-                                                    {domain.available ? (
-                                                        <span className="domain-price">${domain.price}/yr</span>
-                                                    ) : (
-                                                        <span className="domain-taken">Taken</span>
-                                                    )}
-                                                </div>
-                                                {domain.available && (
-                                                    <button
-                                                        className="buy-button"
-                                                        onClick={() => handlePurchaseDomain(domain)}
-                                                    >
-                                                        Buy
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="manual-connect">
-                                <h4>Already have a domain?</h4>
-                                <p>Point your domain's DNS to:</p>
-                                <code>76.76.21.21</code>
-                                <p className="dns-hint">Add an A record pointing to this IP address</p>
+                            <div className="deploy-actions">
+                                <a
+                                    href={deployed.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="deploy-button visit"
+                                >
+                                    <ExternalLink size={18} />
+                                    Visit Website
+                                </a>
+                                <button className="deploy-button secondary" onClick={handleClose}>
+                                    Done
+                                </button>
                             </div>
                         </div>
                     </>

@@ -19,8 +19,8 @@
     ┌─────────▼─────────┐   ┌──────────▼──────────┐
     │   ECS Fargate     │   │   ECS Fargate       │
     │   API Service     │   │   Worker Service    │
-    │   (2-10 tasks)    │   │   (2-20 tasks)      │
-    │   1024 CPU/2GB    │   │   512 CPU/1GB       │
+    │   (4-20 tasks)    │   │   (8-50 tasks)      │
+    │   2048 CPU/4GB    │   │   1024 CPU/2GB      │
     └────────┬──────────┘   └──────────┬──────────┘
              │                         │
         ┌────┴────────┬────────────────┘
@@ -28,7 +28,7 @@
 ┌───────▼──────┐  ┌───▼──────────┐
 │  RDS Postgres │  │ ElastiCache  │
 │  15 Multi-AZ  │  │ Redis 7.0    │
-│  db.t3.medium │  │ cache.t3.sm  │
+│  db.r6g.large │  │ cache.r6g.lg │
 └──────────────┘  └──────────────┘
 ```
 
