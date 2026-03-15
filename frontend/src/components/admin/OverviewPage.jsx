@@ -12,6 +12,7 @@ import {
     adminGetGrowthAnalytics, adminGetGenerationStats,
     adminGetUsers, adminGetGenerations,
 } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
 const T = {
     bg: '#0a0a0f', surface: '#12121a', surfaceHover: '#1a1a28', border: '#2a2a3a',
@@ -33,11 +34,6 @@ function formatUptime(seconds) {
     return `${m}m`;
 }
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
-}
 
 function MiniStat({ label, value, icon: Icon, color, sub, trend }) {
     return (
@@ -88,8 +84,17 @@ export default function OverviewPage() {
             ]);
             setStats(s);
             setSysInfo(sys);
-            setGrowth(Array.isArray(gr) ? gr : gr?.data || gr?.daily || []);
-            setGenStats(Array.isArray(gs) ? gs : gs?.data || gs?.daily || []);
+            // Merge daily_signups + daily_active into [{date, signups, active_users}]
+            const signups = gr?.daily_signups || [];
+            const actives = gr?.daily_active || [];
+            const gMap = {};
+            signups.forEach(d => { gMap[d.date] = { date: d.date, signups: d.count, active_users: 0 }; });
+            actives.forEach(d => {
+                if (!gMap[d.date]) gMap[d.date] = { date: d.date, signups: 0, active_users: 0 };
+                gMap[d.date].active_users = d.count;
+            });
+            setGrowth(Object.values(gMap).sort((a, b) => a.date.localeCompare(b.date)));
+            setGenStats(gs?.daily_stats || []);
             setRecentUsers(Array.isArray(ru) ? ru : ru?.users || ru?.items || []);
             setRecentGens(Array.isArray(rg) ? rg : rg?.generations || rg?.items || []);
         } catch (e) {

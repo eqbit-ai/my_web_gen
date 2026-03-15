@@ -4,12 +4,8 @@ import { RefreshCw } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import { adminGetDomains, adminGetDomainHealth } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
-    catch { return d; }
-}
 
 export default function DomainsListPage() {
     const navigate = useNavigate();
@@ -56,7 +52,7 @@ export default function DomainsListPage() {
     return (
         <div>
             <div className="admin-page-header">
-                <h1 className="admin-page-title">Connected Domains</h1>
+                <h1 className="admin-page-title">External Domains</h1>
                 <button className="admin-btn" onClick={load}><RefreshCw size={14} /> Refresh</button>
             </div>
 

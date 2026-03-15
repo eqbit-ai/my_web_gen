@@ -8,14 +8,10 @@ import {
     adminDisableUser, adminEnableUser, adminGrantTokens,
     adminResetPassword, adminVerifyLicence, adminImpersonateUser,
 } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
 const T = { text: '#e4e4e7', muted: '#71717a', accent: '#818cf8', danger: '#f87171', success: '#34d399' };
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
-}
 
 export default function UserDetailPage() {
     const { id } = useParams();

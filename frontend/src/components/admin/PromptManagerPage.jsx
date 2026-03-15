@@ -25,17 +25,23 @@ export default function PromptManagerPage() {
 
     useEffect(() => { load(); }, [load]);
 
-    // Normalize prompts: could be object keyed by name, array, or {items: [...]}
+    // Normalize prompts: backend returns { prompts: { key: [versions...] }, total_keys }
     const prompts = (() => {
         if (!data) return [];
         if (Array.isArray(data)) return data;
         if (Array.isArray(data?.prompts)) return data.prompts;
-        if (Array.isArray(data?.items)) return data.items;
-        if (typeof data === 'object') {
-            return Object.entries(data).map(([key, val]) => ({
-                key,
-                ...(typeof val === 'object' && val !== null ? val : { content: String(val) }),
-            }));
+        if (data?.prompts && typeof data.prompts === 'object') {
+            return Object.entries(data.prompts).map(([key, versions]) => {
+                const active = versions.find(v => v.is_active) || versions[0] || {};
+                const draft = versions.find(v => !v.is_active && v.version > (active.version || 0));
+                return {
+                    key,
+                    content: active.content || '',
+                    active_version: active.version || 1,
+                    draft_version: draft?.version || null,
+                    versions,
+                };
+            });
         }
         return [];
     })();

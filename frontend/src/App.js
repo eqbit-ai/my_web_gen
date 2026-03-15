@@ -26,8 +26,8 @@ const GenerationQueuePage = lazy(() => import('./components/admin/GenerationQueu
 const FailedGenerationsPage = lazy(() => import('./components/admin/FailedGenerationsPage'));
 const DomainsListPage = lazy(() => import('./components/admin/DomainsListPage'));
 const DomainDetailPage = lazy(() => import('./components/admin/DomainDetailPage'));
-const AeVerificationPage = lazy(() => import('./components/admin/AeVerificationPage'));
-const ExpiringDomainsPage = lazy(() => import('./components/admin/ExpiringDomainsPage'));
+const InternalDomainsPage = lazy(() => import('./components/admin/InternalDomainsPage'));
+const InternalDomainDetailPage = lazy(() => import('./components/admin/InternalDomainDetailPage'));
 const UsersListPage = lazy(() => import('./components/admin/UsersListPage'));
 const UserDetailPage = lazy(() => import('./components/admin/UserDetailPage'));
 const TokenLedgerPage = lazy(() => import('./components/admin/TokenLedgerPage'));
@@ -122,9 +122,9 @@ function AppLayout() {
             <Route path="generation-queue" element={<GenerationQueuePage />} />
             <Route path="failed-generations" element={<FailedGenerationsPage />} />
             <Route path="domains" element={<DomainsListPage />} />
-            <Route path="ae-verification" element={<AeVerificationPage />} />
-            <Route path="expiring-domains" element={<ExpiringDomainsPage />} />
             <Route path="domains/:id" element={<DomainDetailPage />} />
+            <Route path="domains-internal" element={<InternalDomainsPage />} />
+            <Route path="domains-internal/:id" element={<InternalDomainDetailPage />} />
             <Route path="users" element={<UsersListPage />} />
             <Route path="users/:id" element={<UserDetailPage />} />
             <Route path="token-ledger" element={<TokenLedgerPage />} />

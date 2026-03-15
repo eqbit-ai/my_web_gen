@@ -94,7 +94,12 @@ export const adminGetGenerationQueue = async () => {
 };
 
 export const adminGetFailedGenerations = async (page = 1, limit = 20) => {
-    return apiGet(`/admin/generations/failed?page=${page}&limit=${limit}`);
+    const offset = (page - 1) * limit;
+    return apiGet(`/admin/generations/failed?limit=${limit}&offset=${offset}`);
+};
+
+export const adminGetRedisFailedJobs = async () => {
+    return apiGet('/admin/generations/redis-failed');
 };
 
 export const adminRetryGeneration = async (logId) => {
@@ -118,28 +123,26 @@ export const adminGetDomainDetail = async (domainId) => {
     return apiGet(`/admin/domains/${domainId}`);
 };
 
-export const adminUpdateDomain = async (domainId, data) => {
-    return apiPatch(`/admin/domains/${domainId}`, data);
-};
-
-export const adminGetExpiringDomains = async (days = 30) => {
-    return apiGet(`/admin/domains/expiring?days=${days}`);
-};
-
-export const adminGetAeQueue = async () => {
-    return apiGet('/admin/domains/ae-queue');
-};
-
-export const adminVerifyDomain = async (domainId, status, notes = '') => {
-    return apiPost(`/admin/domains/${domainId}/verify`, { status, notes });
-};
-
-export const adminReprovisionSSL = async (domainId) => {
-    return apiPost(`/admin/domains/${domainId}/ssl/reprovision`);
-};
 
 export const adminGetDomainHealth = async () => {
     return apiGet('/admin/domains/health');
+};
+
+// ── Internal Domains (purchased through platform) ───────────────────────
+
+export const adminGetInternalDomains = async (limit = 20, offset = 0, status = null, verification = null) => {
+    let qs = `?limit=${limit}&offset=${offset}`;
+    if (status) qs += `&status=${status}`;
+    if (verification) qs += `&verification=${verification}`;
+    return apiGet(`/admin/domains/internal${qs}`);
+};
+
+export const adminGetInternalDomainDetail = async (domainId) => {
+    return apiGet(`/admin/domains/internal/${domainId}`);
+};
+
+export const adminGetInternalDomainHealth = async () => {
+    return apiGet('/admin/domains/internal/health');
 };
 
 // ── Users (enhanced) ─────────────────────────────────────────────────────
@@ -237,8 +240,9 @@ export const adminUpdateTemplate = async (templateId, data) => {
 };
 
 export const adminGetAuditLogs = async (page = 1, limit = 20, actionType = null, userId = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
-    if (actionType) qs += `&action_type=${actionType}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
+    if (actionType) qs += `&action=${actionType}`;
     if (userId) qs += `&user_id=${userId}`;
     return apiGet(`/admin/audit-logs${qs}`);
 };

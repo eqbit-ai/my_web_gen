@@ -4,12 +4,8 @@ import { RefreshCw, Search, Download, Users } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import { adminGetUsers, adminExportUsers, adminBulkAction } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
-    catch { return d; }
-}
 
 export default function UsersListPage() {
     const navigate = useNavigate();

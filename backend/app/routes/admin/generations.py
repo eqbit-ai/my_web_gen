@@ -128,6 +128,35 @@ async def generation_queue(
         return {"queue_depth": 0, "active_jobs": [], "error": str(e)}
 
 
+@router.get("/generations/redis-failed")
+async def redis_failed_jobs(
+    admin=Depends(require_admin),
+):
+    """List failed jobs from Redis with error details."""
+    try:
+        r = await get_redis()
+        jobs = []
+        async for key in r.scan_iter(match="job:*", count=500):
+            data = await r.hgetall(key)
+            if not data or data.get("status") != "failed":
+                continue
+            jobs.append({
+                "id": data.get("id", key.split(":")[-1] if isinstance(key, str) else ""),
+                "type": data.get("type", ""),
+                "user_id": data.get("user_id", ""),
+                "error": data.get("error", data.get("error_message", "")),
+                "stage": data.get("stage", data.get("progress_message", "")),
+                "created_at": data.get("created_at", ""),
+                "completed_at": data.get("completed_at", data.get("updated_at", "")),
+            })
+
+        jobs.sort(key=lambda j: j.get("completed_at") or j.get("created_at") or "", reverse=True)
+        return {"failed_jobs": jobs, "total": len(jobs)}
+    except Exception as e:
+        logger.warning("Failed to fetch Redis failed jobs: %s", e)
+        return {"failed_jobs": [], "total": 0, "error": str(e)}
+
+
 @router.get("/generations/failed")
 async def failed_generations(
     limit: int = Query(default=50, ge=1, le=200),

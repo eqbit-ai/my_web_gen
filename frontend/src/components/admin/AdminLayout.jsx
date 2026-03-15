@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-    Activity, Globe, AlertTriangle, Clock, Shield, CheckCircle,
+    Activity, Globe, AlertTriangle, Clock, Shield, ShoppingCart,
     Users, Coins, Receipt, Database, Timer,
     FileText, ClipboardList, Bell, Terminal, Server,
     TrendingUp, BarChart3, PieChart,
@@ -27,9 +27,8 @@ const NAV_SECTIONS = [
     {
         label: 'Domains',
         items: [
-            { path: '/admin/domains', label: 'All Domains', icon: Shield },
-            { path: '/admin/ae-verification', label: '.ae Verification', icon: CheckCircle },
-            { path: '/admin/expiring-domains', label: 'Expiring Domains', icon: Timer },
+            { path: '/admin/domains', label: 'External Domains', icon: Shield },
+            { path: '/admin/domains-internal', label: 'Internal Domains', icon: ShoppingCart },
         ],
     },
     {

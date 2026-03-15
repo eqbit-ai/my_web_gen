@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import engine, get_db
 from app.models.announcement import Announcement
 from app.models.audit import AuditLog
+from app.models.user import User
 from app.models.prompt_version import PromptVersion
 from app.utils.audit_log import log_event_bg
 from app.utils.circuit_breaker import get_circuit_status, reset_circuit
@@ -150,11 +151,21 @@ async def list_audit_logs(
         )
         logs = result.scalars().all()
 
+        # Fetch user emails
+        user_ids = list({log.user_id for log in logs if log.user_id})
+        user_map = {}
+        if user_ids:
+            user_result = await db.execute(
+                select(User.id, User.email).where(User.id.in_([int(uid) for uid in user_ids if str(uid).isdigit()]))
+            )
+            user_map = {str(r[0]): r[1] for r in user_result.fetchall()}
+
         return {
             "audit_logs": [
                 {
                     "id": str(log.id),
                     "user_id": log.user_id,
+                    "user_email": user_map.get(str(log.user_id), ""),
                     "action": log.action,
                     "resource_type": log.resource_type,
                     "resource_id": log.resource_id,
@@ -398,7 +409,7 @@ async def list_prompts(
                 "id": str(v.id),
                 "version": v.version,
                 "is_active": v.is_active,
-                "content_preview": v.content[:200] if v.content else "",
+                "content": v.content or "",
                 "published_by": v.published_by,
                 "created_at": _serialize_datetime(v.created_at),
             })

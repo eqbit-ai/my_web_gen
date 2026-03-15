@@ -1,8 +1,8 @@
 """
 Admin domain management endpoints.
 
-Connected domains are stored on the Site model (Site.domain, Site.domain_status, etc.).
-This module queries sites that have a domain connected.
+External domains: user-owned domains pointed via nameservers (stored on Site model).
+Internal domains: domains purchased through the platform (stored in Domain model/table).
 """
 
 import logging
@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.domain import Domain
 from app.models.site import Site
 from app.models.user import User
 
@@ -20,6 +21,9 @@ from .deps import _serialize_datetime, require_admin
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Admin - Domains"])
+
+
+# ── External Domains (user-owned, pointed via nameservers — Site model) ──
 
 
 @router.get("/domains")
@@ -32,7 +36,7 @@ async def list_domains(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all sites with connected domains."""
+    """List all sites with external (user-pointed) domains."""
     try:
         query = select(Site).where(Site.domain.isnot(None), Site.domain != "")
 
@@ -91,7 +95,7 @@ async def domains_health(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Aggregate domain health stats from sites with connected domains."""
+    """Aggregate health stats for external domains."""
     try:
         base = select(Site).where(Site.domain.isnot(None), Site.domain != "")
         total_result = await db.execute(select(func.count()).select_from(base.subquery()))
@@ -122,13 +126,189 @@ async def domains_health(
         return {"error": str(e)}
 
 
+# ── Internal Domains (purchased through platform — Domain model) ─────────
+
+
+@router.get("/domains/internal")
+async def list_internal_domains(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    status: str | None = Query(default=None),
+    verification: str | None = Query(default=None),
+    tld: str | None = Query(default=None),
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all domains registered/purchased through the platform."""
+    try:
+        query = select(Domain)
+
+        if status:
+            query = query.where(Domain.status == status)
+        if verification:
+            query = query.where(Domain.verification_status == verification)
+        if tld:
+            query = query.where(Domain.tld == tld)
+
+        count_query = select(func.count()).select_from(query.subquery())
+        count_result = await db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        result = await db.execute(
+            query.order_by(Domain.created_at.desc()).limit(limit).offset(offset)
+        )
+        domains = result.scalars().all()
+
+        user_ids = list({d.user_id for d in domains})
+        user_map = {}
+        if user_ids:
+            user_result = await db.execute(
+                select(User.id, User.email).where(User.id.in_(user_ids))
+            )
+            user_map = {r[0]: r[1] for r in user_result.fetchall()}
+
+        return {
+            "domains": [
+                {
+                    "id": str(d.id),
+                    "user_id": d.user_id,
+                    "user_email": user_map.get(d.user_id, ""),
+                    "domain_name": d.domain_name,
+                    "tld": d.tld,
+                    "registrar": d.registrar,
+                    "status": d.status,
+                    "dns_status": d.dns_status,
+                    "ssl_status": d.ssl_status,
+                    "ssl_expires_at": _serialize_datetime(d.ssl_expires_at),
+                    "verification_status": d.verification_status,
+                    "auto_renew": d.auto_renew,
+                    "registered_at": _serialize_datetime(d.registered_at),
+                    "expires_at": _serialize_datetime(d.expires_at),
+                    "created_at": _serialize_datetime(d.created_at),
+                }
+                for d in domains
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+    except Exception as e:
+        logger.warning("Failed to list internal domains: %s", e)
+        return {"domains": [], "total": 0, "limit": limit, "offset": offset, "error": str(e)}
+
+
+@router.get("/domains/internal/health")
+async def internal_domains_health(
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Aggregate stats for internally registered domains."""
+    try:
+        total_result = await db.execute(select(func.count()).select_from(Domain))
+        total = total_result.scalar() or 0
+
+        status_result = await db.execute(
+            select(Domain.status, func.count(Domain.id)).group_by(Domain.status)
+        )
+        status_stats = {(r[0] or "unknown"): r[1] for r in status_result.fetchall()}
+
+        verification_result = await db.execute(
+            select(Domain.verification_status, func.count(Domain.id))
+            .group_by(Domain.verification_status)
+        )
+        verification_stats = {(r[0] or "unknown"): r[1] for r in verification_result.fetchall()}
+
+        ssl_result = await db.execute(
+            select(Domain.ssl_status, func.count(Domain.id)).group_by(Domain.ssl_status)
+        )
+        ssl_stats = {(r[0] or "unknown"): r[1] for r in ssl_result.fetchall()}
+
+        return {
+            "total_domains": total,
+            "domain_status": status_stats,
+            "verification_status": verification_stats,
+            "ssl_status": ssl_stats,
+        }
+    except Exception as e:
+        logger.warning("Failed to fetch internal domain health: %s", e)
+        return {"error": str(e)}
+
+
+@router.get("/domains/internal/{domain_id}")
+async def get_internal_domain_detail(
+    domain_id: str,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get details for a specific internally registered domain."""
+    try:
+        result = await db.execute(select(Domain).where(Domain.id == domain_id))
+        domain = result.scalar_one_or_none()
+        if not domain:
+            raise HTTPException(status_code=404, detail="Domain not found")
+
+        user_result = await db.execute(
+            select(User.email, User.full_name, User.company_name)
+            .where(User.id == domain.user_id)
+        )
+        user_info = user_result.first()
+
+        site_info = None
+        if domain.site_id:
+            site_result = await db.execute(
+                select(Site.name, Site.deployed_url, Site.status)
+                .where(Site.id == domain.site_id)
+            )
+            site_row = site_result.first()
+            if site_row:
+                site_info = {
+                    "id": str(domain.site_id),
+                    "name": site_row[0],
+                    "deployed_url": site_row[1],
+                    "status": site_row[2],
+                }
+
+        return {
+            "id": str(domain.id),
+            "user_id": domain.user_id,
+            "owner": {
+                "email": user_info[0] if user_info else "",
+                "full_name": user_info[1] if user_info else "",
+                "company_name": user_info[2] if user_info else "",
+            } if user_info else None,
+            "domain_name": domain.domain_name,
+            "tld": domain.tld,
+            "registrar": domain.registrar,
+            "status": domain.status,
+            "dns_status": domain.dns_status,
+            "ssl_status": domain.ssl_status,
+            "ssl_expires_at": _serialize_datetime(domain.ssl_expires_at),
+            "verification_status": domain.verification_status,
+            "verification_notes": domain.verification_notes,
+            "licence_number": domain.licence_number,
+            "auto_renew": domain.auto_renew,
+            "registered_at": _serialize_datetime(domain.registered_at),
+            "expires_at": _serialize_datetime(domain.expires_at),
+            "site": site_info,
+            "created_at": _serialize_datetime(domain.created_at),
+            "updated_at": _serialize_datetime(domain.updated_at),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch domain: {e}") from e
+
+
+# ── Detail routes (parameterized — must come AFTER all fixed paths) ──────
+
+
 @router.get("/domains/{site_id}")
 async def get_domain_detail(
     site_id: str,
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get domain details for a specific site."""
+    """Get external domain details for a specific site."""
     try:
         result = await db.execute(select(Site).where(Site.id == site_id))
         site = result.scalar_one_or_none()

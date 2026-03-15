@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
@@ -56,6 +56,25 @@ const Dashboard = () => {
     const [newDesignPreview, setNewDesignPreview] = useState(null); // template id for preview inside new design modal
     const [nameservers, setNameservers] = useState({}); // { siteId: string[] }
     const domainPollRef = useRef(null);
+    const [announcements, setAnnouncements] = useState([]);
+    const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('dismissed_announcements') || '[]'); } catch { return []; }
+    });
+
+    // Fetch active announcements
+    useEffect(() => {
+        getActiveAnnouncements().then(res => {
+            setAnnouncements(res?.announcements || []);
+        }).catch(() => {});
+    }, []);
+
+    const dismissAnnouncement = (id) => {
+        const updated = [...dismissedAnnouncements, id];
+        setDismissedAnnouncements(updated);
+        localStorage.setItem('dismissed_announcements', JSON.stringify(updated));
+    };
+
+    const visibleAnnouncements = announcements.filter(a => !dismissedAnnouncements.includes(a.id));
 
     // Persist active tab in URL hash
     useEffect(() => {
@@ -334,7 +353,7 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="dashboard">
+        <div className={`dashboard${impersonateInfo ? ' impersonating' : ''}`}>
             {impersonateInfo && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
@@ -478,6 +497,30 @@ const Dashboard = () => {
 
             {/* Main Content */}
             <main className={`dash-main ${activeTab === 'home' ? 'dash-main-gradient' : ''}`}>
+                {/* Announcements */}
+                {visibleAnnouncements.length > 0 && (
+                    <div style={{ padding: '12px 24px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {visibleAnnouncements.map(a => {
+                            const colors = { info: '#818cf8', warning: '#fbbf24', maintenance: '#f59e0b', success: '#34d399' };
+                            const color = colors[a.type] || colors.info;
+                            return (
+                                <div key={a.id} style={{
+                                    background: `${color}15`, border: `1px solid ${color}40`, borderRadius: 8,
+                                    padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                                }}>
+                                    <div>
+                                        <strong style={{ color, fontSize: 13 }}>{a.title}</strong>
+                                        <span style={{ color: '#e4e4e7', fontSize: 13, marginLeft: 8 }}>{a.message}</span>
+                                    </div>
+                                    <button onClick={() => dismissAnnouncement(a.id)} style={{
+                                        background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: 16, padding: '0 4px',
+                                    }}>×</button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 {/* ── Home Tab ────────────────────────────────────────── */}
                 {activeTab === 'home' && (
                     <div className="dash-content">

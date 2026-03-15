@@ -3487,6 +3487,10 @@ body {
   color: #f0f0f0;
 }
 
+.dashboard.impersonating {
+  padding-top: 40px;
+}
+
 /* --- Sidebar (dark theme matching gradient) --- */
 
 .dash-sidebar {
@@ -3503,6 +3507,15 @@ body {
   top: 0;
   transition: width 0.2s ease, min-width 0.2s ease;
   overflow: hidden;
+}
+
+.dashboard.impersonating .dash-sidebar {
+  height: calc(100vh - 40px);
+  top: 40px;
+}
+
+.dashboard.impersonating .dash-main {
+  min-height: calc(100vh - 40px);
 }
 
 .dash-sidebar.collapsed {

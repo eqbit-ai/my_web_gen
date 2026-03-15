@@ -2,14 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import AdminTable from './shared/AdminTable';
 import { adminGetExpiringTokens } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
 const T = { success: '#34d399', warning: '#fbbf24', danger: '#f87171', muted: '#71717a' };
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
-    catch { return d; }
-}
 
 function daysUntil(d) {
     if (!d) return null;

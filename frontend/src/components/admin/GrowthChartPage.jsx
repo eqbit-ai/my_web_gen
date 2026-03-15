@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import {
-    AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+    AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
 import { adminGetGrowthAnalytics } from '../../services/adminApi';
 
 const T = { border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a', accent: '#818cf8', success: '#34d399' };
+const PIE_COLORS = [T.success, '#f87171', T.accent, '#fbbf24'];
 
 const ChartTooltip = ({ active, payload, label }) => {
     if (!active || !payload) return null;
@@ -40,7 +41,20 @@ export default function GrowthChartPage() {
 
     useEffect(() => { load(); }, [load]);
 
-    const chartData = data?.data || data?.items || (Array.isArray(data) ? data : []);
+    // Merge daily_signups and daily_active into a single chart dataset
+    const signups = data?.daily_signups || [];
+    const active = data?.daily_active || [];
+    const statusBreakdown = data?.status_breakdown || [];
+
+    const chartData = (() => {
+        const map = {};
+        signups.forEach(d => { map[d.date] = { date: d.date, signups: d.count, active: 0 }; });
+        active.forEach(d => {
+            if (!map[d.date]) map[d.date] = { date: d.date, signups: 0, active: 0 };
+            map[d.date].active = d.count;
+        });
+        return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+    })();
 
     if (error) {
         return <div className="admin-alert admin-alert-error"><span>{error}</span><button onClick={load}>Retry</button></div>;
@@ -62,60 +76,71 @@ export default function GrowthChartPage() {
                 </div>
             </div>
 
-            {/* Summary stats from chart data */}
-            {chartData.length > 0 && (
-                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
-                    <div className="admin-stat-card admin-stat-accent-blue">
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">
-                                {chartData[chartData.length - 1]?.total_users ?? '—'}
-                            </div>
-                            <div className="admin-stat-label">Total Users (latest)</div>
-                        </div>
-                    </div>
-                    <div className="admin-stat-card admin-stat-accent-green">
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">
-                                {chartData.reduce((sum, d) => sum + (d.new_users || 0), 0)}
-                            </div>
-                            <div className="admin-stat-label">New Users ({days}d)</div>
-                        </div>
-                    </div>
-                    <div className="admin-stat-card admin-stat-accent-purple">
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">
-                                {chartData[chartData.length - 1]?.active_users ?? '—'}
-                            </div>
-                            <div className="admin-stat-label">Active Users (latest)</div>
-                        </div>
+            {/* Summary */}
+            <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
+                <div className="admin-stat-card admin-stat-accent-blue">
+                    <div className="admin-stat-body">
+                        <div className="admin-stat-value">{data?.total_users ?? '—'}</div>
+                        <div className="admin-stat-label">Total Users</div>
                     </div>
                 </div>
-            )}
+                <div className="admin-stat-card admin-stat-accent-green">
+                    <div className="admin-stat-body">
+                        <div className="admin-stat-value">{data?.new_this_week ?? '—'}</div>
+                        <div className="admin-stat-label">New This Week</div>
+                    </div>
+                </div>
+                <div className="admin-stat-card admin-stat-accent-purple">
+                    <div className="admin-stat-body">
+                        <div className="admin-stat-value">
+                            {signups.reduce((s, d) => s + d.count, 0)}
+                        </div>
+                        <div className="admin-stat-label">Signups ({days}d)</div>
+                    </div>
+                </div>
+            </div>
 
-            {/* Main Chart */}
-            <div className="admin-chart-card admin-chart-full">
-                <div className="admin-chart-title">
-                    Signups & Active Users
-                    <span className="admin-chart-period">Last {days} days</span>
+            <div className="admin-charts-row">
+                {/* Main Chart */}
+                <div className="admin-chart-card" style={{ flex: 2 }}>
+                    <div className="admin-chart-title">
+                        Signups & Active Users
+                        <span className="admin-chart-period">Last {days} days</span>
+                    </div>
+                    {loading ? (
+                        <div className="admin-loading-page" style={{ minHeight: 300 }}><RefreshCw size={20} className="admin-spinner" /> Loading...</div>
+                    ) : chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={350}>
+                            <AreaChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
+                                <XAxis dataKey="date" tick={{ fill: T.muted, fontSize: 11 }} />
+                                <YAxis tick={{ fill: T.muted, fontSize: 11 }} />
+                                <Tooltip content={<ChartTooltip />} />
+                                <Legend />
+                                <Area type="monotone" dataKey="signups" name="Signups" stroke={T.success} fill={`${T.success}30`} strokeWidth={2} />
+                                <Area type="monotone" dataKey="active" name="Active Users" stroke={T.accent} fill={`${T.accent}30`} strokeWidth={2} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="admin-chart-empty">No growth data available for this period</div>
+                    )}
                 </div>
-                {loading ? (
-                    <div className="admin-loading-page" style={{ minHeight: 300 }}><RefreshCw size={20} className="admin-spinner" /> Loading...</div>
-                ) : chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={350}>
-                        <AreaChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
-                            <XAxis dataKey="date" tick={{ fill: T.muted, fontSize: 11 }} />
-                            <YAxis tick={{ fill: T.muted, fontSize: 11 }} />
-                            <Tooltip content={<ChartTooltip />} />
-                            <Legend />
-                            <Area type="monotone" dataKey="total_users" name="Total Users" stroke={T.accent} fill={`${T.accent}30`} strokeWidth={2} />
-                            <Area type="monotone" dataKey="new_users" name="New Users" stroke={T.success} fill={`${T.success}30`} strokeWidth={2} />
-                            <Area type="monotone" dataKey="active_users" name="Active Users" stroke="#c084fc" fill="#c084fc30" strokeWidth={2} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="admin-chart-empty">No growth data available for this period</div>
-                )}
+
+                {/* Status Breakdown Pie */}
+                <div className="admin-chart-card" style={{ flex: 1 }}>
+                    <div className="admin-chart-title">User Status</div>
+                    {statusBreakdown.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={350}>
+                            <PieChart>
+                                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                    {statusBreakdown.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                                </Pie>
+                                <Tooltip content={<ChartTooltip />} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : <div className="admin-chart-empty">No status data</div>}
+                </div>
             </div>
         </div>
     );

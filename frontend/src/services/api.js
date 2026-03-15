@@ -804,6 +804,15 @@ export const getDnsNameservers = async (siteId) => {
     return data;
 };
 
+// ── Announcements ─────────────────────────────────────────────────────
+
+export const getActiveAnnouncements = async () => {
+    const response = await fetch(`${API_BASE_URL}/admin/announcements/active`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) return { announcements: [] };
+    return data;
+};
+
 // ── Password Reset ─────────────────────────────────────────────────────
 
 export const forgotPassword = async (email) => {

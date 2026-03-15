@@ -3,12 +3,8 @@ import { RefreshCw, Clock } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import { adminGetGenerationQueue } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
-}
 
 export default function GenerationQueuePage() {
     const [data, setData] = useState(null);

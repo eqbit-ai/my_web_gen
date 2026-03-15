@@ -15,7 +15,7 @@ import {
 import {
     adminGetStats, adminGetSystemInfo, adminResetCircuit,
     adminGetSites, adminGetGenerations, adminGetGenerationQueue, adminGetGenerationSuccessRate, adminRetryGeneration,
-    adminGetDomains, adminGetExpiringDomains, adminGetAeQueue, adminVerifyDomain, adminReprovisionSSL, adminGetDomainHealth,
+    adminGetDomains, adminGetDomainHealth,
     adminGetUsers, adminGetUserDetail, adminGetUserAudit, adminGetUserLogins,
     adminDisableUser, adminEnableUser, adminGrantTokens, adminResetPassword,
     adminVerifyLicence, adminImpersonateUser, adminBulkAction, adminExportUsers,
@@ -407,106 +407,44 @@ function SitesPage() {
    ═══════════════════════════════════════════════════════════════════════════ */
 function DomainsPage() {
     const [page, setPage] = useState(1);
-    const [tld, setTld] = useState(null);
     const [status, setStatus] = useState(null);
-    const { data: domData, loading, error, reload } = useApi(() => adminGetDomains(page, 20, status, tld), [page, status, tld]);
-    const { data: expiring } = useApi(() => adminGetExpiringDomains(30));
-    const { data: aeQueue } = useApi(() => adminGetAeQueue());
+    const { data: domData, loading, error, reload } = useApi(() => adminGetDomains(page, 20, status), [page, status]);
     const { data: health } = useApi(() => adminGetDomainHealth());
-    const [actionLoading, setActionLoading] = useState(null);
 
     const domains = domData?.domains || domData?.items || [];
     const total = domData?.total || domains.length;
-    const expiringList = expiring?.domains || expiring?.items || (Array.isArray(expiring) ? expiring : []);
-    const aeList = aeQueue?.domains || aeQueue?.items || (Array.isArray(aeQueue) ? aeQueue : []);
-
-    const handleVerify = async (id, st) => {
-        setActionLoading(id);
-        try { await adminVerifyDomain(id, st); reload(); } catch {}
-        setActionLoading(null);
-    };
-    const handleSSL = async (id) => {
-        setActionLoading(id);
-        try { await adminReprovisionSSL(id); reload(); } catch {}
-        setActionLoading(null);
-    };
 
     return (
         <div>
-            <SectionHeader title="Domains & DNS">
+            <SectionHeader title="Connected Domains">
                 <button style={btnGhost} onClick={reload}><RefreshCw size={14} /> Refresh</button>
             </SectionHeader>
 
             {/* Domain Health */}
-            {health && (
+            {health && !health.error && (
                 <div style={{ ...cardStyle, marginBottom: 24, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                    {Object.entries(health).map(([k, v]) => (
-                        <div key={k}>
-                            <span style={{ color: T.muted, fontSize: 12 }}>{k.replace(/_/g, ' ')}</span>
-                            <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Expiring Domains Alert */}
-            {expiringList.length > 0 && (
-                <div style={{ background: 'rgba(251,191,36,0.1)', border: `1px solid ${T.warning}`, borderRadius: 8, padding: '12px 16px', marginBottom: 24, color: T.warning, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <AlertTriangle size={16} />
-                    <span>{expiringList.length} domain(s) expiring within 30 days</span>
-                </div>
-            )}
-
-            {/* .ae Verification Queue */}
-            {aeList.length > 0 && (
-                <div style={{ ...cardStyle, marginBottom: 24 }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 0, marginBottom: 16 }}>.ae Verification Queue ({aeList.length})</h3>
-                    <table style={tableStyle}>
-                        <thead>
-                            <tr>
-                                <th style={thStyle}>Domain</th>
-                                <th style={thStyle}>User</th>
-                                <th style={thStyle}>Submitted</th>
-                                <th style={thStyle}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {aeList.map(d => (
-                                <tr key={d.id}>
-                                    <td style={tdStyle}>{d.domain || d.name}</td>
-                                    <td style={tdStyle}>{d.user_id || d.user_email || '—'}</td>
-                                    <td style={tdStyle}>{formatDate(d.created_at || d.submitted_at)}</td>
-                                    <td style={tdStyle}>
-                                        <div style={{ display: 'flex', gap: 4 }}>
-                                            <button style={{ ...btnStyle, padding: '4px 10px', fontSize: 11, background: T.success }} onClick={() => handleVerify(d.id, 'verified')} disabled={actionLoading === d.id}>
-                                                <Check size={12} /> Approve
-                                            </button>
-                                            <button style={{ ...btnDanger, padding: '4px 10px', fontSize: 11 }} onClick={() => handleVerify(d.id, 'rejected')} disabled={actionLoading === d.id}>
-                                                <X size={12} /> Reject
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div>
+                        <span style={{ color: T.muted, fontSize: 12 }}>Total Domains</span>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>{health.total_domains || 0}</div>
+                    </div>
+                    <div>
+                        <span style={{ color: T.muted, fontSize: 12 }}>SSL Active</span>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>{health.ssl_active || 0}</div>
+                    </div>
+                    <div>
+                        <span style={{ color: T.muted, fontSize: 12 }}>SSL None</span>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: T.text }}>{health.ssl_none || 0}</div>
+                    </div>
                 </div>
             )}
 
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <select value={tld || ''} onChange={e => { setTld(e.target.value || null); setPage(1); }} style={{ ...inputStyle, width: 'auto' }}>
-                    <option value="">All TLDs</option>
-                    <option value=".com">.com</option>
-                    <option value=".ae">.ae</option>
-                    <option value=".net">.net</option>
-                    <option value=".org">.org</option>
-                </select>
                 <select value={status || ''} onChange={e => { setStatus(e.target.value || null); setPage(1); }} style={{ ...inputStyle, width: 'auto' }}>
                     <option value="">All Status</option>
                     <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="expired">Expired</option>
+                    <option value="pending_validation">Pending Validation</option>
+                    <option value="pending_deployment">Pending Deployment</option>
                 </select>
             </div>
 
@@ -518,31 +456,25 @@ function DomainsPage() {
                             <thead>
                                 <tr>
                                     <th style={thStyle}>Domain</th>
+                                    <th style={thStyle}>Site</th>
                                     <th style={thStyle}>User</th>
-                                    <th style={thStyle}>TLD</th>
                                     <th style={thStyle}>Status</th>
                                     <th style={thStyle}>SSL</th>
-                                    <th style={thStyle}>Expires</th>
-                                    <th style={thStyle}>Actions</th>
+                                    <th style={thStyle}>CloudFront</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {domains.map(d => (
                                     <tr key={d.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
-                                        <td style={tdStyle}>{d.domain || d.name}</td>
-                                        <td style={tdStyle}>{d.user_id || d.user_email || '—'}</td>
-                                        <td style={tdStyle}>{d.tld || '—'}</td>
+                                        <td style={tdStyle}>{d.domain || '—'}</td>
+                                        <td style={tdStyle}>{d.site_name || '—'}</td>
+                                        <td style={tdStyle}>{d.user_email || '—'}</td>
                                         <td style={tdStyle}><StatusBadge status={d.status} size="sm" /></td>
-                                        <td style={tdStyle}><StatusBadge status={d.ssl_status || 'unknown'} size="sm" /></td>
-                                        <td style={tdStyle}>{formatDate(d.expires_at)}</td>
-                                        <td style={tdStyle}>
-                                            <button style={{ ...btnGhost, padding: '4px 10px', fontSize: 11 }} onClick={() => handleSSL(d.id)} disabled={actionLoading === d.id}>
-                                                <Shield size={12} /> SSL
-                                            </button>
-                                        </td>
+                                        <td style={tdStyle}><StatusBadge status={d.ssl_status || 'none'} size="sm" /></td>
+                                        <td style={{ ...tdStyle, fontSize: '0.75rem' }}>{d.cloudfront_domain || '—'}</td>
                                     </tr>
                                 ))}
-                                {domains.length === 0 && <tr><td colSpan={7} style={{ ...tdStyle, textAlign: 'center', color: T.muted }}>No domains found</td></tr>}
+                                {domains.length === 0 && <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: T.muted }}>No connected domains</td></tr>}
                             </tbody>
                         </table>
                         <Pagination page={page} total={total} limit={20} onPageChange={setPage} />

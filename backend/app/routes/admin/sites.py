@@ -64,6 +64,7 @@ async def list_sites(
                     "user_email": user_map.get(s.user_id, ""),
                     "name": s.name,
                     "domain": s.domain,
+                    "deployed_url": s.deployed_url,
                     "status": s.status,
                     "is_multipage": s.is_multipage,
                     "page_count": s.page_count,
@@ -111,9 +112,13 @@ async def get_site_detail(
             } if user_info else None,
             "name": site.name,
             "domain": site.domain,
+            "deployed_url": site.deployed_url,
+            "cloudfront_domain": site.cloudfront_domain,
+            "cloudflare_project_name": site.cloudflare_project_name,
             "status": site.status,
             "is_multipage": site.is_multipage,
             "page_count": site.page_count,
+            "session_id": site.session_id,
             "last_deployed_at": _serialize_datetime(site.last_deployed_at),
             "created_at": _serialize_datetime(site.created_at),
             "updated_at": _serialize_datetime(site.updated_at),
@@ -130,28 +135,49 @@ async def preview_site(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return read-only HTML of a user's site from Redis session or DB."""
+    """Return read-only HTML of a user's site from Redis session."""
     try:
-        # Try Redis session first
-        r = await get_redis()
+        import json
+
         result = await db.execute(select(Site).where(Site.id == site_id))
         site = result.scalar_one_or_none()
         if not site:
             raise HTTPException(status_code=404, detail="Site not found")
 
-        # Try to find session data in Redis
+        r = await get_redis()
         html = None
-        async for key in r.scan_iter(match="session:*", count=200):
-            session_data = await r.hgetall(key)
-            if session_data.get("site_id") == str(site_id):
-                html = session_data.get("html")
-                break
 
+        # 1) Try the site's stored session_id
+        if site.session_id:
+            raw = await r.get(f"session:{site.session_id}")
+            if raw:
+                session_data = json.loads(raw) if isinstance(raw, str) else raw
+                # Multi-page: get index page HTML
+                pages = session_data.get("pages")
+                if pages and isinstance(pages, dict):
+                    index_page = pages.get("index", {})
+                    html = index_page.get("html") if isinstance(index_page, dict) else None
+                if not html:
+                    html = session_data.get("html")
+
+        # 2) Fallback: scan recent sessions for this user
         if not html:
-            # Fallback: check if there's a session keyed by user
-            session_key = f"session:{site.user_id}"
-            session_data = await r.hgetall(session_key)
-            html = session_data.get("html") if session_data else None
+            async for key in r.scan_iter(match="session:*", count=200):
+                raw = await r.get(key)
+                if not raw:
+                    continue
+                try:
+                    session_data = json.loads(raw) if isinstance(raw, str) else raw
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if str(session_data.get("user_id")) == str(site.user_id):
+                    pages = session_data.get("pages")
+                    if pages and isinstance(pages, dict):
+                        index_page = pages.get("index", {})
+                        html = index_page.get("html") if isinstance(index_page, dict) else None
+                    if not html:
+                        html = session_data.get("html")
+                    break
 
         return {
             "site_id": str(site.id),

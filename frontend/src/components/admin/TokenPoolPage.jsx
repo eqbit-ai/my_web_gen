@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Coins, TrendingUp } from 'lucide-react';
 import {
-    AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+    ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
 import { adminGetTokenPool, adminGetTokenConsumption } from '../../services/adminApi';
 
 const T = { bg: '#0a0a0f', surface: '#12121a', border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a', accent: '#818cf8', success: '#34d399', warning: '#fbbf24', danger: '#f87171' };
+
+function formatK(v) {
+    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+    if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
+    return v;
+}
 
 const ChartTooltip = ({ active, payload, label }) => {
     if (!active || !payload) return null;
@@ -14,8 +20,11 @@ const ChartTooltip = ({ active, payload, label }) => {
             <div className="admin-chart-tooltip-label">{label}</div>
             {(payload || []).map((p, i) => (
                 <div key={i} className="admin-chart-tooltip-row">
-                    <span>{p.name}</span>
-                    <strong style={{ color: p.color }}>{p.value}</strong>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color || p.fill, display: 'inline-block' }} />
+                        {p.name}
+                    </span>
+                    <strong style={{ color: p.color || p.fill }}>{(p.value || 0).toLocaleString()}</strong>
                 </div>
             ))}
         </div>
@@ -48,8 +57,22 @@ export default function TokenPoolPage() {
     if (error) return <div className="admin-alert admin-alert-error"><span>{error}</span><button onClick={load}>Retry</button></div>;
 
     const p = pool || {};
-    const trendData = trend?.data || trend?.items || (Array.isArray(trend) ? trend : []);
+    const rawTrend = trend?.daily_spend || [];
     const topConsumers = p.top_consumers || p.top_users || [];
+
+    // Build chart data with cumulative net and short date labels
+    const trendData = (() => {
+        let cumNet = 0;
+        return rawTrend.map(d => {
+            cumNet += (d.granted || 0) - (d.consumed || 0);
+            return {
+                date: d.date?.slice(5) || d.date,
+                consumed: d.consumed || 0,
+                granted: d.granted || 0,
+                net: cumNet,
+            };
+        });
+    })();
 
     const totalIssued = p.total_granted ?? p.total_issued ?? 0;
     const totalUsed = p.total_consumed ?? p.total_used ?? 0;
@@ -107,17 +130,32 @@ export default function TokenPoolPage() {
 
             {/* Consumption Trend */}
             <div className="admin-chart-card admin-chart-full" style={{ marginBottom: 24 }}>
-                <div className="admin-chart-title">Consumption Trend (30d)</div>
+                <div className="admin-chart-title">
+                    Consumption Trend
+                    <span className="admin-chart-period">Last 30 days</span>
+                </div>
                 {trendData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                        <AreaChart data={trendData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
-                            <XAxis dataKey="date" tick={{ fill: T.muted, fontSize: 11 }} />
-                            <YAxis tick={{ fill: T.muted, fontSize: 11 }} />
+                    <ResponsiveContainer width="100%" height={280}>
+                        <ComposedChart data={trendData} barGap={2}>
+                            <defs>
+                                <linearGradient id="poolConsumedGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={T.warning} stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor={T.warning} stopOpacity={0.4} />
+                                </linearGradient>
+                                <linearGradient id="poolGrantedGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={T.success} stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor={T.success} stopOpacity={0.4} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: T.muted, fontSize: 11 }} axisLine={{ stroke: T.border }} tickLine={false} />
+                            <YAxis tick={{ fill: T.muted, fontSize: 11 }} tickFormatter={formatK} axisLine={false} tickLine={false} />
                             <Tooltip content={<ChartTooltip />} />
-                            <Area type="monotone" dataKey="consumed" name="Consumed" stroke={T.warning} fill={`${T.warning}30`} />
-                            <Area type="monotone" dataKey="granted" name="Granted" stroke={T.success} fill={`${T.success}30`} />
-                        </AreaChart>
+                            <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                            <Bar dataKey="consumed" name="Consumed" fill="url(#poolConsumedGrad)" radius={[4, 4, 0, 0]} barSize={trendData.length > 20 ? 10 : 18} />
+                            <Bar dataKey="granted" name="Granted" fill="url(#poolGrantedGrad)" radius={[4, 4, 0, 0]} barSize={trendData.length > 20 ? 10 : 18} />
+                            <Line type="monotone" dataKey="net" name="Net Balance" stroke="#c084fc" strokeWidth={2} dot={false} strokeDasharray="6 3" />
+                        </ComposedChart>
                     </ResponsiveContainer>
                 ) : <div className="admin-chart-empty">No consumption data available</div>}
             </div>

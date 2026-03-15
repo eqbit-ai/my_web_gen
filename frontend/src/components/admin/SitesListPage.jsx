@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, RotateCcw } from 'lucide-react';
+import { RefreshCw, ExternalLink } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
-import { adminGetSites, adminRebuildSite } from '../../services/adminApi';
+import { adminGetSites } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
 const T = { muted: '#71717a', text: '#e4e4e7' };
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
-}
 
 export default function SitesListPage() {
     const navigate = useNavigate();
@@ -20,8 +16,6 @@ export default function SitesListPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [rebuilding, setRebuilding] = useState(null);
-
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -34,34 +28,26 @@ export default function SitesListPage() {
 
     useEffect(() => { load(); }, [load]);
 
-    const handleRebuild = async (e, siteId) => {
-        e.stopPropagation();
-        setRebuilding(siteId);
-        try { await adminRebuildSite(siteId); load(); } catch {}
-        setRebuilding(null);
-    };
-
     const sites = Array.isArray(data) ? data : data?.sites || data?.items || [];
     const total = data?.total || sites.length;
 
     const columns = [
         { key: 'id', label: 'ID', width: 60 },
         { key: 'user_id', label: 'User', render: (v, row) => row.user_email || v || '—' },
-        { key: 'domain', label: 'Domain', render: v => v || '—' },
+        {
+            key: 'domain', label: 'Domain / URL',
+            render: (v, row) => {
+                const url = v ? `https://${v}` : row.deployed_url;
+                if (url) return (
+                    <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#818cf8', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem' }}>
+                        {v || 'S3 Link'} <ExternalLink size={10} />
+                    </a>
+                );
+                return '—';
+            },
+        },
         { key: 'status', label: 'Status', render: v => <StatusBadge status={v} size="sm" /> },
         { key: 'created_at', label: 'Created', render: v => <span className="admin-date-cell">{formatDate(v)}</span> },
-        {
-            key: 'actions', label: 'Actions', sortable: false,
-            render: (_, row) => (
-                <button
-                    className="admin-btn admin-btn-sm"
-                    onClick={(e) => handleRebuild(e, row.id)}
-                    disabled
-                >
-                    <RotateCcw size={12} /> {rebuilding === row.id ? '...' : 'Rebuild'}
-                </button>
-            ),
-        },
     ];
 
     if (error) {

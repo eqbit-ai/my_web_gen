@@ -3,15 +3,11 @@ import { RefreshCw, Coins, Plus } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import { adminGetTransactions, adminGetTokenPool, adminGrantTokensWithExpiry, adminGetUsers } from '../../services/adminApi';
+import formatDate from './shared/formatDate';
 
 const T = { text: '#e4e4e7', muted: '#71717a', success: '#34d399', danger: '#f87171', warning: '#fbbf24' };
 function fmt(v) { return v != null && v !== '—' ? Number(v).toLocaleString() : '—'; }
 
-function formatDate(d) {
-    if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return d; }
-}
 
 export default function TokenLedgerPage() {
     const [page, setPage] = useState(1);

@@ -11,7 +11,7 @@ export default function AnnouncementsPage() {
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [form, setForm] = useState({ title: '', content: '', type: 'info', active: true });
+    const [form, setForm] = useState({ title: '', message: '', type: 'info', is_active: true });
     const [saving, setSaving] = useState(false);
     const [preview, setPreview] = useState(null);
 
@@ -36,7 +36,7 @@ export default function AnnouncementsPage() {
             else await adminCreateAnnouncement(form);
             setShowModal(false);
             setEditingId(null);
-            setForm({ title: '', content: '', type: 'info', active: true });
+            setForm({ title: '', message: '', type: 'info', is_active: true });
             load();
         } catch {}
         setSaving(false);
@@ -49,17 +49,17 @@ export default function AnnouncementsPage() {
 
     const startEdit = (a) => {
         setEditingId(a.id);
-        setForm({ title: a.title, content: a.content, type: a.type || 'info', active: a.active !== false });
+        setForm({ title: a.title, message: a.message || '', type: a.type || 'info', is_active: a.is_active !== false });
         setShowModal(true);
     };
 
     const startCreate = () => {
         setEditingId(null);
-        setForm({ title: '', content: '', type: 'info', active: true });
+        setForm({ title: '', message: '', type: 'info', is_active: true });
         setShowModal(true);
     };
 
-    const typeColors = { info: T.accent, warning: '#fbbf24', success: '#34d399', error: T.danger };
+    const typeColors = { info: T.accent, warning: '#fbbf24', success: '#34d399', maintenance: '#f59e0b' };
 
     if (loading) return <div className="admin-loading-page"><RefreshCw size={20} className="admin-spinner" /> Loading...</div>;
     if (error) return <div className="admin-alert admin-alert-error"><span>{error}</span><button onClick={load}>Retry</button></div>;
@@ -89,8 +89,8 @@ export default function AnnouncementsPage() {
                                 <input className="admin-input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
                             </div>
                             <div>
-                                <label style={{ fontSize: 11, color: T.muted, display: 'block', marginBottom: 4 }}>Content</label>
-                                <textarea className="admin-input" style={{ minHeight: 100, resize: 'vertical' }} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
+                                <label style={{ fontSize: 11, color: T.muted, display: 'block', marginBottom: 4 }}>Message</label>
+                                <textarea className="admin-input" style={{ minHeight: 100, resize: 'vertical' }} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
                             </div>
                             <div style={{ display: 'flex', gap: 12 }}>
                                 <div style={{ flex: 1 }}>
@@ -98,19 +98,19 @@ export default function AnnouncementsPage() {
                                     <select className="admin-input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
                                         <option value="info">Info</option>
                                         <option value="warning">Warning</option>
+                                        <option value="maintenance">Maintenance</option>
                                         <option value="success">Success</option>
-                                        <option value="error">Error</option>
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.muted, fontSize: 13, cursor: 'pointer' }}>
-                                        <input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} />
+                                        <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} />
                                         Active
                                     </label>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                                <button className="admin-btn admin-btn-primary" onClick={handleSave} disabled={saving || !form.title}>
+                                <button className="admin-btn admin-btn-primary" onClick={handleSave} disabled={saving || !form.title || !form.message}>
                                     {saving ? 'Saving...' : 'Save'}
                                 </button>
                                 <button className="admin-btn" onClick={() => setShowModal(false)}>Cancel</button>
@@ -138,7 +138,7 @@ export default function AnnouncementsPage() {
                             fontSize: 14,
                             lineHeight: 1.6,
                         }}>
-                            {preview.content}
+                            {preview.message}
                         </div>
                     </div>
                 </>
@@ -152,10 +152,10 @@ export default function AnnouncementsPage() {
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                                     <strong style={{ color: T.text, fontSize: 15 }}>{a.title}</strong>
-                                    <StatusBadge status={a.active !== false ? 'active' : 'inactive'} size="sm" />
+                                    <StatusBadge status={a.is_active !== false ? 'active' : 'inactive'} size="sm" />
                                     <StatusBadge status={a.type || 'info'} size="sm" />
                                 </div>
-                                <p style={{ color: T.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>{a.content}</p>
+                                <p style={{ color: T.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>{a.message}</p>
                             </div>
                             <div className="admin-actions">
                                 <button className="admin-btn admin-btn-sm" onClick={() => setPreview(a)}><Eye size={12} /></button>
