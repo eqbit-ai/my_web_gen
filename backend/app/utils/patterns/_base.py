@@ -492,14 +492,18 @@ LENIS SMOOTH SCROLL — always active. JS initializes Lenis automatically.
 DESIGN QUALITY — what makes a website look "designed" vs "generated":
 
   COMMIT TO AN AESTHETIC: The plan specifies a design style. Execute it with FULL commitment:
-  - Dark themes: use near-black backgrounds (#0a0a0a), not dark gray (#333). Accent colors should POP.
-  - Light themes: use warm whites (#faf9f6 or #f8f7f4), not pure white (#fff). Add depth with subtle tints.
+  - Dark themes: use near-black backgrounds (#0a0a0f, #09090b, #0c0a14), NOT dark gray (#333 or #555). Surface should be 5-10% lighter than bg. Accent colors should POP against the dark base.
+  - Light themes: use tinted whites (#faf8f5, #f5f3f0, #f8f9fa), NOT pure white (#ffffff for bg). Use pure white (#ffffff) only for surface/cards. Add depth with subtle warm or cool tints.
+  - NEVER use raw Tailwind defaults (#3b82f6, #22c55e, #ef4444, #f59e0b) — desaturate 15-30% or shift hue to make them unique.
+  - Text should NEVER be pure #000000 — use tinted blacks (#111827, #1a202c, #2a2520).
   - Every design choice should reinforce the aesthetic. No mixing styles.
 
   TYPOGRAPHY (non-negotiable):
   - Hero headline: hero-heading class = clamp(2.5rem, 6vw, 4.5rem) (MASSIVE and impactful)
-  - NEVER use Inter, Roboto, Arial, or system-ui — these scream "generic"
-  - Use the EXACT fonts from the plan.
+  - NEVER use Inter, Roboto, Arial, or system-ui for HEADINGS — these scream "generic"
+  - Use the EXACT fonts from the plan — heading fonts should be distinctive and memorable
+  - Premium heading fonts: Playfair Display, Cormorant Garamond, DM Serif Display, Space Grotesk, Syne, Outfit, Cabinet Grotesk, Sora, Clash Display, Noto Serif Display, Libre Baskerville
+  - Inter/DM Sans are acceptable ONLY for body text, never headings
   - Small labels/tags: use .section-label class
 
   VISUAL DEPTH & TEXTURE (what separates good from great):

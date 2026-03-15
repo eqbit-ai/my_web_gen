@@ -228,21 +228,32 @@ You MUST return ONLY valid JSON:
   "image_style": "cohesive visual theme for all images on this site — e.g. clean modern architecture photography natural light sustainable materials glass buildings greenery",
   "design": {{
     "theme": "dark or light",
-    "primary_color": "#hex — the main brand color",
-    "secondary_color": "#hex — supporting color",
-    "accent_color": "#hex — for CTAs and highlights",
+    "primary_color": "#hex — the main brand color (muted/sophisticated, NOT bright/saturated)",
+    "secondary_color": "#hex — supporting color (deeper shade or complementary)",
+    "accent_color": "#hex — for CTAs and highlights (can be brighter than primary)",
     "background_color": "#hex — page background",
-    "surface_color": "#hex — card/section background (slightly different from bg)",
-    "text_color": "#hex — primary text",
-    "text_muted": "#hex — secondary/muted text",
-    "heading_font": "Google Font name for headings (NEVER Inter, Roboto, Arial, Open Sans — these are banned. Use distinctive fonts like Playfair Display, Oswald, Barlow Condensed, Space Grotesk, Syne, DM Serif Display, Outfit, etc.)",
-    "body_font": "Google Font name for body text",
+    "surface_color": "#hex — card/section background (slightly different from bg — within 5-10% lightness)",
+    "text_color": "#hex — primary text (NEVER pure #000000 — use #111827, #1a1a2e, #2a2520 etc.)",
+    "text_muted": "#hex — secondary/muted text (40-60% lighter than text_color)",
+    "heading_font": "Google Font name for headings (NEVER Inter, Roboto, Arial, Open Sans — these are banned. Use distinctive fonts like Playfair Display, Cormorant Garamond, DM Serif Display, Space Grotesk, Syne, Outfit, Cabinet Grotesk, Sora, Clash Display, etc.)",
+    "body_font": "Google Font name for body text (Inter, DM Sans, Lato, Source Sans 3, General Sans are good choices)",
     "style": "e.g. minimal, bold, elegant, playful, corporate",
     "card_radius": "8px or 12px or 16px",
     "button_radius": "8px or 50px (pill)",
     "shadow_style": "soft or sharp or none",
     "spacing": "compact or normal or spacious"
   }},
+
+PREMIUM COLOR PALETTE RULES (CRITICAL — cheap colors = cheap website):
+1. NEVER use raw Tailwind/CSS defaults: #3b82f6, #22c55e, #ef4444, #eab308, #8b5cf6, #ec4899, #f97316 — these are the most overused colors on the internet and look generic. Adjust hue, saturation, or lightness to make them unique.
+2. DESATURATE: Professional brands use muted, sophisticated tones — not neon. Reduce saturation 15-30% from pure. Example: instead of #3b82f6 (generic blue), use #2e6fd4 or #3d6eff (richer, deeper).
+3. WARM OR COOL — pick ONE bias for the entire palette and commit. Don't mix warm oranges with cool blues randomly.
+4. BACKGROUND ≠ pure white or pure black. Use tinted neutrals: #faf8f5 (warm white), #f5f3f0 (stone), #0a0a0f (blue-black), #110e09 (warm black).
+5. SURFACE should be 3-8% different from background in lightness. Light themes: bg #f8f9fa → surface #ffffff. Dark themes: bg #0a0a0f → surface #141418.
+6. TEXT should NEVER be #000000 (harsh). Use #111827 (blue-gray), #1a202c (cool), #2a2520 (warm), #1c1c1e (neutral).
+7. Accent color should CONTRAST with primary. If primary is cool (blue/green), accent should be warm (gold/coral). If primary is warm, accent can be a brighter warm or a contrasting cool.
+8. DEPTH through shade: use primary at different opacities or lightness levels (hero bg, card borders, hover states) — don't introduce 5 different colors.
+9. The design direction given below may specify exact hex values — use those as-is. If it specifies a style but no specific colors, create a palette following these rules.
   "sections": [
     {{
       "type": "navbar",
@@ -1503,76 +1514,132 @@ CRITICAL — JS-DEPENDENT CLASS NAMES:
 # Category → list of design seeds appropriate for that category
 NICHE_DESIGN_SEEDS = {
     "tech": [
-        "Dark theme (#0a0a0a bg) with electric blue (#3b82f6) + cyan gradients. Use hero_full_image + icon_grid. Futuristic, bold typography. Glass-morphism cards.",
-        "Deep navy (#0f172a bg) with neon green (#22c55e) accents. Use hero_asymmetric + card_grid. Terminal/hacker aesthetic, monospace headings.",
-        "Pure black (#000000 bg) with violet (#8b5cf6) + pink (#ec4899) gradient accents. Use hero_center + feature_split. Dramatic, high-contrast.",
-        "Clean white (#ffffff bg) with indigo (#4f46e5) + sharp geometric accents. Use hero_product_mockup + icon_grid. Apple-like precision.",
-        "Warm gray (#1c1917 bg) with amber (#f59e0b) accents. Use hero_split + card_grid. Premium dev-tool aesthetic.",
-        "Light gray (#f8fafc bg) with teal (#0d9488) + dark charcoal text. Use hero_split + feature_cards. Modern SaaS clean.",
+        # Vercel-inspired: near-black + single blue accent
+        "Dark theme (#09090b bg, #111113 surface) with refined blue (#2563eb primary, #60a5fa accent). Heading: Space Grotesk. Body: Inter. Use hero_split + icon_grid. Minimal, developer-grade precision. Clean geometry, no visual noise.",
+        # Linear-inspired: dark + violet glow
+        "Deep dark (#0c0a14 bg, #13111c surface) with violet (#7c5cfc primary, #a78bfa accent, #c4b5fd secondary). Heading: Satoshi. Body: General Sans. Use hero_center + card_grid. Soft glow effects, glass-morphism cards, monochrome base with single hue accent.",
+        # Stripe-inspired: white + vibrant indigo
+        "Clean light (#fafafa bg, #ffffff surface) with indigo (#635bff primary, #0a2540 secondary, #00d4aa accent). Text: #0a2540. Heading: Sora. Body: Inter. Use hero_split + feature_split. Diagonal gradient hero, frosted cards, technical but warm.",
+        # Supabase-inspired: dark + emerald
+        "Near-black (#090a0b bg, #111214 surface) with emerald (#3ecf8e primary, #1c8656 secondary, #3ecf8e accent). Heading: Manrope. Body: Inter. Use hero_center + icon_grid. Dark terminal aesthetic, code-friendly, glowing green accents on jet black.",
+        # Notion-inspired: warm white + subtle
+        "Warm light (#fffdf7 bg, #ffffff surface) with soft black (#37352f primary, #e16259 accent, #6940a5 secondary). Text: #37352f. Text muted: #787774. Heading: Lyon Display. Body: Inter. Use hero_split + card_grid. Ultra-clean, content-first, generous whitespace, almost no decoration.",
+        # Arc-inspired: dark + warm gradients
+        "Rich dark (#111019 bg, #1a1825 surface) with warm gradient (#e47de0 primary, #7c5cfc secondary, #fbbf24 accent). Heading: Cabinet Grotesk. Body: General Sans. Use hero_asymmetric + feature_cards. Bold gradients, playful but premium, rounded UI.",
+        # Raycast-inspired: midnight + orange
+        "True dark (#0d0d0d bg, #171717 surface) with warm orange (#ff6363 primary, #ff9f43 accent, #c0392b secondary). Heading: Geist. Body: Inter. Use hero_center + card_grid. Keyboard-first aesthetic, sharp corners, command palette feel.",
+        # Figma-inspired: clean + multi-accent
+        "Pure white (#ffffff bg, #f5f5f5 surface) with charcoal text (#1e1e1e) + accent (#a259ff primary, #1abcfe secondary, #0acf83 accent). Heading: Red Hat Display. Body: Inter. Use hero_split + feature_split. Design tool polish, pixel-perfect spacing, clean grid.",
     ],
     "corporate": [
-        "Deep charcoal (#1a1a2e bg) with gold (#d4a843) accents. Use hero_full_image + feature_split. Executive, powerful.",
-        "Navy (#0c1b33 bg) with silver (#94a3b8) + white text. Use hero_center + card_grid. Institutional authority.",
-        "Slate (#0f172a bg) with emerald (#059669) accents. Use hero_split + icon_grid. Finance/consulting premium.",
-        "Off-white (#fafaf9 bg) with deep navy (#1e293b) + copper (#b45309) accents. Use hero_full_image + feature_split. Heritage luxury.",
-        "Warm white (#fffbeb bg) with forest green (#166534) + gold. Use hero_split + card_grid. Trust and tradition.",
-        "Light stone (#f5f5f4 bg) with burgundy (#881337) + dark gray. Use hero_asymmetric + feature_cards. Bold corporate.",
+        # McKinsey-level: navy + muted gold
+        "Deep navy (#0a1628 bg, #111d32 surface) with muted gold (#c5a04e primary, #8b7332 secondary, #d4b76a accent). Text: #e8e4dc. Heading: DM Serif Display. Body: Source Sans 3. Use hero_full_image + feature_split. Executive boardroom gravitas, serif authority, minimal ornamentation.",
+        # Deloitte-level: dark slate + teal
+        "Charcoal slate (#0f1419 bg, #161d24 surface) with refined teal (#2a9d8f primary, #1a6b5f secondary, #45b7a8 accent). Heading: Outfit. Body: Inter. Use hero_split + card_grid. Consulting-grade credibility, data-driven, clean info hierarchy.",
+        # Goldman-level: cream + navy + copper
+        "Warm ivory (#f7f4ef bg, #ffffff surface) with deep navy (#1b2a4a primary, #b5651d accent, #2c3e6b secondary). Text: #1b2a4a. Heading: Libre Baskerville. Body: Source Serif 4. Use hero_full_image + feature_split. Old-money refinement, serif typography, understated wealth.",
+        # Bain-level: white + deep green
+        "Pearl white (#f8f9fa bg, #ffffff surface) with forest (#1a4731 primary, #c5a04e accent, #2d6a4f secondary). Text: #1a2332. Heading: DM Serif Display. Body: DM Sans. Use hero_split + icon_grid. Trust, heritage, institutional confidence. Gold accent only on CTAs.",
+        # JPMorgan-level: black + white + minimal
+        "Rich black (#0a0a0a bg, #141414 surface) with white (#ffffff text) + platinum (#a8a8a8 primary, #d4d4d4 accent, #6b6b6b secondary). Heading: Playfair Display. Body: Inter. Use hero_center + feature_split. Ultra-premium monochrome, high contrast, zero clutter.",
+        # Accenture-level: light + purple accent
+        "Light warm (#f5f3f0 bg, #ffffff surface) with deep plum (#7b2d8e primary, #a855f7 accent, #4a1259 secondary). Text: #1a1a2e. Heading: Syne. Body: Inter. Use hero_asymmetric + card_grid. Innovation meets tradition, single bold color on neutral base.",
     ],
     "luxury": [
-        "Black (#050505 bg) with gold (#c8a84e) + cream text. Use hero_full_image + feature_split. Ultra-premium, editorial.",
-        "Deep plum (#1a0a2e bg) with rose gold (#e8b4b8) accents. Use hero_center + card_grid. Feminine luxury.",
-        "Charcoal (#111111 bg) with champagne (#d4b896) + white. Use hero_asymmetric + feature_cards. Boutique hotel feel.",
-        "Ivory (#faf8f5 bg) with black (#111111) + gold (#b8860b). Use hero_split + feature_split. Editorial luxury.",
-        "Warm cream (#f5f0e8 bg) with deep green (#1a3a2a) + brass. Use hero_full_image + card_grid. Organic luxury.",
-        "Pearl white (#f8f6f3 bg) with matte black (#1c1c1c) + copper (#b87333). Use hero_asymmetric + icon_grid. Architectural luxury.",
+        # Chanel-level: black + gold + cream
+        "True black (#060606 bg, #0f0f0f surface) with champagne gold (#c9a96e primary, #8a6d3b secondary, #dfc08a accent). Text: #e8e0d0. Heading: Cormorant Garamond. Body: Lato. Use hero_full_image + feature_split. Maison-level sophistication, serif letterforms, extravagant whitespace.",
+        # Cartier-level: deep burgundy + rose gold
+        "Rich burgundy (#1a0810 bg, #240f18 surface) with rose gold (#c9958a primary, #e8b4a8 accent, #8f6860 secondary). Text: #f0e6e0. Heading: Playfair Display. Body: Cormorant. Use hero_center + card_grid. Jewel-box richness, warm metallics, intimate elegance.",
+        # Aesop-level: warm cream + terracotta
+        "Parchment cream (#f5efe6 bg, #faf6ef surface) with terracotta (#a0522d primary, #6b3a28 secondary, #c4825a accent). Text: #2c1810. Heading: Noto Serif Display. Body: Noto Serif. Use hero_split + feature_split. Botanical luxury, earthy refinement, tactile warmth.",
+        # Bottega-level: deep green + whisper
+        "Forest noir (#0a1a0f bg, #122018 surface) with sage (#8fae80 primary, #c2d1b8 accent, #5a7850 secondary). Text: #e0e8dc. Heading: DM Serif Display. Body: DM Sans. Use hero_full_image + card_grid. Quiet luxury, woven texture feel, understated opulence.",
+        # Rolex-level: midnight blue + gold
+        "Midnight (#0a0e1a bg, #111528 surface) with old gold (#b8944f primary, #dab96c accent, #7a6234 secondary). Text: #d4d0c8. Heading: Cormorant Garamond. Body: Inter. Use hero_asymmetric + feature_cards. Horological precision, weight of heritage, clean but warm.",
+        # Dior-level: pearl + matte black
+        "Pearl (#f6f2ed bg, #fefcf8 surface) with onyx (#1c1c1e primary, #b8944f accent, #3a3a3c secondary). Text: #1c1c1e. Heading: Playfair Display. Body: Source Serif 4. Use hero_full_image + feature_split. Haute couture editorial, dramatic contrast, fashion-house presence.",
     ],
     "creative": [
-        "Near-black (#0d0d0d bg) with multi-color gradient accents (pink→orange→yellow). Use hero_asymmetric + feature_cards. Bold, expressive.",
-        "Dark purple (#1e1b4b bg) with lime (#a3e635) + cyan (#22d3ee). Use hero_center + card_grid. Electric creative energy.",
-        "Deep teal (#042f2e bg) with coral (#fb7185) + white. Use hero_split + feature_split. Creative studio.",
-        "Bright white (#ffffff bg) with black (#000000) + one bold accent (red #ef4444). Use hero_asymmetric + icon_grid. Swiss design minimal.",
-        "Soft pink (#fdf2f8 bg) with deep violet (#5b21b6) + black text. Use hero_split + feature_cards. Fashion-forward.",
-        "Light lavender (#f5f3ff bg) with orange (#ea580c) + charcoal. Use hero_center + card_grid. Playful creative.",
+        # Pentagram-level: black + white + one accent
+        "Ink black (#0a0a0a bg, #141414 surface) with white (#ffffff text) + electric coral (#ff5252 accent, #cc4242 primary, #ff7b7b secondary). Heading: Syne. Body: Space Grotesk. Use hero_asymmetric + feature_cards. Design studio authority, Swiss grid, one punchy color.",
+        # Sagmeister-level: playful bold
+        "Off-white (#f4f0eb bg, #ffffff surface) with deep violet (#4a1990 primary, #ff6b35 accent, #2d0f5e secondary). Text: #1a0a2e. Heading: Cabinet Grotesk. Body: General Sans. Use hero_center + card_grid. Bold experimental, oversized type, playful contrast.",
+        # Studio-level: dark teal + warm
+        "Deep teal (#061a1f bg, #0c2830 surface) with warm coral (#e8725c primary, #fbbf68 accent, #b85a48 secondary). Text: #e0d8d0. Heading: Clash Display. Body: Satoshi. Use hero_split + feature_split. Moody creative studio, warm against cool, cinematic.",
+        # Swiss design: pure minimal
+        "Pure white (#ffffff bg, #f8f8f8 surface) with true black (#111111 primary, #dc3545 accent, #333333 secondary). Text: #111111. Heading: Helvetica Neue. Body: Inter. Use hero_asymmetric + icon_grid. International Typographic Style, grid precision, red accent only.",
+        # Fashion editorial: soft + bold
+        "Soft rose (#faf5f0 bg, #ffffff surface) with deep aubergine (#2e0a3e primary, #d4a853 accent, #4a1259 secondary). Text: #1a0a2e. Heading: DM Serif Display. Body: DM Sans. Use hero_split + feature_cards. Fashion editorial, serif elegance, soft with dramatic contrast.",
+        # Neon creative: dark + vibrant
+        "Graphite (#111111 bg, #1a1a1a surface) with acid green (#c8ff00 primary, #00d4ff accent, #a3cc00 secondary). Text: #e5e5e5. Heading: Space Grotesk. Body: Inter. Use hero_center + card_grid. Electric creative energy, neon on dark, bold and unapologetic.",
     ],
     "food": [
-        "Dark moody (#1a1209 bg) with warm amber (#d97706) + cream text. Use hero_full_image + feature_cards. Fine dining, atmospheric.",
-        "Rich espresso (#1c1210 bg) with copper (#c2884c) + ivory. Use hero_center + service_modal. Coffee/bistro luxury.",
-        "Charcoal (#1f1f1f bg) with red (#dc2626) + white. Use hero_full_image + feature_cards. Bold steakhouse/grill.",
-        "Warm cream (#fef3c7 bg) with terracotta (#c2410c) + dark brown. Use hero_split + card_grid. Mediterranean warmth.",
-        "Soft sage (#f0fdf4 bg) with deep green (#166534) + wood brown. Use hero_split + feature_cards. Farm-to-table organic.",
-        "Clean white (#ffffff bg) with coral (#f97316) + charcoal. Use hero_full_image + feature_cards. Modern cafe bright.",
+        # Noma-level: dark moody + warm amber
+        "Smoky dark (#110e09 bg, #1a1610 surface) with burnished amber (#c4862b primary, #e8a84c accent, #8b5e1e secondary). Text: #e8dcc8. Heading: Cormorant Garamond. Body: Lato. Use hero_full_image + feature_cards. Michelin-star atmosphere, candlelit warmth, editorial food photography.",
+        # Nobu-level: charcoal + rich red
+        "Deep charcoal (#0d0c0a bg, #161412 surface) with wine red (#8b2252 primary, #c44569 accent, #5e1636 secondary). Text: #e0d8d0. Heading: Noto Serif Display. Body: Inter. Use hero_full_image + service_modal. Japanese-inspired restraint, crimson accents, moody sophistication.",
+        # Le Bernardin-level: cream + navy
+        "Warm linen (#f8f4ee bg, #ffffff surface) with deep ocean (#1a2744 primary, #c4862b accent, #2a3d5f secondary). Text: #1a2744. Heading: Playfair Display. Body: Source Serif 4. Use hero_split + feature_cards. Fine dining elegance, French bistro warmth, editorial class.",
+        # Farm-to-table: earthy warmth
+        "Warm stone (#f5efe6 bg, #fefaf4 surface) with olive (#5c6b3c primary, #c4862b accent, #3d4728 secondary). Text: #2a2418. Heading: DM Serif Display. Body: DM Sans. Use hero_split + card_grid. Organic farm warmth, earthy tones, rustic-modern, hand-crafted feel.",
+        # Modern cafe: light + terracotta
+        "Soft cream (#faf7f2 bg, #ffffff surface) with terracotta (#b5563a primary, #d4874e accent, #8a3f2a secondary). Text: #2c1f14. Heading: Outfit. Body: Inter. Use hero_full_image + feature_cards. Artisan cafe aesthetic, warm neutrals, Instagram-worthy, approachable premium.",
+        # Sushi bar: dark + jade
+        "Midnight ink (#0a0c0e bg, #12161a surface) with jade (#4a8c6f primary, #6bb88e accent, #2d5f48 secondary). Text: #d4dce0. Heading: Noto Serif. Body: Inter. Use hero_center + service_modal. Omakase precision, Japanese minimalism, serene dark palette, clean lines.",
     ],
     "health": [
-        "Deep teal (#042f2e bg) with aqua (#2dd4bf) + white text. Use hero_split + card_grid. Medical tech futuristic.",
-        "Navy (#0c2340 bg) with sky blue (#38bdf8) + clean white. Use hero_center + icon_grid. Clinical precision.",
-        "Dark slate (#0f172a bg) with green (#22c55e) + light gray. Use hero_full_image + feature_split. Health tech modern.",
-        "Soft mint (#f0fdfa bg) with teal (#0d9488) + dark text. Use hero_split + card_grid. Calming wellness.",
-        "Warm white (#fffbeb bg) with sage (#65a30d) + earth brown. Use hero_split + feature_cards. Natural health.",
-        "Clean blue-white (#f0f9ff bg) with royal blue (#2563eb) + navy text. Use hero_center + icon_grid. Professional healthcare.",
+        # Mayo Clinic-level: clean professional
+        "Soft blue-white (#f0f5fa bg, #ffffff surface) with deep navy (#1a3052 primary, #2e86ab accent, #0d1f38 secondary). Text: #1a2636. Heading: DM Serif Display. Body: Inter. Use hero_split + card_grid. Clinical trust, institutional weight, calming blue tones, zero frivolity.",
+        # One Medical-level: warm modern
+        "Warm white (#faf8f5 bg, #ffffff surface) with warm indigo (#4a5568 primary, #e8725c accent, #2d3748 secondary). Text: #1a202c. Heading: Outfit. Body: Inter. Use hero_split + icon_grid. Modern healthcare, warm and human, approachable but professional.",
+        # Wellness spa: serene
+        "Sage mist (#f0f5f1 bg, #fafcfa surface) with deep sage (#3d6b4f primary, #a8c4ae accent, #2a4d38 secondary). Text: #1a2c20. Heading: Cormorant Garamond. Body: Lato. Use hero_full_image + feature_split. Wellness sanctuary, botanical calm, spa-like serenity.",
+        # Headspace-level: warm + friendly
+        "Soft peach (#fef6f0 bg, #ffffff surface) with warm orange (#e07a3a primary, #fbbf68 accent, #c45f28 secondary). Text: #2a1f14. Heading: Sora. Body: Inter. Use hero_center + card_grid. Mental wellness warmth, friendly and inviting, round shapes, soft shadows.",
+        # Medical tech: dark + precision
+        "Deep slate (#0e1420 bg, #141c2a surface) with cerulean (#2e86ab primary, #4ec6e0 accent, #1a5c7a secondary). Text: #c8d4e0. Heading: Space Grotesk. Body: Inter. Use hero_split + feature_split. Health-tech precision, data-driven, clean dashboard aesthetic.",
+        # Aura-level: lavender calm
+        "Soft lavender (#f5f0fa bg, #ffffff surface) with muted violet (#6b5ca5 primary, #a78bfa accent, #4a3d7a secondary). Text: #2a2440. Heading: DM Sans. Body: Inter. Use hero_split + card_grid. Calming wellness, gentle purples, therapeutic atmosphere, trust through softness.",
     ],
     "nature": [
-        "Forest dark (#0a1f0a bg) with emerald (#34d399) + gold. Use hero_full_image + feature_split. Deep nature immersive.",
-        "Deep ocean (#0c1b33 bg) with turquoise (#14b8a6) + sand. Use hero_center + card_grid. Coastal resort.",
-        "Warm sand (#fefce8 bg) with forest (#166534) + earth brown. Use hero_full_image + feature_cards. Eco-resort.",
-        "Light sage (#ecfdf5 bg) with deep green (#065f46) + wood tones. Use hero_split + card_grid. Sustainable brand.",
+        # National Geographic-level: immersive earth
+        "Rich earth (#0f1209 bg, #181f10 surface) with golden moss (#8ba058 primary, #c4b060 accent, #5a6b38 secondary). Text: #d8dcc8. Heading: DM Serif Display. Body: Inter. Use hero_full_image + feature_split. Nature documentary gravitas, earthy warmth, immersive landscape imagery.",
+        # Patagonia-level: clean + purpose
+        "Warm linen (#f5efe6 bg, #ffffff surface) with deep ocean (#1a4050 primary, #3a8870 accent, #0d2830 secondary). Text: #1a2c28. Heading: Outfit. Body: Inter. Use hero_full_image + card_grid. Purpose-driven outdoor brand, clean and honest, nature-first.",
+        # Botanical garden: green + cream
+        "Ivory (#faf6ef bg, #ffffff surface) with botanical (#2d5a3d primary, #7aa86b accent, #1a3828 secondary). Text: #1a2818. Heading: Cormorant Garamond. Body: Lato. Use hero_split + feature_cards. Garden sanctuary, botanical illustration style, refined natural beauty.",
+        # Eco-tech: dark + vibrant green
+        "Carbon dark (#0c100e bg, #141a16 surface) with vibrant green (#44b078 primary, #6dd5a0 accent, #2a7050 secondary). Text: #d0e0d4. Heading: Space Grotesk. Body: Inter. Use hero_center + icon_grid. Sustainable tech, clean energy, modern eco-consciousness, data meets nature.",
     ],
     "wedding": [
-        "Charcoal (#1a1a1a bg) with blush pink (#f9a8d4) + gold. Use hero_full_image + feature_cards. Dramatic elegance.",
-        "Deep burgundy (#450a0a bg) with rose gold (#e8b4b8) + cream. Use hero_center + card_grid. Romantic luxury.",
-        "Soft blush (#fdf2f8 bg) with sage (#6b8f71) + gold. Use hero_split + feature_split. Garden wedding.",
-        "Ivory (#fffff0 bg) with dusty rose (#d4a0a0) + deep green. Use hero_full_image + feature_cards. Classic romance.",
+        # Vogue Wedding-level: dramatic + intimate
+        "Soft charcoal (#1a1818 bg, #242020 surface) with blush pink (#d4a0a0 primary, #e8c4c0 accent, #a07878 secondary). Text: #ece4e0. Heading: Cormorant Garamond. Body: Lato. Use hero_full_image + feature_cards. Moody romance, editorial candlelight, intimate luxury.",
+        # Martha Stewart-level: garden elegance
+        "Warm ivory (#faf6ef bg, #ffffff surface) with dusty sage (#6b8f71 primary, #c5a04e accent, #4a6b50 secondary). Text: #2a2818. Heading: Playfair Display. Body: Source Serif 4. Use hero_split + feature_split. Garden party sophistication, botanical elegance, timeless refinement.",
+        # Modern luxe: cream + deep tones
+        "Pearl (#f6f2ed bg, #fefcf8 surface) with burgundy (#6b2040 primary, #c5a04e accent, #4a1530 secondary). Text: #2a1520. Heading: DM Serif Display. Body: DM Sans. Use hero_full_image + card_grid. Modern wedding luxe, deep romantic tones, gold touches, editorial style.",
+        # Ethereal: soft + dreamy
+        "Cloud white (#fdf9f5 bg, #ffffff surface) with mauve (#9c7a8e primary, #d4a8c0 accent, #6b5060 secondary). Text: #2e2028. Heading: Cormorant. Body: Lato. Use hero_center + feature_cards. Ethereal dreamscape, soft romantic, ballet-slipper tones, gauzy light.",
     ],
     "education": [
-        "Dark navy (#0f172a bg) with yellow (#eab308) + white. Use hero_split + card_grid. Bold academic.",
-        "Deep indigo (#1e1b4b bg) with cyan (#06b6d4) + light text. Use hero_center + icon_grid. EdTech modern.",
-        "Light cream (#fefce8 bg) with navy (#1e3a5f) + orange accent. Use hero_split + feature_cards. Warm institutional.",
-        "Clean white (#f8fafc bg) with blue (#3b82f6) + dark gray. Use hero_center + card_grid. Clean academic.",
+        # MIT-level: authoritative + modern
+        "Deep navy (#0a1628 bg, #111d32 surface) with warm amber (#d4a043 primary, #f0c060 accent, #8b6b2a secondary). Text: #d4dce8. Heading: Sora. Body: Inter. Use hero_split + card_grid. Ivy League authority, academic prestige, warm gold on deep blue.",
+        # Coursera-level: clean + accessible
+        "Clean white (#f8f9fa bg, #ffffff surface) with royal blue (#2563eb primary, #1d4ed8 secondary, #60a5fa accent). Text: #1a2332. Heading: Outfit. Body: Inter. Use hero_center + icon_grid. EdTech clarity, accessible design, trust through simplicity, clear hierarchy.",
+        # Library-level: warm + scholarly
+        "Warm parchment (#f5efe6 bg, #fefaf4 surface) with oxford blue (#1a3052 primary, #b5651d accent, #0d2038 secondary). Text: #1a2636. Heading: Libre Baskerville. Body: Source Serif 4. Use hero_split + feature_cards. Scholarly warmth, leather and wood tones, wisdom tradition.",
+        # Khan Academy-level: friendly + clear
+        "Soft green-white (#f0faf4 bg, #ffffff surface) with teal (#14866d primary, #1db88e accent, #0d5f4c secondary). Text: #1a302a. Heading: DM Sans. Body: Inter. Use hero_split + card_grid. Friendly learning, approachable, green for growth, clean and inviting.",
     ],
     "minimal": [
-        "Pure black (#000000 bg) with white (#ffffff) text only. Use hero_center + feature_split. Ultra-minimal dark.",
-        "Dark gray (#18181b bg) with light gray (#d4d4d8) + single accent. Use hero_asymmetric + icon_grid. Monochrome modern.",
-        "Off-white (#fafafa bg) with black (#000000) + no accent. Use hero_split + card_grid. Swiss clean.",
-        "Warm cream (#f5f5f0 bg) with charcoal (#292524) + subtle gold. Use hero_center + feature_split. Warm minimal.",
+        # Dieter Rams-level: pure function
+        "True white (#ffffff bg, #f5f5f5 surface) with pure black (#111111 primary, #111111 secondary, #888888 accent). Text: #111111. Heading: Helvetica Neue. Body: Inter. Use hero_center + feature_split. Braun-inspired functionalism, nothing decorative, content is king.",
+        # Japanese minimal: warm + serene
+        "Warm paper (#faf6f0 bg, #f5efe6 surface) with sumi ink (#2a2520 primary, #8b7355 accent, #1a1510 secondary). Text: #2a2520. Heading: Noto Serif. Body: Noto Sans. Use hero_split + card_grid. Wabi-sabi aesthetic, imperfect beauty, warmth in restraint, zen composition.",
+        # Scandi minimal: cool + airy
+        "Cool white (#f8fafb bg, #ffffff surface) with charcoal (#2d3436 primary, #636e72 secondary, #0984e3 accent). Text: #2d3436. Heading: Outfit. Body: Inter. Use hero_asymmetric + icon_grid. Scandinavian airy, hygge warmth, one blue accent, lots of breathing room.",
+        # Dark minimal: refined
+        "Rich black (#0a0a0a bg, #141414 surface) with warm gray (#a0a0a0 primary, #d4d4d4 accent, #666666 secondary). Text: #e0e0e0. Heading: Inter. Body: Inter. Use hero_center + feature_split. Refined dark minimal, monochrome, elegant through reduction, type-driven.",
     ],
 }
 
@@ -1673,14 +1740,14 @@ _NICHE_CATEGORY_MAP = {
 
 # Fallback pool for unmapped niches
 _FALLBACK_SEEDS = [
-    "Dark theme (#0a0a0a bg) with electric blue (#3b82f6) + white text. Use hero_full_image + card_grid. Modern, bold, high-contrast.",
-    "Deep navy (#0c1b33 bg) with gold (#d4a843) + cream. Use hero_split + feature_split. Premium, authoritative.",
-    "Charcoal (#1c1c1c bg) with coral (#f97316) + white. Use hero_center + feature_cards. Warm, energetic.",
-    "Clean white (#ffffff bg) with black (#000000) + one bold accent. Use hero_asymmetric + icon_grid. Swiss precision.",
-    "Warm cream (#faf8f5 bg) with deep green (#166534) + gold. Use hero_split + card_grid. Organic, premium.",
-    "Soft gray (#f8fafc bg) with indigo (#4f46e5) + dark charcoal. Use hero_split + icon_grid. Modern SaaS.",
-    "Pure black (#000000 bg) with gradient accents (violet→pink). Use hero_center + feature_split. Bold, dramatic.",
-    "Slate (#1e293b bg) with emerald (#10b981) + light gray. Use hero_full_image + card_grid. Professional tech.",
+    "Deep charcoal (#0f1117 bg, #171a24 surface) with muted blue (#3d6eff primary, #7094ff accent). Text: #c8d0e0. Heading: Space Grotesk. Body: Inter. Use hero_split + card_grid. Modern and confident, dark base with single refined accent.",
+    "Deep navy (#0a1628 bg, #111d32 surface) with warm gold (#c5a04e primary, #d4b76a accent). Text: #d4dce8. Heading: DM Serif Display. Body: Source Sans 3. Use hero_full_image + feature_split. Executive authority, timeless prestige.",
+    "Rich dark (#110e14 bg, #1a1620 surface) with warm coral (#d4654a primary, #f08c72 accent, #a04838 secondary). Text: #e0d8d0. Heading: Syne. Body: Inter. Use hero_center + feature_cards. Warm and energetic against dark base, inviting sophistication.",
+    "Pearl white (#f8f9fa bg, #ffffff surface) with onyx (#1c1c1e primary, #dc3545 accent, #3a3a3c secondary). Text: #1c1c1e. Heading: Outfit. Body: Inter. Use hero_asymmetric + icon_grid. Swiss-inspired precision, single bold accent on clean canvas.",
+    "Warm ivory (#f5efe6 bg, #ffffff surface) with forest (#2d5a3d primary, #c5a04e accent, #1a3828 secondary). Text: #1a2818. Heading: Cormorant Garamond. Body: Lato. Use hero_split + card_grid. Organic premium, warm earthy tones, refined nature.",
+    "Soft gray (#f5f3f0 bg, #ffffff surface) with deep indigo (#3730a3 primary, #6366f1 accent, #1e1b4b secondary). Text: #1a1a2e. Heading: Sora. Body: Inter. Use hero_split + icon_grid. Modern SaaS, clean and polished, subtle depth.",
+    "Carbon dark (#0a0a0a bg, #141414 surface) with violet-pink gradient (#8b5cf6 primary, #ec4899 accent, #6d28d9 secondary). Text: #e0dce8. Heading: Cabinet Grotesk. Body: Inter. Use hero_center + feature_split. Bold dramatic, gradient glow on black, high-impact.",
+    "Warm stone (#f0ece4 bg, #faf6ef surface) with deep teal (#1a4050 primary, #e8725c accent, #0d2830 secondary). Text: #1a2c28. Heading: DM Serif Display. Body: DM Sans. Use hero_full_image + card_grid. Professional warmth, approachable gravitas.",
 ]
 
 

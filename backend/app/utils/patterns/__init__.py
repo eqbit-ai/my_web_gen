@@ -286,8 +286,9 @@ def get_rotation_hints() -> str:
 
 STYLE_PRESETS = {
     "apple": {
-        "description": "Ultra-clean minimalism inspired by Apple. Massive whitespace, SF Pro/Inter typography, "
-        "subtle shadows, rounded corners, mono-color palette with one accent. Content-first layout.",
+        "description": "Ultra-clean minimalism inspired by Apple. Massive whitespace, refined typography, "
+        "barely-there shadows, generous rounded corners, mono-color palette with one warm accent. "
+        "Content-first layout. Colors: #fafafa bg, #1d1d1f text, one muted blue accent.",
         "preferred_patterns": ["hero_minimal", "hero_text_reveal", "icon_grid", "feature_bento_grid", "feature_split", "cta_centered", "stats_row", "about_numbers", "contact_minimal"],
         "avoid_patterns": ["hero_full_image", "hero_video_bg", "cta_gradient"],
         "design_hints": {
@@ -299,8 +300,9 @@ STYLE_PRESETS = {
         },
     },
     "stripe": {
-        "description": "Stripe-style design. Clean gradients, vibrant blues/purples, code-friendly typography, "
-        "diagonal gradient backgrounds, frosted glass cards, technical yet approachable.",
+        "description": "Stripe-inspired premium SaaS. Deep navy (#0a2540) + vibrant indigo (#635bff) + teal accent (#00d4aa). "
+        "Diagonal gradient hero backgrounds, frosted glass cards, technical but warm. "
+        "Typography: clean geometric sans-serif. Surface cards on pure white.",
         "preferred_patterns": ["hero_split", "card_grid", "feature_bento_grid", "feature_split", "pricing_toggle", "cta_gradient"],
         "avoid_patterns": ["hero_full_image", "team_masonry"],
         "design_hints": {
@@ -312,8 +314,9 @@ STYLE_PRESETS = {
         },
     },
     "linear": {
-        "description": "Linear.app style. Dark theme, purple/violet accents, clean geometric UI, monospace touches, "
-        "subtle glow effects, card-based layout with sharp edges.",
+        "description": "Linear.app dark mode aesthetic. Near-black (#0c0a14) bg with violet (#7c5cfc) accents, "
+        "subtle purple glow effects, glass-morphism cards with 1px borders, monospace code touches. "
+        "Single-hue palette — everything is shades of violet on black. Sharp, precise, dev-tool quality.",
         "preferred_patterns": [
             "hero_mockup_center",
             "hero_text_reveal",
@@ -334,8 +337,9 @@ STYLE_PRESETS = {
         },
     },
     "framer": {
-        "description": "Framer-style design. Bold typography, playful animations, asymmetric layouts, "
-        "black + bright accent color, oversized headings, creative grid breaking.",
+        "description": "Framer-style bold design. Rich black (#0a0a0a) + one electric accent color (coral, lime, or cyan). "
+        "Oversized display typography (Cabinet Grotesk or Syne), playful asymmetric layouts, "
+        "generous spacing, pill buttons, creative grid breaking. Bold but refined, not chaotic.",
         "preferred_patterns": ["hero_asymmetric", "hero_parallax_layers", "feature_hover_cards", "testimonial_marquee", "cta_split", "marquee_text"],
         "avoid_patterns": ["hero_minimal", "icon_grid", "cta_centered"],
         "design_hints": {
@@ -347,8 +351,10 @@ STYLE_PRESETS = {
         },
     },
     "luxury": {
-        "description": "High-end luxury aesthetic. Dark backgrounds (#1a1a2e), gold/champagne accents, "
-        "serif headings (Playfair Display), dramatic imagery, generous negative space.",
+        "description": "Maison-level luxury aesthetic. True black (#060606) bg + champagne gold (#c9a96e) accents. "
+        "Serif headings (Cormorant Garamond or Playfair Display), dramatic full-bleed imagery, "
+        "extravagant negative space, zero visual noise. Colors should feel aged, warm, and rich — "
+        "never bright or saturated. Think Chanel, Cartier, Aesop.",
         "preferred_patterns": ["hero_full_image", "hero_scroll_morph", "feature_accordion_visual", "testimonial_video", "gallery_grid", "cta_parallax", "about_split_scroll", "portfolio_case_study"],
         "avoid_patterns": ["icon_grid", "comparison_table", "pricing_table"],
         "design_hints": {
@@ -361,8 +367,10 @@ STYLE_PRESETS = {
         },
     },
     "corporate": {
-        "description": "Professional corporate style. Navy/slate blues, clean grid layout, Inter/system font, "
-        "trust signals prominent, data-driven, enterprise-grade feel.",
+        "description": "Fortune 500 corporate style. Deep navy (#0a1628) or warm ivory (#f7f4ef) base. "
+        "Muted, trustworthy colors — no bright accents. Serif headings for authority (DM Serif Display), "
+        "clean sans-serif body. Data-driven layout, trust signals prominent, institutional weight. "
+        "Think McKinsey, Goldman Sachs, Deloitte.",
         "preferred_patterns": [
             "hero_split",
             "card_grid",
