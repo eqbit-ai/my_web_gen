@@ -554,6 +554,32 @@ def validate_html(html: str) -> str:
         flags=re.IGNORECASE,
     )
 
+    # Fix common layout issues that hide footer:
+    # 1. Remove overflow:hidden from body/html/main wrappers (clips footer off-screen)
+    # 2. Remove height:100vh from body/html (prevents scrolling to footer)
+    html = re.sub(
+        r'(<(?:body|html)[^>]*style="[^"]*)\boverflow\s*:\s*hidden\b',
+        r'\1overflow:visible',
+        html,
+        flags=re.IGNORECASE,
+    )
+    # Fix any wrapper div that has both height:100vh and overflow:hidden
+    html = re.sub(
+        r'(style="[^"]*height\s*:\s*100vh[^"]*)\boverflow\s*:\s*hidden\b',
+        r'\1overflow:visible',
+        html,
+        flags=re.IGNORECASE,
+    )
+    # Ensure <style> block doesn't have body { height: 100vh; overflow: hidden }
+    def _fix_body_css(m):
+        block = m.group(0)
+        # Remove overflow:hidden from body/html rules
+        block = re.sub(r'((?:body|html)\s*\{[^}]*)\boverflow\s*:\s*hidden\b', r'\1overflow-x:hidden', block)
+        # Change body height:100vh to min-height:100vh
+        block = re.sub(r'(body\s*\{[^}]*)\bheight\s*:\s*100vh\b', r'\1min-height:100vh', block)
+        return block
+    html = re.sub(r'<style[^>]*>.*?</style>', _fix_body_css, html, flags=re.DOTALL)
+
     # Ensure footer has dark background (LLM sometimes forgets)
     footer_match = re.search(r'<section([^>]*data-section-type="footer"[^>]*)>', html)
     if footer_match:
@@ -589,6 +615,15 @@ def validate_html(html: str) -> str:
                     f'<section{attrs} style="background:#1a1a2e">',
                 )
             logger.info("🔧 Footer Fix → Added dark background to footer section")
+
+    # Ensure WhatsApp float button is present on every generated page
+    if "whatsapp-float" not in html and "wa.me" not in html:
+        whatsapp_btn = '<a href="https://wa.me/971XXXXXXXXX" target="_blank" rel="noopener" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s;text-decoration:none" aria-label="Chat on WhatsApp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.638l4.716-1.244A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.143 0-4.144-.663-5.795-1.796l-.404-.282-3.14.828.843-3.076-.309-.444A9.96 9.96 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg></a>'
+        if "</body>" in html:
+            html = html.replace("</body>", f"\n{whatsapp_btn}\n</body>")
+        else:
+            html += f"\n{whatsapp_btn}\n"
+        logger.info("🔧 WhatsApp Fix → Injected WhatsApp float button")
 
     return html
 
@@ -1332,6 +1367,63 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 
+# WhatsApp float HTML snippet to inject on every page
+_WHATSAPP_FLOAT_HTML = """<a href="https://wa.me/971XXXXXXXXX" target="_blank" rel="noopener" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s;text-decoration:none" aria-label="Chat on WhatsApp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.638l4.716-1.244A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.143 0-4.144-.663-5.795-1.796l-.404-.282-3.14.828.843-3.076-.309-.444A9.96 9.96 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg></a>"""
+
+
+def _sync_multipage_shared_elements(pages_html: dict) -> dict:
+    """Ensure footer and WhatsApp button exist on every page.
+
+    Strategy:
+    - Extract footer HTML from the page that has the best footer (usually index)
+    - Inject it into any page missing a footer
+    - Ensure WhatsApp float button is on every page
+    """
+    # 1) Find the best footer from any page (prefer index/home)
+    best_footer_html = None
+    footer_pattern = re.compile(
+        r'(<section[^>]*data-section-type="footer"[^>]*>.*?</section>)',
+        re.DOTALL | re.IGNORECASE,
+    )
+
+    # Check index first, then other pages
+    check_order = ["index"] + [s for s in pages_html if s != "index"]
+    for slug in check_order:
+        html = pages_html.get(slug, "")
+        footer_match = footer_pattern.search(html)
+        if footer_match:
+            best_footer_html = footer_match.group(1)
+            break
+
+    # 2) Sync footer to all pages missing it
+    if best_footer_html:
+        for slug, html in pages_html.items():
+            if not footer_pattern.search(html):
+                # Insert footer before </body> or at end
+                if "</body>" in html:
+                    html = html.replace("</body>", f"\n{best_footer_html}\n</body>")
+                else:
+                    html += f"\n{best_footer_html}\n"
+                pages_html[slug] = html
+                logger.info(f"[MULTIPAGE] Footer synced → injected footer into '{slug}' page")
+
+    # 3) Ensure WhatsApp float button on every page
+    for slug, html in pages_html.items():
+        if "whatsapp-float" not in html and "wa.me" not in html:
+            # Insert before </body> or before closing footer
+            if "</body>" in html:
+                html = html.replace("</body>", f"\n{_WHATSAPP_FLOAT_HTML}\n</body>")
+            elif "</footer>" in html.lower():
+                # Insert after the last </section> (footer)
+                html = html + f"\n{_WHATSAPP_FLOAT_HTML}\n"
+            else:
+                html += f"\n{_WHATSAPP_FLOAT_HTML}\n"
+            pages_html[slug] = html
+            logger.info(f"[MULTIPAGE] WhatsApp → injected float button into '{slug}' page")
+
+    return pages_html
+
+
 async def generate_multipage_html(
     plan: dict, session_id: str, niche_key: str = None, reference_html: str = None
 ) -> dict:
@@ -1406,6 +1498,9 @@ Apply similar polish, spacing, and shadow quality to this page.
 
     if not pages_html:
         raise ValueError("All page generations failed")
+
+    # ── Post-processing: ensure footer + WhatsApp on every page ──
+    pages_html = _sync_multipage_shared_elements(pages_html)
 
     logger.info(f"[MULTIPAGE] Complete → {len(pages_html)}/{len(pages)} pages generated successfully")
     return pages_html

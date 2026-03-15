@@ -202,6 +202,24 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
 </html>"""
 
 
+def _make_links_relative(html: str) -> str:
+    """Convert absolute page links (href="/about.html", href="/") to relative paths.
+
+    S3 static hosting serves sites under a prefix folder (e.g. /project-name/).
+    Absolute paths like href="/about.html" resolve to the bucket root, not the
+    project folder, causing 404s.  Relative paths (href="about.html") work correctly.
+    """
+    # href="/" → href="index.html"
+    html = re.sub(r'href\s*=\s*"/"', 'href="index.html"', html)
+    html = re.sub(r"href\s*=\s*'/'", "href='index.html'", html)
+
+    # href="/about.html" → href="about.html" (strip leading slash from .html links)
+    html = re.sub(r'href\s*=\s*"/([a-zA-Z0-9_-]+\.html)"', r'href="\1"', html)
+    html = re.sub(r"href\s*=\s*'/([a-zA-Z0-9_-]+\.html)'", r"href='\1'", html)
+
+    return html
+
+
 async def deploy_site(
     site_name: str,
     html: str,
@@ -246,6 +264,8 @@ async def deploy_site(
             page_html = page_data.get("html", "")
             page_css = page_data.get("css", css)
             full_html = _inline_css_js(page_html, page_css, js)
+            # Convert absolute links to relative for S3 prefix hosting
+            full_html = _make_links_relative(full_html)
 
             if slug == "index":
                 files["index.html"] = full_html

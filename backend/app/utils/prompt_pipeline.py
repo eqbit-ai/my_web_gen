@@ -539,7 +539,7 @@ JSON STRUCTURE for multi-page:
   "multipage": true,
   "shared_sections": [
     {{ "type": "navbar", "pattern": "navbar", "content": {{ "logo_text": "...", "links": [{{"label": "Home", "href": "/"}}, {{"label": "About", "href": "/about.html"}}, {{"label": "Services", "href": "/services.html"}}, {{"label": "Contact", "href": "/contact.html"}}], "cta_button": "Get Started" }} }},
-    {{ "type": "footer", "pattern": "footer_columns", "content": {{ ... }} }}
+    {{ "type": "footer", "pattern": "footer_columns", "content": {{ "company_description": "...", "quick_links": [...], "contact_info": {{ "email": "...", "phone": "...", "address": "..." }}, "social_links": [...], "copyright": "..." }} }}
   ],
   "pages": [
     {{
@@ -887,14 +887,35 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
     )
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
 
-    # Enforce strong hero sections on every page
+    # Enforce strong hero sections and design consistency on every page
     hero_rules = """
-SUBPAGE HERO RULES (CRITICAL):
+SUBPAGE DESIGN RULES (CRITICAL — READ CAREFULLY):
+
+HERO SECTION:
 - EVERY page MUST start with a visually striking hero section immediately after the navbar.
 - The hero MUST have a full-width background image (from Unsplash) or a bold gradient background — NEVER just text on a plain dark background.
 - Use hero patterns like: hero-bg-cover with overlay, hero-animated-bg with gradient, or a split hero with a large image.
 - The hero must have a clear heading, subtitle, and at least one CTA button.
 - Minimum hero height: 60vh on desktop.
+
+FOOTER (MANDATORY):
+- The page MUST end with a complete footer section with data-section-type="footer".
+- The footer must include: company info/logo, navigation quick links, contact info, social links, and copyright.
+- Footer must have a dark background (bg-gray-900/bg-slate-900/bg-zinc-900 or dark hex).
+- The footer must be FULLY styled — it should look professional and match the site design.
+- DO NOT skip the footer. DO NOT end the page without a footer.
+
+WHATSAPP BUTTON:
+- ALWAYS include a fixed WhatsApp float button at bottom-right of the page.
+
+DESIGN CONSISTENCY:
+- ALL pages must share the SAME visual language: same fonts, same color palette, same spacing scale, same button styles.
+- Use the SAME navbar design on every page (same background, logo, link style, CTA button).
+- Use the SAME footer design on every page.
+- Section styling (card borders, shadows, border-radius, heading sizes) must be consistent across all pages.
+- If the homepage uses a particular accent color (e.g., gold, blue), ALL subpages must use the same accent color.
+
+CSS:
 - ALL CSS for this page must be in the SINGLE <style> block — include navbar styles, hero styles, section styles, footer styles — everything needed to render this page standalone.
 """
 

@@ -74,7 +74,7 @@ The <style> block must contain ALL CSS for the entire page. This is a COMPLETE w
 
 /* ═══ Base Reset & Typography ═══ */
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-body {{ font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; }}
+body {{ font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; min-height: 100vh; }}
 h1, h2, h3, h4, h5, h6 {{ font-family: var(--font-heading); font-weight: 700; line-height: 1.2; color: var(--text); }}
 a {{ text-decoration: none; color: inherit; }}
 img {{ max-width: 100%; height: auto; }}
@@ -261,7 +261,7 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .slider-dot.active {{ background: var(--primary); }}
 
 /* ═══ Footer ═══ */
-footer {{ margin-top: 4rem; }}
+footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 .footer-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }}
 @media (max-width: 1024px) {{ .footer-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
 @media (max-width: 640px) {{ .footer-grid {{ grid-template-columns: 1fr; }} }}
@@ -522,4 +522,11 @@ SEO META — after </style>, add: <!-- SEO_META --> with meta description (150 c
 
 FAVICON — after SEO block: <!-- FAVICON --> with SVG favicon using brand initial + primary color. <!-- END_FAVICON -->
 
-Do NOT add breadcrumbs to single-page websites."""
+Do NOT add breadcrumbs to single-page websites.
+
+FOOTER VISIBILITY — CRITICAL CSS RULES:
+- NEVER use height:100vh on body, html, or any top-level wrapper. Use min-height:100vh instead.
+- NEVER use overflow:hidden on body or html. Use overflow-x:hidden if needed (to prevent horizontal scroll).
+- NEVER wrap the entire page content in a div with height:100vh or overflow:hidden — this clips the footer off-screen.
+- The footer MUST always be visible at the bottom of the page after scrolling through all content.
+- The body CSS is already set above with overflow-x:hidden and min-height:100vh — do NOT override these."""

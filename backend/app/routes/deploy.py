@@ -95,6 +95,10 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     if not html and not pages:
         raise HTTPException(status_code=400, detail="No website content found in session.")
 
+    # Ensure multipage pages dict contains the index page
+    if is_multipage and pages and "index" not in pages and html:
+        pages["index"] = {"html": html, "css": css}
+
     # 3. Determine site name
     site_name = req.site_name.strip() if req.site_name else ""
     if not site_name:
@@ -196,6 +200,10 @@ async def redeploy_website(site_id: str, req: RedeployRequest, user: dict = Depe
         html = session.get("html", "")
         css = session.get("css", "")
         js = session.get("js", "")
+
+        # Ensure multipage pages dict contains the index page
+        if is_multipage and pages and "index" not in pages and html:
+            pages["index"] = {"html": html, "css": css}
 
         try:
             deploy_result = await deploy_site(
