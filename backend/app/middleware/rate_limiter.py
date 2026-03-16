@@ -1,3 +1,4 @@
+import os
 import time
 
 from starlette.requests import Request
@@ -7,22 +8,26 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from app.utils.auth import decode_access_token
 from app.utils.redis_client import get_redis
 
+# Only trust X-Forwarded-For when behind a known reverse proxy (Nginx, ALB, CloudFront)
+# Set TRUSTED_PROXY=true in production Docker (behind Nginx/ALB)
+_TRUST_PROXY = os.getenv("TRUSTED_PROXY", "false").lower() == "true"
+
 RATE_LIMIT_RULES = [
     {
         "prefixes": ["/api/deploy"],
-        "limit": 30,
+        "limit": 60,
         "window": 60,
         "key_prefix": "rl:deploy",
     },
     {
         "prefixes": ["/api/generator/iterate", "/api/sections/"],
-        "limit": 20,
+        "limit": 40,
         "window": 60,
         "key_prefix": "rl:edit",
     },
     {
         "prefixes": ["/api/generator/"],
-        "limit": 10,
+        "limit": 15,
         "window": 60,
         "key_prefix": "rl:gen",
     },
@@ -35,7 +40,7 @@ RATE_LIMIT_RULES = [
     },
     {
         "prefixes": ["/api/"],
-        "limit": 500,
+        "limit": 1000,
         "window": 60,
         "key_prefix": "rl:api",
     },
@@ -140,9 +145,11 @@ class RateLimitMiddleware:
         return None
 
     def _get_client_ip(self, request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        # Only trust X-Forwarded-For when behind a known reverse proxy
+        if _TRUST_PROXY:
+            forwarded = request.headers.get("x-forwarded-for")
+            if forwarded:
+                return forwarded.split(",")[0].strip()
         return request.client.host if request.client else "unknown"
 
     async def _check_rate_limit(self, key: str, limit: int, window: int) -> tuple[int, int]:

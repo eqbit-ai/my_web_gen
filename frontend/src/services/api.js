@@ -534,12 +534,14 @@ export const getMe = async (token) => {
     return result;
 };
 
-export const restoreSession = async (html, css, js = '', projectId = null) => {
+export const restoreSession = async (html, css, js = '', projectId = null, { isMultipage = false, pages = null, currentPage = 'index' } = {}) => {
     try {
+        const body = { html, css, js, projectId, isMultipage, currentPage };
+        if (isMultipage && pages) body.pages = pages;
         const response = await fetch(`${API_BASE_URL}/generator/restore-session`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({ html, css, js, projectId }),
+            body: JSON.stringify(body),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || data.detail || 'Failed to restore session');
@@ -949,6 +951,129 @@ export const adminGetUserDetail = async (userId) => {
     return data;
 };
 
+// ── Domain Purchase & Management ─────────────────────────────────────
+
+export const searchDomains = async (query, extensions) => {
+    const params = new URLSearchParams({ q: query });
+    if (extensions && Array.isArray(extensions)) params.append('extensions', extensions.join(','));
+    else if (extensions) params.append('extensions', extensions);
+    const response = await fetch(`${API_BASE_URL}/domains/search?${params}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Domain search failed');
+    return data;
+};
+
+export const purchaseDomain = async (domainName, tld, siteId = null, period = 1) => {
+    const response = await fetch(`${API_BASE_URL}/domains/purchase`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ domain_name: domainName, tld, period, site_id: siteId, auto_renew: true }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        const detail = data.detail;
+        const msg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(d => d.msg || d.message || JSON.stringify(d)).join(', ') : 'Domain purchase failed';
+        throw new Error(msg);
+    }
+    return data;
+};
+
+export const listUserDomains = async () => {
+    const response = await fetch(`${API_BASE_URL}/domains`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to list domains');
+    return data;
+};
+
+export const getDomainDetail = async (domainId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get domain details');
+    return data;
+};
+
+export const connectDomainToSite = async (domainId, siteId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/connect`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ site_id: siteId }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to connect domain to site');
+    return data;
+};
+
+export const disconnectDomainFromSite = async (domainId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/disconnect`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to disconnect domain');
+    return data;
+};
+
+export const retryDomainActivation = async (domainId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/retry-activation`, {
+        method: 'POST', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to retry activation');
+    return data;
+};
+
+export const getDomainContact = async (domainId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/contact`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to fetch contact info');
+    return data;
+};
+
+export const updateDomainContact = async (domainId, fields) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/contact`, {
+        method: 'PUT', headers: getAuthHeaders(),
+        body: JSON.stringify(fields),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to update contact');
+    return data;
+};
+
+export const requestDomainTransfer = async (domainId, reason = '') => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/request-transfer`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ reason }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to request transfer');
+    return data;
+};
+
+export const cancelDomainTransfer = async (domainId) => {
+    const response = await fetch(`${API_BASE_URL}/domains/${domainId}/cancel-transfer`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to cancel transfer');
+    return data;
+};
+
+// ── Token Requests ────────────────────────────────────────────────────
+
+export const requestTokens = async (amount, reason = '') => {
+    const response = await fetch(`${API_BASE_URL}/auth/token-request`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ amount, reason }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to submit request');
+    return data;
+};
+
+export const getMyTokenRequests = async () => {
+    const response = await fetch(`${API_BASE_URL}/auth/token-requests`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to fetch requests');
+    return data;
+};
+
 const api = {
     generateWebsite, getSession, getSessionVersions, rollbackSession, clearSession,
     editElement, getNiches, getTemplates,
@@ -965,6 +1090,9 @@ const api = {
     updateNavConfig, updateFooterConfig, updateSiteMeta, updateContactConfig,
     forgotPassword, resetPassword, changePassword,
     listDeployedSites, connectDomain, getDomainStatus, disconnectDomain,
+    searchDomains, purchaseDomain, listUserDomains, getDomainDetail,
+    connectDomainToSite, disconnectDomainFromSite, retryDomainActivation,
+    getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer,
     listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers,
     adminGetStats, adminGetTokenStats, adminListUsers, adminDisableUser,
     adminEnableUser, adminGrantTokens, adminResetPassword,

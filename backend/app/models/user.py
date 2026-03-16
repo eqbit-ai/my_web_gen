@@ -11,8 +11,9 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
-    company_name = Column(String, nullable=False)
-    license_number = Column(String, unique=True, nullable=False, index=True)
+    company_name = Column(String, nullable=True)
+    license_number = Column(String, unique=True, nullable=True, index=True)
+    mobile = Column(String, nullable=True)
     db_schema = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -30,3 +31,6 @@ class User(Base):
     licence_verified = Column(Boolean, default=False, server_default="false", nullable=False)
     licence_verified_at = Column(DateTime(timezone=True), nullable=True)
     licence_verified_by = Column(Integer, nullable=True)
+
+    # Force password reset (set by admin)
+    force_password_reset = Column(Boolean, default=False, server_default="false", nullable=False)

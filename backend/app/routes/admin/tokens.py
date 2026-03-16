@@ -11,6 +11,7 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.token_request import TokenRequest
 from app.models.token_transaction import TokenTransaction
 from app.models.user import User
 from app.utils.audit_log import log_event_bg
@@ -338,3 +339,121 @@ async def expiring_tokens(
     except Exception as e:
         logger.warning("Failed to fetch expiring tokens: %s", e)
         return {"expiring_within_days": days, "count": 0, "grants": [], "error": str(e)}
+
+
+# ── Token Requests (user → admin) ───────────────────────────────────
+
+
+class ReviewTokenRequest(BaseModel):
+    action: str  # approve / reject
+    admin_note: str | None = None
+    grant_amount: int | None = None  # override requested amount
+
+
+@router.get("/tokens/requests")
+async def list_token_requests(
+    status_filter: str | None = Query(default="pending", alias="status"),
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """List token requests from users."""
+    query = select(TokenRequest).order_by(TokenRequest.created_at.desc())
+    if status_filter:
+        query = query.where(TokenRequest.status == status_filter)
+
+    result = await db.execute(query.limit(100))
+    requests = result.scalars().all()
+
+    user_ids = list({r.user_id for r in requests})
+    user_map = {}
+    if user_ids:
+        user_result = await db.execute(
+            select(User.id, User.email, User.full_name, User.token_balance).where(User.id.in_(user_ids))
+        )
+        user_map = {r[0]: {"email": r[1], "full_name": r[2], "token_balance": r[3]} for r in user_result.fetchall()}
+
+    return {
+        "total": len(requests),
+        "requests": [
+            {
+                "id": str(r.id),
+                "user_id": r.user_id,
+                "user_email": user_map.get(r.user_id, {}).get("email", ""),
+                "user_name": user_map.get(r.user_id, {}).get("full_name", ""),
+                "user_balance": user_map.get(r.user_id, {}).get("token_balance", 0),
+                "amount": r.amount,
+                "reason": r.reason,
+                "status": r.status,
+                "admin_note": r.admin_note,
+                "created_at": _serialize_datetime(r.created_at),
+                "reviewed_at": _serialize_datetime(r.reviewed_at),
+            }
+            for r in requests
+        ],
+    }
+
+
+@router.post("/tokens/requests/{request_id}/review")
+async def review_token_request(
+    request_id: str,
+    req: ReviewTokenRequest,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Approve or reject a token request. Approving auto-grants the tokens."""
+    result = await db.execute(select(TokenRequest).where(TokenRequest.id == request_id))
+    token_req = result.scalar_one_or_none()
+    if not token_req:
+        raise HTTPException(status_code=404, detail="Token request not found")
+    if token_req.status != "pending":
+        raise HTTPException(status_code=400, detail=f"Request already {token_req.status}")
+
+    if req.action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be 'approve' or 'reject'")
+
+    now = datetime.now(UTC)
+    token_req.status = "approved" if req.action == "approve" else "rejected"
+    token_req.admin_note = req.admin_note
+    token_req.reviewed_by = admin.get("user_id")
+    token_req.reviewed_at = now
+
+    if req.action == "approve":
+        grant_amount = req.grant_amount if req.grant_amount and req.grant_amount > 0 else token_req.amount
+
+        # Grant tokens to user
+        await db.execute(
+            update(User)
+            .where(User.id == token_req.user_id)
+            .values(token_balance=User.token_balance + grant_amount)
+        )
+
+        # Get new balance for transaction record
+        user_result = await db.execute(select(User.token_balance).where(User.id == token_req.user_id))
+        new_balance = user_result.scalar() or 0
+
+        # Record in transaction ledger
+        txn = TokenTransaction(
+            user_id=token_req.user_id,
+            type="grant",
+            amount=grant_amount,
+            balance_after=new_balance,
+            reason=f"Token request approved: {token_req.reason or 'No reason'}",
+            created_by=admin.get("user_id"),
+        )
+        db.add(txn)
+
+    await db.commit()
+
+    # Fetch user email for response
+    user_result = await db.execute(select(User.email).where(User.id == token_req.user_id))
+    email = user_result.scalar() or ""
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action=f"token_request_{req.action}",
+        resource_type="token_request",
+        resource_id=request_id,
+        details={"user_email": email, "amount": token_req.amount, "action": req.action},
+    )
+
+    return {"message": f"Token request {req.action}d for {email}"}

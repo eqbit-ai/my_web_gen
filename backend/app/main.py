@@ -43,6 +43,7 @@ from app.routes import projects as project_routes
 from app.routes import sections as section_routes
 from app.routes import templates as template_routes
 from app.routes import uploads as upload_routes
+from app.routes import domains as domain_routes
 from app.utils import metrics as app_metrics
 from app.utils.redis_client import close_redis, get_redis
 from app.utils.sentry_setup import init_sentry
@@ -140,8 +141,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _allowed_origins],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept"],
 )
 
 # Routes
@@ -157,6 +158,7 @@ app.include_router(deploy_routes.router, prefix="/api/deploy", tags=["Deploy"])
 app.include_router(dns_routes.router, prefix="/api/dns", tags=["DNS"])
 app.include_router(template_routes.router, prefix="/api/templates", tags=["Templates"])
 app.include_router(upload_routes.router, prefix="/api/uploads", tags=["Uploads"])
+app.include_router(domain_routes.router, prefix="/api/domains", tags=["Domains"])
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(metrics_route.router, prefix="/api/metrics", tags=["Metrics"])
 

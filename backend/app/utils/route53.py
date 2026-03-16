@@ -14,7 +14,6 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -390,6 +389,47 @@ async def create_alias_record(
             name, target_domain, zone_id, exc,
         )
         raise
+
+
+async def delete_alias_record(
+    zone_id: str,
+    name: str,
+    target_domain: str,
+    target_zone_id: str = CLOUDFRONT_HOSTED_ZONE_ID,
+) -> bool:
+    """Delete an ALIAS A record from Route53."""
+    client = _get_route53_client()
+    zone_id = _clean_zone_id(zone_id)
+    name = _normalize_name(name)
+    target_domain = _normalize_name(target_domain)
+
+    try:
+        await asyncio.to_thread(
+            client.change_resource_record_sets,
+            HostedZoneId=zone_id,
+            ChangeBatch={
+                "Comment": "meydan-managed cleanup",
+                "Changes": [
+                    {
+                        "Action": "DELETE",
+                        "ResourceRecordSet": {
+                            "Name": name,
+                            "Type": "A",
+                            "AliasTarget": {
+                                "HostedZoneId": target_zone_id,
+                                "DNSName": target_domain,
+                                "EvaluateTargetHealth": False,
+                            },
+                        },
+                    }
+                ],
+            },
+        )
+        logger.info("Deleted ALIAS record %s -> %s in zone %s", name, target_domain, zone_id)
+        return True
+    except ClientError as exc:
+        logger.warning("Failed to delete ALIAS %s in zone %s: %s", name, zone_id, exc)
+        return False
 
 
 async def create_acm_validation_records(

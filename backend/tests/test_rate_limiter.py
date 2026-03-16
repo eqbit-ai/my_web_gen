@@ -52,9 +52,9 @@ async def test_rate_limit_allows_under_limit(client):
 @pytest.mark.asyncio
 async def test_rate_limit_blocks_over_limit(client):
     """Exceeding the rate limit returns 429."""
-    # Auth endpoint has limit=10 per 60s, uses IP-based keys
+    # Auth endpoint has limit=60 per 60s, uses IP-based keys
     responses = []
-    for i in range(12):
+    for i in range(65):
         resp = await client.post(
             "/api/auth/login",
             json={"email": f"ratelimit{i}@test.com", "password": "test"},

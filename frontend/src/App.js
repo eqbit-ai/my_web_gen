@@ -16,6 +16,7 @@ const WebsiteGenerator = lazy(() => import('./components/WebsiteGenerator'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
+const ForceResetPassword = lazy(() => import('./components/ForceResetPassword'));
 
 // Admin — Layout + Pages
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
@@ -42,10 +43,13 @@ const GrowthChartPage = lazy(() => import('./components/admin/GrowthChartPage'))
 const GenerationStatsPage = lazy(() => import('./components/admin/GenerationStatsPage'));
 const TokenTrendPage = lazy(() => import('./components/admin/TokenTrendPage'));
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, allowForceReset }) {
   const { user, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh' }} />;
   if (!user) return <Navigate to="/login" replace />;
+  if (!allowForceReset && localStorage.getItem('force_password_reset') === 'true') {
+    return <Navigate to="/force-reset-password" replace />;
+  }
   return children;
 }
 
@@ -101,7 +105,7 @@ function PageTransition({ children }) {
 
 function AppLayout() {
   const location = useLocation();
-  const hideNavbar = location.pathname === '/generator' || location.pathname === '/dashboard' || location.pathname.startsWith('/admin');
+  const hideNavbar = location.pathname === '/generator' || location.pathname === '/dashboard' || location.pathname === '/force-reset-password' || location.pathname.startsWith('/admin');
 
   return (
     <div className="app">
@@ -113,6 +117,7 @@ function AppLayout() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/force-reset-password" element={<ProtectedRoute allowForceReset><ForceResetPassword /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/generator" element={<ProtectedRoute><WebsiteGenerator /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

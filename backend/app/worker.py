@@ -2,9 +2,9 @@
 Background worker — processes generation jobs from the Redis queue.
 
 Uses the 3-stage pipeline:
-  Stage 1: Plan  → GPT-4.1 → JSON structure + content + layout patterns
-  Stage 2: HTML  → Claude  → HTML with Tailwind CSS + <style> block
-  Stage 3: JS    → Claude  → Interactions/animations
+  Stage 1: Plan  → LLM → JSON structure + content + layout patterns
+  Stage 2: HTML  → LLM → HTML with Tailwind CSS + <style> block
+  Stage 3: JS    → LLM → Interactions/animations
 
 Run separately: python -m app.worker
 """

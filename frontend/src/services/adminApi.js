@@ -63,7 +63,8 @@ const apiDelete = async (path) => {
 // ── Sites ────────────────────────────────────────────────────────────────
 
 export const adminGetSites = async (page = 1, limit = 20, status = null, userId = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
     if (status) qs += `&status=${status}`;
     if (userId) qs += `&user_id=${userId}`;
     return apiGet(`/admin/sites${qs}`);
@@ -84,7 +85,8 @@ export const adminRebuildSite = async (siteId) => {
 // ── Generations ──────────────────────────────────────────────────────────
 
 export const adminGetGenerations = async (page = 1, limit = 20, status = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
     if (status) qs += `&status=${status}`;
     return apiGet(`/admin/generations${qs}`);
 };
@@ -113,7 +115,8 @@ export const adminGetGenerationSuccessRate = async () => {
 // ── Domains ──────────────────────────────────────────────────────────────
 
 export const adminGetDomains = async (page = 1, limit = 20, status = null, tld = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
     if (status) qs += `&status=${status}`;
     if (tld) qs += `&tld=${tld}`;
     return apiGet(`/admin/domains${qs}`);
@@ -145,10 +148,19 @@ export const adminGetInternalDomainHealth = async () => {
     return apiGet('/admin/domains/internal/health');
 };
 
+export const adminGetTransferRequests = async () => {
+    return apiGet('/admin/domains/internal/transfer-requests');
+};
+
+export const adminClearTransferRequest = async (domainId) => {
+    return apiDelete(`/admin/domains/internal/${domainId}/transfer-request`);
+};
+
 // ── Users (enhanced) ─────────────────────────────────────────────────────
 
 export const adminGetUsers = async (page = 1, limit = 20, search = '', isActive = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
     if (search) qs += `&search=${encodeURIComponent(search)}`;
     if (isActive !== null) qs += `&is_active=${isActive}`;
     return apiGet(`/admin/users${qs}`);
@@ -159,11 +171,13 @@ export const adminGetUserDetail = async (userId) => {
 };
 
 export const adminGetUserAudit = async (userId, page = 1, limit = 20) => {
-    return apiGet(`/admin/users/${userId}/audit?page=${page}&limit=${limit}`);
+    const offset = (page - 1) * limit;
+    return apiGet(`/admin/users/${userId}/audit?limit=${limit}&offset=${offset}`);
 };
 
 export const adminGetUserLogins = async (userId, page = 1, limit = 20) => {
-    return apiGet(`/admin/users/${userId}/logins?page=${page}&limit=${limit}`);
+    const offset = (page - 1) * limit;
+    return apiGet(`/admin/users/${userId}/logins?limit=${limit}&offset=${offset}`);
 };
 
 export const adminImpersonateUser = async (userId) => {
@@ -184,7 +198,7 @@ export const adminExportUsers = async () => {
 };
 
 export const adminVerifyLicence = async (userId, verified) => {
-    return apiPatch(`/admin/users/${userId}/licence`, { verified });
+    return apiPatch(`/admin/users/${userId}/licence`, { licence_verified: verified });
 };
 
 export const adminDisableUser = async (userId) => {
@@ -206,7 +220,8 @@ export const adminResetPassword = async (userId) => {
 // ── Tokens ───────────────────────────────────────────────────────────────
 
 export const adminGetTransactions = async (page = 1, limit = 20, userId = null, type = null, dateRange = null) => {
-    let qs = `?page=${page}&limit=${limit}`;
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
     if (userId) qs += `&user_id=${userId}`;
     if (type) qs += `&type=${type}`;
     if (dateRange) qs += `&date_from=${dateRange.from}&date_to=${dateRange.to}`;
@@ -214,7 +229,8 @@ export const adminGetTransactions = async (page = 1, limit = 20, userId = null, 
 };
 
 export const adminGetUserTransactions = async (userId, page = 1, limit = 20) => {
-    return apiGet(`/admin/tokens/transactions?user_id=${userId}&page=${page}&limit=${limit}`);
+    const offset = (page - 1) * limit;
+    return apiGet(`/admin/tokens/transactions?user_id=${userId}&limit=${limit}&offset=${offset}`);
 };
 
 export const adminGrantTokensWithExpiry = async (userId, amount, expiresAt, reason = '') => {
@@ -227,6 +243,16 @@ export const adminGetTokenPool = async () => {
 
 export const adminGetExpiringTokens = async () => {
     return apiGet('/admin/tokens/expiring');
+};
+
+export const adminGetTokenRequests = async (status = 'pending') => {
+    return apiGet(`/admin/tokens/requests?status=${status}`);
+};
+
+export const adminReviewTokenRequest = async (requestId, action, adminNote = '', grantAmount = null) => {
+    const body = { action, admin_note: adminNote };
+    if (grantAmount) body.grant_amount = grantAmount;
+    return apiPost(`/admin/tokens/requests/${requestId}/review`, body);
 };
 
 // ── Operations ───────────────────────────────────────────────────────────

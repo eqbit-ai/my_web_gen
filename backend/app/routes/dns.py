@@ -9,7 +9,6 @@ Endpoints:
 """
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

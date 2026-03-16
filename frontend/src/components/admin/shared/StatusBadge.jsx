@@ -10,9 +10,9 @@ const STATUS_MAP = {
     draft: 'gray', inactive: 'gray', unknown: 'gray',
 };
 
-export default function StatusBadge({ status, size = 'md' }) {
+export default function StatusBadge({ status, label, size = 'md' }) {
     const normalized = (status || 'unknown').toLowerCase().replace(/[\s-]/g, '_');
     const color = STATUS_MAP[normalized] || 'gray';
     const cls = `admin-badge admin-badge-${color}${size === 'sm' ? ' admin-badge-sm' : ''}`;
-    return <span className={cls}>{status || 'Unknown'}</span>;
+    return <span className={cls}>{label || status || 'Unknown'}</span>;
 }

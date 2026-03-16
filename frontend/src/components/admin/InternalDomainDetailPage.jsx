@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Check } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
-import { adminGetInternalDomainDetail } from '../../services/adminApi';
+import { adminGetInternalDomainDetail, adminClearTransferRequest } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
+
+const T = { text: '#e4e4e7', muted: '#71717a', accent: '#818cf8', danger: '#f87171', success: '#34d399', warning: '#fbbf24' };
 
 
 export default function InternalDomainDetailPage() {
@@ -101,7 +103,7 @@ export default function InternalDomainDetailPage() {
             )}
 
             {domain.site && (
-                <div className="admin-card">
+                <div className="admin-card" style={{ marginBottom: 24 }}>
                     <div className="admin-card-title">Linked Site</div>
                     <div className="admin-detail-grid">
                         <div className="admin-detail-item">
@@ -119,6 +121,45 @@ export default function InternalDomainDetailPage() {
                     </div>
                 </div>
             )}
+
+            {domain.transfer_requested_at && (
+                <TransferRequestCard domain={domain} onCleared={load} />
+            )}
+        </div>
+    );
+}
+
+
+function TransferRequestCard({ domain, onCleared }) {
+    const [clearing, setClearing] = useState(false);
+
+    const handleClear = async () => {
+        setClearing(true);
+        try {
+            await adminClearTransferRequest(domain.id);
+            onCleared();
+        } catch {}
+        setClearing(false);
+    };
+
+    return (
+        <div className="admin-card" style={{ borderColor: T.warning, borderWidth: 1, borderStyle: 'solid' }}>
+            <div className="admin-card-title" style={{ color: T.warning }}>Transfer Request</div>
+            <div className="admin-detail-grid">
+                <div className="admin-detail-item">
+                    <span className="admin-detail-label">Requested At</span>
+                    <strong>{formatDate(domain.transfer_requested_at)}</strong>
+                </div>
+                <div className="admin-detail-item" style={{ gridColumn: '1 / -1' }}>
+                    <span className="admin-detail-label">Reason</span>
+                    <strong>{domain.transfer_reason || '—'}</strong>
+                </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+                <button className="admin-btn admin-btn-success" onClick={handleClear} disabled={clearing}>
+                    <Check size={14} /> {clearing ? 'Clearing...' : 'Mark Resolved'}
+                </button>
+            </div>
         </div>
     );
 }

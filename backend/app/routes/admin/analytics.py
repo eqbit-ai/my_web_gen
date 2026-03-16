@@ -10,8 +10,6 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.generation_log import GenerationLog
-from app.models.token_transaction import TokenTransaction
 from app.models.user import User
 from app.utils.redis_client import get_redis
 

@@ -121,6 +121,23 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
     # Strip any kit.fontawesome.com scripts (replaced by CDN link above)
     html = re.sub(r'<script[^>]*src=["\']https?://kit\.fontawesome\.com/[^"\']*["\'][^>]*></script>', '', html)
 
+    # Fix hero-stagger + Splitting.js conflict:
+    # Remove data-splitting from elements that also have hero-stagger class.
+    # Splitting.js auto-inits on [data-splitting] and wraps chars in spans,
+    # then hero-stagger JS also processes .hero-stagger and wipes innerHTML → invisible text.
+    # Removing data-splitting lets hero-stagger handle the animation alone.
+    html = re.sub(
+        r'(<[^>]*class="[^"]*hero-stagger[^"]*"[^>]*)\s+data-splitting(?:="[^"]*")?',
+        r'\1',
+        html,
+    )
+    # Also handle reverse attribute order: data-splitting before class
+    html = re.sub(
+        r'(<[^>]*)\s+data-splitting(?:="[^"]*")?\s+([^>]*class="[^"]*hero-stagger[^"]*")',
+        r'\1 \2',
+        html,
+    )
+
     animation_css = get_animation_css()
     animation_js = get_animation_js()
     aos_init = """
@@ -140,6 +157,20 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
             head_inject += f"<style>\n{animation_css}\n</style>\n"
         if css and css.strip():
             head_inject += f"<style>\n{css}\n</style>\n"
+        # Force hero headings visible — prevents hero-stagger JS + CSS animation from hiding text.
+        # CSS animations with "forwards" override !important on opacity/transform,
+        # so we must also override the animation property itself.
+        head_inject += """<style>
+.hero-stagger, .hero-stagger span,
+[data-section-type="hero"] h1, [data-section-type="hero"] h1 span,
+.hero-section h1, .hero-section h1 span {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  animation: none !important;
+}
+</style>
+"""
         html = html.replace("</head>", f"{head_inject}</head>", 1)
 
         # Inject CDN scripts + animation JS + user JS before </body>
@@ -149,6 +180,80 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
         body_inject += aos_init + "\n"
         if js and js.strip():
             body_inject += f"<script>\n{js}\n</script>\n"
+
+        # Safety: force all sections visible after load + short delay
+        # Catches cases where LLM CSS hides sections with opacity:0 and the
+        # scroll observer JS doesn't fire properly on deployed sites
+        body_inject += """<script>
+(function(){
+  function showAll(){
+    document.querySelectorAll('section, [data-section-type]').forEach(function(el){
+      el.style.opacity='1';
+      el.style.transform='none';
+      el.classList.add('visible');
+    });
+    document.querySelectorAll('.hero-content, .hero-center-content, .hero-full-overlay').forEach(function(el){
+      el.style.opacity='1';
+      el.style.transform='none';
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(showAll,100)});}
+  else{setTimeout(showAll,100);}
+})();
+</script>
+"""
+        # Fix hero-stagger + Splitting.js conflict:
+        # Splitting.js wraps chars in spans, then LLM's hero-stagger JS clears innerHTML
+        # and re-wraps with opacity:0 spans — resulting in invisible headings.
+        # This script runs LAST, after both Splitting.js and LLM JS have executed,
+        # and forces hero-stagger text (especially H1) to be visible.
+        body_inject += """<script>
+(function(){
+  function fixHeroStagger(){
+    document.querySelectorAll('.hero-stagger').forEach(function(el){
+      // Force all child spans visible
+      el.querySelectorAll('span').forEach(function(s){
+        s.style.opacity='1';
+        s.style.transform='none';
+        s.style.display='inline-block';
+      });
+      // If element itself is hidden, show it
+      var cs=window.getComputedStyle(el);
+      if(cs.opacity==='0'||el.style.opacity==='0'){
+        el.style.opacity='1';
+        el.style.transform='none';
+      }
+      // If element has no visible text (Splitting.js or hero-stagger wiped it),
+      // restore from data-original or aria-label
+      if(el.textContent.trim().length===0){
+        var orig=el.getAttribute('data-original')||el.getAttribute('aria-label')||'';
+        if(orig)el.textContent=orig;
+      }
+    });
+    // Also fix any h1 inside hero sections that might be invisible
+    document.querySelectorAll('[data-section-type="hero"] h1, .hero-section h1').forEach(function(h1){
+      var cs=window.getComputedStyle(h1);
+      if(cs.opacity==='0'||h1.offsetHeight===0){
+        h1.style.opacity='1';
+        h1.style.transform='none';
+        h1.style.visibility='visible';
+        h1.querySelectorAll('span').forEach(function(s){
+          s.style.opacity='1';
+          s.style.transform='none';
+        });
+      }
+    });
+  }
+  // Run after everything: DOMContentLoaded + extra delay for Splitting.js + hero-stagger
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(fixHeroStagger,500);setTimeout(fixHeroStagger,1500);});
+  }else{
+    setTimeout(fixHeroStagger,500);
+    setTimeout(fixHeroStagger,1500);
+  }
+})();
+</script>
+"""
         html = html.replace("</body>", f"{body_inject}</body>", 1)
         return html
 
@@ -180,6 +285,13 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
         head_parts.append(f"<style>\n{animation_css}\n</style>")
     if css and css.strip():
         head_parts.append(f"<style>\n{css}\n</style>")
+    head_parts.append("""<style>
+.hero-stagger, .hero-stagger span,
+[data-section-type="hero"] h1, [data-section-type="hero"] h1 span,
+.hero-section h1, .hero-section h1 span {
+  opacity: 1 !important; visibility: visible !important; transform: none !important; animation: none !important;
+}
+</style>""")
 
     body_end = CDN_SCRIPTS
     if animation_js:
@@ -187,6 +299,40 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
     body_end += aos_init + "\n"
     if js and js.strip():
         body_end += f"<script>\n{js}\n</script>"
+    body_end += """<script>
+(function(){
+  function showAll(){
+    document.querySelectorAll('section, [data-section-type]').forEach(function(el){
+      el.style.opacity='1';el.style.transform='none';el.classList.add('visible');
+    });
+    document.querySelectorAll('.hero-content, .hero-center-content, .hero-full-overlay').forEach(function(el){
+      el.style.opacity='1';el.style.transform='none';
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(showAll,100)});}
+  else{setTimeout(showAll,100);}
+})();
+</script>"""
+    body_end += """<script>
+(function(){
+  function fixHeroStagger(){
+    document.querySelectorAll('.hero-stagger').forEach(function(el){
+      el.querySelectorAll('span').forEach(function(s){s.style.opacity='1';s.style.transform='none';s.style.display='inline-block';});
+      var cs=window.getComputedStyle(el);
+      if(cs.opacity==='0'||el.style.opacity==='0'){el.style.opacity='1';el.style.transform='none';}
+    });
+    document.querySelectorAll('[data-section-type="hero"] h1, .hero-section h1').forEach(function(h1){
+      var cs=window.getComputedStyle(h1);
+      if(cs.opacity==='0'||h1.offsetHeight===0){
+        h1.style.opacity='1';h1.style.transform='none';h1.style.visibility='visible';
+        h1.querySelectorAll('span').forEach(function(s){s.style.opacity='1';s.style.transform='none';});
+      }
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(fixHeroStagger,500);setTimeout(fixHeroStagger,1500);});}
+  else{setTimeout(fixHeroStagger,500);setTimeout(fixHeroStagger,1500);}
+})();
+</script>"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -200,6 +346,85 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
 {body_end}
 </body>
 </html>"""
+
+
+def _upload_local_images(html: str, project_name: str, s3, bucket: str) -> str:
+    """Find local /uploads/... URLs in HTML/CSS, upload them to S3, rewrite URLs.
+
+    Local images are served by the backend at /uploads/{user_id}/{project_id}/{uuid}.ext.
+    These don't exist on S3, so we upload them to s3://{bucket}/{project_name}/images/
+    and rewrite the URLs to relative paths (images/{filename}).
+
+    Handles both relative (/uploads/...) and absolute (http://localhost:8000/uploads/...) URLs.
+    """
+    from app.utils.storage import UPLOAD_DIR
+
+    # First, normalize full localhost URLs to relative /uploads/... paths
+    # Matches http://localhost:PORT/uploads/... or http://127.0.0.1:PORT/uploads/...
+    html = re.sub(
+        r'https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/uploads/[^"\')\s]+)',
+        r'\1',
+        html,
+    )
+
+    # Find all /uploads/... references in HTML (src, url(), background-image, etc.)
+    upload_pattern = re.compile(r'''(?:src|href)\s*=\s*["'](/uploads/[^"']+)["']|url\(\s*['"]?(/uploads/[^)'"\s]+)['"]?\s*\)''')
+    matches = upload_pattern.findall(html)
+
+    # Flatten — each match is a tuple of (src_match, url_match), one will be empty
+    local_urls = set()
+    for groups in matches:
+        for url in groups:
+            if url:
+                local_urls.add(url)
+
+    if not local_urls:
+        return html
+
+    uploaded_count = 0
+    for local_url in local_urls:
+        # Strip leading / and uploads/ prefix to get relative path on disk
+        rel_path = local_url.lstrip("/")
+        if rel_path.startswith("uploads/"):
+            rel_path = rel_path[len("uploads/"):]
+
+        abs_path = UPLOAD_DIR / rel_path
+
+        if not abs_path.exists() or not abs_path.is_file():
+            logger.warning("Local image not found on disk: %s", abs_path)
+            continue
+
+        # Read the image
+        try:
+            with open(abs_path, "rb") as f:
+                image_bytes = f.read()
+        except Exception as e:
+            logger.warning("Failed to read local image %s: %s", abs_path, e)
+            continue
+
+        # Upload to S3 under project_name/images/
+        filename = abs_path.name  # uuid.ext
+        s3_key = f"{project_name}/images/{filename}"
+
+        try:
+            s3.put_object(
+                Bucket=bucket,
+                Key=s3_key,
+                Body=image_bytes,
+                ContentType=_content_type(filename),
+            )
+            uploaded_count += 1
+        except ClientError as e:
+            logger.warning("Failed to upload image %s to S3: %s", filename, e)
+            continue
+
+        # Rewrite URL in HTML: /uploads/... → images/filename (relative)
+        html = html.replace(local_url, f"images/{filename}")
+
+    if uploaded_count:
+        logger.info("Uploaded %d local images to S3 for %s", uploaded_count, project_name)
+
+    return html
 
 
 def _make_links_relative(html: str) -> str:
@@ -227,13 +452,15 @@ async def deploy_site(
     js: str,
     pages: dict | None = None,
     is_multipage: bool = False,
+    s3_prefix_override: str | None = None,
 ) -> dict:
     """Deploy a website to S3 as static files.
 
     Each site gets its own folder prefix in the bucket.
+    If s3_prefix_override is given, reuses that exact prefix (for redeploying to the same URL).
     Returns {project_name, url, s3_prefix}.
     """
-    project_name = _sanitize_project_name(site_name)
+    project_name = s3_prefix_override or _sanitize_project_name(site_name)
     bucket = _bucket()
     region = _region()
 
@@ -266,13 +493,17 @@ async def deploy_site(
             full_html = _inline_css_js(page_html, page_css, js)
             # Convert absolute links to relative for S3 prefix hosting
             full_html = _make_links_relative(full_html)
+            # Upload local images to S3 and rewrite URLs
+            full_html = _upload_local_images(full_html, project_name, s3, bucket)
 
             if slug == "index":
                 files["index.html"] = full_html
             else:
                 files[f"{slug}.html"] = full_html
     else:
-        files["index.html"] = _inline_css_js(html, css, js)
+        full_html = _inline_css_js(html, css, js)
+        full_html = _upload_local_images(full_html, project_name, s3, bucket)
+        files["index.html"] = full_html
 
     # Upload each file
     uploaded = 0

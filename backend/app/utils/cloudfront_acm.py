@@ -13,7 +13,6 @@ import asyncio
 import logging
 import os
 import uuid
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -101,7 +100,6 @@ async def request_certificate(domain: str) -> dict:
         logger.info("ACM certificate requested: %s for %s", arn, domain)
 
         # ACM needs a moment before DomainValidationOptions are populated
-        waiter = client.get_waiter("certificate_validated")
         # We won't actually *wait* for full validation here — just poll once
         # to grab the CNAME records the user needs to create.
         import time
@@ -460,3 +458,53 @@ def get_dns_records(
         })
 
     return records
+
+
+# ---------------------------------------------------------------------------
+# 9. Invalidate CloudFront cache (for redeploys)
+# ---------------------------------------------------------------------------
+
+async def invalidate_cache(distribution_id: str, paths: list[str] | None = None) -> dict:
+    """
+    Create a CloudFront cache invalidation so updated S3 files are served immediately.
+
+    Args:
+        distribution_id: CloudFront distribution ID
+        paths: List of paths to invalidate (default: ["/*"] = everything)
+
+    Returns::
+
+        {"invalidation_id": "I1234...", "status": "InProgress"}
+    """
+    if not paths:
+        paths = ["/*"]
+
+    def _invalidate():
+        client = _cf_client()
+        resp = client.create_invalidation(
+            DistributionId=distribution_id,
+            InvalidationBatch={
+                "Paths": {
+                    "Quantity": len(paths),
+                    "Items": paths,
+                },
+                "CallerReference": str(uuid.uuid4()),
+            },
+        )
+        inv = resp["Invalidation"]
+        logger.info(
+            "CloudFront invalidation created: %s for distribution %s",
+            inv["Id"],
+            distribution_id,
+        )
+        return {
+            "invalidation_id": inv["Id"],
+            "status": inv["Status"],
+        }
+
+    try:
+        return await asyncio.to_thread(_invalidate)
+    except ClientError as exc:
+        logger.warning("CloudFront cache invalidation failed for %s: %s", distribution_id, exc)
+        # Non-fatal — site will still update, just with cache delay
+        return {"invalidation_id": None, "status": "failed", "error": str(exc)}

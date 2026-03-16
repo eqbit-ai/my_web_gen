@@ -19,8 +19,12 @@ const Login = () => {
         setError('');
         setIsLoading(true);
         try {
-            await login(email, password);
-            navigate('/dashboard');
+            const data = await login(email, password);
+            if (data.force_password_reset) {
+                navigate('/force-reset-password');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.message);
         } finally {

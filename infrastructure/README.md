@@ -75,10 +75,10 @@ aws secretsmanager put-secret-value \
   --secret-string "sk-your-openai-key" \
   --region me-south-1
 
-# Anthropic API key
+# LLM Provider API key
 aws secretsmanager put-secret-value \
-  --secret-id meydan/staging/anthropic-api-key \
-  --secret-string "sk-ant-your-anthropic-key" \
+  --secret-id meydan/staging/llm-api-key \
+  --secret-string "your-llm-api-key" \
   --region me-south-1
 ```
 
@@ -160,7 +160,7 @@ Production costs will be higher due to more tasks and scaling events. Budget ~$5
 1. **Bahrain region (me-south-1):** Lowest latency to UAE/Dubai users.
 2. **300s ALB idle timeout:** Website generation via SSE can take 30-60 seconds; 300s provides ample buffer.
 3. **Sticky sessions:** SSE connections must stay on the same task for the duration of generation.
-4. **NAT Gateway:** Workers need outbound internet to call OpenAI and Anthropic APIs.
+4. **NAT Gateway:** Workers need outbound internet to call LLM provider APIs.
 5. **Multi-AZ RDS:** Production-grade reliability for tenant data.
 6. **Private subnets for compute:** ECS tasks and databases are not publicly accessible.
 7. **Rolling deployments:** min 50% healthy ensures zero-downtime deploys.

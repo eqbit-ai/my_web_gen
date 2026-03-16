@@ -280,7 +280,7 @@ async def active_announcements(
     """Public endpoint (no admin auth) returning currently active announcements."""
     try:
         now = datetime.now(UTC)
-        query = select(Announcement).where(Announcement.is_active == True)
+        query = select(Announcement).where(Announcement.is_active.is_(True))
 
         result = await db.execute(query.order_by(Announcement.created_at.desc()))
         items = result.scalars().all()

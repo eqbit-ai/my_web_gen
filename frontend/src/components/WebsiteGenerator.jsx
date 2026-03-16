@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded",function(){
 (function(){var c=document.querySelectorAll(".stagger-reveal");if(!c.length)return;var so=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.querySelectorAll(".stagger-child").forEach(function(ch,i){ch.style.transitionDelay=(i*.1)+"s";ch.classList.add("visible")});so.unobserve(entry.target)}})},{threshold:0.15});c.forEach(function(el){so.observe(el)})})();
 (function(){var els=document.querySelectorAll(".fade-up,.fade-in,.scale-in");if(!els.length)return;var fo=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("visible");fo.unobserve(e.target)}})},{threshold:0.12});els.forEach(function(el){fo.observe(el)})})();
 (function(){var r=document.querySelectorAll(".image-reveal");if(!r.length)return;var ro=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("revealed");ro.unobserve(e.target)}})},{threshold:0.25});r.forEach(function(el){ro.observe(el)})})();
-(function(){document.querySelectorAll(".hero-stagger").forEach(function(el){var text=el.textContent.trim();if(!text)return;var words=text.split(/\\s+/);el.innerHTML="";words.forEach(function(word,i){var span=document.createElement("span");span.textContent=word;span.style.animationDelay=(0.15+i*0.08)+"s";el.appendChild(span);if(i<words.length-1)el.appendChild(document.createTextNode(" "))})})})();
+(function(){document.querySelectorAll(".hero-stagger").forEach(function(el){if(el.hasAttribute("data-splitting"))return;if(el.querySelector("span"))return;var text=el.textContent.trim();if(!text)return;var words=text.split(/\\s+/);el.innerHTML="";words.forEach(function(word,i){var span=document.createElement("span");span.textContent=word;span.style.animationDelay=(0.15+i*0.08)+"s";el.appendChild(span);if(i<words.length-1)el.appendChild(document.createTextNode(" "))})})})();
 (function(){var btn=document.querySelector(".back-to-top");if(!btn)return;var ring=btn.querySelector(".progress-ring circle");function up(){var st=window.pageYOffset||document.documentElement.scrollTop;var dh=document.documentElement.scrollHeight-document.documentElement.clientHeight;var pct=dh>0?st/dh:0;if(st>400)btn.classList.add("visible");else btn.classList.remove("visible");if(ring){ring.style.strokeDashoffset=157-(pct*157)}}window.addEventListener("scroll",up,{passive:true});up();btn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"})})})();
 (function(){document.querySelectorAll('a[href^="#"]').forEach(function(link){link.addEventListener("click",function(e){var hash=this.getAttribute("href");if(hash.length<2)return;var target=document.querySelector(hash);if(target){e.preventDefault();target.scrollIntoView({behavior:"smooth",block:"start"});if(history.pushState)history.pushState(null,null,hash)}})})})();
 window.showToast=function(msg,type,dur){type=type||"info";dur=dur||3000;var ex=document.querySelector(".toast");if(ex)ex.remove();var t=document.createElement("div");t.className="toast toast-"+type;t.textContent=msg;document.body.appendChild(t);t.offsetHeight;t.classList.add("show");setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove()},500)},dur)};
@@ -481,6 +481,7 @@ const WebsiteGenerator = () => {
     const [viewMode, setViewMode] = useState('preview');
     const [error, setError] = useState(null);
     const [showDeployModal, setShowDeployModal] = useState(false);
+    const [deployedSiteId, setDeployedSiteId] = useState(null);
 
     // Session
     const [sessionId, setSessionId] = useState(null);
@@ -661,30 +662,51 @@ const WebsiteGenerator = () => {
             const meta = pd.metadata || {};
             let restoreHtml = pd.html || '';
             let restoreCss = pd.css || '';
+            let restoredPages = {};
             if (meta.isMultipage && meta.pages && Object.keys(meta.pages).length > 0) {
                 setIsMultipage(true);
-                setPages(meta.pages);
                 const targetPage = meta.currentPage || 'index';
                 setCurrentPage(targetPage);
+
+                // Extract CSS from HTML if any page has CSS embedded in HTML but no separate CSS
+                restoredPages = { ...meta.pages };
+                for (const slug of Object.keys(restoredPages)) {
+                    const pg = restoredPages[slug];
+                    if (pg && pg.html && !pg.css) {
+                        // Try to extract <style> blocks from HTML
+                        const styleMatch = pg.html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+                        if (styleMatch) {
+                            let extractedCss = '';
+                            let cleanHtml = pg.html;
+                            styleMatch.forEach(block => {
+                                const inner = block.replace(/<\/?style[^>]*>/gi, '');
+                                extractedCss += inner + '\n';
+                                cleanHtml = cleanHtml.replace(block, '');
+                            });
+                            restoredPages[slug] = { html: cleanHtml.trim(), css: extractedCss.trim() };
+                        }
+                    }
+                }
+                setPages(restoredPages);
+
                 // Load the saved current page's html/css — fallback through page data → top-level → index page
-                const savedPage = meta.pages[targetPage] || meta.pages['index'];
+                const savedPage = restoredPages[targetPage] || restoredPages['index'];
                 if (savedPage) {
                     restoreHtml = savedPage.html || pd.html || '';
                     restoreCss = savedPage.css || pd.css || '';
                 }
                 // If current page CSS is empty, try index page CSS, then any page with CSS
                 if (!restoreCss) {
-                    restoreCss = meta.pages['index']?.css || '';
+                    restoreCss = restoredPages['index']?.css || pd.css || '';
                     if (!restoreCss) {
-                        // Last resort: grab CSS from any page that has it
-                        for (const slug of Object.keys(meta.pages)) {
-                            if (meta.pages[slug]?.css) { restoreCss = meta.pages[slug].css; break; }
+                        for (const slug of Object.keys(restoredPages)) {
+                            if (restoredPages[slug]?.css) { restoreCss = restoredPages[slug].css; break; }
                         }
                     }
                 }
             }
             setHtml(restoreHtml); setCss(restoreCss);
-            const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: meta.pages || {} };
+            const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: restoredPages };
             setVersions([v]); setCurrentVersion(0);
             // Restore chat history from metadata if available, otherwise show default message
             if (!pd.isTemplate && meta.messages && meta.messages.length > 0) {
@@ -693,15 +715,12 @@ const WebsiteGenerator = () => {
                 setMessages([{ role: 'assistant', text: pd.isTemplate ? `Template "${pd.name}" loaded. Describe the changes you'd like to make.` : 'Project loaded. What would you like to change?', timestamp: new Date().toLocaleTimeString() }]);
             }
 
-            // Hydrate backend session so chat, sections, design system all work
-            restoreSession(restoreHtml, restoreCss, pd.js || '', pd.id || null)
+            // Hydrate backend session with FULL multipage data so chat/sections/edits work
+            const restoreOpts = meta.isMultipage ? { isMultipage: true, pages: restoredPages, currentPage: meta.currentPage || 'index' } : {};
+            restoreSession(restoreHtml, restoreCss, pd.js || '', pd.id || null, restoreOpts)
                 .then(data => {
                     setSessionId(data.sessionId);
                     if (data.sections) setSections(data.sections);
-                    // Sync multipage data to backend session
-                    if (meta.isMultipage && meta.pages && data.sessionId) {
-                        syncSession(data.sessionId, restoreHtml, restoreCss, pd.js || '', meta.currentPage || 'index').catch(() => {});
-                    }
                 })
                 .catch(err => console.error('Failed to restore session:', err));
         } else if (hasInitialPrompt && !hasAutoGenerated.current && !sessionStorage.getItem(SESSION_STORAGE_KEY)) {
@@ -2260,7 +2279,7 @@ const WebsiteGenerator = () => {
                 </>
             )}
 
-            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} />
+            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} existingSiteId={deployedSiteId} onDeployed={setDeployedSiteId} />
 
             {/* Site Settings (SEO, WhatsApp, Contact) */}
             <SeoEditor

@@ -459,7 +459,7 @@ def auto_fix_responsive(html: str, css: str) -> tuple[str, str]:
 
 def generate_fix_suggestions(issues: list[dict]) -> str:
     """
-    Generate a prompt string for Claude to fix remaining
+    Generate a prompt string for the LLM to fix remaining
     non-auto-fixable issues.
     """
     non_auto = [i for i in issues if i["fix"] != "auto"]

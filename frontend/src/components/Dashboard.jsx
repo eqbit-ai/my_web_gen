@@ -1,9 +1,10 @@
 // src/components/Dashboard.jsx
 
+import config from '../config';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, retryDomainActivation, listUserDomains, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
@@ -22,8 +23,6 @@ const Dashboard = () => {
         const hash = window.location.hash.replace('#', '');
         return ['home', 'projects', 'templates', 'domains'].includes(hash) ? hash : 'home';
     });
-    const [transferModal, setTransferModal] = useState(null);
-    const [transferSuccess, setTransferSuccess] = useState(null);
     const [expandedSections, setExpandedSections] = useState({});
     const textareaRef = useRef(null);
     const userMenuRef = useRef(null);
@@ -46,6 +45,8 @@ const Dashboard = () => {
     const [domainInput, setDomainInput] = useState('');
     const [connecting, setConnecting] = useState(false);
     const [connectResult, setConnectResult] = useState(null);
+    const [modalOwnedDomains, setModalOwnedDomains] = useState([]);
+    const [connectingOwned, setConnectingOwned] = useState(null);
     const [disconnectConfirm, setDisconnectConfirm] = useState(null);
     const [dnsRecords, setDnsRecords] = useState({}); // { siteId: records[] }
     const [addRecordModal, setAddRecordModal] = useState(null); // site_id
@@ -55,6 +56,23 @@ const Dashboard = () => {
     const [newDesignModal, setNewDesignModal] = useState(false);
     const [newDesignPreview, setNewDesignPreview] = useState(null); // template id for preview inside new design modal
     const [nameservers, setNameservers] = useState({}); // { siteId: string[] }
+    const [contactInfo, setContactInfo] = useState({}); // { domainRecordId: contactObj }
+    const [contactLoading, setContactLoading] = useState({});
+    const [contactEditing, setContactEditing] = useState(null); // domainRecordId being edited
+    const [contactForm, setContactForm] = useState({});
+    const [contactSaving, setContactSaving] = useState(false);
+    const [transferModal, setTransferModal] = useState(null); // domainRecordId
+    const [transferReason, setTransferReason] = useState('');
+    const [transferSubmitting, setTransferSubmitting] = useState(false);
+    const [transferResult, setTransferResult] = useState(null);
+
+    // Token request state
+    const [tokenRequestModal, setTokenRequestModal] = useState(false);
+    const [tokenRequestAmount, setTokenRequestAmount] = useState('500000');
+    const [tokenRequestReason, setTokenRequestReason] = useState('');
+    const [tokenRequestSubmitting, setTokenRequestSubmitting] = useState(false);
+    const [tokenRequests, setTokenRequests] = useState([]);
+    const [tokenRequestsLoaded, setTokenRequestsLoaded] = useState(false);
     const domainPollRef = useRef(null);
     const [announcements, setAnnouncements] = useState([]);
     const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
@@ -76,6 +94,18 @@ const Dashboard = () => {
 
     const visibleAnnouncements = announcements.filter(a => !dismissedAnnouncements.includes(a.id));
 
+    // Fetch user's available (unconnected) domains when connect modal opens
+    useEffect(() => {
+        if (!connectModal) { setModalOwnedDomains([]); return; }
+        const token = localStorage.getItem('token');
+        fetch(`${config.apiUrl}/api/deploy/${connectModal}/available-domains`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(data => setModalOwnedDomains(data.available_domains || []))
+            .catch(() => setModalOwnedDomains([]));
+    }, [connectModal]);
+
     // Persist active tab in URL hash
     useEffect(() => {
         window.location.hash = activeTab;
@@ -96,13 +126,98 @@ const Dashboard = () => {
     };
 
     const isSectionExpanded = (domainId, section) => {
-        return expandedSections[`${domainId}-${section}`] !== false;
+        return expandedSections[`${domainId}-${section}`] === true;
     };
 
-    const handleTransferConfirm = (domainId) => {
-        setTransferModal(null);
-        setTransferSuccess(domainId);
-        setTimeout(() => setTransferSuccess(null), 3000);
+    const loadContactInfo = async (domainRecordId) => {
+        if (!domainRecordId || contactInfo[domainRecordId] || contactLoading[domainRecordId]) return;
+        setContactLoading(prev => ({ ...prev, [domainRecordId]: true }));
+        try {
+            const data = await getDomainContact(domainRecordId);
+            setContactInfo(prev => ({ ...prev, [domainRecordId]: data.contact || false }));
+        } catch (err) {
+            console.error('Failed to load contact:', err);
+            setContactInfo(prev => ({ ...prev, [domainRecordId]: false }));
+        } finally {
+            setContactLoading(prev => ({ ...prev, [domainRecordId]: false }));
+        }
+    };
+
+    const handleContactEdit = (domainRecordId) => {
+        const c = contactInfo[domainRecordId];
+        setContactForm({
+            first_name: c?.first_name || '',
+            last_name: c?.last_name || '',
+            company_name: c?.company_name || '',
+            email: c?.email || '',
+            phone: c?.phone || '',
+        });
+        setContactEditing(domainRecordId);
+    };
+
+    const handleContactSave = async (domainRecordId) => {
+        setContactSaving(true);
+        try {
+            await updateDomainContact(domainRecordId, contactForm);
+            setContactInfo(prev => ({ ...prev, [domainRecordId]: { ...prev[domainRecordId], ...contactForm } }));
+            setContactEditing(null);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setContactSaving(false);
+        }
+    };
+
+    const handleTransferRequest = async () => {
+        if (!transferModal) return;
+        setTransferSubmitting(true);
+        try {
+            const result = await requestDomainTransfer(transferModal, transferReason);
+            setTransferResult(result);
+            // Refresh sites
+            const data = await listDeployedSites();
+            setDeployedSites(data.sites || []);
+        } catch (err) {
+            setTransferResult({ status: 'error', message: err.message });
+        } finally {
+            setTransferSubmitting(false);
+        }
+    };
+
+    const handleCancelTransfer = async (domainRecordId) => {
+        try {
+            await cancelDomainTransfer(domainRecordId);
+            const data = await listDeployedSites();
+            setDeployedSites(data.sites || []);
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    // ── Token request handlers ──
+    const loadTokenRequests = async () => {
+        try {
+            const data = await getMyTokenRequests();
+            setTokenRequests(data.requests || []);
+            setTokenRequestsLoaded(true);
+        } catch {}
+    };
+
+    const handleTokenRequest = async () => {
+        const amount = parseInt(tokenRequestAmount);
+        if (!amount || amount <= 0) return;
+        setTokenRequestSubmitting(true);
+        try {
+            await requestTokens(amount, tokenRequestReason);
+            setTokenRequestModal(false);
+            setTokenRequestAmount('500000');
+            setTokenRequestReason('');
+            loadTokenRequests();
+            alert('Token request submitted! Admin will review it shortly.');
+        } catch (err) {
+            alert(err.message);
+        }
+        setTokenRequestSubmitting(false);
     };
 
     // ── Domain handlers ──
@@ -127,27 +242,82 @@ const Dashboard = () => {
         try {
             const data = await listDnsRecords(siteId);
             setDnsRecords(prev => ({ ...prev, [siteId]: data.records || [] }));
-        } catch (e) { console.error('Failed to load DNS:', e); }
+        } catch (e) {
+            console.error('Failed to load DNS:', e);
+            setDnsRecords(prev => ({ ...prev, [siteId]: [] }));
+        }
     };
 
     const loadNameservers = async (siteId) => {
         try {
             const data = await getDnsNameservers(siteId);
             setNameservers(prev => ({ ...prev, [siteId]: data.nameservers || [] }));
-        } catch (e) { console.error('Failed to load nameservers:', e); }
+        } catch (e) {
+            console.error('Failed to load nameservers:', e);
+            setNameservers(prev => ({ ...prev, [siteId]: [] }));
+        }
     };
+
+    const [connectError, setConnectError] = useState(null);
+    const [domainSearchResults, setDomainSearchResults] = useState(null);
+    const [purchasing, setPurchasing] = useState(false);
 
     const handleConnectDomain = async () => {
         if (!connectModal || !domainInput.trim()) return;
         setConnecting(true);
+        setConnectError(null);
+        setDomainSearchResults(null);
         try {
             const result = await connectDomain(connectModal, domainInput.trim());
             setConnectResult(result);
             loadDeployedSites();
         } catch (e) {
-            alert(e.message || 'Failed to connect domain');
+            const msg = e.message || 'Failed to connect domain';
+            if (msg.includes('not registered')) {
+                setConnectError('not_registered');
+                // Auto-search for the domain to show pricing
+                try {
+                    const d = domainInput.trim();
+                    const parts = d.includes('.') ? d.split('.') : [d];
+                    const sld = parts[0];
+                    const results = await searchDomains(sld, ['com', 'ae', 'net', 'org', 'io', 'co']);
+                    setDomainSearchResults(results.results || []);
+                } catch { /* ignore search error */ }
+            } else {
+                setConnectError(msg);
+            }
         }
         setConnecting(false);
+    };
+
+    const handleConnectOwnedDomain = async (domainName) => {
+        if (!connectModal) return;
+        setConnectingOwned(domainName);
+        setConnectError(null);
+        try {
+            const result = await connectDomain(connectModal, domainName);
+            setConnectResult(result);
+            loadDeployedSites();
+        } catch (e) {
+            setConnectError(e.message || 'Failed to connect domain');
+        }
+        setConnectingOwned(null);
+    };
+
+    const handleQuickPurchase = async (sld, tld, siteId) => {
+        setPurchasing(true);
+        try {
+            await purchaseDomain(sld, tld, siteId, 1);
+            setConnectModal(null);
+            setConnectError(null);
+            setDomainSearchResults(null);
+            loadDeployedSites();
+            alert(`${sld}.${tld} purchased and connected successfully!`);
+        } catch (e) {
+            const msg = typeof e.message === 'string' ? e.message : JSON.stringify(e.message);
+            alert(msg || 'Purchase failed');
+        }
+        setPurchasing(false);
     };
 
     const handleDisconnect = async (siteId) => {
@@ -540,6 +710,17 @@ const Dashboard = () => {
                                     <div className="dash-token-track">
                                         <div className="dash-token-fill" style={{ width: `${Math.min(100, ((user.token_balance || 0) / 1000000) * 100)}%` }} />
                                     </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                                        <button
+                                            onClick={() => { setTokenRequestModal(true); if (!tokenRequestsLoaded) loadTokenRequests(); }}
+                                            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+                                        >
+                                            Request More Tokens
+                                        </button>
+                                        {tokenRequests.some(r => r.status === 'pending') && (
+                                            <span style={{ fontSize: 11, color: '#fbbf24' }}>Pending request</span>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -755,157 +936,303 @@ const Dashboard = () => {
                 {activeTab === 'domains' && (
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
-                            <h1 className="dash-domain-title">Domain Management</h1>
+                            <div>
+                                <h1 className="dash-domain-title">Deployed Sites</h1>
+                                <p className="dash-domain-subtitle">Manage your websites, domains, and DNS configuration</p>
+                            </div>
                         </div>
 
                         {domainsLoading ? (
                             <div className="dash-projects-empty"><p>Loading sites...</p></div>
                         ) : deployedSites.length === 0 ? (
-                            <div className="dash-projects-empty">
-                                <p>No deployed sites yet. Deploy a website first, then connect a domain.</p>
+                            <div className="dsite-empty">
+                                <div className="dsite-empty-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                                </div>
+                                <h3>No deployed sites yet</h3>
+                                <p>Deploy a website first, then manage domains here</p>
+                                <button className="dsite-cta-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                    Create Website
+                                </button>
                             </div>
                         ) : (
-                            <div className="dash-domain-list">
-                                {deployedSites.map(site => (
-                                    <div key={site.id} className="dash-domain-card">
-                                        <div className="dash-domain-card-header">
-                                            <div className="dash-domain-name-row">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                                                </svg>
-                                                <h3 className="dash-domain-name">{site.domain || site.name}</h3>
-                                                <span className={`dash-domain-status ${statusColor(site.domain_status || site.status)}`}>
-                                                    {(site.domain_status || site.status || 'draft').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                                                </span>
+                            <div className="dsite-list">
+                                {deployedSites.map(site => {
+                                    const sColor = statusColor(site.domain_status || site.status);
+                                    const sLabel = (site.domain_status || site.status || 'draft').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                    return (
+                                    <div key={site.id} className="dsite-card">
+                                        {/* Card Header */}
+                                        <div className="dsite-card-top">
+                                            <div className="dsite-info">
+                                                <div className="dsite-icon-wrap">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="dsite-meta">
+                                                    <h3 className="dsite-name">{site.domain || site.name}</h3>
+                                                    {site.url && (
+                                                        <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-url">
+                                                            {site.url}
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {site.url && (
-                                                <a href={site.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#6366f1', marginTop: 4, display: 'block' }}>
-                                                    {site.url}
-                                                </a>
+                                            <span className={`dsite-badge dsite-badge-${sColor}`}>{sLabel}</span>
+                                        </div>
+
+                                        {/* Quick Stats */}
+                                        <div className="dsite-stats-row">
+                                            <div className="dsite-stat">
+                                                <span className="dsite-stat-label">Domain</span>
+                                                <span className="dsite-stat-value">{site.domain || 'Not connected'}</span>
+                                            </div>
+                                            <div className="dsite-stat">
+                                                <span className="dsite-stat-label">SSL</span>
+                                                <span className="dsite-stat-value">{site.domain ? (site.cloudfront_domain ? 'Active' : 'Pending') : '—'}</span>
+                                            </div>
+                                            <div className="dsite-stat">
+                                                <span className="dsite-stat-label">CDN</span>
+                                                <span className="dsite-stat-value">{site.cloudfront_domain ? 'Active' : '—'}</span>
+                                            </div>
+                                            {site.last_deployed_at && (
+                                                <div className="dsite-stat">
+                                                    <span className="dsite-stat-label">Deployed</span>
+                                                    <span className="dsite-stat-value">{new Date(site.last_deployed_at).toLocaleDateString()}</span>
+                                                </div>
                                             )}
                                         </div>
 
-                                        {/* Connect Domain button + Delete (if no domain yet) */}
-                                        {!site.domain && (
-                                            <div className="dash-domain-card-footer">
-                                                {site.status === 'published' && (
-                                                    <button className="dash-domain-add-btn" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); }}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                                                        </svg>
-                                                        Connect Domain
-                                                    </button>
-                                                )}
-                                                <button className="dash-domain-transfer-btn" style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                                                    onClick={() => setDeleteSiteConfirm(site.id)}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
-                                                    </svg>
-                                                    Delete Site
+                                        {/* Actions Bar */}
+                                        <div className="dsite-actions">
+                                            {!site.domain && site.status === 'published' && (
+                                                <button className="dsite-action-btn dsite-action-primary" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                                    Connect Domain
                                                 </button>
+                                            )}
+                                            {site.url && (
+                                                <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-action-btn">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                                    Visit Site
+                                                </a>
+                                            )}
+                                            {site.domain && (
+                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'dns'); if (!dnsRecords[site.id]) loadDnsRecords(site.id); }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                                    DNS Records
+                                                </button>
+                                            )}
+                                            {site.domain && (
+                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'ns'); if (!nameservers[site.id]) loadNameservers(site.id); }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                                                    Nameservers
+                                                </button>
+                                            )}
+                                            {site.domain_record_id && (
+                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'contact'); loadContactInfo(site.domain_record_id); }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                                    Contact Info
+                                                </button>
+                                            )}
+                                            <div className="dsite-actions-right">
+                                                {site.domain && (
+                                                    <button className="dsite-action-btn dsite-action-danger" onClick={() => setDisconnectConfirm(site.id)}>Disconnect</button>
+                                                )}
+                                                <button className="dsite-action-btn dsite-action-danger" onClick={() => setDeleteSiteConfirm(site.id)}>
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* DNS Records Panel */}
+                                        {site.domain && isSectionExpanded(site.id, 'dns') && (
+                                            <div className="dsite-panel">
+                                                <div className="dsite-panel-header">
+                                                    <h4>DNS Records</h4>
+                                                    <button className="dsite-panel-btn" onClick={() => setAddRecordModal(site.id)}>+ Add Record</button>
+                                                </div>
+                                                <table className="dash-domain-table">
+                                                    <thead>
+                                                        <tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th><th></th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(dnsRecords[site.id] || []).map((rec, i) => (
+                                                            <tr key={i}>
+                                                                <td><span className="dash-domain-type-badge">{rec.type}</span></td>
+                                                                <td style={{ fontSize: 13 }}>{rec.name}</td>
+                                                                <td className="dash-domain-value-cell">{rec.is_alias ? `ALIAS \u2192 ${rec.alias_target || rec.value}` : rec.value}</td>
+                                                                <td>{rec.ttl || '\u2014'}</td>
+                                                                <td>
+                                                                    {!rec.managed ? (
+                                                                        <button className="dash-domain-edit-btn" title="Delete" onClick={() => setDeleteRecordConfirm({ siteId: site.id, record: rec })} style={{ color: '#ef4444' }}>
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                                        </button>
+                                                                    ) : <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>System</span>}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {!dnsRecords[site.id] && (
+                                                            <tr><td colSpan="5" className="dsite-panel-empty">Loading records...</td></tr>
+                                                        )}
+                                                        {dnsRecords[site.id] && dnsRecords[site.id].length === 0 && (
+                                                            <tr><td colSpan="5" className="dsite-panel-empty">
+                                                                {site.route53_zone_id ? 'No DNS records found' : 'No hosted zone \u2014 connect a domain first'}
+                                                            </td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         )}
 
-                                        {/* Domain info (if connected) */}
-                                        {site.domain && (
-                                            <>
-                                                {/* DNS Records */}
-                                                <div className="dash-domain-section">
-                                                    <button className="dash-domain-section-toggle" onClick={() => { toggleSection(site.id, 'dns'); if (!dnsRecords[site.id]) loadDnsRecords(site.id); }}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                                            style={{ transform: isSectionExpanded(site.id, 'dns') ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                                                            <polyline points="9 18 15 12 9 6" />
-                                                        </svg>
-                                                        DNS Records
-                                                    </button>
-                                                    {isSectionExpanded(site.id, 'dns') && (
-                                                        <div className="dash-domain-section-content">
-                                                            <div style={{ marginBottom: 8, textAlign: 'right' }}>
-                                                                <button className="dash-domain-add-btn" style={{ fontSize: 12, padding: '4px 12px' }} onClick={() => setAddRecordModal(site.id)}>
-                                                                    + Add Record
-                                                                </button>
+                                        {/* Nameservers Panel */}
+                                        {site.domain && isSectionExpanded(site.id, 'ns') && (
+                                            <div className="dsite-panel">
+                                                <div className="dsite-panel-header">
+                                                    <h4>Nameservers</h4>
+                                                </div>
+                                                <p className="dsite-panel-hint">Point your domain to these nameservers at your registrar:</p>
+                                                <div className="dsite-ns-grid">
+                                                    {!nameservers[site.id] ? (
+                                                        <p className="dsite-panel-empty">Loading nameservers...</p>
+                                                    ) : nameservers[site.id].length > 0 ? (
+                                                        nameservers[site.id].map((ns, i) => (
+                                                            <div key={i} className="dsite-ns-item">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                                                                <code>{ns}</code>
                                                             </div>
-                                                            <table className="dash-domain-table">
-                                                                <thead>
-                                                                    <tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th><th></th></tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {(dnsRecords[site.id] || []).map((rec, i) => (
-                                                                        <tr key={i}>
-                                                                            <td><span className="dash-domain-type-badge">{rec.type}</span></td>
-                                                                            <td>{rec.name}</td>
-                                                                            <td className="dash-domain-value-cell">{rec.is_alias ? `ALIAS → ${rec.alias_target || rec.value}` : rec.value}</td>
-                                                                            <td>{rec.ttl || '—'}</td>
-                                                                            <td>
-                                                                                {!rec.managed && (
-                                                                                    <button className="dash-domain-edit-btn" title="Delete" onClick={() => setDeleteRecordConfirm({ siteId: site.id, record: rec })}
-                                                                                        style={{ color: '#ef4444' }}>
-                                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
-                                                                                        </svg>
-                                                                                    </button>
-                                                                                )}
-                                                                                {rec.managed && <span style={{ fontSize: 10, color: '#9ca3af' }}>System</span>}
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
-                                                                    {(dnsRecords[site.id] || []).length === 0 && (
-                                                                        <tr><td colSpan="5" style={{ textAlign: 'center', color: '#9ca3af' }}>Loading records...</td></tr>
-                                                                    )}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="dsite-panel-empty">
+                                                            {site.route53_zone_id ? 'No nameservers found' : 'No hosted zone \u2014 connect a domain first'}
+                                                        </p>
                                                     )}
                                                 </div>
+                                            </div>
+                                        )}
 
-                                                {/* Nameservers */}
-                                                <div className="dash-domain-section">
-                                                    <button className="dash-domain-section-toggle" onClick={() => { toggleSection(site.id, 'ns'); if (!nameservers[site.id]) loadNameservers(site.id); }}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                                            style={{ transform: isSectionExpanded(site.id, 'ns') ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                                                            <polyline points="9 18 15 12 9 6" />
-                                                        </svg>
-                                                        Nameservers
-                                                    </button>
-                                                    {isSectionExpanded(site.id, 'ns') && (
-                                                        <div className="dash-domain-section-content">
-                                                            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
-                                                                Update your domain's nameservers at your registrar to:
-                                                            </p>
-                                                            <div className="dash-domain-ns-list">
-                                                                {(nameservers[site.id] || []).length > 0 ? (
-                                                                    (nameservers[site.id]).map((ns, i) => (
-                                                                        <div key={i} style={{ fontFamily: 'monospace', fontSize: 13, padding: '4px 0', color: '#e5e7eb' }}>{ns}</div>
-                                                                    ))
-                                                                ) : (
-                                                                    <p style={{ fontSize: 12, color: '#9ca3af' }}>Loading nameservers...</p>
-                                                                )}
+                                        {/* Contact Info Panel */}
+                                        {site.domain_record_id && isSectionExpanded(site.id, 'contact') && (
+                                            <div className="dsite-panel">
+                                                <div className="dsite-panel-header">
+                                                    <h4>Contact Information</h4>
+                                                    {contactInfo[site.domain_record_id] && contactEditing !== site.domain_record_id && (
+                                                        <button className="dsite-panel-btn" onClick={() => handleContactEdit(site.domain_record_id)}>Edit</button>
+                                                    )}
+                                                </div>
+                                                {contactLoading[site.domain_record_id] || !(site.domain_record_id in contactInfo) ? (
+                                                    <p className="dsite-panel-empty">Loading contact info...</p>
+                                                ) : !contactInfo[site.domain_record_id] ? (
+                                                    <p className="dsite-panel-empty">No contact information available</p>
+                                                ) : contactEditing === site.domain_record_id ? (
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '8px 0' }}>
+                                                        {['first_name', 'last_name', 'company_name', 'email', 'phone'].map(field => (
+                                                            <div key={field} style={field === 'company_name' ? { gridColumn: '1 / -1' } : {}}>
+                                                                <label style={{ fontSize: 11, color: '#9ca3af', textTransform: 'capitalize', display: 'block', marginBottom: 3 }}>{field.replace(/_/g, ' ')}</label>
+                                                                <input
+                                                                    value={contactForm[field] || ''}
+                                                                    onChange={e => setContactForm(prev => ({ ...prev, [field]: e.target.value }))}
+                                                                    style={{ width: '100%', padding: '6px 10px', fontSize: 13, background: '#1f2937', border: '1px solid #374151', borderRadius: 6, color: '#f3f4f6', outline: 'none', boxSizing: 'border-box' }}
+                                                                />
                                                             </div>
+                                                        ))}
+                                                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                                                            <button onClick={() => setContactEditing(null)} style={{ padding: '6px 14px', fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
+                                                            <button onClick={() => handleContactSave(site.domain_record_id)} disabled={contactSaving} style={{ padding: '6px 14px', fontSize: 12, background: '#3b82f6', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', opacity: contactSaving ? 0.5 : 1 }}>{contactSaving ? 'Saving...' : 'Save'}</button>
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', padding: '8px 0' }}>
+                                                        {[
+                                                            ['Name', `${contactInfo[site.domain_record_id].first_name || ''} ${contactInfo[site.domain_record_id].last_name || ''}`.trim()],
+                                                            ['Company', contactInfo[site.domain_record_id].company_name],
+                                                            ['Email', contactInfo[site.domain_record_id].email],
+                                                            ['Phone', contactInfo[site.domain_record_id].phone],
+                                                        ].map(([label, value]) => (
+                                                            <div key={label}>
+                                                                <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>{label}</span>
+                                                                <span style={{ fontSize: 13, color: '#e5e7eb' }}>{value || '—'}</span>
+                                                            </div>
+                                                        ))}
+                                                        {contactInfo[site.domain_record_id].address && (
+                                                            <div style={{ gridColumn: '1 / -1' }}>
+                                                                <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>Address</span>
+                                                                <span style={{ fontSize: 13, color: '#e5e7eb' }}>
+                                                                    {[contactInfo[site.domain_record_id].address.street, contactInfo[site.domain_record_id].address.number, contactInfo[site.domain_record_id].address.city, contactInfo[site.domain_record_id].address.state, contactInfo[site.domain_record_id].address.country].filter(Boolean).join(', ')}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
-                                                {/* Disconnect + Delete */}
-                                                <div className="dash-domain-card-footer">
-                                                    {site.domain_status === 'pending_validation' && (
-                                                        <span style={{ fontSize: 12, color: '#f59e0b' }}>Waiting for nameserver propagation...</span>
+                                                {/* Transfer Request section */}
+                                                <div style={{ borderTop: '1px solid #374151', marginTop: 12, paddingTop: 12 }}>
+                                                    {site.transfer_requested_at ? (
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                                <span style={{ fontSize: 13, color: '#fbbf24' }}>Transfer requested on {new Date(site.transfer_requested_at).toLocaleDateString()}</span>
+                                                            </div>
+                                                            <button onClick={() => handleCancelTransfer(site.domain_record_id)} style={{ fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 10px', color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => { setTransferModal(site.domain_record_id); setTransferReason(''); setTransferResult(null); }}
+                                                            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '6px 14px', color: '#9ca3af', cursor: 'pointer' }}
+                                                        >
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+                                                            Request Domain Transfer
+                                                        </button>
                                                     )}
-                                                    <button className="dash-domain-transfer-btn" style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                                                        onClick={() => setDisconnectConfirm(site.id)}>
-                                                        Disconnect Domain
-                                                    </button>
-                                                    <button className="dash-domain-transfer-btn" style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                                                        onClick={() => setDeleteSiteConfirm(site.id)}>
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
-                                                        </svg>
-                                                        Delete Site
-                                                    </button>
                                                 </div>
-                                            </>
+                                            </div>
+                                        )}
+
+                                        {/* Pending status notice with refresh */}
+                                        {(site.domain_status === 'pending_validation' || site.domain_status === 'pending_deployment' || site.domain_status === 'creating_cdn') && (
+                                            <div className="dsite-notice" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                    {site.domain_status === 'pending_validation' ? 'SSL certificate pending validation...' :
+                                                     site.domain_status === 'creating_cdn' ? 'Creating CDN distribution...' :
+                                                     'CloudFront deployment in progress...'}
+                                                </div>
+                                                <button
+                                                    onClick={async (e) => {
+                                                        const btn = e.currentTarget;
+                                                        btn.disabled = true;
+                                                        btn.textContent = 'Checking...';
+                                                        try {
+                                                            const result = await getDomainStatus(site.id);
+                                                            // Refresh the sites list
+                                                            const data = await listDeployedSites();
+                                                            setDeployedSites(data.sites || []);
+                                                            if (result.domain_status === 'active') {
+                                                                btn.textContent = 'Active!';
+                                                                btn.style.color = '#34d399';
+                                                            } else {
+                                                                btn.textContent = 'Still pending';
+                                                                setTimeout(() => { btn.textContent = 'Refresh'; btn.disabled = false; }, 2000);
+                                                            }
+                                                        } catch (err) {
+                                                            btn.textContent = 'Error';
+                                                            setTimeout(() => { btn.textContent = 'Refresh'; btn.disabled = false; }, 2000);
+                                                        }
+                                                    }}
+                                                    style={{ background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 12px', color: '#9ca3af', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+                                                    Refresh
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -913,27 +1240,121 @@ const Dashboard = () => {
 
                 {/* Connect Domain Modal */}
                 {connectModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); }}>
+                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); }}>
                         <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
-                            {!connectResult ? (
+                            {connectError === 'not_registered' ? (
                                 <>
-                                    <h3 style={{ marginBottom: 8 }}>Connect Custom Domain</h3>
-                                    <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-                                        Enter your domain name. We'll set up SSL and DNS automatically.
+                                    <div className="dash-domain-modal-icon" style={{ background: '#fef3c7' }}>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    </div>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Domain Not Registered</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>
+                                        <strong style={{ color: '#e5e7eb' }}>{domainInput}</strong> is not registered yet. Purchase it below and it will be auto-connected to your site.
                                     </p>
+
+                                    {domainSearchResults === null ? (
+                                        <div style={{ textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>Searching available domains...</div>
+                                    ) : domainSearchResults.length > 0 ? (
+                                        <div style={{ maxHeight: 220, overflowY: 'auto', marginBottom: 16, borderRadius: 8, border: '1px solid #374151' }}>
+                                            {domainSearchResults.filter(r => r.status === 'free').map((r, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < domainSearchResults.filter(x => x.status === 'free').length - 1 ? '1px solid #374151' : 'none' }}>
+                                                    <div>
+                                                        <span style={{ fontWeight: 600, fontSize: 14, color: '#f3f4f6' }}>{r.sld}</span>
+                                                        <span style={{ color: '#9ca3af', fontSize: 14 }}>.{r.tld}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                        {r.price && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>${r.price.amount}/yr</span>}
+                                                        <button
+                                                            onClick={() => handleQuickPurchase(r.sld, r.tld, connectModal)}
+                                                            disabled={purchasing}
+                                                            style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: purchasing ? 'wait' : 'pointer', opacity: purchasing ? 0.6 : 1 }}
+                                                        >
+                                                            {purchasing ? '...' : 'Buy & Connect'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {domainSearchResults.filter(r => r.status !== 'free').length > 0 && (
+                                                <div style={{ padding: '8px 14px', fontSize: 12, color: '#6b7280', background: '#1f2937' }}>
+                                                    {domainSearchResults.filter(r => r.status !== 'free').map(r => r.domain).join(', ')} — already taken
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>No domains available. Try a different name.</p>
+                                    )}
+
+                                    <div className="dash-domain-modal-actions" style={{ gap: 8 }}>
+                                        <button className="dash-domain-modal-cancel" onClick={() => { setConnectError(null); setDomainSearchResults(null); }}>Try Another Domain</button>
+                                    </div>
+                                </>
+                            ) : connectError ? (
+                                <>
+                                    <div className="dash-domain-modal-icon" style={{ background: '#fef2f2' }}>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    </div>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Connection Failed</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>{connectError}</p>
+                                    <div className="dash-domain-modal-actions">
+                                        <button className="dash-domain-modal-cancel" onClick={() => setConnectError(null)}>Try Again</button>
+                                    </div>
+                                </>
+                            ) : !connectResult ? (
+                                <>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Connect Custom Domain</h3>
+
+                                    {/* Owned domains available for quick connect */}
+                                    {modalOwnedDomains.length > 0 && (
+                                        <div style={{ marginBottom: 16 }}>
+                                            <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>Your available domains</p>
+                                            <div style={{ borderRadius: 8, border: '1px solid #374151', overflow: 'hidden' }}>
+                                                {modalOwnedDomains.map((d, i) => (
+                                                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < modalOwnedDomains.length - 1 ? '1px solid #374151' : 'none', background: '#1f2937' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                            <span style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</span>
+                                                            {d.instant_connect && (
+                                                                <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                                                                    Instant
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleConnectOwnedDomain(d.domain_name)}
+                                                            disabled={!!connectingOwned}
+                                                            style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: connectingOwned ? 'wait' : 'pointer', opacity: connectingOwned ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 4 }}
+                                                        >
+                                                            {connectingOwned === d.domain_name ? 'Connecting...' : 'Connect'}
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0', color: '#6b7280', fontSize: 12 }}>
+                                                <div style={{ flex: 1, height: 1, background: '#374151' }} />
+                                                <span>or enter a domain</span>
+                                                <div style={{ flex: 1, height: 1, background: '#374151' }} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {modalOwnedDomains.length === 0 && (
+                                        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                                            Enter a domain you own. We'll verify it's registered, then set up SSL and DNS automatically.
+                                        </p>
+                                    )}
                                     <input
                                         type="text"
                                         value={domainInput}
                                         onChange={e => setDomainInput(e.target.value)}
                                         placeholder="mybusiness.ae"
-                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, marginBottom: 16 }}
+                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #374151', background: '#1f2937', color: '#f3f4f6', fontSize: 14, marginBottom: 16 }}
                                         disabled={connecting}
                                         onKeyDown={e => e.key === 'Enter' && handleConnectDomain()}
                                     />
                                     <div className="dash-domain-modal-actions">
                                         <button className="dash-domain-modal-cancel" onClick={() => setConnectModal(null)}>Cancel</button>
                                         <button className="dash-domain-modal-confirm" onClick={handleConnectDomain} disabled={connecting || !domainInput.trim()}>
-                                            {connecting ? 'Setting up...' : 'Connect'}
+                                            {connecting ? 'Verifying...' : 'Connect'}
                                         </button>
                                     </div>
                                 </>
@@ -942,15 +1363,15 @@ const Dashboard = () => {
                                     <div className="dash-domain-modal-icon" style={{ background: '#ecfdf5' }}>
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
                                     </div>
-                                    <h3 style={{ marginBottom: 8 }}>Domain Connected!</h3>
-                                    <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Domain Connected!</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
                                         {connectResult.instructions}
                                     </p>
                                     {connectResult.nameservers && (
-                                        <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                                            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#374151' }}>Set these nameservers at your registrar:</p>
+                                        <div style={{ background: '#1f2937', borderRadius: 8, padding: 16, marginBottom: 16, border: '1px solid #374151' }}>
+                                            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#d1d5db' }}>Set these nameservers at your registrar:</p>
                                             {connectResult.nameservers.map((ns, i) => (
-                                                <div key={i} style={{ fontFamily: 'monospace', fontSize: 13, padding: '4px 0', color: '#1f2937' }}>{ns}</div>
+                                                <div key={i} style={{ fontFamily: 'monospace', fontSize: 13, padding: '4px 0', color: '#e5e7eb' }}>{ns}</div>
                                             ))}
                                         </div>
                                     )}
@@ -1039,6 +1460,114 @@ const Dashboard = () => {
                             <div className="dash-domain-modal-actions">
                                 <button className="dash-domain-modal-cancel" onClick={() => setDeleteRecordConfirm(null)}>Cancel</button>
                                 <button className="dash-domain-modal-confirm" style={{ background: '#ef4444' }} onClick={() => { handleDeleteRecord(deleteRecordConfirm.siteId, deleteRecordConfirm.record); setDeleteRecordConfirm(null); }}>Delete Record</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Transfer Request Modal */}
+                {transferModal && (
+                    <div className="dash-domain-modal-overlay" onClick={() => { setTransferModal(null); setTransferResult(null); }}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                            {transferResult ? (
+                                <>
+                                    <div className="dash-domain-modal-icon" style={{ background: transferResult.status === 'error' ? '#fef2f2' : '#ecfdf5' }}>
+                                        {transferResult.status === 'error' ? (
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                        ) : (
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        )}
+                                    </div>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>{transferResult.status === 'error' ? 'Error' : 'Transfer Requested'}</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>{transferResult.message}</p>
+                                    <button className="dash-domain-modal-confirm" style={{ background: '#3b82f6', width: '100%' }} onClick={() => { setTransferModal(null); setTransferResult(null); }}>OK</button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="dash-domain-modal-icon" style={{ background: '#fef3c7' }}>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+                                    </div>
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Request Domain Transfer</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                                        Submit a request to transfer this domain away from the platform. Our team will review and process your request within 24-48 hours.
+                                    </p>
+                                    <div style={{ marginBottom: 16 }}>
+                                        <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Reason (optional)</label>
+                                        <textarea
+                                            value={transferReason}
+                                            onChange={e => setTransferReason(e.target.value)}
+                                            placeholder="e.g. Moving to a different hosting provider..."
+                                            rows={3}
+                                            style={{ width: '100%', padding: '8px 12px', fontSize: 13, background: '#1f2937', border: '1px solid #374151', borderRadius: 8, color: '#f3f4f6', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div className="dash-domain-modal-actions">
+                                        <button className="dash-domain-modal-cancel" onClick={() => setTransferModal(null)}>Cancel</button>
+                                        <button className="dash-domain-modal-confirm" style={{ background: '#f59e0b' }} onClick={handleTransferRequest} disabled={transferSubmitting}>
+                                            {transferSubmitting ? 'Submitting...' : 'Submit Request'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Token Request Modal */}
+                {tokenRequestModal && (
+                    <div className="dash-domain-modal-overlay" onClick={() => setTokenRequestModal(false)}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                            <div className="dash-domain-modal-icon" style={{ background: '#ede9fe' }}>
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                            </div>
+                            <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Request More Tokens</h3>
+                            <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                                Submit a request to the admin for additional tokens. You'll be notified when it's reviewed.
+                            </p>
+                            <div style={{ marginBottom: 12 }}>
+                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Amount</label>
+                                <select
+                                    value={tokenRequestAmount}
+                                    onChange={e => setTokenRequestAmount(e.target.value)}
+                                    style={{ width: '100%', padding: '8px 12px', background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 8, fontSize: 14 }}
+                                >
+                                    <option value="100000">100,000 tokens</option>
+                                    <option value="250000">250,000 tokens</option>
+                                    <option value="500000">500,000 tokens</option>
+                                    <option value="1000000">1,000,000 tokens</option>
+                                    <option value="2000000">2,000,000 tokens</option>
+                                </select>
+                            </div>
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Reason (optional)</label>
+                                <textarea
+                                    value={tokenRequestReason}
+                                    onChange={e => setTokenRequestReason(e.target.value)}
+                                    placeholder="e.g. Need more tokens for a large project..."
+                                    style={{ width: '100%', minHeight: 70, padding: '8px 12px', background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 8, fontSize: 13, resize: 'vertical' }}
+                                />
+                            </div>
+
+                            {/* Show past requests */}
+                            {tokenRequests.length > 0 && (
+                                <div style={{ marginBottom: 16, maxHeight: 120, overflow: 'auto' }}>
+                                    <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Your Requests</label>
+                                    {tokenRequests.map(r => (
+                                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <span style={{ color: '#d1d5db' }}>{parseInt(r.amount).toLocaleString()} tokens</span>
+                                            <span style={{ color: r.status === 'approved' ? '#34d399' : r.status === 'rejected' ? '#f87171' : '#fbbf24', fontWeight: 600 }}>
+                                                {r.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button className="dash-domain-modal-cancel" onClick={() => setTokenRequestModal(false)}>Cancel</button>
+                                <button className="dash-domain-modal-confirm" style={{ background: '#7c3aed' }} onClick={handleTokenRequest} disabled={tokenRequestSubmitting}>
+                                    {tokenRequestSubmitting ? 'Submitting...' : 'Submit Request'}
+                                </button>
                             </div>
                         </div>
                     </div>

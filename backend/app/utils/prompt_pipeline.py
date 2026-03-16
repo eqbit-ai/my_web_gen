@@ -2,8 +2,8 @@
 Multi-stage AI website generation pipeline.
 
 Stage 1: Plan      → GPT-4.1 analyzes prompt → JSON structure + layout patterns
-Stage 2: HTML      → Claude generates HTML with pure CSS classes + <style> block
-Stage 3: JS        → Claude generates interactions/animations
+Stage 2: HTML      → LLM generates HTML with pure CSS classes + <style> block
+Stage 3: JS        → LLM generates interactions/animations
 
 CSS is embedded as semantic classes in a <style> block in the HTML output.
 """
@@ -202,6 +202,14 @@ OTHER:
 
 VARIETY RULE: Do NOT always default to hero_split + card_grid + testimonial_cards. Actively choose DIFFERENT variants for each generation to make every website feel unique.
 AVOID feature_steps and timeline — these numbered step layouts are overused and look generic. Prefer card_grid, icon_grid, feature_split, or feature_cards instead. Only use feature_steps if the user EXPLICITLY asks for a step-by-step process section.
+
+PREMIUM DESIGN MANDATE: Every website should look like it was designed by a top-tier agency. Think Apple, Stripe, Linear quality.
+- Hero sections should feel ALIVE: floating elements, depth layers, subtle glow effects, premium imagery
+- Content sections need visual rhythm: alternating layouts, whitespace, card hover effects
+- Color palettes should feel curated and intentional — not random
+- Typography should be bold and distinctive — large hero headings (3.5-5rem), generous line-height
+- Every section transition should feel smooth — consistent spacing and visual flow
+- Prefer hero_asymmetric, hero_parallax_layers, hero_scroll_morph for premium feel over basic hero_split
 
 PATTERN SELECTION GUIDANCE (choose based on website type):
 - SaaS / Software products → prefer hero_product_mockup or hero_mockup_center for hero
@@ -619,8 +627,8 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
     if rotation_hints:
         prompt += "\n" + rotation_hints
 
-    # Style preset: inject frequently (60% chance) for design variety
-    if random.random() < 0.60:
+    # Style preset: inject almost always (95%) for premium design quality
+    if random.random() < 0.95:
         preset_name, preset = get_random_style_preset()
         prompt += "\n" + format_style_hint(preset_name, preset)
 
@@ -756,10 +764,10 @@ def build_template_customize_prompt(template_html: str, plan: dict) -> str:
     """Build a prompt for customizing an existing template with plan content.
 
     This is MUCH smaller than the from-scratch prompt (~35K vs ~72K) and produces
-    more reliable results because Claude modifies working code instead of generating
+    more reliable results because LLM modifies working code instead of generating
     from scratch.
     """
-    # Strip long image URLs to reduce token count — Claude will replace them anyway
+    # Strip long image URLs to reduce token count — LLM will replace them anyway
     import re as _re
     compressed = _re.sub(
         r'src="https://[^"]{50,}"',
@@ -767,7 +775,7 @@ def build_template_customize_prompt(template_html: str, plan: dict) -> str:
         template_html,
     )
 
-    # Build minimal plan JSON with just the content Claude needs
+    # Build minimal plan JSON with just the content the model needs
     plan_content = {
         "brand": plan.get("brand", {}),
         "design": plan.get("design", {}),
@@ -800,7 +808,7 @@ def build_html_prompt(plan: dict, enhanced_brief: str = None) -> str:
         style_additions=style_additions,
     )
 
-    # Pre-build the Google Fonts URL so Claude doesn't get it wrong
+    # Pre-build the Google Fonts URL so the model doesn't get it wrong
     design = plan.get("design", {})
     heading_font = design.get("heading_font", "Space Grotesk").replace(" ", "+")
     body_font = design.get("body_font", "Inter").replace(" ", "+")
@@ -826,6 +834,21 @@ CUSTOM CSS EFFECTS — add these in the <style> block:
 - Hero staggered entrance: .hero-stagger {{ opacity: 0; transform: translateY(30px); animation: heroIn 0.8s ease forwards; }} @keyframes heroIn {{ to {{ opacity: 1; transform: translateY(0); }} }}
   Use animation-delay: 0.2s, 0.4s, 0.6s on child elements for stagger effect
 - Stats suffix accent: .stat-suffix {{ color: var(--accent); }} (wrap +, %, M in this class)
+"""
+
+    # Always inject premium CSS hints (even without enhanced_brief)
+    if not enhanced_brief:
+        prompt += """
+
+PREMIUM CSS EFFECTS — add these in the <style> block to make the site feel high-end:
+- Floating cards in hero: position: absolute with subtle box-shadow and backdrop-filter: blur(10px)
+- Gradient accent lines: use ::after pseudo-elements with background: linear-gradient(90deg, var(--primary), var(--accent))
+- Card hover lifts: transform: translateY(-8px); box-shadow: var(--shadow-hover); on hover
+- Glass-morphism cards: background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08)
+- Button gradient shifts: background-size: 200% 200%; animation: gradientShift 3s ease infinite on primary buttons
+- Subtle section separators: border-top: 1px solid rgba(var(--text-rgb), 0.06) between sections
+- Trust indicators in hero: small counter stats (75+ clients, 98% success) with animated numbers
+- Depth layering in hero: use z-index layers with floating decorative elements at different scales
 """
 
     # Inject animation guidance
@@ -1122,7 +1145,7 @@ RULES:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# STAGE 4: JavaScript Generation (Claude → JS only)
+# STAGE 4: JavaScript Generation (LLM → JS only)
 # ═══════════════════════════════════════════════════════════════════════
 
 JS_GEN_SYSTEM_PROMPT = """You are a frontend JavaScript developer. Generate ONLY vanilla JavaScript for a website.
@@ -1215,7 +1238,7 @@ RULES:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# ITERATION PROMPT (single Claude call to modify existing site)
+# ITERATION PROMPT (single LLM call to modify existing site)
 # ═══════════════════════════════════════════════════════════════════════
 
 ITERATION_SYSTEM_PROMPT = """You are an expert web developer modifying an existing website that uses pure CSS classes (NO Tailwind, NO utility frameworks).
@@ -1386,6 +1409,21 @@ FAQ ACCORDION:
 - Question button MUST have class "faq-question"
 - Answer div MUST have class "faq-answer"
 - JS toggles "active" class on .faq-item when clicked
+
+CONTACT FORMS:
+- ALL <input> and <textarea> elements MUST have class="form-input" — this is the ONLY way they get styled
+- Textareas also add class="form-textarea" (i.e. class="form-input form-textarea")
+- Wrap form in <form class="contact-form">
+- Use placeholder attributes for field labels (placeholder="Your Name"), NOT floating <label> elements
+- Do NOT use Material Design floating labels, fieldset/legend, or custom input wrappers — just <input class="form-input" placeholder="...">
+- Submit button: use class="btn-primary" (already styled)
+- Contact info items: use .contact-item, .contact-icon classes
+- Add margin-bottom: 1rem inline style on each input/textarea for spacing
+
+FOOTER:
+- MUST use .footer-grid (CSS grid), .footer-heading, .footer-links, .footer-description, .social-links, .social-link, .footer-bottom
+- Footer links: use <ul class="footer-links"> with <li><a> elements — do NOT use raw bullet lists
+- Social links: use <div class="social-links"> with <a class="social-link"> containing <i class="fa-brands fa-xxx">
 
 TESTIMONIAL SLIDER:
 - Each slide MUST have class "testimonial-slide"
@@ -1860,7 +1898,7 @@ def parse_code_blocks(text: str) -> dict[str, str]:
         elif current_lang is not None:
             current_lines.append(line)
 
-    # Handle unclosed fence (Claude sometimes omits closing ```)
+    # Handle unclosed fence (model sometimes omits closing ```)
     if current_lang is not None and current_lines:
         code = "\n".join(current_lines).strip()
         if code and current_lang in result:

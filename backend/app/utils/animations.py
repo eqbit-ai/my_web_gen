@@ -686,6 +686,43 @@ ANIMATION_JS = """
 document.addEventListener('DOMContentLoaded', function() {
 
   /* ------------------------------------------------------------------
+     Mobile Hamburger Menu Toggle
+     ------------------------------------------------------------------ */
+  (function() {
+    var toggle = document.querySelector('.nav-toggle');
+    var navLinks = document.querySelector('.nav-links');
+    if (!toggle || !navLinks) return;
+
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navLinks.classList.toggle('active');
+      var isOpen = navLinks.classList.contains('active');
+      toggle.setAttribute('aria-expanded', isOpen);
+      toggle.innerHTML = isOpen
+        ? '<i class="fa-solid fa-xmark"></i>'
+        : '<i class="fa-solid fa-bars"></i>';
+    });
+
+    // Close menu when a nav link is clicked
+    navLinks.querySelectorAll('a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        navLinks.classList.remove('active');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!navLinks.contains(e.target) && !toggle.contains(e.target)) {
+        navLinks.classList.remove('active');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      }
+    });
+  })();
+
+  /* ------------------------------------------------------------------
      Scroll Progress Bar
      ------------------------------------------------------------------ */
   (function() {
@@ -964,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 # ---------------------------------------------------------------------------
-# 3. ANIMATION_PROMPT_SECTION — injected into Claude's HTML generation prompt
+# 3. ANIMATION_PROMPT_SECTION — injected into the HTML generation prompt
 # ---------------------------------------------------------------------------
 
 ANIMATION_PROMPT_SECTION = """

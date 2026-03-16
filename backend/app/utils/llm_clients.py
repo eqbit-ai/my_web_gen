@@ -1,11 +1,12 @@
 """
 Multi-LLM client manager.
 - OpenAI (GPT) for text/content generation + planning stages
-- Anthropic (Claude) for code generation + final beautification
+- Anthropic for code generation + final beautification
 """
 
 import os
 
+import httpx
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 
@@ -19,7 +20,10 @@ def get_anthropic_client() -> AsyncAnthropic:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not configured")
-        _anthropic_client = AsyncAnthropic(api_key=api_key)
+        _anthropic_client = AsyncAnthropic(
+            api_key=api_key,
+            timeout=httpx.Timeout(300.0, connect=10.0),  # 5min total, 10s connect
+        )
     return _anthropic_client
 
 

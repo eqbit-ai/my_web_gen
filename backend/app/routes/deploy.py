@@ -30,11 +30,13 @@ from app.utils.cloudfront_acm import (
     delete_distribution,
     delete_certificate,
     get_dns_records,
+    invalidate_cache,
 )
 from app.utils.route53 import (
     create_hosted_zone,
     delete_hosted_zone,
     create_alias_record,
+    delete_alias_record,
     create_acm_validation_records,
     get_nameservers,
 )
@@ -60,6 +62,7 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 class DeployRequest(BaseModel):
     session_id: str
     site_name: str = ""
+    site_id: str | None = None  # Pass existing site_id to overwrite same S3 folder
 
 
 class RedeployRequest(BaseModel):
@@ -99,16 +102,42 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     if is_multipage and pages and "index" not in pages and html:
         pages["index"] = {"html": html, "css": css}
 
-    # 3. Determine site name
+    # 3. Determine site name — reuse S3 prefix for the SAME website
     site_name = req.site_name.strip() if req.site_name else ""
-    if not site_name:
+    existing_site = None
+    async with async_session() as db:
+        # First try: match by explicit site_id (redesign/redeploy of same site)
+        if req.site_id:
+            result_q = await db.execute(
+                select(Site).where(
+                    Site.id == req.site_id,
+                    Site.user_id == user["user_id"],
+                )
+            )
+            existing_site = result_q.scalar_one_or_none()
+
+        # Second try: match by session_id (same generation = same site)
+        if not existing_site:
+            result_q = await db.execute(
+                select(Site).where(
+                    Site.user_id == user["user_id"],
+                    Site.session_id == req.session_id,
+                )
+            )
+            existing_site = result_q.scalar_one_or_none()
+
+    # Reuse the existing S3 prefix only for the SAME website
+    if existing_site and existing_site.cloudflare_project_name:
+        site_name = site_name or existing_site.name or existing_site.cloudflare_project_name
+    elif not site_name:
         plan = session.get("plan", {})
         if isinstance(plan, dict):
             site_name = plan.get("company_name") or plan.get("business_name") or ""
         if not site_name:
             site_name = f"site-{req.session_id[:8]}"
 
-    # 4. Deploy to S3
+    # 4. Deploy to S3 — use existing S3 prefix if we have one, otherwise derive from site_name
+    s3_project_name = existing_site.cloudflare_project_name if existing_site and existing_site.cloudflare_project_name else None
     try:
         result = await deploy_site(
             site_name=site_name,
@@ -117,6 +146,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             js=js,
             pages=pages,
             is_multipage=is_multipage,
+            s3_prefix_override=s3_project_name,
         )
     except Exception as e:
         logger.error("Deployment failed: %s", e, exc_info=True)
@@ -125,19 +155,19 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     # 5. Store in database
     page_count = len(pages) if pages else 1
     async with async_session() as db:
-        existing = await db.execute(
-            select(Site).where(
-                Site.user_id == user["user_id"],
-                Site.session_id == req.session_id,
-            )
-        )
-        site = existing.scalar_one_or_none()
+        # Re-fetch inside this session to avoid detached instance
+        if existing_site:
+            refetch = await db.execute(select(Site).where(Site.id == existing_site.id))
+            site = refetch.scalar_one_or_none()
+        else:
+            site = None
 
         if site:
             site.name = site_name
             site.status = "published"
             site.deployed_url = result["url"]
             site.cloudflare_project_name = result["project_name"]  # reuse column for S3 prefix
+            site.session_id = req.session_id  # update to new session
             site.is_multipage = is_multipage
             site.page_count = page_count
             site.deploy_error = None
@@ -160,6 +190,19 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         await db.refresh(site)
         site_id = str(site.id)
 
+    # Invalidate CloudFront cache if site has a distribution (overwrote existing files)
+    cache_invalidated = False
+    async with async_session() as db:
+        refetch = await db.execute(select(Site).where(Site.id == site_id))
+        site_obj = refetch.scalar_one_or_none()
+        cf_dist_id = getattr(site_obj, "cloudfront_distribution_id", None) if site_obj else None
+    if cf_dist_id:
+        try:
+            inv_result = await invalidate_cache(cf_dist_id)
+            cache_invalidated = inv_result.get("status") != "failed"
+        except Exception as e:
+            logger.warning("Cache invalidation failed for site %s: %s", site_id, e)
+
     logger.info("Site deployed to S3: %s → %s", site_name, result["url"])
 
     return {
@@ -170,6 +213,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         "project_name": result["project_name"],
         "is_multipage": is_multipage,
         "page_count": page_count,
+        "cache_invalidated": cache_invalidated,
     }
 
 
@@ -229,10 +273,21 @@ async def redeploy_website(site_id: str, req: RedeployRequest, user: dict = Depe
             site.session_id = req.session_id
         await db.commit()
 
+        # Invalidate CloudFront cache so the new content is served immediately
+        cf_distribution_id = getattr(site, "cloudfront_distribution_id", None)
+        cache_invalidated = False
+        if cf_distribution_id:
+            try:
+                inv_result = await invalidate_cache(cf_distribution_id)
+                cache_invalidated = inv_result.get("status") != "failed"
+            except Exception as e:
+                logger.warning("Cache invalidation failed for site %s: %s", site_id, e)
+
     return {
         "success": True,
         "url": deploy_result["url"],
         "deployment_url": deploy_result["url"],
+        "cache_invalidated": cache_invalidated,
     }
 
 
@@ -272,6 +327,7 @@ async def get_deploy_status(site_id: str, user: dict = Depends(require_auth)):
 @router.get("")
 async def list_deployed_sites(user: dict = Depends(require_auth)):
     """List all deployed sites for the current user."""
+    from app.models.domain import Domain as DomainModel
     async with async_session() as db:
         result = await db.execute(
             select(Site)
@@ -280,24 +336,43 @@ async def list_deployed_sites(user: dict = Depends(require_auth)):
         )
         sites = result.scalars().all()
 
-    return {
-        "sites": [
-            {
-                "id": str(s.id),
-                "name": s.name,
-                "status": s.status,
-                "url": s.deployed_url,
-                "domain": s.domain,
-                "domain_status": s.domain_status,
-                "cloudfront_domain": s.cloudfront_domain,
-                "is_multipage": s.is_multipage,
-                "page_count": s.page_count,
-                "last_deployed_at": s.last_deployed_at.isoformat() if s.last_deployed_at else None,
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-            }
-            for s in sites
-        ]
-    }
+        # Map site_id → domain record for sites with domains
+        site_ids = [s.id for s in sites if s.domain]
+        domain_map = {}
+        if site_ids:
+            dom_result = await db.execute(
+                select(DomainModel).where(DomainModel.site_id.in_(site_ids))
+            )
+            for d in dom_result.scalars().all():
+                domain_map[str(d.site_id)] = d
+
+    site_list = []
+    for s in sites:
+        entry = {
+            "id": str(s.id),
+            "name": s.name,
+            "status": s.status,
+            "url": s.deployed_url,
+            "domain": s.domain,
+            "domain_status": s.domain_status,
+            "cloudfront_domain": s.cloudfront_domain,
+            "route53_zone_id": s.route53_zone_id,
+            "is_multipage": s.is_multipage,
+            "page_count": s.page_count,
+            "last_deployed_at": s.last_deployed_at.isoformat() if s.last_deployed_at else None,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        dom = domain_map.get(str(s.id))
+        if dom:
+            entry["domain_record_id"] = str(dom.id)
+            entry["contact_handle"] = dom.contact_handle
+            entry["transfer_requested_at"] = dom.transfer_requested_at.isoformat() if dom.transfer_requested_at else None
+            entry["whois_privacy"] = dom.whois_privacy
+            entry["transfer_locked"] = dom.transfer_locked
+            entry["expires_at"] = dom.expires_at.isoformat() if dom.expires_at else None
+        site_list.append(entry)
+
+    return {"sites": site_list}
 
 
 # ── Take Offline ─────────────────────────────────────────────────────────
@@ -334,20 +409,45 @@ async def take_site_offline(site_id: str, user: dict = Depends(require_auth)):
 async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = Depends(require_auth)):
     """Connect a custom domain to a deployed site.
 
-    Phase 1 (immediate):
-      1. Creates a Route53 hosted zone → returns nameservers
-      2. Requests an ACM certificate (DNS validation)
-      3. Auto-creates ACM validation CNAME records in Route53
+    For platform-purchased domains with existing Route53 zone + ACM cert:
+      - Reuses existing infrastructure (no NS change, no SSL wait)
+      - Creates CloudFront distribution immediately if cert is ISSUED
+      - Domain goes live in ~5 minutes (CloudFront deploy time only)
 
-    Phase 2 (background — after user changes nameservers & cert validates):
-      4. Creates CloudFront distribution (needs ISSUED cert)
-      5. Auto-creates ALIAS records in Route53
-
-    The domain-status endpoint triggers Phase 2 when it detects the cert is ISSUED.
+    For external domains (first-time setup):
+      Phase 1: Creates Route53 zone + ACM cert + validation records
+      Phase 2: domain-status endpoint creates CloudFront once cert is ISSUED
     """
     domain = req.domain_name.strip().lower().rstrip(".")
     if not domain or "." not in domain:
         raise HTTPException(status_code=400, detail="Valid domain name is required (e.g. mybusiness.ae)")
+
+    # Split into SLD and TLD
+    parts = domain.rsplit(".", 1)
+    check_sld, check_tld = parts[0], parts[1]
+
+    # Check if domain is purchased through our platform
+    from app.models.domain import Domain as DomainModel
+    async with async_session() as db:
+        internal = await db.execute(
+            select(DomainModel).where(DomainModel.domain_name == domain)
+        )
+        internal_domain = internal.scalar_one_or_none()
+
+    if not internal_domain:
+        # External domain — check if it's registered anywhere
+        try:
+            from app.utils.openprovider import check_domain_availability
+            results = await check_domain_availability(check_sld, [check_tld])
+            if results and results[0].get("status") == "free":
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Domain {domain} is not registered. You need to register it first before connecting. Purchase it from the Domains section."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("[DOMAIN] Availability check failed for %s: %s — proceeding anyway", domain, e)
 
     async with async_session() as db:
         result = await db.execute(
@@ -360,7 +460,7 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         if site.status != "published":
             raise HTTPException(status_code=400, detail="Site must be deployed before connecting a domain")
 
-        s3_prefix = site.cloudflare_project_name  # S3 project name / prefix
+        s3_prefix = site.cloudflare_project_name
         if not s3_prefix:
             raise HTTPException(status_code=400, detail="Site has no S3 deployment. Deploy first.")
 
@@ -371,67 +471,163 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         if existing_domain.scalar_one_or_none():
             raise HTTPException(status_code=409, detail="Domain is already connected to another site")
 
-        # Step 1: Create Route53 hosted zone
-        try:
-            zone_result = await create_hosted_zone(domain)
-        except Exception as e:
-            logger.error("Route53 hosted zone creation failed for %s: %s", domain, e)
-            raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}")
+        # ── Reuse existing infrastructure from Domain record if available ──
+        has_existing_zone = internal_domain and internal_domain.route53_zone_id
+        has_existing_cert = internal_domain and internal_domain.acm_certificate_arn
 
-        zone_id = zone_result["zone_id"]
-        nameservers = zone_result["nameservers"]
-
-        # Step 2: Request ACM certificate
-        try:
-            cert_result = await request_certificate(domain)
-        except Exception as e:
-            logger.error("ACM certificate request failed for %s: %s", domain, e)
+        # --- Route53 Zone ---
+        if has_existing_zone:
+            zone_id = internal_domain.route53_zone_id
+            nameservers = internal_domain.nameservers or []
+            if not nameservers:
+                try:
+                    nameservers = await get_nameservers(zone_id)
+                except Exception:
+                    nameservers = []
+            logger.info("Reusing existing Route53 zone %s for %s", zone_id, domain)
+        else:
             try:
-                await delete_hosted_zone(zone_id)
-            except Exception:
-                pass
-            raise HTTPException(status_code=502, detail=f"SSL certificate request failed: {e}")
-
-        # Step 3: Auto-create ACM validation records in Route53
-        if cert_result.get("validation_records"):
-            try:
-                await create_acm_validation_records(zone_id, cert_result["validation_records"])
-                logger.info("ACM validation records auto-created in Route53 for %s", domain)
+                zone_result = await create_hosted_zone(domain)
             except Exception as e:
-                logger.warning("Failed to auto-create ACM validation records: %s", e)
+                logger.error("Route53 hosted zone creation failed for %s: %s", domain, e)
+                raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}")
+            zone_id = zone_result["zone_id"]
+            nameservers = zone_result["nameservers"]
+            # Persist on Domain record for future reconnects
+            if internal_domain:
+                refetch = await db.execute(select(DomainModel).where(DomainModel.id == internal_domain.id))
+                dom = refetch.scalar_one_or_none()
+                if dom:
+                    dom.route53_zone_id = zone_id
+                    dom.nameservers = nameservers
 
-        # CloudFront is NOT created yet — it requires an ISSUED certificate.
-        # The domain-status endpoint will create it once the cert is validated.
+        # --- ACM Certificate ---
+        cert_arn = None
+        cert_issued = False
+        validation_records = []
 
-        # Build user-facing DNS info (without CloudFront domain for now)
+        if has_existing_cert:
+            cert_arn = internal_domain.acm_certificate_arn
+            # Check if it's still valid
+            try:
+                cert_status = await check_certificate_status(cert_arn)
+                cert_issued = cert_status.get("status") == "ISSUED"
+                logger.info("Reusing existing ACM cert %s (status=%s) for %s", cert_arn, cert_status.get("status"), domain)
+            except Exception:
+                # Cert might be deleted — request a new one
+                cert_arn = None
+
+        if not cert_arn:
+            try:
+                cert_result = await request_certificate(domain)
+            except Exception as e:
+                logger.error("ACM certificate request failed for %s: %s", domain, e)
+                if not has_existing_zone:
+                    try:
+                        await delete_hosted_zone(zone_id)
+                    except Exception:
+                        pass
+                raise HTTPException(status_code=502, detail=f"SSL certificate request failed: {e}")
+            cert_arn = cert_result["arn"]
+            validation_records = cert_result.get("validation_records", [])
+            # Persist on Domain record
+            if internal_domain:
+                refetch = await db.execute(select(DomainModel).where(DomainModel.id == internal_domain.id))
+                dom = refetch.scalar_one_or_none()
+                if dom:
+                    dom.acm_certificate_arn = cert_arn
+
+            # Auto-create ACM validation records in Route53
+            if validation_records:
+                try:
+                    await create_acm_validation_records(zone_id, validation_records)
+                    logger.info("ACM validation records auto-created in Route53 for %s", domain)
+                except Exception as e:
+                    logger.warning("Failed to auto-create ACM validation records: %s", e)
+
+        # --- If cert is already ISSUED, create CloudFront immediately ---
+        cf_dist_id = None
+        cf_domain = None
+        if cert_issued:
+            try:
+                dist_result = await create_distribution(
+                    domain=domain,
+                    s3_project_name=s3_prefix,
+                    acm_cert_arn=cert_arn,
+                )
+                cf_dist_id = dist_result["distribution_id"]
+                cf_domain = dist_result["domain_name"]
+                logger.info("CloudFront distribution created immediately for %s: %s", domain, cf_dist_id)
+
+                # Auto-create ALIAS records in Route53
+                try:
+                    await create_alias_record(zone_id=zone_id, name=domain, target_domain=cf_domain)
+                    if not domain.startswith("www."):
+                        await create_alias_record(zone_id=zone_id, name=f"www.{domain}", target_domain=cf_domain)
+                    logger.info("ALIAS records auto-created for %s", domain)
+                except Exception as e:
+                    logger.warning("Failed to auto-create ALIAS records: %s", e)
+            except Exception as e:
+                logger.error("Immediate CloudFront creation failed for %s: %s", domain, e)
+                # Fall through — domain-status endpoint will retry
+
+        # Determine initial status
+        if cf_dist_id:
+            domain_status_val = "pending_deployment"  # CloudFront deploying (~5 min)
+            cf_domain_display = cf_domain
+        else:
+            domain_status_val = "pending_validation"
+            cf_domain_display = "(pending SSL validation)"
+
         dns_records = get_dns_records(
             domain=domain,
-            cloudfront_domain="(pending SSL validation)",
-            validation_records=cert_result["validation_records"],
+            cloudfront_domain=cf_domain_display or "(pending SSL validation)",
+            validation_records=validation_records,
         )
 
-        # Update site in database
+        # Update site
         site.domain = domain
         site.route53_zone_id = zone_id
-        site.acm_certificate_arn = cert_result["arn"]
-        site.domain_status = "pending_validation"
+        site.acm_certificate_arn = cert_arn
+        site.cloudfront_distribution_id = cf_dist_id
+        site.cloudfront_domain = cf_domain
+        site.domain_status = domain_status_val
         site.dns_records = dns_records
+
+        # Link Domain record to this site
+        if internal_domain:
+            refetch = await db.execute(select(DomainModel).where(DomainModel.id == internal_domain.id))
+            dom = refetch.scalar_one_or_none()
+            if dom:
+                dom.site_id = site.id
+                dom.ssl_status = "issued" if cert_issued else "pending_validation"
+
         await db.commit()
 
-    logger.info("Domain %s connected to site %s (pending SSL validation)", domain, site_id)
-
-    return {
-        "success": True,
-        "domain": domain,
-        "domain_status": "pending_validation",
-        "nameservers": nameservers,
-        "dns_records": dns_records,
-        "instructions": (
+    if cert_issued:
+        instructions = (
+            "Your domain already has a valid SSL certificate. "
+            "CloudFront CDN is being deployed now (~5 minutes). "
+            "Your site will be live at https://" + domain + " shortly."
+        )
+    else:
+        instructions = (
             "Step 1: Update your domain's nameservers at your registrar to the nameservers listed below. "
             "Step 2: Wait for SSL certificate validation (automatic once nameservers propagate). "
             "Step 3: CloudFront CDN will be set up automatically after SSL is validated. "
             "Your site will be live at https://" + domain + " once complete."
-        ),
+        )
+
+    logger.info("Domain %s connected to site %s (status=%s, reused_infra=%s)", domain, site_id, domain_status_val, bool(has_existing_zone))
+
+    return {
+        "success": True,
+        "domain": domain,
+        "domain_status": domain_status_val,
+        "nameservers": nameservers,
+        "dns_records": dns_records,
+        "reused_infrastructure": bool(has_existing_zone or has_existing_cert),
+        "instructions": instructions,
     }
 
 
@@ -550,6 +746,15 @@ async def domain_status(site_id: str, user: dict = Depends(require_auth)):
             site.domain_status = new_status
             if new_status == "active":
                 site.deployed_url = deployed_url
+                # Sync ssl_status on the Domain record
+                from app.models.domain import Domain as DomainModel
+                dom_result = await db.execute(
+                    select(DomainModel).where(DomainModel.site_id == site.id)
+                )
+                dom = dom_result.scalar_one_or_none()
+                if dom:
+                    dom.ssl_status = "active"
+                    dom.dns_status = "healthy"
             await db.commit()
 
         # Fetch nameservers
@@ -579,9 +784,16 @@ async def domain_status(site_id: str, user: dict = Depends(require_auth)):
 async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
     """Disconnect a custom domain from a site.
 
-    Disables and deletes the CloudFront distribution, then removes the ACM certificate.
-    The S3-hosted site remains accessible via its original URL.
+    For platform-purchased domains:
+      - Deletes CloudFront distribution only
+      - KEEPS Route53 zone + ACM cert on the Domain record for instant reconnect
+      - No nameserver change needed when reconnecting to a new site
+
+    For external domains:
+      - Deletes CloudFront + ACM cert + Route53 zone (full cleanup)
     """
+    import asyncio
+
     async with async_session() as db:
         result = await db.execute(
             select(Site).where(Site.id == site_id, Site.user_id == user["user_id"])
@@ -593,63 +805,170 @@ async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
         if not site.domain:
             raise HTTPException(status_code=400, detail="No custom domain is connected")
 
-        # Step 1: Disable CloudFront distribution (if it exists)
+        domain_name = site.domain
         dist_id = site.cloudfront_distribution_id
+        site_cf_domain = site.cloudfront_domain  # needed for ALIAS record cleanup
         cert_arn = site.acm_certificate_arn
+        zone_id = site.route53_zone_id
+        s3_prefix = site.cloudflare_project_name
 
+        # Check if this is a platform-purchased domain
+        from app.models.domain import Domain as DomainModel
+        dom_result = await db.execute(
+            select(DomainModel).where(DomainModel.domain_name == domain_name)
+        )
+        internal_domain = dom_result.scalar_one_or_none()
+        is_platform_domain = internal_domain is not None
+
+        # Step 1: Disable CloudFront distribution (always)
         if dist_id:
             try:
                 await disable_distribution(dist_id)
                 logger.info("Distribution %s disabled for domain disconnect", dist_id)
             except Exception as e:
                 logger.error("Failed to disable distribution %s: %s", dist_id, e)
-                # Continue with cleanup even if disable fails
 
-        # Note: CloudFront takes ~15 min to fully disable before it can be deleted.
-        # We mark the domain as disconnected immediately and schedule cleanup.
-        # The distribution deletion can be handled by a background task later.
-
-        # Step 2: Clear domain fields
-        s3_prefix = site.cloudflare_project_name
-        zone_id = site.route53_zone_id
+        # Step 2: Clear domain fields on the Site record
         site.domain = None
-        site.route53_zone_id = None
         site.cloudfront_distribution_id = None
         site.cloudfront_domain = None
-        site.acm_certificate_arn = None
         site.domain_status = None
         site.dns_records = None
+
+        if is_platform_domain:
+            # Platform domain: keep zone + cert on Domain record, clear from Site only
+            site.route53_zone_id = None
+            site.acm_certificate_arn = None
+            # Ensure Domain record has the infra fields preserved
+            if internal_domain:
+                if not internal_domain.route53_zone_id and zone_id:
+                    internal_domain.route53_zone_id = zone_id
+                if not internal_domain.acm_certificate_arn and cert_arn:
+                    internal_domain.acm_certificate_arn = cert_arn
+                internal_domain.site_id = None  # Unlink from site
+                internal_domain.ssl_status = "issued" if cert_arn else "none"
+            logger.info("Platform domain %s disconnected — keeping Route53 zone + ACM cert for reconnect", domain_name)
+        else:
+            # External domain: clear everything from Site
+            site.route53_zone_id = None
+            site.acm_certificate_arn = None
+
         # Restore original S3 URL
         if s3_prefix:
             bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
             region = os.getenv("AWS_REGION", "me-central-1")
             site.deployed_url = f"http://{bucket}.s3-website.{region}.amazonaws.com/{s3_prefix}/"
+
         await db.commit()
 
-    # Background cleanup: delete distribution + cert + hosted zone (best-effort)
-    import asyncio
-
+    # Background cleanup: delete CloudFront distribution (always)
+    # For external domains, also delete cert + zone
     async def _cleanup():
-        """Wait for distribution to deploy in disabled state, then delete it + cert + zone."""
         try:
-            # CloudFront needs to be in "Deployed" state before deletion
-            for _ in range(60):  # up to 30 minutes
-                await asyncio.sleep(30)
-                status = await get_distribution_status(dist_id)
-                if status.get("status") == "Deployed":
-                    break
-            await delete_distribution(dist_id)
-            if cert_arn:
-                await delete_certificate(cert_arn)
-            if zone_id:
-                await delete_hosted_zone(zone_id)
-            logger.info("Cleanup complete: distribution %s, cert, and zone deleted", dist_id)
+            if dist_id:
+                for _ in range(60):  # up to 30 minutes
+                    await asyncio.sleep(30)
+                    status = await get_distribution_status(dist_id)
+                    if status.get("status") == "Deployed":
+                        break
+                await delete_distribution(dist_id)
+                logger.info("CloudFront distribution %s deleted", dist_id)
+
+            if not is_platform_domain:
+                # External domain: full cleanup
+                if cert_arn:
+                    await delete_certificate(cert_arn)
+                if zone_id:
+                    await delete_hosted_zone(zone_id)
+                logger.info("Full cleanup complete for external domain %s", domain_name)
+            else:
+                # Platform domain: remove old ALIAS records from Route53 (they point to deleted CloudFront)
+                if zone_id and site_cf_domain:
+                    try:
+                        await delete_alias_record(zone_id, domain_name, site_cf_domain)
+                        if not domain_name.startswith("www."):
+                            await delete_alias_record(zone_id, f"www.{domain_name}", site_cf_domain)
+                    except Exception as e:
+                        logger.warning("Failed to clean up ALIAS records for %s: %s", domain_name, e)
+                logger.info("CloudFront cleanup complete for platform domain %s (zone + cert preserved)", domain_name)
         except Exception as e:
-            logger.warning("Background cleanup failed for distribution %s: %s", dist_id, e)
+            logger.warning("Background cleanup failed for %s: %s", domain_name, e)
 
     asyncio.create_task(_cleanup())
 
-    return {"success": True, "message": "Domain disconnected. CloudFront cleanup in progress."}
+    msg = "Domain disconnected."
+    if is_platform_domain:
+        msg += " DNS and SSL infrastructure preserved — you can reconnect this domain instantly to any site."
+    else:
+        msg += " CloudFront cleanup in progress."
+
+    return {"success": True, "message": msg, "platform_domain": is_platform_domain}
+
+
+# ── Available Domains for Connection ─────────────────────────────────────
+
+
+@router.get("/{site_id}/available-domains")
+async def get_available_domains(site_id: str, user: dict = Depends(require_auth)):
+    """Get user's purchased domains that are available to connect to this site.
+
+    Returns domains that are:
+    - Owned by this user
+    - Not currently connected to any site (site_id is null)
+    - Status is active
+    """
+    from app.models.domain import Domain as DomainModel
+    async with async_session() as db:
+        # Verify site exists and belongs to user
+        site_result = await db.execute(
+            select(Site).where(Site.id == site_id, Site.user_id == user["user_id"])
+        )
+        site = site_result.scalar_one_or_none()
+        if not site:
+            raise HTTPException(status_code=404, detail="Site not found")
+
+        # Get all user's domains that are not connected to any site
+        result = await db.execute(
+            select(DomainModel).where(
+                DomainModel.user_id == user["user_id"],
+                DomainModel.site_id.is_(None),
+                DomainModel.status == "active",
+            ).order_by(DomainModel.domain_name)
+        )
+        available = result.scalars().all()
+
+        # Also get the domain currently connected to this site (if any)
+        current_domain = None
+        if site.domain:
+            dom_result = await db.execute(
+                select(DomainModel).where(DomainModel.domain_name == site.domain)
+            )
+            current_dom = dom_result.scalar_one_or_none()
+            if current_dom:
+                current_domain = {
+                    "id": str(current_dom.id),
+                    "domain_name": current_dom.domain_name,
+                    "status": current_dom.status,
+                    "ssl_status": current_dom.ssl_status,
+                }
+
+    return {
+        "available_domains": [
+            {
+                "id": str(d.id),
+                "domain_name": d.domain_name,
+                "tld": d.tld,
+                "has_ssl": d.acm_certificate_arn is not None,
+                "has_dns": d.route53_zone_id is not None,
+                "instant_connect": d.acm_certificate_arn is not None and d.route53_zone_id is not None,
+                "registered_at": d.registered_at.isoformat() if d.registered_at else None,
+                "expires_at": d.expires_at.isoformat() if d.expires_at else None,
+            }
+            for d in available
+        ],
+        "current_domain": current_domain,
+        "site_status": site.status,
+    }
 
 
 # ── Delete Deployed Site ──────────────────────────────────────────────────

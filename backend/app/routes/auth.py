@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -37,8 +36,7 @@ def _log_login_event_bg(user_id: int, event_type: str, ip_address: str, user_age
                 ))
                 await session.commit()
         except Exception as e:
-            print(f"[LoginEvent] Failed to log {event_type}: {e}", flush=True)
-            traceback.print_exc()
+            logger.warning("Failed to log login event %s: %s", event_type, e)
 
     try:
         loop = asyncio.get_running_loop()
@@ -57,8 +55,9 @@ class SignupRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str
-    company_name: str
-    license_number: str
+    company_name: str | None = None
+    license_number: str | None = None
+    mobile: str | None = None
 
 
 class LoginRequest(BaseModel):
@@ -70,8 +69,9 @@ class UserResponse(BaseModel):
     id: int
     email: str
     full_name: str
-    company_name: str
-    license_number: str
+    company_name: str | None = None
+    license_number: str | None = None
+    mobile: str | None = None
     db_schema: str | None = None
     token_balance: int = 1_000_000
     tokens_used: int = 0
@@ -81,6 +81,7 @@ class UserResponse(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: UserResponse
+    force_password_reset: bool = False
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -102,14 +103,15 @@ class ChangePasswordRequest(BaseModel):
 
 @router.post("/signup", response_model=AuthResponse)
 async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    # Validate license number format
-    try:
-        data.license_number = validate_license_number(data.license_number)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        ) from e
+    # Validate license number format (only if provided)
+    if data.license_number:
+        try:
+            data.license_number = validate_license_number(data.license_number)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(e),
+            ) from e
 
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == data.email))
@@ -119,16 +121,17 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
             detail="An account with this email already exists",
         )
 
-    # Check if license number already exists
-    result = await db.execute(select(User).where(User.license_number == data.license_number))
-    if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="License number already registered",
-        )
+    # Check if license number already exists (only if provided)
+    if data.license_number:
+        result = await db.execute(select(User).where(User.license_number == data.license_number))
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="License number already registered",
+            )
 
-    # Create isolated tenant schema
-    schema_name = await create_tenant_schema(data.license_number)
+    # Create isolated tenant schema (tied to email)
+    schema_name = await create_tenant_schema(data.email)
 
     user = User(
         email=data.email,
@@ -136,6 +139,7 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         full_name=data.full_name,
         company_name=data.company_name,
         license_number=data.license_number,
+        mobile=data.mobile,
         db_schema=schema_name,
     )
     db.add(user)
@@ -162,6 +166,7 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
             full_name=user.full_name,
             company_name=user.company_name,
             license_number=user.license_number,
+            mobile=getattr(user, 'mobile', None),
             db_schema=user.db_schema,
             token_balance=getattr(user, 'token_balance', 1_000_000),
             tokens_used=getattr(user, 'tokens_used', 0),
@@ -223,6 +228,8 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
         user_agent=request.headers.get("user-agent"),
     )
 
+    force_reset = getattr(user, "force_password_reset", False) or False
+
     return AuthResponse(
         token=token,
         user=UserResponse(
@@ -231,11 +238,13 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
             full_name=user.full_name,
             company_name=user.company_name,
             license_number=user.license_number,
+            mobile=getattr(user, 'mobile', None),
             db_schema=user.db_schema,
             token_balance=getattr(user, 'token_balance', 1_000_000),
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
         ),
+        force_password_reset=force_reset,
     )
 
 
@@ -265,6 +274,7 @@ async def get_me(
         full_name=user.full_name,
         company_name=user.company_name,
         license_number=user.license_number,
+        mobile=getattr(user, 'mobile', None),
         db_schema=user.db_schema,
         token_balance=getattr(user, 'token_balance', 1_000_000),
         tokens_used=getattr(user, 'tokens_used', 0),
@@ -303,7 +313,7 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
     # In development, return the token directly. In production, send email.
     import os
     response = {"message": "If an account with that email exists, a reset link has been generated."}
-    if os.getenv("DEV_MODE", "true").lower() == "true":
+    if os.getenv("DEV_MODE", "false").lower() == "true":
         response["reset_token"] = reset_token
         response["reset_url"] = f"/reset-password?token={reset_token}"
 
@@ -318,7 +328,7 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     result = await db.execute(
         select(PasswordResetToken).where(
             PasswordResetToken.token == data.token,
-            PasswordResetToken.used == False,
+            PasswordResetToken.used.is_(False),
         )
     )
     token_record = result.scalar_one_or_none()
@@ -329,8 +339,8 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     if token_record.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=400, detail="Reset token has expired")
 
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if len(data.new_password) < 10:
+        raise HTTPException(status_code=400, detail="Password must be at least 10 characters")
 
     # Update password
     await db.execute(
@@ -366,14 +376,103 @@ async def change_password(
     if not verify_password(data.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    if len(data.new_password) < 10:
+        raise HTTPException(status_code=400, detail="New password must be at least 10 characters")
 
     await db.execute(
         update(User).where(User.id == user.id).values(
-            hashed_password=hash_password(data.new_password)
+            hashed_password=hash_password(data.new_password),
+            force_password_reset=False,
         )
     )
     await db.commit()
 
     return {"message": "Password changed successfully"}
+
+
+# --- Token Requests ---
+
+
+class TokenRequestModel(BaseModel):
+    amount: int
+    reason: str | None = None
+
+
+@router.post("/token-request")
+async def request_tokens(
+    data: TokenRequestModel,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    """User requests more tokens. Creates a pending request for admin review."""
+    from app.models.token_request import TokenRequest
+
+    token_data = decode_access_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    if data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    # Check for existing pending request
+    result = await db.execute(
+        select(TokenRequest)
+        .where(TokenRequest.user_id == token_data["user_id"], TokenRequest.status == "pending")
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="You already have a pending token request")
+
+    req = TokenRequest(
+        user_id=token_data["user_id"],
+        amount=data.amount,
+        reason=data.reason,
+    )
+    db.add(req)
+    await db.commit()
+    await db.refresh(req)
+
+    log_event_bg(
+        user_id=str(token_data["user_id"]),
+        action="token_request",
+        resource_type="token",
+        resource_id=str(req.id),
+        details={"amount": data.amount, "reason": data.reason},
+    )
+
+    return {"message": "Token request submitted", "request_id": str(req.id)}
+
+
+@router.get("/token-requests")
+async def my_token_requests(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the current user's token requests."""
+    from app.models.token_request import TokenRequest
+
+    token_data = decode_access_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    result = await db.execute(
+        select(TokenRequest)
+        .where(TokenRequest.user_id == token_data["user_id"])
+        .order_by(TokenRequest.created_at.desc())
+        .limit(10)
+    )
+    requests = result.scalars().all()
+
+    return {
+        "requests": [
+            {
+                "id": str(r.id),
+                "amount": r.amount,
+                "reason": r.reason,
+                "status": r.status,
+                "admin_note": r.admin_note,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "reviewed_at": r.reviewed_at.isoformat() if r.reviewed_at else None,
+            }
+            for r in requests
+        ]
+    }

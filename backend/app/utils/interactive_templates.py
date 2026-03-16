@@ -1,5 +1,5 @@
 """Pre-built interactive templates for common UI patterns.
-Claude fills in data, templates handle the structure."""
+LLM fills in data, templates handle the structure."""
 
 DETAIL_MODAL_CSS = """
 /* Detail Modal Styles */
@@ -207,7 +207,7 @@ DETAIL_MODAL_HTML_SNIPPET = """
 </script>
 """
 
-# The prompt sent to Claude - it only needs to add data attributes to existing cards
+# The prompt sent to the LLM - it only needs to add data attributes to existing cards
 DETAIL_MODAL_PROMPT = """You need to add detail modal data to the service/feature cards in this section.
 
 TASK: Add data attributes to each card element so the pre-built modal system can show detailed information.
@@ -238,5 +238,5 @@ def get_detail_modal_template():
 
 
 def get_detail_modal_prompt():
-    """Return the prompt to send to Claude for adding data attributes."""
+    """Return the prompt to send to the LLM for adding data attributes."""
     return DETAIL_MODAL_PROMPT

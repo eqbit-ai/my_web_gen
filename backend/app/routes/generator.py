@@ -2,8 +2,8 @@
 Generator routes — 3-stage AI website generation pipeline:
 
   Stage 1: Plan  → GPT-4.1 → JSON structure + content + layout patterns
-  Stage 2: HTML  → Claude  → HTML with pure CSS classes + <style> block
-  Stage 3: JS    → Claude  → Interactions/animations
+  Stage 2: HTML  → LLM    → HTML with pure CSS classes + <style> block
+  Stage 3: JS    → LLM    → Interactions/animations
 
 CSS is semantic classes in a <style> block (layout, components, responsive).
 """
@@ -397,7 +397,7 @@ def polish_css(css: str, theme: str = "light") -> str:
 def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
     """Convert hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders.
 
-    Claude sometimes ignores the {{IMG:}} instruction and generates fake
+    The model sometimes ignores the {{IMG:}} instruction and generates fake
     image URLs that return 404. This catches them and converts to placeholders
     using the alt text, so the image resolver can fetch real images.
     """
@@ -575,16 +575,17 @@ def validate_html(html: str) -> str:
         block = m.group(0)
         # Remove overflow:hidden from body/html rules
         block = re.sub(r'((?:body|html)\s*\{[^}]*)\boverflow\s*:\s*hidden\b', r'\1overflow-x:hidden', block)
-        # Change body height:100vh to min-height:100vh
-        block = re.sub(r'(body\s*\{[^}]*)\bheight\s*:\s*100vh\b', r'\1min-height:100vh', block)
+        # Change body height:100vh to min-height:100vh (negative lookbehind to avoid min-height → min-min-height)
+        block = re.sub(r'(body\s*\{[^}]*)(?<!min-)height\s*:\s*100vh\b', r'\1min-height:100vh', block)
         return block
     html = re.sub(r'<style[^>]*>.*?</style>', _fix_body_css, html, flags=re.DOTALL)
 
     # Ensure footer has dark background (LLM sometimes forgets)
-    footer_match = re.search(r'<section([^>]*data-section-type="footer"[^>]*)>', html)
+    # Match both <section data-section-type="footer"> and <footer data-section-type="footer">
+    footer_match = re.search(r'<(?:section|footer)([^>]*data-section-type="footer"[^>]*)>', html)
     if footer_match:
         attrs = footer_match.group(1)
-        # Check if footer section tag itself already has a dark bg
+        # Check if footer tag itself already has a dark bg
         section_has_bg = (
             "background" in attrs
             or "bg-[#" in attrs
@@ -592,9 +593,9 @@ def validate_html(html: str) -> str:
             or "bg-black" in attrs
             or "bg-slate-9" in attrs
         )
-        # Also check if an inner div right after the section tag has a dark bg class
+        # Also check if an inner div right after the footer tag has a dark bg class
         inner_div_match = re.search(
-            r'<section[^>]*data-section-type="footer"[^>]*>\s*<div([^>]*)>',
+            r'<(?:section|footer)[^>]*data-section-type="footer"[^>]*>\s*<div([^>]*)>',
             html,
         )
         inner_has_bg = False
@@ -610,11 +611,122 @@ def validate_html(html: str) -> str:
                     footer_match.group(0).replace('style="', 'style="background:#1a1a2e;'),
                 )
             else:
+                tag = footer_match.group(0)
+                tag_name = "footer" if tag.startswith("<footer") else "section"
                 html = html.replace(
-                    footer_match.group(0),
-                    f'<section{attrs} style="background:#1a1a2e">',
+                    tag,
+                    f'<{tag_name}{attrs} style="background:#1a1a2e">',
                 )
             logger.info("🔧 Footer Fix → Added dark background to footer section")
+
+    # Ensure mobile hamburger menu CSS is present (LLM often writes .nav-links { display: none } but forgets .active state)
+    if ".nav-links" in html and ".nav-links.active" not in html:
+        mobile_menu_css = """<style>
+@media (max-width: 768px) {
+  .nav-links.active { display: flex !important; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; padding: 1.5rem 2rem; gap: 1.25rem; z-index: 999; background: var(--bg, #fff); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .nav-toggle { display: flex !important; }
+}
+</style>"""
+        if "</head>" in html:
+            html = html.replace("</head>", f"{mobile_menu_css}\n</head>", 1)
+        elif "</style>" in html:
+            # Inject before the closing of the first style block
+            html = html.replace("</style>", f"</style>\n{mobile_menu_css}", 1)
+        logger.info("🔧 Mobile Nav Fix → Injected .nav-links.active CSS")
+
+    # ── Hero class enforcement: fix invented class names ──────────────────
+    # LLM often invents classes like .hero-content, .hero-buttons instead of framework ones.
+    # Enforce proper alignment classes so the CSS framework works correctly.
+    hero_match = re.search(
+        r'(<section[^>]*data-section-type="hero"[^>]*>)(.*?)(</section>)',
+        html, re.DOTALL
+    )
+    if hero_match:
+        hero_html = hero_match.group(2)
+        hero_changed = False
+
+        # Detect if hero already has proper alignment class
+        has_center = "hero-center-content" in hero_html
+        has_left = "hero-full-overlay" in hero_html
+
+        if not has_center and not has_left:
+            # Find the main content wrapper inside hero (first div inside container)
+            # Common invented names: hero-content, hero-text, hero-wrapper, hero-inner
+            def _fix_hero_wrapper(m_inner):
+                tag = m_inner.group(0)
+                classes = m_inner.group(1) or ""
+                # Default to centered alignment for heroes
+                if "hero-center-content" not in classes and "hero-full-overlay" not in classes:
+                    if 'class="' in tag:
+                        tag = tag.replace('class="', 'class="hero-center-content ', 1)
+                    else:
+                        tag = tag.replace('>', ' class="hero-center-content">', 1)
+                return tag
+
+            # Match the content wrapper: a div inside container that holds heading/subtitle
+            # Pattern: div with hero-related class OR first div after container
+            hero_html_new = re.sub(
+                r'<div[^>]*class="([^"]*(?:hero-content|hero-text|hero-wrapper|hero-inner|hero-body)[^"]*)"[^>]*>',
+                _fix_hero_wrapper,
+                hero_html,
+                count=1
+            )
+            if hero_html_new != hero_html:
+                hero_html = hero_html_new
+                hero_changed = True
+
+            # If no common wrapper class found, try to add to the first div inside container
+            if not hero_changed and "hero-center-content" not in hero_html:
+                hero_html_new = re.sub(
+                    r'(<div[^>]*class="container[^"]*"[^>]*>\s*)<div([^>]*)>',
+                    lambda m2: m2.group(1) + '<div' + (
+                        m2.group(2).replace('class="', 'class="hero-center-content ')
+                        if 'class="' in m2.group(2)
+                        else m2.group(2) + ' class="hero-center-content"'
+                    ) + '>',
+                    hero_html,
+                    count=1
+                )
+                if hero_html_new != hero_html:
+                    hero_html = hero_html_new
+                    hero_changed = True
+
+        # Fix invented button wrapper class: hero-buttons → hero-ctas
+        if "hero-buttons" in hero_html and "hero-ctas" not in hero_html:
+            hero_html = hero_html.replace("hero-buttons", "hero-ctas")
+            hero_changed = True
+
+        if hero_changed:
+            html = html[:hero_match.start(2)] + hero_html + html[hero_match.end(2):]
+            logger.info("🔧 Hero Fix → Enforced alignment classes (hero-center-content/hero-ctas)")
+
+    # Fix hero-subtitle alignment: ensure margin auto when max-width is set
+    def _fix_hero_subtitle(m):
+        block = m.group(0)
+        # Add margin auto to hero-subtitle if it has max-width but no margin auto
+        if ".hero-subtitle" in block and "max-width" in block:
+            block = re.sub(
+                r'(\.hero-subtitle\s*\{[^}]*max-width\s*:[^;]+;)',
+                lambda sub: sub.group(0) + ' margin-left: auto; margin-right: auto;'
+                if 'margin-left' not in sub.group(0) and 'margin: 0 auto' not in sub.group(0)
+                else sub.group(0),
+                block,
+            )
+        # Fix hero overlays that are too dark (>0.55 opacity)
+        def _lighten_overlay(sub):
+            val_str = sub.group(1)  # e.g. "7" for 0.7, "65" for 0.65
+            # Normalize to hundredths: "7" → 70, "65" → 65
+            hundredths = int(val_str) * (10 if len(val_str) == 1 else 1)
+            new_val = max(35, hundredths - 15)  # reduce by 0.15
+            # Format back: 50 → "5", 45 → "45"
+            return f'rgba(0,0,0,0.{new_val if new_val % 10 else new_val // 10})'
+        block = re.sub(
+            r'rgba\(0\s*,\s*0\s*,\s*0\s*,\s*0\.([6-9]\d*)\)',
+            _lighten_overlay,
+            block,
+        )
+        return block
+    html = re.sub(r'<style[^>]*>.*?</style>', _fix_hero_subtitle, html, flags=re.DOTALL)
 
     # Ensure WhatsApp float button is present on every generated page
     if "whatsapp-float" not in html and "wa.me" not in html:
@@ -668,6 +780,12 @@ def validate_js(js: str) -> str:
     # NOTE: backtick replacement removed — JS is now injected via
     # doc.createElement('script') + appendChild, not embedded in a template literal,
     # so backticks in generated JS are safe and should be left as-is.
+    # Strip verbose comments to reduce size
+    if len(js) > 20000:
+        js = re.sub(r'^\s*//[^\n]*\n', '', js, flags=re.MULTILINE)  # single-line comments
+        js = re.sub(r'/\*[\s\S]*?\*/', '', js)  # block comments
+        js = re.sub(r'\n{3,}', '\n\n', js)  # collapse blank lines
+        logger.warning(f"[validate_js] JS was oversized, stripped comments → {len(js):,} chars")
     if len(js) > 50000:
         raise ValueError(f"JS too large ({len(js)} chars)")
 
@@ -711,22 +829,33 @@ def format_conversation_history(session: dict, max_entries: int = 5) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# CLAUDE STREAMING HELPER
+# LLM STREAMING HELPER
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def _claude_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3) -> tuple[str, dict]:
-    """Call Claude with streaming. Returns (text, {"input_tokens": N, "output_tokens": N})."""
+async def _llm_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3, use_prompt_cache: bool = False) -> tuple[str, dict]:
+    """Call LLM with streaming. Returns (text, {"input_tokens": N, "output_tokens": N}).
+
+    If use_prompt_cache=True, the system prompt is sent with cache_control
+    so the API caches the large static prefix across calls (~90% faster on cache hit).
+    """
 
     @circuit_protected(provider="anthropic")
     async def _inner_call():
         collected = []
         usage = {"input_tokens": 0, "output_tokens": 0}
+
+        # Build system param — use cache_control for large prompts
+        if use_prompt_cache:
+            system_param = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+        else:
+            system_param = system
+
         async with client.messages.stream(
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
-            system=system,
+            system=system_param,
             messages=[{"role": "user", "content": user_msg}],
         ) as stream:
             async for text in stream.text_stream:
@@ -740,7 +869,7 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
                 pass
         result = "".join(collected)
         if not result.strip():
-            raise ValueError("Empty response from Claude")
+            raise ValueError("Empty response from LLM")
         return result, usage
 
     last_error = None
@@ -750,7 +879,7 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
             # Auto-deduct tokens via contextvar
             uid = _current_user_id.get()
             if uid:
-                _deduct_bg(uid, usage, "anthropic", model, "claude_stream")
+                _deduct_bg(uid, usage, "anthropic", model, "llm_stream")
             return result_text, usage
         except CircuitOpenError:
             raise  # Don't retry if circuit is open
@@ -759,10 +888,10 @@ async def _claude_stream(client, model: str, max_tokens: int, system: str, user_
             is_rate_limit = "429" in str(e) or "rate_limit" in str(e).lower()
             if attempt < retries:
                 wait = 30 if is_rate_limit else 2
-                logger.warning(f"[RETRY] Claude attempt {attempt} failed: {e} — waiting {wait}s")
+                logger.warning(f"[RETRY] LLM attempt {attempt} failed: {e} — waiting {wait}s")
                 await asyncio.sleep(wait)
             else:
-                logger.error(f"[RETRY] Claude exhausted after {retries} attempts: {e}")
+                logger.error(f"[RETRY] LLM exhausted after {retries} attempts: {e}")
     raise last_error
 
 
@@ -1152,7 +1281,7 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# STAGE 2: HTML Generation (Claude → HTML only)
+# STAGE 2: HTML Generation (LLM → HTML only)
 # ═══════════════════════════════════════════════════════════════════════
 
 
@@ -1180,12 +1309,13 @@ REFERENCE DESIGN SYSTEM (use as quality inspiration — adapt colors/spacing to 
 Study this reference's design quality: variable naming, spacing values, shadow depths, and transitions. Apply similar polish to the generated HTML.
 """
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         16000,
         system,
         "Generate the HTML markup for this website using the specified layout patterns. Return only the html code block.",
+        use_prompt_cache=True,
     )
 
     html = parse_single_code_block(text, "html")
@@ -1214,7 +1344,7 @@ async def stage_2_html_from_template(
     """Generate HTML by customizing an existing template — faster and higher quality.
 
     Instead of generating from scratch with a 72K prompt, this sends the working
-    template HTML (~30K) with a short customization prompt (~5K). Claude modifies
+    template HTML (~30K) with a short customization prompt (~5K). The model modifies
     the proven structure rather than building from zero.
     """
     from app.utils.prompt_pipeline import build_template_customize_prompt
@@ -1226,18 +1356,19 @@ async def stage_2_html_from_template(
     system = build_template_customize_prompt(template_html, plan)
     logger.info(f"⚙️ Template Customize Prompt → {len(system):,} chars (vs ~72K for from-scratch)")
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         16000,
         system,
         "Customize this template for the business described in the plan. Return the complete HTML.",
+        use_prompt_cache=True,
     )
 
     html = parse_single_code_block(text, "html")
     html = validate_html(html)
 
-    # Ensure data-section-type attributes exist (post-process if Claude missed some)
+    # Ensure data-section-type attributes exist (post-process if the model missed some)
     html = _ensure_section_types(html)
 
     html_duration = int((time.time() - t0) * 1000)
@@ -1247,7 +1378,7 @@ async def stage_2_html_from_template(
 
     # Resolve {{IMG:query}} placeholders to real image URLs (niche-aware)
     img_count = html.count("{{IMG:")
-    # Also handle any REPLACE_ME markers that Claude didn't convert
+    # Also handle any REPLACE_ME markers that the model didn't convert
     replace_me_count = html.count('src="REPLACE_ME"')
     if replace_me_count > 0:
         logger.warning(f"⚠️ {replace_me_count} REPLACE_ME markers not converted — removing")
@@ -1325,7 +1456,7 @@ def extract_style_block(html: str) -> tuple[str, str]:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# STAGE 3: JS Generation (Claude → JS only)
+# STAGE 3: JS Generation (LLM → JS only)
 # ═══════════════════════════════════════════════════════════════════════
 
 
@@ -1341,9 +1472,9 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
         html_summary=summarize_html(html),
         section_types=section_types,
     )
-    logger.info(f"⚙️ JS Prompt Built → {len(system):,} chars, sending to Claude Sonnet...")
+    logger.info(f"⚙️ JS Prompt Built → {len(system):,} chars, sending to LLM...")
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         4000,
@@ -1360,6 +1491,139 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
 
     save_debug(session_id, "js", js)
     return js
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# COMBINED HTML + JS GENERATION (Single LLM Call — saves 5-10s)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+async def stage_2_html_and_js(
+    plan: dict, session_id: str = "", niche_key: str = None,
+    reference_html: str = None, enhanced_brief: str = None,
+    use_template: bool = False, template_html: str = None,
+) -> tuple[str, str]:
+    """Generate HTML AND JS in a single LLM call — eliminates the separate JS round-trip.
+
+    Returns (html_with_images_resolved, js).
+    Saves ~5-10 seconds by merging two sequential LLM calls into one.
+    """
+    from app.utils.prompt_pipeline import build_template_customize_prompt
+
+    logger.info("🚀 Stage 2+3 COMBINED: HTML+JS → Single LLM call")
+    t0 = time.time()
+    client = get_anthropic_client()
+
+    # Build the HTML system prompt (same as stage_2_html)
+    if use_template and template_html:
+        system = build_template_customize_prompt(template_html, plan)
+        logger.info(f"⚙️ Template Customize Prompt → {len(system):,} chars")
+    else:
+        system = build_html_prompt(plan, enhanced_brief=enhanced_brief)
+        if reference_html:
+            import re as _re
+            root_match = _re.search(r':root\s*\{[^}]+\}', reference_html)
+            if root_match:
+                ref_css_vars = root_match.group(0)
+                system += f"""
+
+REFERENCE DESIGN SYSTEM (use as quality inspiration — adapt colors/spacing to the plan above):
+{ref_css_vars}
+Study this reference's design quality: variable naming, spacing values, shadow depths, and transitions. Apply similar polish to the generated HTML.
+"""
+        logger.info(f"⚙️ HTML+JS Combined Prompt → {len(system):,} chars")
+
+    # Append JS generation instructions to the same system prompt
+    system += """
+
+═══════════════════════════════════════════════════════════════
+JAVASCRIPT GENERATION — include AFTER the HTML code block
+═══════════════════════════════════════════════════════════════
+
+After the ```html code block, output a SECOND code block: ```js
+This JS block must contain vanilla JavaScript for all interactions:
+- Mobile hamburger: querySelector('.nav-toggle') toggles 'active' on querySelector('.nav-links'). Button already exists in HTML.
+- Close mobile menu on nav link click
+- Smooth scroll for anchor links (skip bare "#" — only scroll to "#section-name" links)
+- Sticky/transparent navbar on scroll (add class 'nav-scrolled')
+- FAQ accordion (.faq-item toggle 'active' on .faq-question click)
+- Counter animation (.stat-number — parse number, animate from 0, preserve suffix +/%/M/K)
+- Testimonial slider (.slider-dot shows matching .testimonial-slide, auto-advance 5s)
+- Image carousel (.carousel-container — prev/next/dots, auto-advance 5s, pause on hover)
+- Gallery lightbox (#gallery-lightbox — click img to open, close/prev/next, keyboard nav)
+- Service modals (.modal-trigger → data-modal → 'active' class, close on backdrop/Escape)
+- Typed.js hero (.typed-text with data-typed — only if typeof Typed !== 'undefined')
+- Newsletter form (.newsletter-form — preventDefault, inline success message, no alert())
+- Logo carousel (.logo-carousel-track — duplicate children for seamless loop)
+- Back-to-top (#back-to-top — show when scrollY > 300, smooth scroll to top)
+- Search bar (.search-toggle → toggle .search-dropdown, close on outside click/Escape)
+- Vanilla-tilt ([data-tilt] — only if typeof VanillaTilt !== 'undefined')
+- tsParticles (#tsparticles — only if typeof tsParticles !== 'undefined')
+- Splitting.js ([data-splitting] — only if typeof Splitting !== 'undefined')
+- Lenis smooth scroll (only if typeof Lenis !== 'undefined')
+- Section scroll reveal: IntersectionObserver on all <section> — add 'visible' class (threshold 0.1)
+- Staggered grid reveals: '[data-section-type] .grid > *' — transitionDelay = (index % 3) * 120 + 'ms'
+- Hero stagger entrance: add 'visible' to hero section immediately
+- Active nav highlighting on scroll
+- Set footer year: document.getElementById('year').textContent = new Date().getFullYear()
+
+JS RULES:
+- IIFE wrapper: (function() { ... })();
+- CRITICAL: NO template literals (backticks) — use string concatenation only
+- Vanilla JS only, no frameworks. Use const/let/arrow functions.
+- Do NOT wrap in DOMContentLoaded — runs inline at bottom of body
+- Only implement behaviors for sections that ACTUALLY exist in the HTML above — skip any feature whose selectors don't match
+- KEEP JS CONCISE: aim for under 8,000 characters total. Combine similar handlers, avoid verbose comments, use short variable names. Do NOT generate boilerplate for features not present in the HTML.
+"""
+
+    text, _usage = await _llm_stream(
+        client,
+        "claude-sonnet-4-20250514",
+        16000,  # HTML ~12K + JS ~4K
+        system,
+        "Generate the complete HTML markup AND JavaScript. Return TWO code blocks: first ```html then ```js. Keep JS concise — only implement interactions for elements that exist in the HTML.",
+        use_prompt_cache=True,
+    )
+
+    # Parse both code blocks from the response
+    html_raw = parse_single_code_block(text, "html")
+    js_raw = parse_single_code_block(text, "js")
+
+    html = validate_html(html_raw)
+    js = validate_js(js_raw) if js_raw else ""
+
+    combined_duration = int((time.time() - t0) * 1000)
+    n_sections = html.count("data-section-type")
+    log_stage("HTML+JS-COMBINED", combined_duration, len(html) + len(js), True,
+              f"{n_sections} sections, {len(js):,} chars JS")
+    logger.info(
+        f"✅ HTML+JS Combined → {len(html):,} chars HTML + {len(js):,} chars JS "
+        f"with {n_sections} sections in {_fmt_duration(combined_duration)}"
+    )
+
+    if use_template and template_html:
+        html = _ensure_section_types(html)
+
+    # Resolve images (can run while we return)
+    img_count = html.count("{{IMG:")
+    replace_me_count = html.count('src="REPLACE_ME"')
+    if replace_me_count > 0:
+        html = html.replace('src="REPLACE_ME"', 'src="{{IMG:feature placeholder}}"')
+        img_count = html.count("{{IMG:")
+
+    logger.info(f"🖼️ Resolving Images → {img_count} placeholders (niche={niche_key or 'general'})")
+    html = await _resolve_images_safe(html, niche_key=niche_key)
+    logger.info("✅ Images Resolved → all placeholders replaced with real URLs")
+
+    save_debug(session_id, "html", html)
+    save_debug(session_id, "js", js)
+
+    # If JS extraction failed, fall back to separate stage_3_js call
+    if not js.strip():
+        logger.warning("⚠️ Combined call produced no JS — falling back to separate stage_3_js")
+        js = await stage_3_js(html, session_id)
+
+    return html, js
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1457,12 +1721,13 @@ Apply similar polish, spacing, and shadow quality to this page.
 """
 
         client = get_anthropic_client()
-        text, _usage = await _claude_stream(
+        text, _usage = await _llm_stream(
             client,
             "claude-sonnet-4-20250514",
             16000,
             prompt,
             f"Generate the {title} page HTML. Follow ALL pattern templates exactly.",
+            use_prompt_cache=True,
         )
 
         html = parse_single_code_block(text, "html")
@@ -1476,25 +1741,38 @@ Apply similar polish, spacing, and shadow quality to this page.
         save_debug(session_id, f"html_{slug}", html)
         return slug, html
 
-    # Generate pages in parallel batches of 3 to balance speed vs rate limits
-    BATCH_SIZE = 3
+    # Generate pages in parallel batches of 2 to avoid rate limits
+    BATCH_SIZE = 2
     results = []
     for batch_start in range(0, len(pages), BATCH_SIZE):
         batch = pages[batch_start:batch_start + BATCH_SIZE]
         batch_coros = [generate_one_page(p) for p in batch]
         batch_results = await asyncio.gather(*batch_coros, return_exceptions=True)
         results.extend(batch_results)
-        # Small delay between batches (not between individual pages)
+        # Longer delay between batches to respect rate limits
         if batch_start + BATCH_SIZE < len(pages):
-            await asyncio.sleep(3)
+            await asyncio.sleep(8)
 
     pages_html = {}
-    for result in results:
+    failed_pages = []
+    for i, result in enumerate(results):
         if isinstance(result, Exception):
             logger.error(f"[MULTIPAGE] Page generation failed: {result}")
+            failed_pages.append(pages[i])
             continue
         slug, html = result
         pages_html[slug] = html
+
+    # Retry failed pages sequentially (one at a time to avoid rate limits)
+    for page in failed_pages:
+        try:
+            logger.info(f"[MULTIPAGE] Retrying failed page '{page.get('title', page.get('slug'))}'...")
+            await asyncio.sleep(5)
+            slug, html = await generate_one_page(page)
+            pages_html[slug] = html
+            logger.info(f"[MULTIPAGE] Retry succeeded for '{slug}'")
+        except Exception as e:
+            logger.error(f"[MULTIPAGE] Retry also failed for '{page.get('slug')}': {e}")
 
     if not pages_html:
         raise ValueError("All page generations failed")
@@ -1599,7 +1877,7 @@ def extract_css_vars(css: str) -> str:
 
 
 async def edit_single_component(section_html: str, section_type: str, css_vars: str, prompt: str) -> str:
-    """Edit a single section using Claude. Returns updated section HTML."""
+    """Edit a single section using LLM. Returns updated section HTML."""
     logger.info(f'🔧 Editing Section → type="{section_type}" ({len(section_html):,} chars)')
     logger.info(f'📝 Edit Request → "{prompt[:80]}{"..." if len(prompt) > 80 else ""}"')
     t0 = time.time()
@@ -1613,9 +1891,9 @@ async def edit_single_component(section_html: str, section_type: str, css_vars: 
         prompt=prompt,
         animation_ref=get_animation_prompt_compact(),
     )
-    logger.info(f"⚙️ Edit Prompt Built → {len(system):,} chars (section HTML + CSS vars + rules), sending to Claude...")
+    logger.info(f"⚙️ Edit Prompt Built → {len(system):,} chars (section HTML + CSS vars + rules), sending to LLM...")
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         8000,
@@ -1649,7 +1927,7 @@ async def edit_style_block(css: str, section_types: str, prompt: str) -> str:
         prompt=prompt,
     )
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         12000,
@@ -1720,7 +1998,7 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
 
     # Run edits
     logger.info(
-        f"🚀 Executing Step → Editing {len(edit_tasks)} section(s) via Claude Sonnet{'  (parallel)' if len(edit_tasks) > 1 else ''}"
+        f"🚀 Executing Step → Editing {len(edit_tasks)} section(s) via LLM{'  (parallel)' if len(edit_tasks) > 1 else ''}"
     )
     updated_sections = {}
     if len(edit_tasks) == 1:
@@ -1739,7 +2017,7 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
         updated_html = replace_section_html(updated_html, target_id, new_section_html)
         logger.info(f'✅ Section Replaced → id="{target_id}" patched into full HTML')
 
-    # Resolve any {{IMG:}} placeholders Claude may have added (with hallucination safety)
+    # Resolve any {{IMG:}} placeholders the model may have added (with hallucination safety)
     if "{{IMG:" in updated_html or re.search(r'src=["\']https?://images\.(pexels|unsplash)\.com/', updated_html):
         plan = session.get("plan", {})
         niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
@@ -2262,7 +2540,7 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     )
 
     client = get_anthropic_client()
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         8000,
@@ -2272,7 +2550,7 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
 
     page_html = parse_single_code_block(text, "html")
     if not page_html:
-        logger.error("[ADD PAGE] Claude returned empty HTML")
+        logger.error("[ADD PAGE] LLM returned empty HTML")
         return {"html": "", "css": ref_css, "js": js}
 
     # Separate CSS and HTML
@@ -2284,6 +2562,12 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
 
     # Inject section IDs
     page_html_clean = inject_section_ids(page_html_clean)
+
+    # Apply the same post-processing fixes as the main pipeline
+    try:
+        page_html_clean = validate_html(page_html_clean)
+    except Exception as e:
+        logger.warning(f"[ADD PAGE] validate_html failed: {e}")
 
     logger.info(
         f'✅ Add Page Complete → slug="{page_slug}" HTML={len(page_html_clean):,} CSS={len(merged_css):,} chars'
@@ -2346,14 +2630,14 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
         prompt=prompt,
     )
     logger.info(
-        f"🚀 Executing Step → Sending to Claude Sonnet to generate {section_type} section ({len(prompt_text):,} chars prompt)"
+        f"🚀 Executing Step → Sending to LLM to generate {section_type} section ({len(prompt_text):,} chars prompt)"
     )
 
     client = get_anthropic_client()
     t0 = time.time()
 
     try:
-        raw, _usage = await _claude_stream(
+        raw, _usage = await _llm_stream(
             client,
             "claude-sonnet-4-20250514",
             4000,
@@ -2463,9 +2747,9 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
         conversation_history=format_conversation_history(session),
         prompt=prompt,
     )
-    logger.info(f"🚀 Executing Step → Sending full page + edit request to Claude Sonnet ({len(system):,} chars prompt)")
+    logger.info(f"🚀 Executing Step → Sending full page + edit request to LLM ({len(system):,} chars prompt)")
 
-    text, _usage = await _claude_stream(
+    text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
         max_tokens,
@@ -2570,6 +2854,9 @@ class RestoreSessionRequest(BaseModel):
     js: str = ""
     projectId: str | None = None
     projectName: str | None = None
+    isMultipage: bool = False
+    pages: dict | None = None
+    currentPage: str = "index"
 
 
 @router.post("/restore-session")
@@ -2579,8 +2866,12 @@ async def restore_session(req: RestoreSessionRequest, user: dict = Depends(requi
     all features (chat iteration, sections, design system) work.
     """
     # Validate input size to prevent abuse
-    MAX_RESTORE_SIZE = 200_000  # 200KB
+    MAX_RESTORE_SIZE = 500_000  # 500KB (multipage projects can be large)
     total_size = len(req.html) + len(req.css) + len(req.js)
+    if req.pages:
+        for pg in req.pages.values():
+            if isinstance(pg, dict):
+                total_size += len(pg.get("html", "")) + len(pg.get("css", ""))
     if total_size > MAX_RESTORE_SIZE:
         raise HTTPException(status_code=413, detail=f"Payload too large ({total_size} chars, max {MAX_RESTORE_SIZE})")
 
@@ -2589,20 +2880,36 @@ async def restore_session(req: RestoreSessionRequest, user: dict = Depends(requi
     html = inject_section_ids(req.html)
     sections_list = parse_sections(html)
 
-    await redis_save_session(
-        session_id,
-        {
-            "html": html,
-            "css": req.css,
-            "js": req.js,
-            "plan": {},
-            "prompts": [],
-            "versions": [],
-            "current_version": 1,
-            "user_id": user["user_id"],
-            "project_id": req.projectId,
-        },
-    )
+    session_data = {
+        "html": html,
+        "css": req.css,
+        "js": req.js,
+        "plan": {},
+        "prompts": [],
+        "versions": [],
+        "current_version": 1,
+        "user_id": user["user_id"],
+        "project_id": req.projectId,
+    }
+
+    # Restore multipage structure if provided
+    if req.isMultipage and req.pages:
+        session_data["multipage"] = True
+        session_data["pages"] = {}
+        for slug, page_data in req.pages.items():
+            if isinstance(page_data, dict):
+                page_html = inject_section_ids(page_data.get("html", ""))
+                page_css = page_data.get("css", "")
+                # If CSS is empty but HTML contains <style> blocks, extract them
+                if not page_css and "<style" in page_html:
+                    page_css, page_html = extract_style_block(page_html)
+                session_data["pages"][slug] = {"html": page_html, "css": page_css}
+        # Ensure index is the top-level html/css
+        if "index" in session_data["pages"]:
+            session_data["html"] = session_data["pages"]["index"]["html"]
+            session_data["css"] = session_data["pages"]["index"]["css"]
+
+    await redis_save_session(session_id, session_data)
 
     return {
         "sessionId": session_id,
@@ -2876,34 +3183,38 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         },
                     )
                 else:
-                    # Single-page: prefer template-first when a reference template is available
+                    # Single-page: COMBINED HTML+JS in one LLM call (saves 5-10s)
                     use_template_path = reference_html is not None
                     if use_template_path:
                         yield sse(
                             "stage",
-                            {"stage": 1, "name": "html", "status": "running", "message": "Customizing template for your business..."},
-                        )
-                        html_task = asyncio.create_task(
-                            stage_2_html_from_template(reference_html, plan, session_id, niche_key=niche_key)
+                            {"stage": 1, "name": "html", "status": "running", "message": "Customizing template + adding interactions..."},
                         )
                     else:
                         yield sse(
                             "stage",
-                            {"stage": 1, "name": "html", "status": "running", "message": "Building the page structure..."},
-                        )
-                        html_task = asyncio.create_task(
-                            stage_2_html(plan, session_id, niche_key=niche_key, reference_html=None, enhanced_brief=enhanced_prompt)
+                            {"stage": 1, "name": "html", "status": "running", "message": "Building page structure + interactions..."},
                         )
 
-                    while not html_task.done():
+                    combined_task = asyncio.create_task(
+                        stage_2_html_and_js(
+                            plan, session_id, niche_key=niche_key,
+                            reference_html=reference_html if not use_template_path else None,
+                            enhanced_brief=enhanced_prompt,
+                            use_template=use_template_path,
+                            template_html=reference_html if use_template_path else None,
+                        )
+                    )
+
+                    while not combined_task.done():
                         await asyncio.sleep(8)
-                        if not html_task.done():
+                        if not combined_task.done():
                             yield ": keepalive\n\n"
-                    html = html_task.result()
+                    html, js = combined_task.result()
 
                     yield sse(
                         "stage",
-                        {"stage": 1, "name": "html", "status": "done", "message": f"HTML ready ({len(html):,} chars)"},
+                        {"stage": 1, "name": "html", "status": "done", "message": f"HTML + JS ready ({len(html):,} + {len(js):,} chars)"},
                     )
 
                     # ── Extract CSS from HTML <style> block ──────────────
@@ -2918,22 +3229,20 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
                     )
 
-                await _update_job_progress(job_id, 60, "HTML & CSS ready, generating JS...")
+                await _update_job_progress(job_id, 60, "HTML, CSS & JS ready, polishing...")
 
-                # ── Stage 3: JS (shared across all pages) ───────────
-                yield sse("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
-
-                # For multipage, generate JS based on combined HTML context
+                # ── Stage 3: JS — only needed for multipage (single-page already has JS from combined call)
                 if is_multipage and pages_dict:
-                    # Combine all page HTML for JS context (so JS handles all page types)
+                    yield sse("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
                     combined_html = "\n".join(pd["html"] for pd in pages_dict.values())
                     js = await stage_3_js(combined_html, session_id)
+                    yield sse(
+                        "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
+                    )
                 else:
-                    js = await stage_3_js(html, session_id)
-
-                yield sse(
-                    "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
-                )
+                    yield sse(
+                        "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
+                    )
 
                 # ── Stage 4: Quality checks + auto-fix ─────────────────
                 yield sse(
@@ -2950,7 +3259,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                 # Helper to apply quality fixes to a single html/css pair
                 def _apply_quality_fixes(page_html, page_css):
-                    """Apply responsive, image, form, SEO, and perf fixes. Returns (html, css)."""
+                    """Apply validate_html, responsive, image fixes. Returns (html, css)."""
+                    # validate_html fixes: footer bg, mobile nav CSS, overflow:hidden, WhatsApp, etc.
+                    try:
+                        page_html = validate_html(page_html)
+                    except Exception as e:
+                        logger.warning(f"[VALIDATE] subpage fix failed: {e}")
                     try:
                         from app.utils.responsive_check import auto_fix_responsive
 
@@ -3056,7 +3370,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     if anim_css and anim_css not in css:
                         css = css + "\n\n/* === Built-in Animations === */\n" + anim_css
                     anim_js = get_animation_js()
-                    if anim_js and "image-reveal" not in js:
+                    if anim_js and "Mobile Hamburger Menu Toggle" not in js:
                         js = js + "\n\n// === Built-in Animation Observers ===\n" + anim_js
 
                     # Also inject animation CSS into multipage subpages
@@ -3235,7 +3549,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     pages_dict = {}
                     for slug, page_html in pages_html.items():
                         page_css, page_html_clean = extract_style_block(page_html)
-                        page_html_clean = post_process_html(page_html_clean, theme=theme)
+                        page_css = polish_css(page_css, theme)
                         pages_dict[slug] = {"html": page_html_clean, "css": page_css}
 
                     # Generate JS
@@ -3708,7 +4022,7 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 if anim_css and anim_css not in css:
                     css = css + "\n\n/* === Built-in Animations === */\n" + anim_css
                 anim_js = get_animation_js()
-                if anim_js and "image-reveal" not in js:
+                if anim_js and "Mobile Hamburger Menu Toggle" not in js:
                     js = js + "\n\n// === Built-in Animation Observers ===\n" + anim_js
             except Exception:
                 pass
@@ -3722,11 +4036,22 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                             from app.utils.image_optimizer import optimize_image_tags
                             from app.utils.responsive_check import auto_fix_responsive
 
-                            p_html, p_css = auto_fix_responsive(pages_dict[slug]["html"], pages_dict[slug]["css"])
+                            p_html = validate_html(pages_dict[slug]["html"])
+                            p_html, p_css = auto_fix_responsive(p_html, pages_dict[slug]["css"])
                             p_html = optimize_image_tags(p_html)
                             pages_dict[slug] = {"html": p_html, "css": p_css}
                         except Exception:
                             pass
+                # Inject animation CSS into subpages
+                try:
+                    from app.utils.animations import get_animation_css
+                    anim_css = get_animation_css()
+                    if anim_css:
+                        for slug in pages_dict:
+                            if slug != "index" and anim_css not in pages_dict[slug].get("css", ""):
+                                pages_dict[slug]["css"] += "\n\n/* === Built-in Animations === */\n" + anim_css
+                except Exception:
+                    pass
 
             code = {"html": html, "css": css, "js": js}
 
@@ -3904,6 +4229,7 @@ RULES:
 - Same opening tag (e.g. if it's a <div>, return a <div>; if <h2>, return <h2>)
 - Keep existing classes, ids, data attributes unless the edit requires changing them
 - Use inline style for one-off changes, or use the CSS classes listed above
+- ALIGNMENT CHANGES: When centering text, add style="text-align: center" directly on the element. For hero sections, also add .hero-center-content class to the container or add text-align: center as inline style on BOTH the element AND its parent wrapper
 - Use var(--primary), var(--accent), var(--bg), var(--text), var(--radius) for colors/tokens
 - Keep existing image src URLs unless user explicitly asks to change images
 - Do NOT bloat the element — keep it concise
@@ -3954,7 +4280,11 @@ Grid: .grid-2, .grid-3, .grid-4 | Buttons: .btn-primary, .btn-secondary, .btn-gr
 Cards: .card, .card-title, .card-text, .card-body, .icon-box
 Images: .img-cover, .img-wrapper | Section: .section-header, .section-title, .section-subtitle, .text-center, .text-light
 Hero: .hero-section, .hero-heading, .hero-subtitle, .hero-split-grid, .hero-ctas
-Stats: .stat-item, .stat-number, .stat-label | Forms: .form-input, .contact-form
+Stats: .stat-item, .stat-number, .stat-label
+Forms: .form-input (ALL inputs/textareas MUST have this), .form-textarea (add to textareas), .contact-form, .form-hint, .contact-item, .contact-icon
+Footer: .footer-grid, .footer-heading, .footer-links (list-style:none), .footer-description, .social-links, .social-link, .footer-bottom
+
+FORM RULES: Every <input> and <textarea> MUST have class="form-input". Use placeholder="..." for labels, NOT floating <label> elements. Submit buttons use .btn-primary. Footer lists use <ul class="footer-links"> (NO raw bullets).
 
 FULL SECTION ({section_type}, id={section_id}):
 {section_html}
@@ -3975,6 +4305,12 @@ RULES:
 - Do NOT add Font Awesome script tags
 - Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include explanation
+
+ALIGNMENT CHANGES:
+- To CENTER a hero: remove .hero-full-overlay class (if present), add .text-center class to the content wrapper, and add style="text-align: center" on the content container. Also set .hero-ctas to justify-content: center.
+- To LEFT-ALIGN a hero: add .hero-full-overlay class to the content wrapper, remove .text-center, set text-align: left.
+- For non-hero sections: add style="text-align: center/left/right" on the container or wrapper div.
+- ALL child elements (heading, subtitle, buttons, trust line) must have the SAME alignment — never mix.
 
 TYPOGRAPHY & STYLING (when changing text appearance):
 - Font size: inline style font-size in rem (0.875rem, 1rem, 1.25rem, 1.5rem, 2rem, 3rem)
@@ -4008,6 +4344,32 @@ def _is_structural_edit(prompt: str) -> bool:
         r'\bgrid\b.*\bcolumn', r'\bconvert\b.*\b(to|into)\b',
         r'\bput\b.*\b(image|picture|photo|logo|img)\b',
         r'\bplace\b.*\b(image|picture|photo|logo|img)\b',
+        # ── Alignment ──
+        r'\b(center|left|right)\s*(align|alignment)', r'\balign.*(center|left|right)',
+        r'\btext.align', r'\bfix.*align',
+        r'\bmake\b.*\bcenter', r'\bcenter\b.*\b(text|heading|title|button|cta|content|everything|all|it)',
+        r'\b(text|heading|title|button|cta|content|everything|all)\b.*\bcenter',
+        r'\bmiddle\b', r'\bcentered\b', r'\bcentrali[sz]e', r'\bjustify.*center',
+        r'\bmove\b.*\bcenter', r'\bput\b.*\bcenter',
+        # ── Spacing & padding ──
+        r'\b(more|less|reduce|increase|add)\b.*\b(space|spacing|gap|padding|margin)\b',
+        r'\b(space|spacing|gap|padding|margin)\b.*\b(between|around|inside)\b',
+        r'\btighter\b', r'\blooser\b', r'\bcompact\b',
+        # ── Layout & width ──
+        r'\bfull\s*width\b', r'\bmake\b.*\b(wider|narrower|bigger|smaller)\b',
+        r'\bstack\b.*\b(vertical|horizontal)', r'\bside\s*by\s*side\b',
+        r'\b(vertical|horizontal)\s*layout\b', r'\bcolumn\s*layout\b', r'\brow\s*layout\b',
+        # ── Background & overlay ──
+        r'\b(change|add|remove)\b.*\bbackground\b', r'\boverlay\b', r'\bdarken\b.*\bbackground\b',
+        r'\bbg\s*(color|image|colour)\b', r'\bsection\s*background\b',
+        # ── Bulk / "all" changes ──
+        r'\b(change|make|set)\b.*\ball\b.*\b(text|button|card|font|color|colour)\b',
+        r'\ball\b.*\b(text|button|card)\b.*\b(white|black|bigger|smaller|same)\b',
+        r'\bsame\b.*\b(font|size|color|colour|style)\b.*\b(for|across|everywhere)\b',
+        r'\beverything\b.*\b(white|black|bigger|smaller|same)\b',
+        # ── Visibility ──
+        r'\bhide\b', r'\bshow\b.*\b(the|this|a)\b', r'\btoggle\b',
+        r'\bmake\b.*\b(visible|invisible|hidden)\b',
     ]
     prompt_lower = prompt.lower()
     return any(re.search(pat, prompt_lower) for pat in structural_keywords)
@@ -4176,10 +4538,10 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 animation_ref=_anim_compact(),
             )
 
-            text, _ = await _claude_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
+            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
             edited_section = parse_single_code_block(text, "html")
             if not edited_section:
-                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed from section edit")
+                logger.error("🖱️ [ELEMENT EDIT] FAILED — no HTML parsed from section edit")
                 raise HTTPException(status_code=500, detail="Failed to parse edited section")
 
             result_html = replace_section_html(full_html, section_id, edited_section)
@@ -4212,7 +4574,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             )
             logger.info(f"🖱️ [ELEMENT EDIT] Precise prompt: {len(system):,} chars")
 
-            text, _ = await _claude_stream(
+            text, _ = await _llm_stream(
                 client, "claude-sonnet-4-20250514", 4000, system,
                 f"Edit this element: {req.prompt}"
             )
@@ -4257,7 +4619,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 html=full_html, css=css,
                 element_path=req.elementPath, element_html=req.elementHtml, prompt=req.prompt,
             )
-            text, _ = await _claude_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
+            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
             code = parse_code_blocks(text)
             if not code["html"]:
                 raise HTTPException(status_code=500, detail="Failed to parse edited code")

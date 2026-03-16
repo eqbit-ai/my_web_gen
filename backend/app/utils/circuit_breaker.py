@@ -1,5 +1,5 @@
 """
-Circuit breaker for LLM API calls (OpenAI and Anthropic).
+Circuit breaker for LLM API calls.
 
 Prevents cascading failures by short-circuiting requests to providers
 that are experiencing outages. Includes retry logic with exponential

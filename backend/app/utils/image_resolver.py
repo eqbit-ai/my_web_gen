@@ -452,7 +452,7 @@ async def search_unsplash_ranked(
             elif resp.status_code == 403:
                 _unsplash_fail_count += 1
                 if _unsplash_fail_count >= _UNSPLASH_FAIL_THRESHOLD:
-                    print(f"[Images] Unsplash returning 403 — switching to Pexels only", flush=True)
+                    print("[Images] Unsplash returning 403 — switching to Pexels only", flush=True)
                     return None
         except Exception:
             continue

@@ -25,9 +25,10 @@ async def get_redis() -> aioredis.Redis:
         _pool = aioredis.from_url(
             REDIS_URL,
             decode_responses=True,
-            max_connections=200,
+            max_connections=500,
             socket_connect_timeout=5,
             socket_timeout=10,
+            retry_on_timeout=True,
         )
     return _pool
 
@@ -43,7 +44,7 @@ async def close_redis():
 
 JOB_PREFIX = "job:"
 JOB_TTL = 3600  # Jobs expire after 1 hour
-MAX_QUEUE_DEPTH = 500  # Reject new jobs when queue exceeds this
+MAX_QUEUE_DEPTH = 2000  # Reject new jobs when queue exceeds this
 
 
 async def get_queue_depth() -> int:

@@ -163,7 +163,7 @@ const BUILTIN_ANIMATION_JS = `
 /* Image Reveal / Fade-Zoom / Slide-Up / Blur-In */
 (function(){var r=document.querySelectorAll(".image-reveal,.image-fade-zoom,.image-slide-up,.image-blur-in");if(!r.length)return;var ro=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("revealed");ro.unobserve(e.target)}})},{threshold:0.25});r.forEach(function(el){ro.observe(el)})})();
 /* Hero Text Stagger */
-(function(){document.querySelectorAll(".hero-stagger").forEach(function(el){var text=el.textContent.trim();if(!text)return;var words=text.split(/\\s+/);el.innerHTML="";words.forEach(function(word,i){var span=document.createElement("span");span.textContent=word;span.style.animationDelay=(0.15+i*0.08)+"s";el.appendChild(span);if(i<words.length-1)el.appendChild(document.createTextNode(" "))})})})();
+(function(){document.querySelectorAll(".hero-stagger").forEach(function(el){if(el.hasAttribute("data-splitting"))return;if(el.querySelector("span"))return;var text=el.textContent.trim();if(!text)return;var words=text.split(/\\s+/);el.innerHTML="";words.forEach(function(word,i){var span=document.createElement("span");span.textContent=word;span.style.animationDelay=(0.15+i*0.08)+"s";el.appendChild(span);if(i<words.length-1)el.appendChild(document.createTextNode(" "))})})})();
 /* Back-to-Top with Progress Ring */
 (function(){var btn=document.querySelector(".back-to-top");if(!btn)return;var ring=btn.querySelector(".progress-ring circle");function up(){var st=window.pageYOffset||document.documentElement.scrollTop;var dh=document.documentElement.scrollHeight-document.documentElement.clientHeight;var pct=dh>0?st/dh:0;if(st>400)btn.classList.add("visible");else btn.classList.remove("visible");if(ring){ring.style.strokeDashoffset=157-(pct*157)}}window.addEventListener("scroll",up,{passive:true});up();btn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"})})})();
 /* Smooth Scroll Anchors */
@@ -972,18 +972,29 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             // Scroll to top on content change
             try { iframe.contentWindow.scrollTo(0, 0); } catch(e) {}
 
-            // Inject user JS via DOM — wrap in IIFE to avoid scope conflicts with builtins
+            // Inject user JS via DOM — wait for CDN libs (Typed.js, Lenis, etc.) to load first
             if (js) {
                 try {
                     // Test if JS parses without errors before injecting
                     new Function(js); // eslint-disable-line no-new-func
-                    // Wrap in IIFE to isolate scope (prevents const/let redeclaration errors)
-                    const script = doc.createElement('script');
-                    script.textContent = `(function(){${js}})();`;
-                    doc.body.appendChild(script);
-                    // Re-dispatch DOMContentLoaded + load so listeners in generated JS fire
-                    doc.dispatchEvent(new Event('DOMContentLoaded', { bubbles: true }));
-                    iframe.contentWindow.dispatchEvent(new Event('load'));
+
+                    let injected = false;
+                    const injectUserJS = () => {
+                        if (injected) return;
+                        injected = true;
+                        try {
+                            const script = doc.createElement('script');
+                            script.textContent = `(function(){${js}})();`;
+                            doc.body.appendChild(script);
+                        } catch (e) {
+                            console.warn('[Preview] JS injection failed:', e.message);
+                        }
+                    };
+
+                    // Wait for iframe load event (fires after all CDN scripts loaded)
+                    iframe.contentWindow.addEventListener('load', injectUserJS, { once: true });
+                    // Fallback: if load already fired or takes too long, inject after 2s
+                    setTimeout(injectUserJS, 2000);
                 } catch (e) {
                     console.warn('[Preview] JS has syntax error, skipping:', e.message);
                 }

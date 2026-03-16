@@ -68,6 +68,21 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     return token_data
 
 
+async def _verify_session_ownership(session_id: str, user: dict) -> dict:
+    """Verify that a session exists and belongs to the authenticated user.
+
+    Returns the session data if valid.
+    Raises 404 if session not found, 403 if it belongs to another user.
+    """
+    session = await redis_get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session_user = session.get("user_id")
+    if session_user and str(session_user) != str(user.get("user_id")):
+        raise HTTPException(status_code=403, detail="Forbidden — session belongs to another user")
+    return session
+
+
 import html as _html_mod
 import re as _re
 
@@ -120,9 +135,12 @@ def _merge_section_css(base_css: str, section_id: str, new_css: str) -> str:
 def _validate_regen_html(html: str, section_id: str, section_type: str) -> str:
     """Validate and fix regenerated section HTML.
     Ensures data-section-id and data-section-type attributes exist.
-    Strips Font Awesome kit scripts that Claude sometimes adds.
+    Strips Font Awesome kit scripts that LLM sometimes adds.
+    Checks for required elements per section type (e.g. H1 in hero).
     """
+    import logging
     import re as _re
+    _logger = logging.getLogger(__name__)
 
     if not html or len(html) < 20:
         return html
@@ -153,6 +171,67 @@ def _validate_regen_html(html: str, section_id: str, section_type: str) -> str:
         first_tag_end = html.index(">") if ">" in html else -1
         if first_tag_end > 0:
             html = html[:first_tag_end] + f' data-section-type="{section_type}"' + html[first_tag_end:]
+
+    # ── Required elements check ──────────────────────────────────────
+    section_lower = section_type.lower() if section_type else ""
+
+    # Hero sections: fix Typed.js inside H1 — H1 must have static readable text
+    if section_lower == "hero" and _re.search(r"<h1[\s>]", html, _re.IGNORECASE):
+        # Check if H1 contains data-typed or typed-text spans (JS-dependent text)
+        h1_match = _re.search(r"<h1[^>]*>(.*?)</h1>", html, _re.IGNORECASE | _re.DOTALL)
+        if h1_match:
+            h1_content = h1_match.group(1)
+            has_typed = "data-typed" in h1_content or "typed-text" in h1_content
+            if has_typed:
+                _logger.warning("⚠️ Hero H1 contains Typed.js — extracting static text")
+                # Extract the typed strings to use as static text
+                typed_strings_match = _re.search(r'data-typed=\'(\[.*?\])\'', h1_content)
+                static_text = ""
+                if typed_strings_match:
+                    try:
+                        import json
+                        strings = json.loads(typed_strings_match.group(1))
+                        static_text = strings[0] if strings else ""
+                    except Exception:
+                        pass
+                # Extract any non-typed text (e.g. "with Intelligent ERP Solutions")
+                remaining_text = _re.sub(r'<span[^>]*(?:typed-text|data-typed)[^>]*>.*?</span>', '', h1_content, flags=_re.DOTALL)
+                remaining_text = _re.sub(r'<br\s*/?>', ' ', remaining_text)
+                remaining_text = _re.sub(r'<[^>]+>', '', remaining_text).strip()
+                # Build clean H1 content
+                full_text = f"{static_text} {remaining_text}".strip() if static_text else remaining_text
+                if not full_text:
+                    full_text = "Your Business Solution"
+                # Get original H1 opening tag
+                h1_open_match = _re.search(r"(<h1[^>]*>)", html, _re.IGNORECASE)
+                if h1_open_match:
+                    # Remove data-splitting from the H1 tag
+                    clean_h1_open = _re.sub(r'\s*data-splitting(?:="[^"]*")?', '', h1_open_match.group(1))
+                    html = html[:h1_match.start()] + f'{clean_h1_open}{full_text}</h1>' + html[h1_match.end():]
+
+    # Hero sections MUST have an H1
+    if section_lower == "hero" and not _re.search(r"<h1[\s>]", html, _re.IGNORECASE):
+        _logger.warning("⚠️ Regenerated hero section missing <h1> — injecting fallback heading")
+        # Find a good insertion point: after the first container/wrapper div, or after section opening tag
+        # Look for a subtitle/span/p to insert before
+        subtitle_match = _re.search(r"(<(?:span|p|div)[^>]*class=\"[^\"]*(?:subtitle|tagline|badge|label)[^\"]*\")", html, _re.IGNORECASE)
+        if subtitle_match:
+            # Insert H1 after the subtitle element's closing tag
+            # Find the end of this element
+            pos = subtitle_match.end()
+            # Find the closing tag
+            tag_name = _re.match(r"<(\w+)", subtitle_match.group(1)).group(1)
+            close_pattern = f"</{tag_name}>"
+            close_pos = html.find(close_pattern, pos)
+            if close_pos != -1:
+                insert_at = close_pos + len(close_pattern)
+                html = html[:insert_at] + '\n            <h1 class="hero-heading">Your Heading Here</h1>' + html[insert_at:]
+        else:
+            # Insert after first container-like div
+            container_match = _re.search(r"(<div[^>]*class=\"[^\"]*container[^\"]*\"[^>]*>)", html, _re.IGNORECASE)
+            if container_match:
+                insert_at = container_match.end()
+                html = html[:insert_at] + '\n            <h1 class="hero-heading">Your Heading Here</h1>' + html[insert_at:]
 
     return html
 
@@ -333,9 +412,7 @@ class UpdateContactRequest(BaseModel):
 @router.get("/{session_id}")
 async def get_sections(session_id: str, page_slug: str = "index", user: dict = Depends(require_auth)):
     """Parse and return section list for the current session HTML."""
-    session = await redis_get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(session_id, user)
 
     html = _get_page_html(session, page_slug)
 
@@ -352,9 +429,7 @@ async def get_sections(session_id: str, page_slug: str = "index", user: dict = D
 @router.post("/reorder")
 async def reorder(req: ReorderRequest, user: dict = Depends(require_auth)):
     """Reorder sections by their IDs."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
     new_html = reorder_sections(html, req.newOrder)
@@ -367,9 +442,7 @@ async def reorder(req: ReorderRequest, user: dict = Depends(require_auth)):
 @router.post("/delete")
 async def delete(req: DeleteRequest, user: dict = Depends(require_auth)):
     """Remove a section from the website."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
     new_html = remove_section(html, req.sectionId)
@@ -382,9 +455,7 @@ async def delete(req: DeleteRequest, user: dict = Depends(require_auth)):
 @router.post("/duplicate")
 async def dup(req: DuplicateRequest, user: dict = Depends(require_auth)):
     """Duplicate a section."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
     new_html = duplicate_section(html, req.sectionId)
@@ -412,9 +483,7 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
         if not moderation["safe"]:
             raise HTTPException(status_code=400, detail=moderation["reason"])
 
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     _logger.info(
         f"📄 Session → multipage={session.get('multipage')}, pages={list(session.get('pages', {}).keys())}, pageSlug={req.pageSlug}"
@@ -558,7 +627,8 @@ Sections on this page: {", ".join(s["type"] for s in all_sections)}
 {variant_context}
 
 RULES:
-- Output HTML in ```html block, CSS in ```css block (if needed)
+- Output HTML in ```html block, CSS in ```css block
+- You MUST include a ```css block with ALL CSS needed for the section — grid layouts, custom classes, animations, floating elements, etc. Without CSS the layout will be broken. This is NOT optional.
 - KEEP data-section-id="{req.sectionId}" on the root element
 - KEEP data-section-type="{section_type}" on the root element
 - Use the SAME design system (colors, fonts, spacing, radius) as the existing section
@@ -578,6 +648,14 @@ SECTION SIZE CONSTRAINTS (CRITICAL — prevents layout breakage):
 - All other sections: reasonable height, no min-h-screen or min-h-[100vh] unless the current section already uses it.
 - Do NOT add excessive padding or margins that make a section abnormally tall.
 - Keep the section roughly the same visual size as the original.
+
+REQUIRED ELEMENTS BY SECTION TYPE (CRITICAL — never omit these):
+- HERO section MUST contain: an <h1> heading (the main page title) with PLAIN TEXT content (NOT Typed.js, NOT data-typed, NOT empty spans that rely on JavaScript to fill in text — the heading must be readable without JS), a subtitle/description paragraph, and at least one CTA button. NEVER put Typed.js or animated typing inside the H1 tag — if you want typing effects, put them in a separate element below the H1.
+- FEATURES section MUST contain: a section title (<h2>), and at least 3 feature items.
+- TESTIMONIALS section MUST contain: a section title (<h2>), and at least 2 testimonial quotes.
+- CTA section MUST contain: a heading, description text, and at least one button.
+- CONTACT section MUST contain: a heading and a contact form or contact info.
+- If the original section has an element, the regenerated version MUST also have it unless the user explicitly asked to remove it.
 
 IMAGE HANDLING (CRITICAL — follow exactly):
 - "Add background image" = use CSS background-image on the section wrapper. Do NOT also add an <img> tag.
@@ -603,7 +681,7 @@ CRITICAL — JS-DEPENDENT CLASS NAMES (do NOT rename these):
 USER REQUEST: {req.prompt}"""
 
     _logger.info(
-        f"🚀 Executing Step → Sending {section_type} section + edit request to Claude Sonnet ({len(system_prompt):,} chars prompt)"
+        f"🚀 Executing Step → Sending {section_type} section + edit request to LLM ({len(system_prompt):,} chars prompt)"
     )
 
     response = await client.messages.create(
@@ -638,7 +716,7 @@ USER REQUEST: {req.prompt}"""
             result["html"] = stripped
         else:
             _logger.error(
-                f"❌ Regenerate Failed → Claude returned no HTML for {section_type} section. Raw (first 500): {raw_text[:500]!r}"
+                f"❌ Regenerate Failed → LLM returned no HTML for {section_type} section. Raw (first 500): {raw_text[:500]!r}"
             )
             raise HTTPException(status_code=500, detail="Failed to regenerate section")
 
@@ -694,7 +772,7 @@ USER REQUEST: {req.prompt}"""
             result["html"] = html_content[:last_valid_end]
 
     _logger.info(
-        f"📦 Claude Response → HTML={len(result.get('html', '')):,} chars, CSS={len(result.get('css', '')):,} chars, JS={len(result.get('js', '')):,} chars"
+        f"📦 LLM Response → HTML={len(result.get('html', '')):,} chars, CSS={len(result.get('css', '')):,} chars, JS={len(result.get('js', '')):,} chars"
     )
 
     # Validate regenerated HTML has required attributes
@@ -776,9 +854,7 @@ async def update_text(req: UpdateTextRequest, user: dict = Depends(require_auth)
         if not moderation["safe"]:
             raise HTTPException(status_code=400, detail=moderation["reason"])
 
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
 
@@ -804,9 +880,7 @@ async def update_text(req: UpdateTextRequest, user: dict = Depends(require_auth)
 @router.post("/insert")
 async def insert_section(req: InsertSectionRequest, user: dict = Depends(require_auth)):
     """Insert a new section before or after a reference section."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     if req.position not in ("before", "after"):
         raise HTTPException(status_code=400, detail="position must be 'before' or 'after'")
@@ -837,9 +911,7 @@ async def insert_section(req: InsertSectionRequest, user: dict = Depends(require
 @router.post("/toggle-visibility")
 async def toggle_visibility(req: ToggleVisibilityRequest, user: dict = Depends(require_auth)):
     """Show or hide a section by toggling display:none."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
     new_html = toggle_section_visibility(html, req.sectionId, req.visible)
@@ -857,9 +929,7 @@ async def toggle_visibility(req: ToggleVisibilityRequest, user: dict = Depends(r
 @router.post("/update-style")
 async def update_style(req: UpdateStyleRequest, user: dict = Depends(require_auth)):
     """Add or update inline styles on a section's root element."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     html = _get_page_html(session, req.pageSlug)
     new_html = update_section_style(html, req.sectionId, req.styles)
@@ -891,9 +961,7 @@ def _find_section_by_type(html: str, section_type: str) -> tuple[str | None, str
 @router.post("/update-nav")
 async def update_nav(req: UpdateNavRequest, user: dict = Depends(require_auth)):
     """Update navbar section using AI with new nav items and settings."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     page_html = _get_page_html(session, req.pageSlug)
     section_id, existing_html = _find_section_by_type(page_html, "navbar")
@@ -969,9 +1037,7 @@ INSTRUCTIONS:
 @router.post("/update-footer")
 async def update_footer(req: UpdateFooterRequest, user: dict = Depends(require_auth)):
     """Update footer section using AI with new columns, copyright, and social links."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     page_html = _get_page_html(session, req.pageSlug)
     section_id, existing_html = _find_section_by_type(page_html, "footer")
@@ -1055,9 +1121,7 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
     """Update page title, description, keywords, favicon, and WhatsApp float button."""
     import re
 
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     # Store meta config in session
     site_meta = session.get("site_meta", {})
@@ -1163,9 +1227,7 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
 @router.post("/update-contact")
 async def update_contact(req: UpdateContactRequest, user: dict = Depends(require_auth)):
     """Update contact form configuration and regenerate the contact section."""
-    session = await redis_get_session(req.sessionId)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = await _verify_session_ownership(req.sessionId, user)
 
     # Store contact config in session
     session["contact_config"] = {

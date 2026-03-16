@@ -5,8 +5,8 @@ Admin stats and dashboard overview endpoints.
 import logging
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select, text
+from fastapi import APIRouter, Depends
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -48,7 +48,7 @@ async def admin_stats(
     try:
         r = await get_redis()
         # Count only sessions that have a TTL (active) or all session keys
-        async for key in r.scan_iter(match="session:*", count=100):
+        async for _key in r.scan_iter(match="session:*", count=100):
             active_sessions += 1
         queue_depth = await r.llen("queue:generate")
     except Exception as e:

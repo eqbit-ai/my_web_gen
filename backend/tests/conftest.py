@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 # ---------------------------------------------------------------------------
 # Environment setup — must happen BEFORE any app imports
 # ---------------------------------------------------------------------------
+os.environ["DEV_MODE"] = "true"  # Allow unauthenticated deep health checks in tests
 os.environ["JWT_SECRET"] = "test-secret-key-for-testing-only"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["JWT_EXPIRE_MINUTES"] = "60"

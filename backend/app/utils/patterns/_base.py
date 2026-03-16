@@ -43,10 +43,27 @@ RULES:
   2. When using a background image hero (.hero-bg-cover), ALL text MUST be white (#fff or white) and the overlay MUST have minimum 0.5 opacity. Use the provided .hero-overlay-left or .hero-overlay-center classes — do NOT create custom overlays with lower opacity.
   3. Do NOT override .hero-overlay opacity in your <style> block. The provided overlay classes are already optimized.
   4. NEVER use dark text (var(--text) or dark colors) on a hero with a background image — it will be invisible if the image is dark.
+  5. The H1 heading MUST contain PLAIN, STATIC TEXT — NOT Typed.js spans, NOT data-typed attributes, NOT empty elements that rely on JS to fill text. The heading must be fully readable with JavaScript disabled. If you want typing animation effects, put them in a SEPARATE element BELOW the H1, never inside it.
+- HERO ALIGNMENT CONSISTENCY: ALL elements inside the hero (heading, subtitle, CTAs, trust line) MUST have the SAME alignment. If the hero uses .hero-center-content, everything is centered. If it uses .hero-full-overlay (left-aligned), EVERYTHING must be left-aligned — do NOT center the subtitle or CTAs while left-aligning the heading. Never mix text-align values within a hero.
 - NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
 - HERO NAVBAR CLEARANCE: The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. Use the .hero-section class which has padding-top: 7rem (8rem on desktop). For full-bleed heroes with background images, use .hero-bg-cover which includes padding-top: 80px. NEVER let hero content start at the very top of the viewport.
 - HERO IMAGES: EVERY page's hero section MUST include a high-quality image — either as a background image (using .hero-bg-cover with background-image) or as a side image in a split layout (using .hero-split-grid). No hero section should be text-only without any imagery. Use relevant Unsplash/Pexels images.
-- Follow pattern templates EXACTLY — use the same class names, same HTML structure, same nesting. Do not rename or add wrapper classes.
+- PATTERN COMPLIANCE:
+  1. Each section's HTML should follow the provided pattern template's GENERAL STRUCTURE — same layout approach (grid, flex, etc.) and nesting concept.
+  2. Use the class names from the CSS framework above and from the pattern template as your foundation.
+  3. You MAY add additional custom CSS classes for enhanced styling — but you MUST define them in your <style> block. Every class you use must have CSS rules.
+  4. Use the pattern template as a starting point, then ENHANCE it with richer visual elements: floating cards, glow effects, gradient accents, subtle animations.
+  5. The key rule: if you reference a CSS class, it MUST exist either in the framework above OR in your custom <style> block. No undefined classes.
+
+PREMIUM CSS QUALITY — Your CSS must be production-grade and visually impressive:
+- Use subtle gradients, layered shadows, glassmorphism, smooth transitions
+- Add micro-interactions: button hover transforms, card hover lifts, link underline animations
+- Hero sections need depth: floating cards, glow effects, layered backgrounds
+- Use backdrop-filter: blur() for glass effects where appropriate
+- Create visual hierarchy with deliberate spacing rhythm (8px base grid)
+- Every interactive element needs a hover/focus state
+- Add subtle background textures or patterns where they enhance the design
+- Use ::before/::after pseudo-elements for decorative accents (gradient lines, dots, glows)
 
 STYLE BLOCK — output this FIRST before any HTML elements.
 The <style> block must contain ALL CSS for the entire page. This is a COMPLETE website — every element must be styled.
@@ -116,7 +133,7 @@ section[data-section-type].visible {{ opacity: 1; transform: translateY(0); anim
 @keyframes sectionFallback {{ to {{ opacity: 1; transform: translateY(0); }} }}
 [data-aos] {{ animation: sectionFallback 0.6s ease forwards; animation-delay: 1.5s; }}
 [data-aos].aos-animate {{ animation: none; }}
-footer, footer section[data-section-type] {{ opacity: 1; transform: none; }}
+footer, footer[data-section-type], footer section[data-section-type] {{ opacity: 1; transform: none; animation: none; }}
 @media (min-width: 769px) {{
   section[data-section-type] {{ padding: 5rem 0; }}
 }}
@@ -190,16 +207,24 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0; min-height: 100vh; }}
 .hero-heading {{ font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; color: var(--text); }}
 .hero-subtitle {{ font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
+.hero-center-content .hero-subtitle {{ margin-left: auto; margin-right: auto; }}
 .trust-line {{ font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }}
+.hero-ctas {{ display: flex; flex-wrap: wrap; gap: 1rem; }}
+.hero-center-content .hero-ctas {{ justify-content: center; }}
+.hero-full-overlay {{ text-align: left; }}
+.hero-full-overlay .hero-subtitle {{ margin-left: 0; margin-right: 0; }}
+.hero-full-overlay .hero-ctas {{ justify-content: flex-start; }}
+.hero-full-overlay .trust-line {{ text-align: left; }}
 .hero-split-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; min-height: 70vh; }}
 .hero-split-asymmetric {{ grid-template-columns: 55% 45%; }}
 @media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; min-height: auto; }} }}
-.hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; }}
-.hero-bg-cover {{ position: relative; min-height: 100vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; padding-top: 80px; }}
+.hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; width: 100%; }}
+.hero-bg-cover {{ position: relative; width: 100%; min-height: 100vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }}
+.hero-bg-cover > .container, .hero-bg-cover > .container-wide, .hero-bg-cover > .container-narrow {{ width: 100%; }}
 .hero-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }}
-.hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.5), rgba(0,0,0,0.2)); }}
-.hero-overlay-center {{ background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.5), rgba(0,0,0,0.7)); }}
-.hero-overlay-modern {{ background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.4)); }}
+.hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.35), rgba(0,0,0,0.1)); }}
+.hero-overlay-center {{ background: linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.35), rgba(0,0,0,0.5)); }}
+.hero-overlay-modern {{ background: linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25)); }}
 .hero-bg-cover > *:not(.hero-overlay) {{ position: relative; z-index: 2; }}
 .text-light {{ color: #fff !important; }}
 .hero-animated-bg {{ min-height: 100vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }}
@@ -266,7 +291,8 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 @media (max-width: 1024px) {{ .footer-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
 @media (max-width: 640px) {{ .footer-grid {{ grid-template-columns: 1fr; }} }}
 .footer-description {{ font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 280px; }}
-.footer-heading {{ font-weight: 700; color: white; margin-bottom: 1rem; }}
+.footer-heading {{ font-weight: 700; color: white; margin-bottom: 1rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }}
+.footer-links {{ list-style: none; padding: 0; margin: 0; }}
 .footer-links li {{ margin-bottom: 0.5rem; }}
 .footer-links a {{ color: rgba(255,255,255,0.7); transition: color 0.3s; font-size: 0.9rem; }}
 .footer-links a:hover {{ color: white; }}
@@ -278,9 +304,13 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 .contact-icon {{ color: var(--accent); width: 1.25rem; margin-top: 0.25rem; flex-shrink: 0; }}
 
 /* ═══ Forms ═══ */
-.form-input {{ width: 100%; padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); background: var(--bg-surface); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; }}
+.contact-form {{ display: flex; flex-direction: column; gap: 1rem; }}
+.contact-form .form-row {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }}
+@media (max-width: 640px) {{ .contact-form .form-row {{ grid-template-columns: 1fr; }} }}
+.form-input {{ width: 100%; padding: 1rem; border-radius: var(--radius, 0.5rem); border: 1px solid rgba(255,255,255,0.12); background: var(--bg-surface, rgba(255,255,255,0.05)); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; box-sizing: border-box; }}
 .form-input:focus {{ border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent); }}
-.form-textarea {{ resize: vertical; }}
+.form-input::placeholder {{ color: var(--text-muted, rgba(255,255,255,0.4)); }}
+.form-textarea {{ resize: vertical; min-height: 120px; }}
 .newsletter-form {{ display: flex; gap: 0.75rem; max-width: 28rem; margin: 0 auto; }}
 @media (max-width: 640px) {{ .newsletter-form {{ flex-direction: column; }} }}
 .form-hint {{ font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; opacity: 0.7; }}
@@ -385,13 +415,12 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 [data-splitting].visible .char {{ opacity: 1; transform: translateY(0); }}
 @media (max-width: 768px) {{ .steps-container::before {{ left: 24px; }} .timeline-container::before {{ left: 98px; }} }}
 </style>
-Fill in ALL values from the plan's design spec. Use the EXACT colors, fonts, and radii.
-The <style> block above is a MINIMUM — you MUST add MORE custom CSS for:
+OUTPUT THE ENTIRE <style> BLOCK ABOVE as your first output, with ALL placeholder values filled in from the plan's design spec (colors, fonts, radii). Then APPEND additional CSS rules AFTER the framework above for:
 - Section-specific backgrounds and textures
 - Custom animation @keyframes beyond the basics above
-- Any section-specific layout not covered by the framework above
+- Any section-specific layout not covered by the framework (e.g. hero ::before/::after decorative elements)
 - Light theme adjustments (e.g. border-color: rgba(0,0,0,0.08) instead of rgba(255,255,255,0.06))
-A good website needs 200-400 lines of CSS. The framework above gives you ~200, add 100-200 more for section-specific styles.
+IMPORTANT: Do NOT rewrite or replace the framework CSS above. Keep ALL of it intact and just ADD your custom rules at the end. The framework classes (.hero-section, .hero-bg-cover, .card, .btn-primary, .grid-2, .container, .navbar, .footer-grid, etc.) MUST remain unchanged. You are EXTENDING the framework, not replacing it.
 
 ⚠️ MANDATORY IMAGE RULES — VIOLATION = BROKEN OUTPUT ⚠️
 NEVER write real image URLs (pexels.com, unsplash.com, etc). They will ALL 404.
@@ -421,10 +450,9 @@ TYPED.JS HERO EFFECT — adds a typewriter animation to the hero headline. Use f
     </h1>
   The JS stage auto-detects .typed-text and initializes Typed.js. Use 3-4 different phrases that showcase the brand.
 
-HERO DEPTH ELEMENTS — add at least 2 of these to every hero section for visual richness:
-  1. Giant faded decorative text: <span class="bg-number" style="font-family: var(--font-heading)">01</span>
-  2. Section label above headline: <span class="section-label"><span class="label-line"></span>LABEL TEXT</span>
-  3. Stats mini-bar in hero (for dark themes): 2-3 key stats in a glassmorphism strip at bottom
+HERO DEPTH ELEMENTS — add at least 1 of these to every hero section for visual richness:
+  1. Section label above headline: <span class="section-label"><span class="label-line"></span>LABEL TEXT</span>
+  2. Trust line below CTAs: <p class="trust-line">Trust signal text</p>
   Do NOT add custom animation classes (no hero-stagger, no hero-anim, no fade-in-up). AOS handles animations.
 
 HERO HEADLINE SIZE — hero-heading class gives clamp(2.5rem, 6vw, 4.5rem). For display fonts (Oswald, Bebas Neue), add style="font-size: clamp(3rem, 7vw, 5.5rem)" inline.

@@ -107,7 +107,7 @@ async def export_users_csv(
         writer = csv.writer(output)
         writer.writerow([
             "id", "email", "full_name", "company_name", "license_number",
-            "is_active", "is_admin", "token_balance", "tokens_used",
+            "mobile", "is_active", "is_admin", "token_balance", "tokens_used",
             "generation_count", "created_at", "last_login",
         ])
         yield output.getvalue()
@@ -117,6 +117,7 @@ async def export_users_csv(
         for u in users:
             writer.writerow([
                 u.id, u.email, u.full_name, u.company_name, u.license_number,
+                _safe_getattr(u, "mobile"),
                 _safe_getattr(u, "is_active", True),
                 _safe_getattr(u, "is_admin", False),
                 _safe_getattr(u, "token_balance", 0),
@@ -155,17 +156,27 @@ async def get_user_detail(
     if user.db_schema:
         try:
             result = await db.execute(
-                text(f'SELECT count(*) FROM "{user.db_schema}".projects')
+                text("""
+                    SELECT count(*) FROM information_schema.tables
+                    WHERE table_schema = :schema AND table_name = 'projects'
+                """),
+                {"schema": user.db_schema},
             )
-            projects_count = result.scalar() or 0
-        except Exception:
-            pass
+            has_table = (result.scalar() or 0) > 0
+            if has_table:
+                result = await db.execute(
+                    text(f'SELECT count(*) FROM "{user.db_schema}".projects')
+                )
+                projects_count = result.scalar() or 0
+        except Exception as e:
+            logger.warning("Failed to get projects count for schema %s: %s", user.db_schema, e)
+            await db.rollback()
     user_data["projects_count"] = projects_count
 
     # Sites
-    try:
-        from app.models.site import Site
+    from app.models.site import Site
 
+    try:
         result = await db.execute(
             select(Site).where(Site.user_id == user_id).order_by(Site.created_at.desc()).limit(20)
         )
@@ -175,19 +186,21 @@ async def get_user_detail(
                 "id": str(s.id),
                 "name": s.name,
                 "domain": s.domain,
+                "deployed_url": s.deployed_url,
                 "status": s.status,
                 "is_multipage": s.is_multipage,
                 "created_at": _serialize_datetime(s.created_at),
             }
             for s in sites
         ]
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch sites for user %s: %s", user_id, e)
         user_data["sites"] = []
 
     # Domains
-    try:
-        from app.models.domain import Domain
+    from app.models.domain import Domain
 
+    try:
         result = await db.execute(
             select(Domain).where(Domain.user_id == user_id).order_by(Domain.created_at.desc()).limit(20)
         )
@@ -202,13 +215,14 @@ async def get_user_detail(
             }
             for d in domains
         ]
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch domains for user %s: %s", user_id, e)
         user_data["domains"] = []
 
     # Recent token transactions
-    try:
-        from app.models.token_transaction import TokenTransaction
+    from app.models.token_transaction import TokenTransaction
 
+    try:
         result = await db.execute(
             select(TokenTransaction)
             .where(TokenTransaction.user_id == user_id)
@@ -227,7 +241,8 @@ async def get_user_detail(
             }
             for t in txns
         ]
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch token transactions for user %s: %s", user_id, e)
         user_data["token_transactions"] = []
 
     # Recent login events
@@ -249,7 +264,8 @@ async def get_user_detail(
             }
             for e in events
         ]
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to fetch login events for user %s: %s", user_id, e)
         user_data["login_events"] = []
 
     return user_data
@@ -615,7 +631,10 @@ async def admin_reset_password(
     await db.execute(
         update(User)
         .where(User.id == user_id)
-        .values(hashed_password=hash_password(temp_password))
+        .values(
+            hashed_password=hash_password(temp_password),
+            force_password_reset=True,
+        )
     )
     await db.commit()
 

@@ -75,6 +75,7 @@ export default function UsersListPage() {
         { key: 'license_number', label: 'Licence', render: (v, row) => (
             <span className="admin-license">{v || row.licence_number || '—'}</span>
         )},
+        { key: 'mobile', label: 'Mobile', render: v => v || '—' },
         { key: 'token_balance', label: 'Tokens', render: (v, row) => v ?? row.tokens ?? '—' },
         { key: 'is_active', label: 'Status', render: v => (
             <StatusBadge status={v !== false ? 'active' : 'disabled'} size="sm" />

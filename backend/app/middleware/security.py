@@ -18,6 +18,7 @@ SECURITY_HEADERS = [
     (b"x-xss-protection", b"1; mode=block"),
     (b"referrer-policy", b"strict-origin-when-cross-origin"),
     (b"permissions-policy", b"camera=(), microphone=(), geolocation=()"),
+    (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload"),
 ]
 
 
@@ -32,9 +33,12 @@ def _sanitize_dict(data: dict) -> dict:
         "currentCss",
         "currentJs",
         "elementHtml",
+        "contextBefore",
+        "contextAfter",
         "html",
         "css",
         "js",
+        "metadata",
     }
     for key, value in data.items():
         if isinstance(value, str):
@@ -106,7 +110,8 @@ class SecurityHeadersMiddleware:
 
                     full_body = b"".join(body_parts)
                     if len(full_body) > MAX_REQUEST_SIZE:
-                        return {"type": "http.request", "body": full_body}
+                        # Body exceeds limit even without Content-Length header
+                        return {"type": "http.request", "body": b'{"detail":"Request body too large"}'}
 
                     if full_body:
                         try:

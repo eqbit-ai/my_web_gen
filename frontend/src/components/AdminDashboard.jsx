@@ -24,6 +24,7 @@ import {
     adminGetAnnouncements, adminCreateAnnouncement, adminUpdateAnnouncement, adminDeleteAnnouncement,
     adminGetPrompts, adminSavePrompt, adminPublishPrompt,
     adminGetGrowthAnalytics, adminGetGenerationStats, adminGetTokenConsumption,
+    adminGetTokenRequests, adminReviewTokenRequest,
 } from '../services/adminApi';
 
 /* ─── Design Tokens ─── */
@@ -742,6 +743,31 @@ function TokensPage() {
     const [grantReason, setGrantReason] = useState('');
     const [granting, setGranting] = useState(false);
 
+    // Token requests
+    const [tokenRequests, setTokenRequests] = useState([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+    const [reviewingId, setReviewingId] = useState(null);
+
+    const loadRequests = useCallback(async () => {
+        setRequestsLoading(true);
+        try {
+            const res = await adminGetTokenRequests('pending');
+            setTokenRequests(res?.requests || []);
+        } catch {}
+        setRequestsLoading(false);
+    }, []);
+    useEffect(() => { loadRequests(); }, [loadRequests]);
+
+    const handleReview = async (reqId, action, amount) => {
+        setReviewingId(reqId);
+        try {
+            await adminReviewTokenRequest(reqId, action, '', action === 'approve' ? amount : null);
+            loadRequests();
+            reload();
+        } catch {}
+        setReviewingId(null);
+    };
+
     const transactions = txData?.transactions || txData?.items || [];
     const total = txData?.total || transactions.length;
     const expiringList = expiring?.tokens || expiring?.items || (Array.isArray(expiring) ? expiring : []);
@@ -807,6 +833,45 @@ function TokensPage() {
                     <button type="submit" style={btnStyle} disabled={granting}><Plus size={14} /> {granting ? 'Granting...' : 'Grant'}</button>
                 </form>
             </div>
+
+            {/* Token Requests from Users */}
+            {tokenRequests.length > 0 && (
+                <div style={{ ...cardStyle, marginBottom: 24, borderColor: T.warning, borderWidth: 1 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: T.warning, marginTop: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Bell size={16} /> Token Requests ({tokenRequests.length} pending)
+                    </h3>
+                    {tokenRequests.map(r => (
+                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${T.border}`, gap: 16 }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ color: T.text, fontSize: 13, fontWeight: 600 }}>{r.user_name || r.user_email}</div>
+                                <div style={{ color: T.muted, fontSize: 12 }}>
+                                    Requesting <span style={{ color: T.accent, fontWeight: 600 }}>{(r.amount || 0).toLocaleString()}</span> tokens
+                                    {r.reason && <> — {r.reason}</>}
+                                </div>
+                                <div style={{ color: T.muted, fontSize: 11 }}>
+                                    Current balance: {(r.user_balance || 0).toLocaleString()} | {formatDate(r.created_at)}
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <button
+                                    onClick={() => handleReview(r.id, 'approve', r.amount)}
+                                    disabled={reviewingId === r.id}
+                                    style={{ ...btnStyle, background: T.success, color: '#000', padding: '6px 12px', fontSize: 12 }}
+                                >
+                                    <Check size={12} /> Approve
+                                </button>
+                                <button
+                                    onClick={() => handleReview(r.id, 'reject')}
+                                    disabled={reviewingId === r.id}
+                                    style={{ ...btnGhost, border: `1px solid ${T.danger}`, color: T.danger, padding: '6px 12px', fontSize: 12 }}
+                                >
+                                    <X size={12} /> Reject
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

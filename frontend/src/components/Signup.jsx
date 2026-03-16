@@ -8,6 +8,7 @@ const Signup = () => {
     const [formData, setFormData] = useState({
         companyName: '',
         licenseNumber: '',
+        mobile: '',
         fullName: '',
         email: '',
         password: '',
@@ -41,8 +42,9 @@ const Signup = () => {
                 email: formData.email,
                 password: formData.password,
                 full_name: formData.fullName,
-                company_name: formData.companyName,
-                license_number: formData.licenseNumber,
+                company_name: formData.companyName || undefined,
+                license_number: formData.licenseNumber || undefined,
+                mobile: formData.mobile || undefined,
             });
             navigate('/dashboard');
         } catch (err) {
@@ -83,22 +85,31 @@ const Signup = () => {
                             </h3>
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="companyName">Company Name <span className="required">*</span></label>
+                                    <label htmlFor="companyName">Company Name</label>
                                     <div className="input-wrapper">
                                         <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
                                         </svg>
-                                        <input id="companyName" name="companyName" type="text" value={formData.companyName} onChange={handleChange} placeholder="Your company name" required />
+                                        <input id="companyName" name="companyName" type="text" value={formData.companyName} onChange={handleChange} placeholder="Your company name (optional)" />
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="licenseNumber">License Number <span className="required">*</span></label>
+                                    <label htmlFor="licenseNumber">License Number</label>
                                     <div className="input-wrapper">
                                         <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>
                                         </svg>
-                                        <input id="licenseNumber" name="licenseNumber" type="text" value={formData.licenseNumber} onChange={handleChange} placeholder="e.g. MFZ-12345" required />
+                                        <input id="licenseNumber" name="licenseNumber" type="text" value={formData.licenseNumber} onChange={handleChange} placeholder="e.g. MFZ-12345 (optional)" />
                                     </div>
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="mobile">Mobile Number</label>
+                                <div className="input-wrapper">
+                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                                    </svg>
+                                    <input id="mobile" name="mobile" type="tel" value={formData.mobile} onChange={handleChange} placeholder="+971 50 123 4567 (optional)" />
                                 </div>
                             </div>
                         </div>

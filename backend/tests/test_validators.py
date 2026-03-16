@@ -41,8 +41,8 @@ def test_validate_html_minimum_length():
 
 
 def test_validate_html_maximum_length():
-    """HTML longer than 50000 chars raises ValueError."""
-    huge_html = _make_html(60000)
+    """HTML longer than 150000 chars raises ValueError."""
+    huge_html = _make_html(160000)
     with pytest.raises(ValueError, match="too large"):
         validate_html(huge_html)
 
@@ -99,11 +99,11 @@ def test_validate_css_valid_passes():
     assert "--primary" in result
 
 
-def test_validate_css_strips_aos_rules():
-    """AOS-related rules are stripped from CSS."""
+def test_validate_css_preserves_aos_rules():
+    """AOS-related rules are preserved in CSS (no longer stripped)."""
     css = _make_css(500) + "\n[data-aos] { opacity: 0; }\n"
     result = validate_css(css)
-    assert "[data-aos]" not in result
+    assert "[data-aos]" in result
 
 
 # ---------------------------------------------------------------------------
@@ -133,8 +133,14 @@ def test_validate_js_strips_markdown_fences():
 
 
 def test_validate_js_maximum_length():
-    """JS longer than 20000 chars raises ValueError."""
-    huge_js = "x" * 25000
+    """JS longer than 50000 chars raises ValueError; under that, comments are stripped to reduce size."""
+    # Under 50k: should gracefully truncate by stripping comments, not raise
+    moderate_js = "x" * 25000
+    result = validate_js(moderate_js)
+    assert len(result) <= 50000
+
+    # Over 50k: should raise ValueError
+    huge_js = "x" * 55000
     with pytest.raises(ValueError, match="too large"):
         validate_js(huge_js)
 

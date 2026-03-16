@@ -24,4 +24,3 @@ async def test_deep_health_check_returns_all_checks(client):
     assert "api" in data["checks"]
     assert data["checks"]["api"] == "ok"
     assert "inflight_requests" in data
-    assert "circuits" in data

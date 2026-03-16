@@ -29,6 +29,11 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
+        if (data.force_password_reset) {
+            localStorage.setItem('force_password_reset', 'true');
+        } else {
+            localStorage.removeItem('force_password_reset');
+        }
         return data;
     };
 

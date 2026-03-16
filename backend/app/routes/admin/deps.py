@@ -40,6 +40,7 @@ def _user_to_dict(user) -> dict:
         "full_name": user.full_name,
         "company_name": user.company_name,
         "license_number": user.license_number,
+        "mobile": _safe_getattr(user, "mobile"),
         "db_schema": user.db_schema,
         "created_at": _safe_getattr(user, "created_at"),
         "last_login": _safe_getattr(user, "last_login"),

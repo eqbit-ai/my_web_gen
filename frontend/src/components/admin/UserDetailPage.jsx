@@ -43,20 +43,31 @@ export default function UserDetailPage() {
 
     useEffect(() => { load(); }, [load]);
 
+    const [actionMsg, setActionMsg] = useState(null);
+
     const handleAction = async (action) => {
         setActionLoading(true);
+        setActionMsg(null);
         try {
-            if (action === 'disable') await adminDisableUser(id);
-            else if (action === 'enable') await adminEnableUser(id);
-            else if (action === 'reset-password') await adminResetPassword(id);
-            else if (action === 'verify-licence') await adminVerifyLicence(id, true);
-            else if (action === 'impersonate') {
-                const result = await adminImpersonateUser(id);
+            let result;
+            if (action === 'disable') {
+                result = await adminDisableUser(id);
+                setActionMsg({ type: 'success', text: result?.message || 'User disabled' });
+            } else if (action === 'enable') {
+                result = await adminEnableUser(id);
+                setActionMsg({ type: 'success', text: result?.message || 'User enabled' });
+            } else if (action === 'reset-password') {
+                result = await adminResetPassword(id);
+                const tempPwd = result?.temporary_password;
+                setActionMsg({ type: 'success', text: tempPwd ? `Password reset. Temporary password: ${tempPwd}` : (result?.message || 'Password reset') });
+            } else if (action === 'verify-licence') {
+                result = await adminVerifyLicence(id, true);
+                setActionMsg({ type: 'success', text: result?.message || 'Licence verified' });
+            } else if (action === 'impersonate') {
+                result = await adminImpersonateUser(id);
                 if (result?.token) {
-                    // Save admin token so we can switch back
                     const adminToken = localStorage.getItem('token');
                     localStorage.setItem('admin_token_backup', adminToken);
-                    // Switch to impersonated user's token
                     localStorage.setItem('token', result.token);
                     localStorage.setItem('impersonating', JSON.stringify({
                         userId: id,
@@ -64,17 +75,18 @@ export default function UserDetailPage() {
                         readOnly: result.read_only,
                         expiresIn: result.expires_in_minutes,
                     }));
-                    // Redirect to dashboard as the impersonated user
                     window.location.href = '/dashboard';
                     return;
                 }
-            }
-            else if (action === 'grant' && grantAmount) {
-                await adminGrantTokens(id, parseInt(grantAmount));
+            } else if (action === 'grant' && grantAmount) {
+                result = await adminGrantTokens(id, parseInt(grantAmount));
+                setActionMsg({ type: 'success', text: result?.message || `Granted ${grantAmount} tokens` });
                 setGrantAmount('');
             }
             load();
-        } catch {}
+        } catch (e) {
+            setActionMsg({ type: 'error', text: e.message || 'Action failed' });
+        }
         setActionLoading(false);
     };
 
@@ -82,8 +94,8 @@ export default function UserDetailPage() {
     if (error) return <div className="admin-alert admin-alert-error"><span>{error}</span><button onClick={load}>Retry</button></div>;
     if (!user) return <div className="admin-empty">User not found</div>;
 
-    const auditLogs = audit?.items || audit?.logs || (Array.isArray(audit) ? audit : []);
-    const loginList = logins?.items || logins?.logins || (Array.isArray(logins) ? logins : []);
+    const auditLogs = audit?.audit_logs || audit?.items || audit?.logs || (Array.isArray(audit) ? audit : []);
+    const loginList = logins?.login_events || logins?.items || logins?.logins || (Array.isArray(logins) ? logins : []);
 
     const tabs = ['overview', 'sites', 'tokens', 'logins', 'audit'];
 
@@ -137,6 +149,20 @@ export default function UserDetailPage() {
                         </button>
                     </div>
                 </div>
+                {actionMsg && (
+                    <div style={{
+                        marginTop: 12,
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        background: actionMsg.type === 'error' ? 'rgba(248,113,113,0.15)' : 'rgba(52,211,153,0.15)',
+                        color: actionMsg.type === 'error' ? T.danger : T.success,
+                        border: `1px solid ${actionMsg.type === 'error' ? 'rgba(248,113,113,0.3)' : 'rgba(52,211,153,0.3)'}`,
+                        wordBreak: 'break-all',
+                    }}>
+                        {actionMsg.text}
+                    </div>
+                )}
             </div>
 
             {/* Tabs */}
@@ -171,15 +197,20 @@ export default function UserDetailPage() {
             {tab === 'sites' && (
                 <div className="admin-card">
                     <div className="admin-card-title">User Sites</div>
-                    {user.sites && (Array.isArray(user.sites) ? user.sites : []).length > 0 ? (
+                    {user.sites && user.sites.length > 0 ? (
                         <AdminTable
                             columns={[
-                                { key: 'id', label: 'ID' },
-                                { key: 'domain', label: 'Domain', render: v => v || '—' },
+                                { key: 'name', label: 'Name' },
+                                { key: 'deployed_url', label: 'URL', render: v => v ? (
+                                    <a href={v} target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'none', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                                        {v.replace(/^https?:\/\//, '').slice(0, 50)}
+                                    </a>
+                                ) : '—' },
                                 { key: 'status', label: 'Status', render: v => <StatusBadge status={v} size="sm" /> },
+                                { key: 'is_multipage', label: 'Multi', render: v => v ? 'Yes' : 'No' },
                                 { key: 'created_at', label: 'Created', render: v => formatDate(v) },
                             ]}
-                            data={user.sites || []}
+                            data={user.sites}
                         />
                     ) : (
                         <div className="admin-empty">No sites for this user</div>
@@ -193,23 +224,46 @@ export default function UserDetailPage() {
                     <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16 }}>
                         <div className="admin-stat-card admin-stat-accent-blue">
                             <div className="admin-stat-body">
-                                <div className="admin-stat-value">{user.token_balance ?? user.tokens ?? '—'}</div>
+                                <div className="admin-stat-value">{(user.token_balance ?? 0).toLocaleString()}</div>
                                 <div className="admin-stat-label">Current Balance</div>
                             </div>
                         </div>
                         <div className="admin-stat-card admin-stat-accent-green">
                             <div className="admin-stat-body">
-                                <div className="admin-stat-value">{user.total_granted ?? '—'}</div>
+                                <div className="admin-stat-value">{((user.token_balance ?? 0) + (user.tokens_used ?? 0)).toLocaleString()}</div>
                                 <div className="admin-stat-label">Total Granted</div>
                             </div>
                         </div>
                         <div className="admin-stat-card admin-stat-accent-orange">
                             <div className="admin-stat-body">
-                                <div className="admin-stat-value">{user.total_consumed ?? '—'}</div>
+                                <div className="admin-stat-value">{(user.tokens_used ?? 0).toLocaleString()}</div>
                                 <div className="admin-stat-label">Total Consumed</div>
                             </div>
                         </div>
                     </div>
+                    {user.token_transactions && user.token_transactions.length > 0 && (
+                        <>
+                            <div className="admin-card-title" style={{ marginTop: 16 }}>Recent Transactions</div>
+                            <AdminTable
+                                columns={[
+                                    { key: 'created_at', label: 'Time', render: v => formatDate(v) },
+                                    { key: 'type', label: 'Type', render: v => <StatusBadge status={v === 'grant' ? 'active' : 'warning'} label={v} size="sm" /> },
+                                    { key: 'amount', label: 'Amount', render: v => (
+                                        <span style={{ color: v > 0 ? T.success : T.danger, fontWeight: 600 }}>
+                                            {v > 0 ? '+' : ''}{v?.toLocaleString()}
+                                        </span>
+                                    )},
+                                    { key: 'balance_after', label: 'Balance After', render: v => v?.toLocaleString() ?? '—' },
+                                    { key: 'reason', label: 'Reason', render: v => (
+                                        <span style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={v}>
+                                            {v || '—'}
+                                        </span>
+                                    )},
+                                ]}
+                                data={user.token_transactions}
+                            />
+                        </>
+                    )}
                 </div>
             )}
 

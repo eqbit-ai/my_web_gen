@@ -3,11 +3,16 @@ Health check routes — used by ALB target group health checks.
 """
 
 import asyncio
+import os
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import StreamingResponse
 
+from app.utils.auth import decode_access_token
+
 router = APIRouter()
+_security = HTTPBearer(auto_error=False)
 
 
 @router.get("/health/sse-test")
@@ -35,8 +40,19 @@ async def health_check():
 
 
 @router.get("/health/deep")
-async def deep_health_check():
-    """Deep health check — verifies Redis, DB, and LLM circuit breakers."""
+async def deep_health_check(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_security),
+):
+    """Deep health check — requires admin auth. Returns service status details."""
+    # Require admin auth in production; allow unauthenticated in dev for convenience
+    is_dev = os.getenv("DEV_MODE", "false").lower() == "true"
+    if not is_dev:
+        if not credentials:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        token_data = decode_access_token(credentials.credentials)
+        if not token_data or not token_data.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+
     from app.middleware.request_tracker import get_inflight_count, is_shutting_down
     from app.utils.circuit_breaker import get_circuit_status
 
@@ -48,8 +64,8 @@ async def deep_health_check():
         r = await get_redis()
         await r.ping()
         checks["redis"] = "ok"
-    except Exception as e:
-        checks["redis"] = f"error: {e}"
+    except Exception:
+        checks["redis"] = "error"
 
     try:
         from sqlalchemy import text
@@ -59,8 +75,8 @@ async def deep_health_check():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         checks["database"] = "ok"
-    except Exception as e:
-        checks["database"] = f"error: {e}"
+    except Exception:
+        checks["database"] = "error"
 
     circuits = get_circuit_status()
     for name, info in circuits.items():
@@ -72,5 +88,4 @@ async def deep_health_check():
         "status": "draining" if is_shutting_down() else ("ok" if all_ok else "degraded"),
         "checks": checks,
         "inflight_requests": get_inflight_count(),
-        "circuits": circuits,
     }

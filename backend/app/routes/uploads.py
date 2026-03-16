@@ -2,9 +2,11 @@
 Upload routes — file upload, list, delete, download-from-URL, and image transforms.
 """
 
+import ipaddress
 import mimetypes
 import uuid
 from io import BytesIO
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -182,8 +184,29 @@ async def delete_upload(filename: str, user: dict = Depends(require_auth)):
 @router.post("/from-url")
 async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth)):
     """Download an image from a URL and save it locally."""
+    # SSRF protection: validate URL before fetching
     try:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        parsed = urlparse(req.url)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Only HTTP/HTTPS URLs are allowed")
+
+    hostname = parsed.hostname or ""
+    # Block private/internal IPs and metadata endpoints
+    try:
+        addr = ipaddress.ip_address(hostname)
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise HTTPException(status_code=400, detail="URLs pointing to internal networks are not allowed")
+    except ValueError:
+        # It's a hostname, not an IP — block known internal hostnames
+        blocked = {"localhost", "127.0.0.1", "0.0.0.0", "metadata.google.internal", "169.254.169.254"}
+        if hostname.lower() in blocked or hostname.endswith(".internal") or hostname.endswith(".local"):
+            raise HTTPException(status_code=400, detail="URLs pointing to internal networks are not allowed")
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=False, max_redirects=0) as client:
             resp = await client.get(req.url)
             resp.raise_for_status()
     except httpx.HTTPError as e:

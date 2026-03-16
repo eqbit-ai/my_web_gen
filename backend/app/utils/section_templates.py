@@ -1,6 +1,6 @@
 """
 High-quality HTML reference snippets for each section type.
-These serve as per-section quality references for Claude during generation.
+These serve as per-section quality references during generation.
 Each snippet uses Tailwind CSS utility classes and {{IMG:description}} placeholders.
 """
 
