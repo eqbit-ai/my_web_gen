@@ -417,6 +417,7 @@ async def review_token_request(
     token_req.reviewed_by = admin.get("user_id")
     token_req.reviewed_at = now
 
+    grant_amount = 0
     if req.action == "approve":
         grant_amount = req.grant_amount if req.grant_amount and req.grant_amount > 0 else token_req.amount
 
@@ -448,12 +449,22 @@ async def review_token_request(
     user_result = await db.execute(select(User.email).where(User.id == token_req.user_id))
     email = user_result.scalar() or ""
 
+    granted = grant_amount
     log_event_bg(
         user_id=str(admin.get("user_id")),
         action=f"token_request_{req.action}",
         resource_type="token_request",
         resource_id=request_id,
-        details={"user_email": email, "amount": token_req.amount, "action": req.action},
+        details={
+            "user_email": email,
+            "requested_amount": token_req.amount,
+            "granted_amount": granted,
+            "action": req.action,
+            "admin_note": req.admin_note,
+        },
     )
 
-    return {"message": f"Token request {req.action}d for {email}"}
+    msg = f"Token request {req.action}d for {email}"
+    if req.action == "approve":
+        msg += f" — granted {granted:,} tokens"
+    return {"message": msg}
