@@ -22,17 +22,17 @@ from app.database import Base
 # Import all models so Alembic can detect schema changes
 try:
     from app.models import (  # noqa: F401
-        User,
+        Announcement,
         AuditLog,
+        Domain,
+        GenerationLog,
+        LoginEvent,
         Media,
         PasswordResetToken,
-        GenerationLog,
-        Site,
-        Domain,
-        TokenTransaction,
-        Announcement,
         PromptVersion,
-        LoginEvent,
+        Site,
+        TokenTransaction,
+        User,
     )
 except ImportError:
     pass

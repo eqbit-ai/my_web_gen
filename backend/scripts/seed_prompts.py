@@ -4,28 +4,28 @@ Run: cd backend && python -m scripts.seed_prompts
 """
 
 import asyncio
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import engine, get_db, async_session
-from app.models.prompt_version import PromptVersion
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
+from app.database import async_session
+from app.models.prompt_version import PromptVersion
 
 # Import prompts from codebase
 from app.utils.prompt_pipeline import (
-    PROMPT_ENHANCE_SYSTEM,
-    PLAN_SYSTEM_PROMPT,
-    TEMPLATE_CUSTOMIZE_PROMPT,
     ADD_PAGE_HTML_PROMPT,
-    JS_GEN_SYSTEM_PROMPT,
-    ITERATION_SYSTEM_PROMPT,
-    COMPONENT_ROUTER_PROMPT,
-    COMPONENT_EDIT_PROMPT,
-    STYLE_EDIT_PROMPT,
     APPEND_SECTION_PROMPT,
+    COMPONENT_EDIT_PROMPT,
+    COMPONENT_ROUTER_PROMPT,
+    ITERATION_SYSTEM_PROMPT,
+    JS_GEN_SYSTEM_PROMPT,
+    PLAN_SYSTEM_PROMPT,
+    PROMPT_ENHANCE_SYSTEM,
+    STYLE_EDIT_PROMPT,
+    TEMPLATE_CUSTOMIZE_PROMPT,
 )
 
 PROMPTS = {

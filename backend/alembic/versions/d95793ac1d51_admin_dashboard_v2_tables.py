@@ -1,18 +1,19 @@
 """admin_dashboard_v2_tables
 
 Revision ID: d95793ac1d51
-Revises: 
+Revises:
 Create Date: 2026-03-13 16:11:43.010080
 """
-from typing import Sequence, Union
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
 
 revision: str = 'd95793ac1d51'
-down_revision: Union[str, None] = 'd8d84517254c'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'd8d84517254c'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 def _column_exists(connection, table_name, column_name, schema="public"):
     result = connection.execute(

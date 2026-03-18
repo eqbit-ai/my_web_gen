@@ -1,6 +1,6 @@
 import config from '../config';
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Rocket, Check, Loader2, ExternalLink, Copy, AlertCircle, Globe, Search, ShoppingCart, Zap, Shield, ArrowRight, Sparkles, CheckCircle2, Clock, ChevronDown } from 'lucide-react';
+import { X, Rocket, Check, Loader2, ExternalLink, Copy, AlertCircle, Globe, Search, Zap, Shield, ArrowRight, Sparkles, CheckCircle2, ChevronDown } from 'lucide-react';
 import { searchDomains, purchaseDomain } from '../services/api';
 
 const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId, onDeployed }) => {

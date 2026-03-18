@@ -6,7 +6,7 @@ import csv
 import io
 import logging
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta  # noqa: F811
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -463,10 +463,32 @@ async def bulk_user_action(
         )
         return {"message": f"Enabled {len(req.user_ids)} users"}
 
+    elif req.action == "approve":
+        await db.execute(
+            update(User)
+            .where(User.id.in_(req.user_ids))
+            .values(
+                is_approved=True,
+                approved_at=datetime.now(UTC),
+                approved_by=admin.get("user_id"),
+                token_balance=1_000_000,
+                is_active=True,
+            )
+        )
+        await db.commit()
+
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_approve_users",
+            resource_type="user",
+            details={"user_ids": req.user_ids},
+        )
+        return {"message": f"Approved {len(req.user_ids)} users with 1,000,000 tokens each"}
+
     else:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown action '{req.action}'. Supported: grant_tokens, disable, enable",
+            detail=f"Unknown action '{req.action}'. Supported: grant_tokens, disable, enable, approve",
         )
 
 
@@ -506,6 +528,49 @@ async def set_licence_verified(
     )
 
     return {"message": f"Licence verified={req.licence_verified} for {user.email}"}
+
+
+@router.post("/users/{user_id}/approve", response_model=MessageResponse)
+async def approve_user(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Approve a user account — grants 1M tokens and unlocks the app."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if _safe_getattr(user, "is_approved", False):
+        raise HTTPException(status_code=400, detail="User is already approved")
+
+    try:
+        await db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(
+                is_approved=True,
+                approved_at=datetime.now(UTC),
+                approved_by=admin.get("user_id"),
+                token_balance=1_000_000,
+                is_active=True,
+            )
+        )
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to approve user: {e}") from e
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="approve_user",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"email": user.email, "tokens_granted": 1_000_000},
+    )
+
+    return {"message": f"User {user.email} has been approved with 1,000,000 tokens"}
 
 
 @router.post("/users/{user_id}/disable", response_model=MessageResponse)

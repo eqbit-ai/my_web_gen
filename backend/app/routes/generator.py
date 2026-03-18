@@ -57,6 +57,8 @@ from app.utils.prompt_pipeline import (
     parse_single_code_block,
     summarize_html,
 )
+from app.utils.redis_client import get_redis as get_redis_client
+from app.utils.redis_client import update_job
 from app.utils.section_parser import inject_section_ids, parse_sections, replace_section_html
 from app.utils.session_store import (
     delete_session as redis_delete_session,
@@ -70,7 +72,6 @@ from app.utils.session_store import (
 from app.utils.session_store import (
     session_exists as redis_session_exists,
 )
-from app.utils.redis_client import get_redis as get_redis_client, update_job
 from app.utils.token_tracker import check_budget, deduct_tokens
 
 logger = logging.getLogger(__name__)
@@ -150,13 +151,16 @@ def _log_generation_bg(
 ):
     """Fire-and-forget GenerationLog insert for admin dashboard."""
     import traceback as _tb
-    from datetime import UTC as _UTC, datetime as _dt
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
     from app.database import async_session as _async_session
     from app.models.generation_log import GenerationLog
 
     async def _insert():
         try:
             from sqlalchemy import update as _update
+
             from app.models.user import User as _User
 
             async with _async_session() as session:
@@ -218,7 +222,7 @@ DEBUG_DIR = os.path.join(
 def _find_best_reference_template(niche_key: str) -> str | None:
     """Find the closest matching template for a detected niche.
     Returns the template HTML+CSS string, or None if no match."""
-    from app.routes.templates import _load_template_file, TEMPLATE_CATALOG
+    from app.routes.templates import TEMPLATE_CATALOG, _load_template_file
 
     # Direct match: niche_key matches a template ID
     template_ids = [t["id"] for t in TEMPLATE_CATALOG]

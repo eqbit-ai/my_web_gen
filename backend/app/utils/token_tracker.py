@@ -2,7 +2,9 @@
 
 import logging
 import uuid
+
 from sqlalchemy import text
+
 from app.database import async_session
 
 logger = logging.getLogger(__name__)

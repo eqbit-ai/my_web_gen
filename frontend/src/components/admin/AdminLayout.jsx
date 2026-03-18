@@ -3,10 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     Activity, Globe, AlertTriangle, Clock, Shield, ShoppingCart,
-    Users, Coins, Receipt, Database, Timer,
+    Users, Receipt, Database, Timer,
     FileText, ClipboardList, Bell, Terminal, Server,
     TrendingUp, BarChart3, PieChart,
-    ChevronDown, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Menu, X,
+    ChevronDown, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Menu,
 } from 'lucide-react';
 
 const NAV_SECTIONS = [

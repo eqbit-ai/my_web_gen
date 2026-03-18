@@ -17,6 +17,7 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
 const ForceResetPassword = lazy(() => import('./components/ForceResetPassword'));
+const PendingApproval = lazy(() => import('./components/PendingApproval'));
 
 // Admin — Layout + Pages
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
@@ -43,12 +44,16 @@ const GrowthChartPage = lazy(() => import('./components/admin/GrowthChartPage'))
 const GenerationStatsPage = lazy(() => import('./components/admin/GenerationStatsPage'));
 const TokenTrendPage = lazy(() => import('./components/admin/TokenTrendPage'));
 
-function ProtectedRoute({ children, allowForceReset }) {
+function ProtectedRoute({ children, allowForceReset, allowPending }) {
   const { user, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh' }} />;
   if (!user) return <Navigate to="/login" replace />;
   if (!allowForceReset && localStorage.getItem('force_password_reset') === 'true') {
     return <Navigate to="/force-reset-password" replace />;
+  }
+  // Redirect unapproved users (except admins) to pending page
+  if (!allowPending && user.is_approved === false && !user.is_admin) {
+    return <Navigate to="/pending-approval" replace />;
   }
   return children;
 }
@@ -105,7 +110,7 @@ function PageTransition({ children }) {
 
 function AppLayout() {
   const location = useLocation();
-  const hideNavbar = location.pathname === '/generator' || location.pathname === '/dashboard' || location.pathname === '/force-reset-password' || location.pathname.startsWith('/admin');
+  const hideNavbar = location.pathname === '/generator' || location.pathname === '/dashboard' || location.pathname === '/force-reset-password' || location.pathname === '/pending-approval' || location.pathname.startsWith('/admin');
 
   return (
     <div className="app">
@@ -118,6 +123,7 @@ function AppLayout() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/force-reset-password" element={<ProtectedRoute allowForceReset><ForceResetPassword /></ProtectedRoute>} />
+          <Route path="/pending-approval" element={<ProtectedRoute allowPending><PendingApproval /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/generator" element={<ProtectedRoute><WebsiteGenerator /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

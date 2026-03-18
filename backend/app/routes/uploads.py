@@ -188,7 +188,7 @@ async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth
     try:
         parsed = urlparse(req.url)
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid URL")
+        raise HTTPException(status_code=400, detail="Invalid URL") from None
 
     if parsed.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="Only HTTP/HTTPS URLs are allowed")
@@ -203,7 +203,7 @@ async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth
         # It's a hostname, not an IP — block known internal hostnames
         blocked = {"localhost", "127.0.0.1", "0.0.0.0", "metadata.google.internal", "169.254.169.254"}
         if hostname.lower() in blocked or hostname.endswith(".internal") or hostname.endswith(".local"):
-            raise HTTPException(status_code=400, detail="URLs pointing to internal networks are not allowed")
+            raise HTTPException(status_code=400, detail="URLs pointing to internal networks are not allowed") from None
 
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=False, max_redirects=0) as client:

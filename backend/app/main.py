@@ -35,6 +35,7 @@ from app.routes import auth as auth_routes
 from app.routes import components as component_routes
 from app.routes import deploy as deploy_routes
 from app.routes import dns as dns_routes
+from app.routes import domains as domain_routes
 from app.routes import generator as generator_routes
 from app.routes import health, metrics_route
 from app.routes import images as image_routes
@@ -43,7 +44,6 @@ from app.routes import projects as project_routes
 from app.routes import sections as section_routes
 from app.routes import templates as template_routes
 from app.routes import uploads as upload_routes
-from app.routes import domains as domain_routes
 from app.utils import metrics as app_metrics
 from app.utils.redis_client import close_redis, get_redis
 from app.utils.sentry_setup import init_sentry

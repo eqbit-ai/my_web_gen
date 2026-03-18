@@ -22,6 +22,8 @@ const Login = () => {
             const data = await login(email, password);
             if (data.force_password_reset) {
                 navigate('/force-reset-password');
+            } else if (data.user && data.user.is_approved === false && !data.user.is_admin) {
+                navigate('/pending-approval');
             } else {
                 navigate('/dashboard');
             }

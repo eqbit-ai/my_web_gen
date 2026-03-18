@@ -24,13 +24,18 @@ class User(Base):
     generation_count = Column(Integer, default=0, server_default="0", nullable=False)
 
     # Token budget tracking
-    token_balance = Column(BigInteger, default=1_000_000, server_default="1000000", nullable=False)
+    token_balance = Column(BigInteger, default=0, server_default="0", nullable=False)
     tokens_used = Column(BigInteger, default=0, server_default="0", nullable=False)
 
     # Licence verification
     licence_verified = Column(Boolean, default=False, server_default="false", nullable=False)
     licence_verified_at = Column(DateTime(timezone=True), nullable=True)
     licence_verified_by = Column(Integer, nullable=True)
+
+    # Admin approval — new users start unapproved with 0 tokens
+    is_approved = Column(Boolean, default=False, server_default="false", nullable=False)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    approved_by = Column(Integer, nullable=True)
 
     # Force password reset (set by admin)
     force_password_reset = Column(Boolean, default=False, server_default="false", nullable=False)

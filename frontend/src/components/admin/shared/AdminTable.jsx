@@ -1,11 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const T = {
-    bg: '#0a0a0f', surface: '#12121a', surfaceHover: '#1a1a28', border: '#2a2a3a',
-    text: '#e4e4e7', muted: '#71717a', accent: '#818cf8',
-};
-
 export default function AdminTable({
     columns = [],
     data,
@@ -24,7 +19,7 @@ export default function AdminTable({
     const [sortCol, setSortCol] = useState(null);
     const [sortDir, setSortDir] = useState('asc');
 
-    const rows = data || [];
+    const rows = useMemo(() => data || [], [data]);
 
     const sorted = useMemo(() => {
         if (!sortCol) return rows;

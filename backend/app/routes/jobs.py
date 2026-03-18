@@ -44,7 +44,7 @@ async def submit_job(req: SubmitJobRequest, user: dict = Depends(require_auth)):
     try:
         job_id = await create_job("generate", payload, str(user["user_id"]))
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
     return {
         "jobId": job_id,

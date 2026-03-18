@@ -38,7 +38,7 @@ const Signup = () => {
         }
         setIsLoading(true);
         try {
-            await signup({
+            const data = await signup({
                 email: formData.email,
                 password: formData.password,
                 full_name: formData.fullName,
@@ -46,7 +46,11 @@ const Signup = () => {
                 license_number: formData.licenseNumber || undefined,
                 mobile: formData.mobile || undefined,
             });
-            navigate('/dashboard');
+            if (data.user && data.user.is_approved === false) {
+                navigate('/pending-approval');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -99,7 +103,7 @@ const Signup = () => {
                                         <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>
                                         </svg>
-                                        <input id="licenseNumber" name="licenseNumber" type="text" value={formData.licenseNumber} onChange={handleChange} placeholder="e.g. MFZ-12345 (optional)" />
+                                        <input id="licenseNumber" name="licenseNumber" type="text" value={formData.licenseNumber} onChange={handleChange} placeholder="e.g. 12345 (optional)" />
                                     </div>
                                 </div>
                             </div>
@@ -164,7 +168,7 @@ const Signup = () => {
                             <label className="checkbox-label">
                                 <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
                                 <span className="checkmark" />
-                                <span>I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a></span>
+                                <span>I agree to the <a href="https://www.meydanfz.ae/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a> and <a href="https://www.meydanfz.ae/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></span>
                             </label>
                         </div>
 

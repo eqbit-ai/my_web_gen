@@ -73,9 +73,10 @@ class UserResponse(BaseModel):
     license_number: str | None = None
     mobile: str | None = None
     db_schema: str | None = None
-    token_balance: int = 1_000_000
+    token_balance: int = 0
     tokens_used: int = 0
     is_admin: bool = False
+    is_approved: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -141,6 +142,8 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         license_number=data.license_number,
         mobile=data.mobile,
         db_schema=schema_name,
+        is_approved=False,
+        token_balance=0,
     )
     db.add(user)
     await db.commit()
@@ -168,9 +171,10 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
             license_number=user.license_number,
             mobile=getattr(user, 'mobile', None),
             db_schema=user.db_schema,
-            token_balance=getattr(user, 'token_balance', 1_000_000),
+            token_balance=getattr(user, 'token_balance', 0),
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
+            is_approved=getattr(user, 'is_approved', False),
         ),
     )
 
@@ -240,9 +244,10 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
             license_number=user.license_number,
             mobile=getattr(user, 'mobile', None),
             db_schema=user.db_schema,
-            token_balance=getattr(user, 'token_balance', 1_000_000),
+            token_balance=getattr(user, 'token_balance', 0),
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
+            is_approved=getattr(user, 'is_approved', False),
         ),
         force_password_reset=force_reset,
     )
@@ -276,9 +281,10 @@ async def get_me(
         license_number=user.license_number,
         mobile=getattr(user, 'mobile', None),
         db_schema=user.db_schema,
-        token_balance=getattr(user, 'token_balance', 1_000_000),
+        token_balance=getattr(user, 'token_balance', 0),
         tokens_used=getattr(user, 'tokens_used', 0),
         is_admin=getattr(user, 'is_admin', False),
+        is_approved=getattr(user, 'is_approved', False),
     )
 
 
@@ -287,6 +293,7 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
     """Request a password reset token."""
     import uuid
     from datetime import timedelta
+
     from app.models.password_reset import PasswordResetToken
 
     result = await db.execute(select(User).where(User.email == data.email))

@@ -41,7 +41,7 @@ async def list_token_transactions(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     user_id: int | None = Query(default=None),
-    type: str | None = Query(default=None),
+    token_type: str | None = Query(default=None),
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -51,8 +51,8 @@ async def list_token_transactions(
 
         if user_id:
             query = query.where(TokenTransaction.user_id == user_id)
-        if type:
-            query = query.where(TokenTransaction.type == type)
+        if token_type:
+            query = query.where(TokenTransaction.type == token_type)
 
         count_query = select(func.count()).select_from(query.subquery())
         count_result = await db.execute(count_query)

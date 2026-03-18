@@ -6,7 +6,6 @@ import logging
 import os
 import platform
 import sys
-
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -17,8 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import engine, get_db
 from app.models.announcement import Announcement
 from app.models.audit import AuditLog
-from app.models.user import User
 from app.models.prompt_version import PromptVersion
+from app.models.user import User
 from app.utils.audit_log import log_event_bg
 from app.utils.circuit_breaker import get_circuit_status, reset_circuit
 from app.utils.metrics import get_metrics

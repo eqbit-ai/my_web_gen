@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Search, Download, Users } from 'lucide-react';
+import { RefreshCw, Search, Download } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import { adminGetUsers, adminExportUsers, adminBulkAction } from '../../services/adminApi';
@@ -77,6 +77,9 @@ export default function UsersListPage() {
         )},
         { key: 'mobile', label: 'Mobile', render: v => v || '—' },
         { key: 'token_balance', label: 'Tokens', render: (v, row) => v ?? row.tokens ?? '—' },
+        { key: 'is_approved', label: 'Approved', render: v => (
+            <StatusBadge status={v ? 'active' : 'pending'} label={v ? 'Approved' : 'Pending'} size="sm" />
+        )},
         { key: 'is_active', label: 'Status', render: v => (
             <StatusBadge status={v !== false ? 'active' : 'disabled'} size="sm" />
         )},
@@ -134,6 +137,7 @@ export default function UsersListPage() {
                     <span>{selectedIds.length} selected</span>
                     <select className="admin-input" style={{ width: 'auto' }} value={bulkAction} onChange={e => setBulkAction(e.target.value)}>
                         <option value="">Bulk action...</option>
+                        <option value="approve">Approve</option>
                         <option value="disable">Disable</option>
                         <option value="enable">Enable</option>
                         <option value="verify_licence">Verify Licence</option>

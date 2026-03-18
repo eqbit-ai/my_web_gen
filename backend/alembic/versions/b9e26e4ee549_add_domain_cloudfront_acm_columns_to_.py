@@ -4,15 +4,16 @@ Revision ID: b9e26e4ee549
 Revises: d95793ac1d51
 Create Date: 2026-03-15 12:20:34.010975
 """
-from typing import Sequence, Union
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
 
 revision: str = 'b9e26e4ee549'
-down_revision: Union[str, None] = 'd95793ac1d51'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = 'd95793ac1d51'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 def _column_exists(connection, table_name, column_name, schema="public"):
     result = connection.execute(

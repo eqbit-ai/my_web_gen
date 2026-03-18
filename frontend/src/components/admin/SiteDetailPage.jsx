@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, RotateCcw, ExternalLink } from 'lucide-react';
+import { ArrowLeft, RefreshCw, ExternalLink } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
-import { adminGetSiteDetail, adminRebuildSite } from '../../services/adminApi';
+import { adminGetSiteDetail } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
 
 const T = { bg: '#0a0a0f', surface: '#12121a', border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a' };
@@ -14,8 +14,6 @@ export default function SiteDetailPage() {
     const [site, setSite] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [rebuilding, setRebuilding] = useState(false);
-
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -27,12 +25,6 @@ export default function SiteDetailPage() {
     }, [id]);
 
     useEffect(() => { load(); }, [load]);
-
-    const handleRebuild = async () => {
-        setRebuilding(true);
-        try { await adminRebuildSite(id); load(); } catch {}
-        setRebuilding(false);
-    };
 
     if (loading) {
         return <div className="admin-loading-page"><RefreshCw size={20} className="admin-spinner" /> Loading...</div>;

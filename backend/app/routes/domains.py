@@ -40,6 +40,9 @@ from app.utils.openprovider import (
     get_contact as op_get_contact,
 )
 from app.utils.openprovider import (
+    reassign_domain_contact as op_reassign_contact,
+)
+from app.utils.openprovider import (
     renew_domain as op_renew_domain,
 )
 from app.utils.openprovider import (
@@ -53,9 +56,6 @@ from app.utils.openprovider import (
 )
 from app.utils.openprovider import (
     transfer_lock as op_transfer_lock,
-)
-from app.utils.openprovider import (
-    reassign_domain_contact as op_reassign_contact,
 )
 from app.utils.openprovider import (
     update_contact as op_update_contact,

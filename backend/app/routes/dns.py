@@ -18,7 +18,7 @@ from sqlalchemy import select
 from app.database import async_session
 from app.models.site import Site
 from app.utils.auth import decode_access_token
-from app.utils.route53 import list_records, upsert_record, delete_record
+from app.utils.route53 import delete_record, list_records, upsert_record
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ async def get_dns_records(site_id: str, token_data: dict = Depends(require_auth)
         records = await list_records(site.route53_zone_id)
     except Exception as e:
         logger.error(f"Failed to list DNS records for zone {site.route53_zone_id}: {e}")
-        raise HTTPException(status_code=502, detail="Failed to fetch DNS records from provider")
+        raise HTTPException(status_code=502, detail="Failed to fetch DNS records from provider") from e
 
     # Extract nameservers from the NS records
     ns_records = [r for r in records if r["type"] == "NS"]
@@ -148,7 +148,7 @@ async def create_or_update_dns_record(
         )
     except Exception as e:
         logger.error(f"Failed to upsert DNS record in zone {site.route53_zone_id}: {e}")
-        raise HTTPException(status_code=502, detail="Failed to create/update DNS record")
+        raise HTTPException(status_code=502, detail="Failed to create/update DNS record") from e
 
     return {"record": record}
 
@@ -176,7 +176,7 @@ async def remove_dns_record(
         )
     except Exception as e:
         logger.error(f"Failed to delete DNS record in zone {site.route53_zone_id}: {e}")
-        raise HTTPException(status_code=502, detail="Failed to delete DNS record")
+        raise HTTPException(status_code=502, detail="Failed to delete DNS record") from e
 
     return {"success": True}
 
@@ -191,7 +191,7 @@ async def get_nameservers(site_id: str, token_data: dict = Depends(require_auth)
         records = await list_records(site.route53_zone_id)
     except Exception as e:
         logger.error(f"Failed to fetch nameservers for zone {site.route53_zone_id}: {e}")
-        raise HTTPException(status_code=502, detail="Failed to fetch nameservers from provider")
+        raise HTTPException(status_code=502, detail="Failed to fetch nameservers from provider") from e
 
     ns_records = [r for r in records if r["type"] == "NS"]
     nameservers = []

@@ -28,17 +28,6 @@ const apiPost = async (path, body = {}) => {
     return data;
 };
 
-const apiPut = async (path, body = {}) => {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(body),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || 'Request failed');
-    return data;
-};
-
 const apiPatch = async (path, body = {}) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
         method: 'PATCH',
@@ -199,6 +188,10 @@ export const adminExportUsers = async () => {
 
 export const adminVerifyLicence = async (userId, verified) => {
     return apiPatch(`/admin/users/${userId}/licence`, { licence_verified: verified });
+};
+
+export const adminApproveUser = async (userId) => {
+    return apiPost(`/admin/users/${userId}/approve`);
 };
 
 export const adminDisableUser = async (userId) => {

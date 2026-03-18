@@ -1696,6 +1696,7 @@ const LandingPage = () => {
                     <div className="footer-links">
                         <div className="footer-col"><h4>Platform</h4><a href="#showcase">Generator</a><a href="#how-it-works">How It Works</a></div>
                         <div className="footer-col"><h4>Company</h4><a href="https://meydanfz.ae" target="_blank" rel="noopener noreferrer">Meydan Free Zone</a><a href="mailto:contact@meydanfz.ae">Contact</a></div>
+                        <div className="footer-col"><h4>Legal</h4><a href="https://www.meydanfz.ae/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a><a href="https://www.meydanfz.ae/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></div>
                     </div>
                 </div>
                 <div className="footer-bottom"><p>&copy; {new Date().getFullYear()} Meydan Free Zone. All rights reserved.</p></div>

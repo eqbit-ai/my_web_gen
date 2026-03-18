@@ -6,7 +6,6 @@ import AdminTable from './shared/AdminTable';
 import { adminGetSites } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
 
-const T = { muted: '#71717a', text: '#e4e4e7' };
 
 
 export default function SitesListPage() {

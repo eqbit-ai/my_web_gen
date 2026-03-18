@@ -522,7 +522,7 @@ async def deploy_site(
             logger.debug("Uploaded s3://%s/%s (%d bytes)", bucket, s3_key, len(content_bytes))
         except ClientError as e:
             logger.error("Failed to upload %s: %s", s3_key, e)
-            raise RuntimeError(f"S3 upload failed for {file_path}: {e}")
+            raise RuntimeError(f"S3 upload failed for {file_path}: {e}") from e
 
     # Set bucket policy for public read (if not already set)
     try:

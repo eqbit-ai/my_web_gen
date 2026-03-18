@@ -22,25 +22,25 @@ from app.database import async_session
 from app.models.site import Site
 from app.utils.auth import decode_access_token
 from app.utils.cloudfront_acm import (
-    request_certificate,
     check_certificate_status,
     create_distribution,
-    get_distribution_status,
-    disable_distribution,
-    delete_distribution,
     delete_certificate,
+    delete_distribution,
+    disable_distribution,
+    get_distribution_status,
     get_dns_records,
     invalidate_cache,
+    request_certificate,
 )
 from app.utils.route53 import (
-    create_hosted_zone,
-    delete_hosted_zone,
-    create_alias_record,
-    delete_alias_record,
     create_acm_validation_records,
+    create_alias_record,
+    create_hosted_zone,
+    delete_alias_record,
+    delete_hosted_zone,
     get_nameservers,
 )
-from app.utils.s3_deploy import deploy_site, delete_site, verify_credentials
+from app.utils.s3_deploy import delete_site, deploy_site, verify_credentials
 from app.utils.session_store import get_session
 
 logger = logging.getLogger(__name__)
@@ -150,7 +150,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         )
     except Exception as e:
         logger.error("Deployment failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=502, detail=f"Deployment failed: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Deployment failed: {str(e)}") from e
 
     # 5. Store in database
     page_count = len(pages) if pages else 1
@@ -261,7 +261,7 @@ async def redeploy_website(site_id: str, req: RedeployRequest, user: dict = Depe
         except Exception as e:
             site.deploy_error = str(e)
             await db.commit()
-            raise HTTPException(status_code=502, detail=f"Redeployment failed: {str(e)}")
+            raise HTTPException(status_code=502, detail=f"Redeployment failed: {str(e)}") from e
 
         site.deployed_url = deploy_result["url"]
         site.status = "published"
@@ -490,7 +490,7 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
                 zone_result = await create_hosted_zone(domain)
             except Exception as e:
                 logger.error("Route53 hosted zone creation failed for %s: %s", domain, e)
-                raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}")
+                raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}") from e
             zone_id = zone_result["zone_id"]
             nameservers = zone_result["nameservers"]
             # Persist on Domain record for future reconnects
@@ -527,7 +527,7 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
                         await delete_hosted_zone(zone_id)
                     except Exception:
                         pass
-                raise HTTPException(status_code=502, detail=f"SSL certificate request failed: {e}")
+                raise HTTPException(status_code=502, detail=f"SSL certificate request failed: {e}") from e
             cert_arn = cert_result["arn"]
             validation_records = cert_result.get("validation_records", [])
             # Persist on Domain record

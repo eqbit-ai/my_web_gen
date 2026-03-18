@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Ban, Check, Key, Eye, Coins } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Ban, Check, Key, Eye, Coins, ShieldCheck } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
 import AdminTable from './shared/AdminTable';
 import {
     adminGetUserDetail, adminGetUserAudit, adminGetUserLogins,
     adminDisableUser, adminEnableUser, adminGrantTokens,
     adminResetPassword, adminVerifyLicence, adminImpersonateUser,
+    adminApproveUser,
 } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
 
@@ -60,6 +61,9 @@ export default function UserDetailPage() {
                 result = await adminResetPassword(id);
                 const tempPwd = result?.temporary_password;
                 setActionMsg({ type: 'success', text: tempPwd ? `Password reset. Temporary password: ${tempPwd}` : (result?.message || 'Password reset') });
+            } else if (action === 'approve') {
+                result = await adminApproveUser(id);
+                setActionMsg({ type: 'success', text: result?.message || 'User approved with 1,000,000 tokens' });
             } else if (action === 'verify-licence') {
                 result = await adminVerifyLicence(id, true);
                 setActionMsg({ type: 'success', text: result?.message || 'Licence verified' });
@@ -111,6 +115,7 @@ export default function UserDetailPage() {
                         <span style={{ color: T.muted, fontSize: 13 }}>{user.email}</span>
                     </div>
                     <StatusBadge status={user.is_active !== false ? 'active' : 'disabled'} />
+                    {!user.is_approved && <StatusBadge status="pending" label="Pending Approval" />}
                 </div>
                 <button className="admin-btn" onClick={load}><RefreshCw size={14} /> Refresh</button>
             </div>
@@ -119,6 +124,15 @@ export default function UserDetailPage() {
             <div className="admin-card" style={{ marginBottom: 24 }}>
                 <div className="admin-card-title">Actions</div>
                 <div className="admin-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
+                    {!user.is_approved && (
+                        <button
+                            className="admin-btn admin-btn-success"
+                            onClick={() => handleAction('approve')}
+                            disabled={actionLoading}
+                        >
+                            <ShieldCheck size={12} /> Approve (1M Tokens)
+                        </button>
+                    )}
                     <button
                         className={`admin-btn ${user.is_active !== false ? 'admin-btn-danger' : 'admin-btn-success'}`}
                         onClick={() => handleAction(user.is_active !== false ? 'disable' : 'enable')}

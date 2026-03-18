@@ -137,7 +137,7 @@ class LoadTestResults:
 
         if self.errors:
             lines.append("")
-            lines.append(f"  First 10 errors:")
+            lines.append("  First 10 errors:")
             for e in self.errors[:10]:
                 lines.append(f"    - {e}")
 
@@ -247,7 +247,7 @@ async def submit_job(
                         error = body[:200]
                 results.record(resp.status, elapsed, error)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             elapsed = time.monotonic() - start
             results.record_error("timeout", f"Request timed out after {elapsed:.1f}s")
         except aiohttp.ClientConnectionError as e:
@@ -299,10 +299,10 @@ async def run_load_test(base_url: str, use_single_user: str = None):
 
     # Step 2: Create test users (or use provided token)
     if use_single_user:
-        print(f"\n  [2/4] Using provided token for all requests")
+        print("\n  [2/4] Using provided token for all requests")
         users = [{"email": "admin", "token": use_single_user}] * TOTAL
     else:
-        print(f"\n  [2/4] Creating test users...")
+        print("\n  [2/4] Creating test users...")
         users = await create_test_users(base_url, min(TOTAL, 200))
         if len(users) < 10:
             print("  ERROR: Could not create enough test users.")
@@ -427,7 +427,7 @@ async def run_api_stress_test(base_url: str):
                     await resp.read()
                     error = None if resp.status < 400 else f"Status {resp.status}"
                     results.record(resp.status, elapsed, error)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 results.record_error("timeout", f"Timeout after {time.monotonic()-start:.1f}s")
             except aiohttp.ClientConnectionError as e:
                 results.record_error("connection", str(e))

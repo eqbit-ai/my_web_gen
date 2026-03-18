@@ -4,7 +4,7 @@ import {
     TrendingUp, Clock, AlertTriangle, CheckCircle, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import {
-    AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+    AreaChart, Area, PieChart, Pie, Cell,
     XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import {
