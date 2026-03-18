@@ -71,6 +71,14 @@ export const adminRebuildSite = async (siteId) => {
     return apiPost(`/admin/sites/${siteId}/rebuild`);
 };
 
+export const adminGetSiteVersions = async (siteId) => {
+    return apiGet(`/admin/sites/${siteId}/versions`);
+};
+
+export const adminRestoreSiteVersion = async (siteId, deploymentTime) => {
+    return apiPost(`/admin/sites/${siteId}/restore/${encodeURIComponent(deploymentTime)}`);
+};
+
 // ── Generations ──────────────────────────────────────────────────────────
 
 export const adminGetGenerations = async (page = 1, limit = 20, status = null) => {

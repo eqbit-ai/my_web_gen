@@ -219,3 +219,132 @@ async def rebuild_site(
         "site_id": str(site.id),
         "status": "queued",
     }
+
+
+@router.get("/sites/{site_id}/versions")
+async def list_site_versions(
+    site_id: str,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """List deployment versions for a site from S3 versioning."""
+    import os
+    from collections import defaultdict
+
+    import boto3
+
+    result = await db.execute(select(Site).where(Site.id == site_id))
+    site = result.scalar_one_or_none()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    s3_prefix = site.cloudflare_project_name
+    if not s3_prefix:
+        return {"versions": [], "site_id": site_id}
+
+    bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
+
+    try:
+        response = s3.list_object_versions(Bucket=bucket, Prefix=f"{s3_prefix}/")
+        versions_raw = response.get("Versions", [])
+
+        # Group by LastModified (rounded to minute = one deployment)
+        deployments = defaultdict(list)
+        for v in versions_raw:
+            ts = v["LastModified"].strftime("%Y-%m-%d %H:%M")
+            deployments[ts].append({
+                "key": v["Key"],
+                "version_id": v["VersionId"],
+                "size": v["Size"],
+                "is_latest": v.get("IsLatest", False),
+            })
+
+        # Sort by timestamp descending
+        sorted_deps = sorted(deployments.items(), key=lambda x: x[0], reverse=True)
+
+        result_versions = []
+        for i, (ts, files) in enumerate(sorted_deps):
+            total_size = sum(f["size"] for f in files)
+            is_current = any(f["is_latest"] for f in files)
+            result_versions.append({
+                "deployment_time": ts,
+                "file_count": len(files),
+                "total_size": total_size,
+                "total_size_kb": round(total_size / 1024, 1),
+                "is_current": is_current,
+                "version_id": files[0]["version_id"],  # Use first file's version as ref
+                "files": files,
+            })
+
+        return {"versions": result_versions, "site_id": site_id, "site_name": site.name}
+
+    except Exception as e:
+        logger.error("Failed to list versions for site %s: %s", site_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to list versions: {e}") from e
+
+
+@router.post("/sites/{site_id}/restore/{deployment_time}")
+async def restore_site_version(
+    site_id: str,
+    deployment_time: str,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Restore a site to a previous deployment version."""
+    import os
+
+    import boto3
+
+    result = await db.execute(select(Site).where(Site.id == site_id))
+    site = result.scalar_one_or_none()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    s3_prefix = site.cloudflare_project_name
+    if not s3_prefix:
+        raise HTTPException(status_code=400, detail="Site has no S3 prefix")
+
+    bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
+
+    try:
+        response = s3.list_object_versions(Bucket=bucket, Prefix=f"{s3_prefix}/")
+        versions_raw = response.get("Versions", [])
+
+        # Find files from the target deployment time
+        target_files = [
+            v for v in versions_raw
+            if v["LastModified"].strftime("%Y-%m-%d %H:%M") == deployment_time
+        ]
+
+        if not target_files:
+            raise HTTPException(status_code=404, detail="No files found for that deployment time")
+
+        # Copy each versioned file back as the current version
+        restored = 0
+        for f in target_files:
+            copy_source = {"Bucket": bucket, "Key": f["Key"], "VersionId": f["VersionId"]}
+            s3.copy_object(Bucket=bucket, CopySource=copy_source, Key=f["Key"])
+            restored += 1
+
+        from app.utils.audit_log import log_event_bg
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="restore_site_version",
+            resource_type="site",
+            resource_id=str(site_id),
+            details={"deployment_time": deployment_time, "files_restored": restored, "site_name": site.name},
+        )
+
+        return {
+            "success": True,
+            "message": f"Restored {restored} files from {deployment_time}",
+            "files_restored": restored,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to restore site %s: %s", site_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to restore: {e}") from e
