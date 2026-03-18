@@ -740,9 +740,23 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
 
     // Init AOS with offset 0 so iframe elements animate immediately
     if (typeof AOS !== 'undefined') {
-      AOS.init({ duration: 800, once: true, offset: 0 });
-      setTimeout(function() { AOS.refresh(); }, 500);
+      AOS.init({ duration: 800, once: true, offset: 0, disable: false });
+      setTimeout(function() { AOS.refresh(); }, 300);
+      // Force all AOS elements visible after a delay in case observer doesn't fire
+      setTimeout(function() {
+        document.querySelectorAll('[data-aos]').forEach(function(el) {
+          el.classList.add('aos-animate');
+        });
+      }, 1000);
     }
+    // Force visibility for any hidden-by-default animation elements
+    setTimeout(function() {
+      var s = document.createElement('style');
+      s.textContent = '[data-aos]{opacity:1!important;transform:none!important;transition:none!important}' +
+        '.stagger-child{opacity:1!important;transform:none!important}' +
+        '.fade-in,.slide-up,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}';
+      document.head.appendChild(s);
+    }, 2000);
 
     // Mobile hamburger menu — universal fallback
     (function() {
