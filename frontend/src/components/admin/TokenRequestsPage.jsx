@@ -94,8 +94,8 @@ export default function TokenRequestsPage() {
                             </div>
 
                             <div style={{ display: 'flex', gap: 24, fontSize: 13, color: '#71717a', marginBottom: 12 }}>
-                                <span>Requested: <strong style={{ color: '#fbbf24' }}>{(req.requested_amount || 0).toLocaleString()} tokens</strong></span>
-                                <span>Current balance: <strong style={{ color: '#a1a1aa' }}>{(req.current_balance || 0).toLocaleString()}</strong></span>
+                                <span>Requested: <strong style={{ color: '#fbbf24' }}>{(req.amount || 0).toLocaleString()} tokens</strong></span>
+                                <span>Current balance: <strong style={{ color: '#a1a1aa' }}>{(req.user_balance || 0).toLocaleString()}</strong></span>
                                 <span>{formatDate(req.created_at)}</span>
                             </div>
 
