@@ -4,7 +4,7 @@ import config from '../config';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
@@ -260,34 +260,62 @@ const Dashboard = () => {
 
     const [connectError, setConnectError] = useState(null);
     const [domainSearchResults, setDomainSearchResults] = useState(null);
+    const [connectStep, setConnectStep] = useState(1); // 1=search, 2=results, 3=success
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [domainSubTab, setDomainSubTab] = useState('sites'); // 'sites' | 'mydomains'
+    const [myDomains, setMyDomains] = useState([]);
+    const [myDomainsLoading, setMyDomainsLoading] = useState(false);
     const [purchasing, setPurchasing] = useState(false);
 
-    const handleConnectDomain = async () => {
-        if (!connectModal || !domainInput.trim()) return;
-        setConnecting(true);
+    const handleSearchDomain = async () => {
+        if (!domainInput.trim()) return;
+        setSearchLoading(true);
         setConnectError(null);
         setDomainSearchResults(null);
         try {
-            const result = await connectDomain(connectModal, domainInput.trim());
+            const d = domainInput.trim();
+            const parts = d.includes('.') ? d.split('.') : [d];
+            const sld = parts[0];
+            const extensions = parts[1] ? [parts[1], 'com', 'ae', 'net', 'org', 'io'] : ['com', 'ae', 'net', 'org', 'io', 'co'];
+            const results = await searchDomains(sld, extensions);
+            setDomainSearchResults(results.results || []);
+            setConnectStep(2);
+        } catch (e) {
+            setConnectError(e.message || 'Search failed');
+        }
+        setSearchLoading(false);
+    };
+
+    const handleConnectDomain = async (domainName) => {
+        if (!connectModal) return;
+        const domain = domainName || domainInput.trim();
+        if (!domain) return;
+        setConnecting(true);
+        setConnectError(null);
+        try {
+            const result = await connectDomain(connectModal, domain);
             setConnectResult(result);
+            setConnectStep(3);
             loadDeployedSites();
         } catch (e) {
             const msg = e.message || 'Failed to connect domain';
             if (msg.includes('not registered')) {
                 setConnectError('not_registered');
-                // Auto-search for the domain to show pricing
-                try {
-                    const d = domainInput.trim();
-                    const parts = d.includes('.') ? d.split('.') : [d];
-                    const sld = parts[0];
-                    const results = await searchDomains(sld, ['com', 'ae', 'net', 'org', 'io', 'co']);
-                    setDomainSearchResults(results.results || []);
-                } catch { /* ignore search error */ }
+                handleSearchDomain();
             } else {
                 setConnectError(msg);
             }
         }
         setConnecting(false);
+    };
+
+    const loadMyDomains = async () => {
+        setMyDomainsLoading(true);
+        try {
+            const data = await listUserDomains();
+            setMyDomains(data.domains || data || []);
+        } catch { /* ignore */ }
+        setMyDomainsLoading(false);
     };
 
     const handleConnectOwnedDomain = async (domainName) => {
@@ -938,12 +966,65 @@ const Dashboard = () => {
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
                             <div>
-                                <h1 className="dash-domain-title">Deployed Sites</h1>
-                                <p className="dash-domain-subtitle">Manage your websites, domains, and DNS configuration</p>
+                                <h1 className="dash-domain-title">{domainSubTab === 'sites' ? 'Deployed Sites' : 'My Domains'}</h1>
+                                <p className="dash-domain-subtitle">{domainSubTab === 'sites' ? 'Manage your websites, domains, and DNS configuration' : 'Manage your purchased and connected domains'}</p>
                             </div>
                         </div>
 
-                        {domainsLoading ? (
+                        {/* Sub-tabs */}
+                        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #27272a' }}>
+                            <button onClick={() => setDomainSubTab('sites')} style={{ padding: '10px 20px', background: 'none', border: 'none', borderBottom: domainSubTab === 'sites' ? '2px solid #22c55e' : '2px solid transparent', color: domainSubTab === 'sites' ? '#f3f4f6' : '#71717a', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                                Sites & Domains
+                            </button>
+                            <button onClick={() => { setDomainSubTab('mydomains'); if (myDomains.length === 0) loadMyDomains(); }} style={{ padding: '10px 20px', background: 'none', border: 'none', borderBottom: domainSubTab === 'mydomains' ? '2px solid #22c55e' : '2px solid transparent', color: domainSubTab === 'mydomains' ? '#f3f4f6' : '#71717a', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                                My Domains
+                            </button>
+                        </div>
+
+                        {/* My Domains sub-tab */}
+                        {domainSubTab === 'mydomains' ? (
+                            <div>
+                                {myDomainsLoading ? (
+                                    <div className="dash-projects-empty"><p>Loading domains...</p></div>
+                                ) : myDomains.length === 0 ? (
+                                    <div className="dsite-empty">
+                                        <div className="dsite-empty-icon">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                                        </div>
+                                        <h3>No domains yet</h3>
+                                        <p>Purchase a domain through the Connect Domain flow on any deployed site</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gap: 12 }}>
+                                        {myDomains.map(d => (
+                                            <div key={d.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                                                        <strong style={{ color: '#f3f4f6', fontSize: 15 }}>{d.domain_name}</strong>
+                                                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 500, background: d.status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)', color: d.status === 'active' ? '#22c55e' : '#fbbf24' }}>
+                                                            {d.status || 'pending'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ fontSize: 13, color: '#71717a', display: 'flex', gap: 16 }}>
+                                                        <span>Connected to: <strong style={{ color: '#a1a1aa' }}>{d.site_name || d.site_id || 'Not connected'}</strong></span>
+                                                        {d.expiry_date && <span>Expires: {new Date(d.expiry_date).toLocaleDateString()}</span>}
+                                                        {d.ssl_status && <span>SSL: {d.ssl_status}</span>}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    {!d.site_id && deployedSites.length > 0 && (
+                                                        <select onChange={e => { if (e.target.value) { handleConnectOwnedDomain(d.domain_name); } }} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #374151', background: '#1f2937', color: '#e5e7eb', fontSize: 12 }}>
+                                                            <option value="">Connect to site...</option>
+                                                            {deployedSites.map(s => <option key={s.id} value={s.id}>{s.name || s.id}</option>)}
+                                                        </select>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : domainsLoading ? (
                             <div className="dash-projects-empty"><p>Loading sites...</p></div>
                         ) : deployedSites.length === 0 ? (
                             <div className="dsite-empty">
@@ -1239,72 +1320,100 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* Connect Domain Modal */}
+                {/* Connect Domain Modal — Multi-step */}
                 {connectModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); }}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
-                            {connectError === 'not_registered' ? (
+                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); }}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+                            {/* Close button */}
+                            <button onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); }} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: 18 }}>×</button>
+
+                            {/* Step 3: Success */}
+                            {connectStep === 3 && connectResult ? (
                                 <>
-                                    <div className="dash-domain-modal-icon" style={{ background: '#fef3c7' }}>
-                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    <div className="dash-domain-modal-icon" style={{ background: '#ecfdf5' }}>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
                                     </div>
-                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Domain Not Registered</h3>
-                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>
-                                        <strong style={{ color: '#e5e7eb' }}>{domainInput}</strong> is not registered yet. Purchase it below and it will be auto-connected to your site.
+                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Domain Connected!</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>{connectResult.instructions}</p>
+                                    {connectResult.nameservers && (
+                                        <div style={{ background: '#1f2937', borderRadius: 8, padding: 16, marginBottom: 16, border: '1px solid #374151' }}>
+                                            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#d1d5db' }}>Set these nameservers at your registrar:</p>
+                                            {connectResult.nameservers.map((ns, i) => (
+                                                <div key={i} style={{ fontFamily: 'monospace', fontSize: 13, padding: '4px 0', color: '#e5e7eb' }}>{ns}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {connectResult.cname_target && (
+                                        <div style={{ background: '#1f2937', borderRadius: 8, padding: 16, marginBottom: 16, border: '1px solid #374151' }}>
+                                            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#d1d5db' }}>Add this CNAME record at your DNS provider:</p>
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                <code style={{ fontSize: 13, color: '#e5e7eb', flex: 1 }}>www → {connectResult.cname_target}</code>
+                                                <button onClick={() => navigator.clipboard.writeText(connectResult.cname_target)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="dash-domain-modal-actions">
+                                        <button className="dash-domain-modal-confirm" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectStep(1); }}>Done</button>
+                                    </div>
+                                </>
+
+                            /* Step 2: Search Results */
+                            ) : connectStep === 2 && domainSearchResults ? (
+                                <>
+                                    <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Domain Search Results</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                                        Results for "<strong style={{ color: '#e5e7eb' }}>{domainInput}</strong>"
                                     </p>
 
-                                    {domainSearchResults === null ? (
-                                        <div style={{ textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>Searching available domains...</div>
-                                    ) : domainSearchResults.length > 0 ? (
-                                        <div style={{ maxHeight: 220, overflowY: 'auto', marginBottom: 16, borderRadius: 8, border: '1px solid #374151' }}>
-                                            {domainSearchResults.filter(r => r.status === 'free').map((r, i) => (
-                                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < domainSearchResults.filter(x => x.status === 'free').length - 1 ? '1px solid #374151' : 'none' }}>
-                                                    <div>
-                                                        <span style={{ fontWeight: 600, fontSize: 14, color: '#f3f4f6' }}>{r.sld}</span>
-                                                        <span style={{ color: '#9ca3af', fontSize: 14 }}>.{r.tld}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        {r.price && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>${r.price.amount}/yr</span>}
-                                                        <button
-                                                            onClick={() => handleQuickPurchase(r.sld, r.tld, connectModal)}
-                                                            disabled={purchasing}
-                                                            style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: purchasing ? 'wait' : 'pointer', opacity: purchasing ? 0.6 : 1 }}
-                                                        >
-                                                            {purchasing ? '...' : 'Buy & Connect'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {domainSearchResults.filter(r => r.status !== 'free').length > 0 && (
-                                                <div style={{ padding: '8px 14px', fontSize: 12, color: '#6b7280', background: '#1f2937' }}>
-                                                    {domainSearchResults.filter(r => r.status !== 'free').map(r => r.domain).join(', ')} — already taken
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>No domains available. Try a different name.</p>
-                                    )}
+                                    {connectError && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 12 }}>{connectError}</p>}
 
-                                    <div className="dash-domain-modal-actions" style={{ gap: 8 }}>
-                                        <button className="dash-domain-modal-cancel" onClick={() => { setConnectError(null); setDomainSearchResults(null); }}>Try Another Domain</button>
+                                    <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: 16, borderRadius: 8, border: '1px solid #374151' }}>
+                                        {domainSearchResults.map((r, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: i < domainSearchResults.length - 1 ? '1px solid #374151' : 'none', background: r.status === 'free' ? '#1a2332' : '#1f2937' }}>
+                                                <div>
+                                                    <span style={{ fontWeight: 600, fontSize: 14, color: '#f3f4f6' }}>{r.sld || r.domain?.split('.')[0]}</span>
+                                                    <span style={{ color: '#9ca3af', fontSize: 14 }}>.{r.tld || r.domain?.split('.').slice(1).join('.')}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    {r.status === 'free' ? (
+                                                        <>
+                                                            {r.price && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>${r.price.amount}/yr</span>}
+                                                            <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 500 }}>Available</span>
+                                                            <button onClick={() => handleQuickPurchase(r.sld, r.tld, connectModal)} disabled={purchasing} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', fontSize: 12, fontWeight: 600, cursor: purchasing ? 'wait' : 'pointer', opacity: purchasing ? 0.6 : 1 }}>
+                                                                {purchasing ? '...' : 'Buy & Connect'}
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>Registered</span>
+                                                            <button onClick={() => handleConnectDomain(`${r.sld || r.domain?.split('.')[0]}.${r.tld || r.domain?.split('.').slice(1).join('.')}`)} disabled={connecting} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#e5e7eb', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+                                                                {connecting ? '...' : 'I own this'}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                </>
-                            ) : connectError ? (
-                                <>
-                                    <div className="dash-domain-modal-icon" style={{ background: '#fef2f2' }}>
-                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                                    </div>
-                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Connection Failed</h3>
-                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>{connectError}</p>
+
                                     <div className="dash-domain-modal-actions">
-                                        <button className="dash-domain-modal-cancel" onClick={() => setConnectError(null)}>Try Again</button>
+                                        <button className="dash-domain-modal-cancel" onClick={() => { setConnectStep(1); setDomainSearchResults(null); setConnectError(null); }}>
+                                            ← Back to Search
+                                        </button>
                                     </div>
                                 </>
-                            ) : !connectResult ? (
-                                <>
-                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Connect Custom Domain</h3>
 
-                                    {/* Owned domains available for quick connect */}
+                            /* Step 1: Search */
+                            ) : (
+                                <>
+                                    <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Connect Domain</h3>
+                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                                        Search for a domain to buy, or enter one you already own.
+                                    </p>
+
+                                    {connectError && connectError !== 'not_registered' && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 12 }}>{connectError}</p>}
+
+                                    {/* Owned domains for quick connect */}
                                     {modalOwnedDomains.length > 0 && (
                                         <div style={{ marginBottom: 16 }}>
                                             <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>Your available domains</p>
@@ -1314,17 +1423,10 @@ const Dashboard = () => {
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                             <span style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</span>
                                                             {d.instant_connect && (
-                                                                <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-                                                                    Instant
-                                                                </span>
+                                                                <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: 4 }}>Instant</span>
                                                             )}
                                                         </div>
-                                                        <button
-                                                            onClick={() => handleConnectOwnedDomain(d.domain_name)}
-                                                            disabled={!!connectingOwned}
-                                                            style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: connectingOwned ? 'wait' : 'pointer', opacity: connectingOwned ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 4 }}
-                                                        >
+                                                        <button onClick={() => handleConnectOwnedDomain(d.domain_name)} disabled={!!connectingOwned} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: connectingOwned ? 'wait' : 'pointer', opacity: connectingOwned ? 0.6 : 1 }}>
                                                             {connectingOwned === d.domain_name ? 'Connecting...' : 'Connect'}
                                                         </button>
                                                     </div>
@@ -1332,52 +1434,29 @@ const Dashboard = () => {
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0', color: '#6b7280', fontSize: 12 }}>
                                                 <div style={{ flex: 1, height: 1, background: '#374151' }} />
-                                                <span>or enter a domain</span>
+                                                <span>or search for a domain</span>
                                                 <div style={{ flex: 1, height: 1, background: '#374151' }} />
                                             </div>
                                         </div>
                                     )}
 
-                                    {modalOwnedDomains.length === 0 && (
-                                        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
-                                            Enter a domain you own. We'll verify it's registered, then set up SSL and DNS automatically.
-                                        </p>
-                                    )}
-                                    <input
-                                        type="text"
-                                        value={domainInput}
-                                        onChange={e => setDomainInput(e.target.value)}
-                                        placeholder="mybusiness.ae"
-                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #374151', background: '#1f2937', color: '#f3f4f6', fontSize: 14, marginBottom: 16 }}
-                                        disabled={connecting}
-                                        onKeyDown={e => e.key === 'Enter' && handleConnectDomain()}
-                                    />
-                                    <div className="dash-domain-modal-actions">
-                                        <button className="dash-domain-modal-cancel" onClick={() => setConnectModal(null)}>Cancel</button>
-                                        <button className="dash-domain-modal-confirm" onClick={handleConnectDomain} disabled={connecting || !domainInput.trim()}>
-                                            {connecting ? 'Verifying...' : 'Connect'}
+                                    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                                        <input
+                                            type="text"
+                                            value={domainInput}
+                                            onChange={e => setDomainInput(e.target.value)}
+                                            placeholder="mybusiness.ae"
+                                            style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #374151', background: '#1f2937', color: '#f3f4f6', fontSize: 14 }}
+                                            disabled={searchLoading}
+                                            onKeyDown={e => e.key === 'Enter' && handleSearchDomain()}
+                                        />
+                                        <button className="dash-domain-modal-confirm" onClick={handleSearchDomain} disabled={searchLoading || !domainInput.trim()} style={{ whiteSpace: 'nowrap' }}>
+                                            {searchLoading ? 'Searching...' : 'Search'}
                                         </button>
                                     </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="dash-domain-modal-icon" style={{ background: '#ecfdf5' }}>
-                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-                                    </div>
-                                    <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Domain Connected!</h3>
-                                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
-                                        {connectResult.instructions}
-                                    </p>
-                                    {connectResult.nameservers && (
-                                        <div style={{ background: '#1f2937', borderRadius: 8, padding: 16, marginBottom: 16, border: '1px solid #374151' }}>
-                                            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#d1d5db' }}>Set these nameservers at your registrar:</p>
-                                            {connectResult.nameservers.map((ns, i) => (
-                                                <div key={i} style={{ fontFamily: 'monospace', fontSize: 13, padding: '4px 0', color: '#e5e7eb' }}>{ns}</div>
-                                            ))}
-                                        </div>
-                                    )}
+
                                     <div className="dash-domain-modal-actions">
-                                        <button className="dash-domain-modal-confirm" onClick={() => { setConnectModal(null); setConnectResult(null); }}>Done</button>
+                                        <button className="dash-domain-modal-cancel" onClick={() => { setConnectModal(null); setConnectStep(1); setDomainInput(''); }}>Cancel</button>
                                     </div>
                                 </>
                             )}
