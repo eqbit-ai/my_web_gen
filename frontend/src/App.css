@@ -5455,6 +5455,8 @@ body {
 .dash-token-bar {
   margin-top: 16px;
   max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dash-token-info {

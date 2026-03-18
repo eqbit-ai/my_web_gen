@@ -48,6 +48,7 @@ RULES:
 - NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
 - HERO NAVBAR CLEARANCE: The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. Use the .hero-section class which has padding-top: 7rem (8rem on desktop). For full-bleed heroes with background images, use .hero-bg-cover which includes padding-top: 80px. NEVER let hero content start at the very top of the viewport.
 - HERO IMAGES: EVERY page's hero section MUST include a high-quality image — either as a background image (using .hero-bg-cover with background-image) or as a side image in a split layout (using .hero-split-grid). No hero section should be text-only without any imagery. Use relevant Unsplash/Pexels images.
+- HERO IS MANDATORY: The FIRST section after navbar MUST be the hero section. It MUST contain: a compelling headline (H1), a subtitle, at least one CTA button, and an image. The hero must be visually impactful and take up at least 80vh. NEVER skip the hero or make it empty. If the plan includes a hero, render ALL its content (headline, subtitle, CTAs, trust line, image). Do NOT output a page that starts with a content section instead of the hero.
 - PATTERN COMPLIANCE:
   1. Each section's HTML should follow the provided pattern template's GENERAL STRUCTURE — same layout approach (grid, flex, etc.) and nesting concept.
   2. Use the class names from the CSS framework above and from the pattern template as your foundation.
@@ -408,9 +409,9 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 {style_additions}
 .typed-cursor {{ color: var(--primary); font-weight: 100; }}
 .search-dropdown.active {{ display: block; }}
-#back-to-top {{ position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 50; }}
+.whatsapp-float {{ position: fixed !important; bottom: 1.5rem !important; left: 1.5rem !important; right: auto !important; z-index: 50; animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }}
+#back-to-top {{ position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; left: auto !important; z-index: 50; }}
 #back-to-top.visible {{ opacity: 1; pointer-events: auto; }}
-.whatsapp-float {{ position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50; animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }}
 [data-splitting] .char {{ display: inline-block; opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }}
 [data-splitting].visible .char {{ opacity: 1; transform: translateY(0); }}
 @media (max-width: 768px) {{ .steps-container::before {{ left: 24px; }} .timeline-container::before {{ left: 98px; }} }}
@@ -495,10 +496,10 @@ ADDITIONAL HTML RULES:
 
 NAVBAR SEARCH — add a search toggle button in nav-links with a dropdown input. Class: search-toggle, search-dropdown.
 
-WHATSAPP FLOAT — ALWAYS add on the RIGHT side: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
+WHATSAPP FLOAT — ALWAYS add on the LEFT side: <a href="https://wa.me/971XXXXXXXXX" class="whatsapp-float" style="position:fixed;bottom:1.5rem;left:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s"><i class="fa-brands fa-whatsapp"></i></a>
 
-BACK-TO-TOP — add on the LEFT side (opposite to WhatsApp): <button id="back-to-top" style="position:fixed;bottom:1.5rem;left:1.5rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
-IMPORTANT: WhatsApp button goes bottom-RIGHT, Back-to-top goes bottom-LEFT. They must be on OPPOSITE sides of the screen.
+BACK-TO-TOP — add on the RIGHT side (opposite to WhatsApp): <button id="back-to-top" style="position:fixed;bottom:1.5rem;right:1.5rem;width:2.75rem;height:2.75rem;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:all 0.3s;z-index:50"><i class="fa-solid fa-chevron-up" style="font-size:0.8rem"></i></button>
+IMPORTANT: WhatsApp button goes bottom-LEFT, Back-to-top goes bottom-RIGHT. They must be on OPPOSITE sides of the screen. NEVER put them on the same side.
 
 IMAGE OPTIMIZATION — for every <img> tag:
 - ALWAYS add loading="lazy" (except hero images — hero loads eagerly)
