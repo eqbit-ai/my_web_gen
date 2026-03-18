@@ -1,8 +1,7 @@
 // src/App.js
 
-import React, { useRef, useState, useLayoutEffect, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { gsap } from 'gsap';
 import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './meydan-theme.css';
@@ -59,52 +58,15 @@ function ProtectedRoute({ children, allowForceReset, allowPending }) {
 }
 
 // ============================================
-// SMOOTH PAGE TRANSITION — simple crossfade
+// PAGE WRAPPER — instant navigation, no transition
 // ============================================
-function PageTransition({ children }) {
-  const wrapperRef = useRef(null);
+function PageWrapper({ children }) {
   const location = useLocation();
-  const prevPath = useRef(location.pathname);
-  const [displayLocation, setDisplayLocation] = useState(location);
-
-  useLayoutEffect(() => {
-    if (location.pathname === prevPath.current) {
-      setDisplayLocation(location);
-      return;
-    }
-    prevPath.current = location.pathname;
-
-    const el = wrapperRef.current;
-    if (!el) {
-      setDisplayLocation(location);
-      return;
-    }
-
-    // Fade out current page
-    gsap.to(el, {
-      opacity: 0,
-      duration: 0.25,
-      ease: 'power2.inOut',
-      onComplete: () => {
-        setDisplayLocation(location);
-        window.scrollTo(0, 0);
-
-        // Fade in new page
-        gsap.to(el, {
-          opacity: 1,
-          duration: 0.3,
-          ease: 'power2.out',
-        });
-      }
-    });
-  }, [location]);
 
   return (
-    <div ref={wrapperRef} style={{ opacity: 1 }}>
-      <Routes location={displayLocation}>
-        {children}
-      </Routes>
-    </div>
+    <Routes location={location}>
+      {children}
+    </Routes>
   );
 }
 
@@ -116,7 +78,7 @@ function AppLayout() {
     <div className="app">
       {!hideNavbar && <Navbar />}
       <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
-        <PageTransition>
+        <PageWrapper>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -151,7 +113,7 @@ function AppLayout() {
             <Route path="token-trends" element={<TokenTrendPage />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
-        </PageTransition>
+        </PageWrapper>
       </Suspense>
     </div>
   );

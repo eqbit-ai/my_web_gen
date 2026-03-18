@@ -31,7 +31,7 @@ from openai import (
 logger = logging.getLogger(__name__)
 
 # Status codes considered transient (worth retrying)
-TRANSIENT_STATUS_CODES = {429, 500, 502, 503}
+TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 529}
 
 
 class CircuitState(StrEnum):

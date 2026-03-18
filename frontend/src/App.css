@@ -3728,7 +3728,7 @@ body {
 }
 
 .dashboard.impersonating .dash-main {
-  min-height: calc(100vh - 40px);
+  height: calc(100vh - 40px);
 }
 
 .dash-sidebar.collapsed {
@@ -4000,12 +4000,13 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  overflow: hidden;
+  height: 100vh;
+  overflow-y: auto;
   background: #0e0e18;
 }
 
 .dash-main-gradient {
+  overflow: hidden !important;
   background: radial-gradient(ellipse at 50% 0%, #0a3d2e 0%, #061f18 30%, #0a0a12 60%),
               radial-gradient(ellipse at 20% 80%, #1a4a3a 0%, transparent 50%),
               radial-gradient(ellipse at 80% 90%, #2a1a3a 0%, transparent 50%);
@@ -4018,7 +4019,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px 0;
+  padding: 40px 24px;
   gap: 24px;
 }
 
