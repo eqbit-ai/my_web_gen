@@ -414,7 +414,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         </style>
         <script>
         (function() {
-            var TEXT_TAGS = ['H1','H2','H3','H4','H5','H6','P','SPAN','A','BUTTON','LI','LABEL','FIGCAPTION','BLOCKQUOTE','TD','TH','DT','DD'];
+            var TEXT_TAGS = ['H1','H2','H3','H4','H5','H6','P','SPAN','A','BUTTON','LI','LABEL','FIGCAPTION','BLOCKQUOTE','TD','TH','DT','DD','STRONG','EM','B','I','SMALL'];
             var tooltip = document.createElement('div');
             tooltip.className = 'cms-tooltip';
             document.body.appendChild(tooltip);
@@ -443,7 +443,11 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             }
 
             function isEditableText(el) {
-                return el && TEXT_TAGS.indexOf(el.tagName) !== -1;
+                if (!el) return false;
+                if (TEXT_TAGS.indexOf(el.tagName) !== -1) return true;
+                // Also allow DIV elements that contain direct text (like footer logo)
+                if (el.tagName === 'DIV' && el.childElementCount === 0 && el.textContent.trim().length > 0) return true;
+                return false;
             }
 
             function isEditableImage(el) {
