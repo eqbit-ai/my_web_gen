@@ -4492,6 +4492,27 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         css_vars = extract_css_vars(css)
         structural = _is_structural_edit(req.prompt)
 
+        # ── FAST PATH: Direct removal (no LLM call) ─────────────
+        remove_pattern = re.compile(
+            r"^(remove|delete|get rid of|take out|strip|hide|drop)\s*(this|it|the section|section|element|this section|this element)?\.?$",
+            re.IGNORECASE,
+        )
+        if remove_pattern.match(req.prompt.strip()):
+            # Try to find and remove the element directly from HTML
+            element_snippet = req.elementHtml.strip()
+            if element_snippet and element_snippet in full_html:
+                result_html = full_html.replace(element_snippet, "", 1)
+                # Verify we didn't wipe everything
+                if len(result_html.strip()) > 200:
+                    logger.info("🖱️ [ELEMENT EDIT] ✅ Direct removal (no LLM) — removed %d chars", len(element_snippet))
+                    return {
+                        "success": True,
+                        "website": {"html": result_html, "css": css},
+                        "manualReplace": False,
+                    }
+                else:
+                    logger.warning("🖱️ [ELEMENT EDIT] Direct removal would leave page empty, falling through to LLM")
+
         # ── Find which section contains the element ──────────────
         sections = parse_sections(full_html)
         target_section = None
