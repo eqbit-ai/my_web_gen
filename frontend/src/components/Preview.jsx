@@ -714,11 +714,12 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       e.stopPropagation();
       // Map href to page slug
       var slug = 'index';
-      if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index' || href === '/home' || href === '/home.html') {
+      if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index' || href === '/home' || href === '/home.html' || href === 'home.html') {
         slug = 'index';
       } else {
-        var m = href.match(/^\\/?([a-z0-9][a-z0-9_-]*?)(?:\\.html)?$/i);
-        if (m) slug = m[1];
+        // Strip leading slash, strip .html extension
+        var clean = href.replace(/^\\//, '').replace(/\\.html$/, '');
+        if (clean) slug = clean;
       }
       window.parent.postMessage({ type: 'page-navigate', slug: slug }, '*');
     }, true);
