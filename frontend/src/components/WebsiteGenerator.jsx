@@ -857,9 +857,9 @@ const WebsiteGenerator = () => {
     // ── Onboarding check ──────────────────────────────────────────────
     useEffect(() => {
         const done = localStorage.getItem(ONBOARDING_KEY);
-        if (!done && !html && !isLoading && !onboardingShown.current) {
+        if (!done && !onboardingShown.current) {
             onboardingShown.current = true;
-            const timer = setTimeout(() => setOnboardingStep(0), 1000);
+            const timer = setTimeout(() => setOnboardingStep(0), 500);
             return () => clearTimeout(timer);
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1367,6 +1367,13 @@ const WebsiteGenerator = () => {
             const result = await editElement(sessionId, selectedElement, finalPrompt, { html, css }, currentPage);
             if (result.success && !result.manualReplace) {
                 const newHtml = result.website.html;
+                // Safety: reject empty or near-empty HTML (LLM deleted everything)
+                if (!newHtml || newHtml.trim().length < 200) {
+                    addToast('Edit rejected — it would remove too much content. Use undo or try a different prompt.', 'error', 6000);
+                    setIsEditingElement(false);
+                    isEditingRef.current = false;
+                    return;
+                }
                 const newCss = result.website.css || css; // Preserve existing CSS if backend returns empty
                 const newJs = result.website.js || js;
                 setHtml(newHtml); setCss(newCss);
@@ -2320,7 +2327,7 @@ const WebsiteGenerator = () => {
             {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
 
             {/* Onboarding Tour */}
-            {onboardingStep >= 0 && !html && !isLoading && (
+            {onboardingStep >= 0 && (
                 <OnboardingTour
                     step={onboardingStep}
                     totalSteps={ONBOARDING_STEPS.length}
