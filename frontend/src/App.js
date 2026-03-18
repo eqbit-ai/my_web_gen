@@ -42,6 +42,8 @@ const SystemHealthPage = lazy(() => import('./components/admin/SystemHealthPage'
 const GrowthChartPage = lazy(() => import('./components/admin/GrowthChartPage'));
 const GenerationStatsPage = lazy(() => import('./components/admin/GenerationStatsPage'));
 const TokenTrendPage = lazy(() => import('./components/admin/TokenTrendPage'));
+const PendingApprovalsPage = lazy(() => import('./components/admin/PendingApprovalsPage'));
+const TokenRequestsPage = lazy(() => import('./components/admin/TokenRequestsPage'));
 
 function ProtectedRoute({ children, allowForceReset, allowPending }) {
   const { user, loading } = useAuth();
@@ -100,6 +102,8 @@ function AppLayout() {
             <Route path="domains-internal/:id" element={<InternalDomainDetailPage />} />
             <Route path="users" element={<UsersListPage />} />
             <Route path="users/:id" element={<UserDetailPage />} />
+            <Route path="pending-approvals" element={<PendingApprovalsPage />} />
+            <Route path="token-requests" element={<TokenRequestsPage />} />
             <Route path="token-ledger" element={<TokenLedgerPage />} />
             <Route path="token-pool" element={<TokenPoolPage />} />
             <Route path="expiring-tokens" element={<ExpiringTokensPage />} />

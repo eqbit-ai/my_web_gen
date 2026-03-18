@@ -573,6 +573,35 @@ async def approve_user(
     return {"message": f"User {user.email} has been approved with 1,000,000 tokens"}
 
 
+@router.post("/users/{user_id}/toggle-admin", response_model=MessageResponse)
+async def toggle_admin(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle admin status for a user."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_status = not _safe_getattr(user, "is_admin", False)
+    await db.execute(
+        update(User).where(User.id == user_id).values(is_admin=new_status)
+    )
+    await db.commit()
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="toggle_admin",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"is_admin": new_status, "email": user.email},
+    )
+
+    return {"message": f"{'Granted' if new_status else 'Revoked'} admin for {user.email}"}
+
+
 @router.post("/users/{user_id}/disable", response_model=MessageResponse)
 async def disable_user(
     user_id: int,

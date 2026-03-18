@@ -7,7 +7,7 @@ import {
     adminGetUserDetail, adminGetUserAudit, adminGetUserLogins,
     adminDisableUser, adminEnableUser, adminGrantTokens,
     adminResetPassword, adminVerifyLicence, adminImpersonateUser,
-    adminApproveUser,
+    adminApproveUser, adminToggleAdmin,
 } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
 
@@ -64,6 +64,9 @@ export default function UserDetailPage() {
             } else if (action === 'approve') {
                 result = await adminApproveUser(id);
                 setActionMsg({ type: 'success', text: result?.message || 'User approved with 1,000,000 tokens' });
+            } else if (action === 'toggle-admin') {
+                result = await adminToggleAdmin(id);
+                setActionMsg({ type: 'success', text: result?.message || 'Admin status toggled' });
             } else if (action === 'verify-licence') {
                 result = await adminVerifyLicence(id, true);
                 setActionMsg({ type: 'success', text: result?.message || 'Licence verified' });
@@ -139,6 +142,14 @@ export default function UserDetailPage() {
                         disabled={actionLoading}
                     >
                         {user.is_active !== false ? <><Ban size={12} /> Disable</> : <><Check size={12} /> Enable</>}
+                    </button>
+                    <button
+                        className={`admin-btn ${user.is_admin ? 'admin-btn-danger' : ''}`}
+                        onClick={() => handleAction('toggle-admin')}
+                        disabled={actionLoading}
+                        style={!user.is_admin ? { color: '#818cf8', borderColor: '#818cf840' } : {}}
+                    >
+                        <ShieldCheck size={12} /> {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                     </button>
                     <button className="admin-btn" onClick={() => handleAction('verify-licence')} disabled={actionLoading}>
                         <Check size={12} /> Verify Licence

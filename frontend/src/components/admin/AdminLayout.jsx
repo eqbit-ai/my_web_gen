@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     Activity, Globe, AlertTriangle, Clock, Shield, ShoppingCart,
-    Users, Receipt, Database, Timer,
+    Users, UserCheck, Receipt, Database, Timer, Coins,
     FileText, ClipboardList, Bell, Terminal, Server,
     TrendingUp, BarChart3, PieChart,
     ChevronDown, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Menu,
@@ -35,11 +35,13 @@ const NAV_SECTIONS = [
         label: 'Users',
         items: [
             { path: '/admin/users', label: 'User List', icon: Users },
+            { path: '/admin/pending-approvals', label: 'Pending Approvals', icon: UserCheck },
         ],
     },
     {
         label: 'Tokens',
         items: [
+            { path: '/admin/token-requests', label: 'Token Requests', icon: Coins },
             { path: '/admin/token-ledger', label: 'Transaction Ledger', icon: Receipt },
             { path: '/admin/token-pool', label: 'Token Pool', icon: Database },
             { path: '/admin/expiring-tokens', label: 'Expiring Tokens', icon: Timer },

@@ -194,6 +194,10 @@ export const adminApproveUser = async (userId) => {
     return apiPost(`/admin/users/${userId}/approve`);
 };
 
+export const adminToggleAdmin = async (userId) => {
+    return apiPost(`/admin/users/${userId}/toggle-admin`);
+};
+
 export const adminDisableUser = async (userId) => {
     return apiPost(`/admin/users/${userId}/disable`);
 };
