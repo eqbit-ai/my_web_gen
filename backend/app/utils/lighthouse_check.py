@@ -522,4 +522,31 @@ def auto_fix_performance(html: str, css: str, js: str) -> tuple[str, str, str]:
 
     fixed_css = _dedup_css(fixed_css)
 
+    # ── Fix WhatsApp (left) and Back-to-top (right) positions ─────────
+    # WhatsApp must be bottom-left, back-to-top must be bottom-right
+    def _fix_whatsapp_pos(m):
+        tag = m.group(0)
+        # Remove any right positioning, force left
+        tag = re.sub(r"right\s*:\s*[^;]+;?", "", tag)
+        if "left:" not in tag:
+            tag = tag.replace("position:fixed", "position:fixed;left:1.5rem")
+        return tag
+
+    def _fix_backtotop_pos(m):
+        tag = m.group(0)
+        # Remove any left positioning, force right
+        tag = re.sub(r"left\s*:\s*[^;]+;?", "", tag)
+        if "right:" not in tag:
+            tag = tag.replace("position:fixed", "position:fixed;right:1.5rem")
+        return tag
+
+    fixed_html = re.sub(
+        r'<a\b[^>]*class\s*=\s*["\'][^"\']*whatsapp[^"\']*["\'][^>]*>',
+        _fix_whatsapp_pos, fixed_html, flags=re.I | re.S,
+    )
+    fixed_html = re.sub(
+        r'<button\b[^>]*id\s*=\s*["\']back-to-top["\'][^>]*>',
+        _fix_backtotop_pos, fixed_html, flags=re.I | re.S,
+    )
+
     return fixed_html, fixed_css, fixed_js
