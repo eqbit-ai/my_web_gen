@@ -35,6 +35,18 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
     const body = { prompt, sessionId, niche, currentPage };
     if (templateId) body.templateId = templateId;
 
+    // Prevent browser from freezing the connection when tab is backgrounded
+    // by acquiring a Web Lock (keeps the event loop active)
+    let lockRelease = null;
+    if (navigator.locks) {
+        navigator.locks.request('generate-stream-lock', { mode: 'exclusive', ifAvailable: true }, (lock) => {
+            if (!lock) return;
+            return new Promise((resolve) => { lockRelease = resolve; });
+        });
+    }
+
+    const releaseLock = () => { if (lockRelease) { lockRelease(); lockRelease = null; } };
+
     fetch(`${API_BASE_URL}/generator/generate-stream`, {
         method: 'POST',
         headers,
@@ -42,6 +54,7 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
         signal: controller.signal,
     }).then(async (response) => {
         if (!response.ok) {
+            releaseLock();
             try {
                 const data = await response.json();
                 onError(data.detail || 'Stream failed');
@@ -78,9 +91,10 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
                 }
             }
         }
-        // Stream closed without complete/error event — notify the UI
+        releaseLock();
         if (!completed) onError('Connection lost — generation may still be processing. Please try again.');
     }).catch((err) => {
+        releaseLock();
         if (err.name !== 'AbortError') onError(err.message);
     });
 

@@ -3088,7 +3088,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     stage_1_plan(enhanced_prompt, session_id, niche_key=niche_key, multipage=multipage_requested)
                 )
                 while not plan_task.done():
-                    await asyncio.sleep(8)
+                    await asyncio.sleep(3)
                     if not plan_task.done():
                         yield ": keepalive\n\n"
                 plan = plan_task.result()
@@ -3144,7 +3144,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
                     )
                     while not html_task.done():
-                        await asyncio.sleep(8)
+                        await asyncio.sleep(3)
                         if not html_task.done():
                             yield ": keepalive\n\n"
                     pages_html = html_task.result()  # {slug: html_string}
@@ -3211,7 +3211,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     )
 
                     while not combined_task.done():
-                        await asyncio.sleep(8)
+                        await asyncio.sleep(3)
                         if not combined_task.done():
                             yield ": keepalive\n\n"
                     html, js = combined_task.result()
@@ -3515,7 +3515,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         stage_1_plan(multipage_prompt, session_id, niche_key=niche_key, multipage=True)
                     )
                     while not plan_task.done():
-                        await asyncio.sleep(8)
+                        await asyncio.sleep(3)
                         if not plan_task.done():
                             yield ": keepalive\n\n"
                     plan = plan_task.result()
@@ -3537,7 +3537,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
                     )
                     while not html_task.done():
-                        await asyncio.sleep(8)
+                        await asyncio.sleep(3)
                         if not html_task.done():
                             yield ": keepalive\n\n"
                     pages_html = html_task.result()
