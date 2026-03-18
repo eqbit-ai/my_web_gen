@@ -1088,10 +1088,35 @@ const Dashboard = () => {
                                             )}
                                         </div>
 
+                                        {/* Domain Setup Instructions — shown when domain connected but pending */}
+                                        {site.domain && site.domain_status && site.domain_status !== 'active' && (
+                                            <div style={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: 8, padding: 16, margin: '12px 0' }}>
+                                                <h4 style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                    Domain Setup Required
+                                                </h4>
+                                                <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>Add this CNAME record at your DNS provider to point your domain to this site:</p>
+                                                <div style={{ background: '#0f0f1a', borderRadius: 6, padding: '10px 14px', fontFamily: 'monospace', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        <span style={{ color: '#818cf8' }}>www.{site.domain}</span>
+                                                        <span style={{ color: '#6b7280' }}> → CNAME → </span>
+                                                        <span style={{ color: '#34d399' }}>{site.cloudfront_domain || '(pending SSL validation)'}</span>
+                                                    </div>
+                                                    {site.cloudfront_domain && (
+                                                        <button onClick={() => navigator.clipboard.writeText(site.cloudfront_domain)} style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                                    )}
+                                                </div>
+                                                <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                                    Status: <span style={{ color: site.domain_status === 'pending_validation' ? '#fbbf24' : site.domain_status === 'active' ? '#22c55e' : '#818cf8' }}>{(site.domain_status || '').replace(/_/g, ' ')}</span>
+                                                    {' · '}SSL and CDN will activate automatically once DNS propagates.
+                                                </p>
+                                            </div>
+                                        )}
+
                                         {/* Actions Bar */}
                                         <div className="dsite-actions">
                                             {!site.domain && site.status === 'published' && (
-                                                <button className="dsite-action-btn dsite-action-primary" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); }}>
+                                                <button className="dsite-action-btn dsite-action-primary" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); setConnectStep(1); }}>
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                                                     Connect Domain
                                                 </button>

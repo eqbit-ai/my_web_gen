@@ -604,6 +604,8 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
 
         await db.commit()
 
+    cf_domain_for_cname = site.cloudfront_domain or "(will be available after SSL validation)"
+
     if cert_issued:
         instructions = (
             "Your domain already has a valid SSL certificate. "
@@ -612,10 +614,12 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         )
     else:
         instructions = (
-            "Step 1: Update your domain's nameservers at your registrar to the nameservers listed below. "
-            "Step 2: Wait for SSL certificate validation (automatic once nameservers propagate). "
-            "Step 3: CloudFront CDN will be set up automatically after SSL is validated. "
-            "Your site will be live at https://" + domain + " once complete."
+            "Choose one of these options to connect your domain:\n\n"
+            "Option A (Recommended): Add a CNAME record at your DNS provider:\n"
+            f"  www.{domain} → {cf_domain_for_cname}\n\n"
+            "Option B (Full control): Change your nameservers to the ones listed below. "
+            "This gives us full DNS control including SSL auto-setup.\n\n"
+            "SSL certificate will be validated automatically once DNS propagates."
         )
 
     logger.info("Domain %s connected to site %s (status=%s, reused_infra=%s)", domain, site_id, domain_status_val, bool(has_existing_zone))
@@ -625,6 +629,9 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         "domain": domain,
         "domain_status": domain_status_val,
         "nameservers": nameservers,
+        "cloudfront_domain": cf_domain_for_cname,
+        "cname_target": cf_domain_for_cname,
+        "cname_record": f"www.{domain} → {cf_domain_for_cname}",
         "dns_records": dns_records,
         "reused_infrastructure": bool(has_existing_zone or has_existing_cert),
         "instructions": instructions,
