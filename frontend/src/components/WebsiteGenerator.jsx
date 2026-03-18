@@ -1198,6 +1198,10 @@ const WebsiteGenerator = () => {
     const handleRollback = (versionIndex) => {
         if (versionIndex < 0 || versionIndex >= versions.length) return;
         const v = versions[versionIndex];
+        if (!v.html || v.html.trim().length < 200) {
+            addToast('This version has no content — cannot restore.', 'error');
+            return;
+        }
         setHtml(v.html); setCss(v.css); setJs(v.js);
         setCurrentVersion(versionIndex);
         // Restore multi-page state from version
