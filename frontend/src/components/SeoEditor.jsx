@@ -57,8 +57,9 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
             });
             if (result.success && onUpdate) {
                 onUpdate(result.html, result.css, result.js);
-                setSuccess('Settings saved successfully!');
-                setTimeout(() => setSuccess(''), 3000);
+                setSaving(false);
+                onClose();
+                return;
             }
         } catch (err) {
             setError('Failed to save: ' + err.message);
@@ -74,8 +75,9 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
             const result = await updateContactConfig(sessionId, contact);
             if (result.success && onUpdate) {
                 onUpdate(result.html, result.css, result.js);
-                setSuccess('Contact form settings saved!');
-                setTimeout(() => setSuccess(''), 3000);
+                setSaving(false);
+                onClose();
+                return;
             }
         } catch (err) {
             setError('Failed to save: ' + err.message);
