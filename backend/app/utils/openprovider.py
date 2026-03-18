@@ -32,19 +32,29 @@ async def _get_token() -> str:
         return _token
 
     cfg = _config()
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            f"{cfg['api_url']}/auth/login",
-            json={"username": cfg["username"], "password": cfg["password"], "ip": "0.0.0.0"},
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    last_err = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    f"{cfg['api_url']}/auth/login",
+                    json={"username": cfg["username"], "password": cfg["password"], "ip": "0.0.0.0"},
+                )
+                resp.raise_for_status()
+                data = resp.json()
 
-    _token = data["data"]["token"]
-    # Refresh 1 hour before expiry (tokens last ~48h)
-    _token_expires = time.time() + 47 * 3600
-    logger.info("[OpenProvider] Authenticated successfully")
-    return _token
+            _token = data["data"]["token"]
+            _token_expires = time.time() + 47 * 3600
+            logger.info("[OpenProvider] Authenticated successfully")
+            return _token
+        except Exception as e:
+            last_err = e
+            logger.warning("[OpenProvider] Auth attempt %d failed: %s", attempt + 1, e)
+            if attempt < 2:
+                import asyncio
+                await asyncio.sleep(1 * (attempt + 1))
+
+    raise last_err
 
 
 async def _request(method: str, path: str, **kwargs) -> dict:
