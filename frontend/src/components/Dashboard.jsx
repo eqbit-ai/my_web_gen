@@ -14,7 +14,10 @@ const buildSrcDoc = (css, html, withScripts = false) =>
 
 
 const Dashboard = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, refreshUser } = useAuth();
+
+    // Refresh user data on mount (updates token balance after generation)
+    useEffect(() => { refreshUser(); }, []);
     const navigate = useNavigate();
     const [prompt, setPrompt] = useState('');
     const [sidebarOpen, setSidebarOpen] = useState(true);

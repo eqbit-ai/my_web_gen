@@ -1706,16 +1706,41 @@ def _sync_multipage_shared_elements(pages_html: dict) -> dict:
 async def generate_multipage_html(
     plan: dict, session_id: str, niche_key: str = None, reference_html: str = None
 ) -> dict:
-    """Generate HTML for each page in a multi-page plan. Returns {slug: html_string}."""
+    """Generate HTML for each page in a multi-page plan. Returns {slug: html_string}.
+
+    Strategy: Generate homepage FIRST, then use its full CSS as a design reference
+    for all subpages to ensure visual consistency across the site.
+    """
     pages = plan.get("pages", [])
     shared_sections = plan.get("shared_sections", [])
 
     if not pages:
         raise ValueError("No pages found in multi-page plan")
 
-    logger.info(f"[MULTIPAGE] Generating {len(pages)} pages in parallel...")
+    # Separate homepage from subpages — homepage generates first as design reference
+    homepage = None
+    subpages = []
+    for p in pages:
+        if p.get("slug", "index") == "index":
+            homepage = p
+        else:
+            subpages.append(p)
 
-    async def generate_one_page(page: dict) -> tuple:
+    if not homepage:
+        homepage = pages[0]
+        subpages = pages[1:]
+
+    logger.info(f"[MULTIPAGE] Generating homepage first, then {len(subpages)} subpages...")
+
+    # Extract CSS from reference_html if provided (template-based generation)
+    _reference_css = ""
+    if reference_html:
+        import re as _re
+        style_match = _re.search(r'<style[^>]*>(.*?)</style>', reference_html, _re.DOTALL)
+        if style_match:
+            _reference_css = style_match.group(1).strip()
+
+    async def generate_one_page(page: dict, design_reference_css: str = "") -> tuple:
         slug = page.get("slug", "index")
         title = page.get("title", slug)
         logger.info(f"[MULTIPAGE] Starting page '{title}' (slug: {slug})")
@@ -1723,16 +1748,23 @@ async def generate_multipage_html(
 
         prompt = build_page_html_prompt(plan, page, shared_sections)
 
-        # If a reference template is provided, extract just CSS design system
-        if reference_html:
-            import re as _re
-            root_match = _re.search(r':root\s*\{[^}]+\}', reference_html)
-            if root_match:
-                prompt += f"""
+        # Inject full CSS design reference for consistent styling across pages
+        if design_reference_css:
+            # Trim to avoid token overflow but keep enough for full design system
+            css_ref = design_reference_css[:8000]
+            prompt += f"""
 
-REFERENCE DESIGN SYSTEM (quality inspiration):
-{root_match.group(0)}
-Apply similar polish, spacing, and shadow quality to this page.
+DESIGN REFERENCE CSS (CRITICAL — USE THIS EXACT DESIGN SYSTEM):
+You MUST copy the exact same visual design from this CSS into your page.
+Use the same colors, fonts, spacing, shadows, border-radius, button styles, and layout patterns.
+The subpage should look like it belongs to the same website as the homepage.
+
+```css
+{css_ref}
+```
+
+IMPORTANT: Your <style> block must reuse the same CSS variables, class naming conventions,
+and visual treatments from the reference above. Do NOT invent new colors or fonts.
 """
 
         client = get_anthropic_client()
@@ -1741,7 +1773,7 @@ Apply similar polish, spacing, and shadow quality to this page.
             "claude-sonnet-4-20250514",
             28000,
             prompt,
-            f"Generate the {title} page HTML. Follow ALL pattern templates exactly.",
+            f"Generate the {title} page HTML. Follow ALL pattern templates exactly. Match the design reference CSS precisely.",
             use_prompt_cache=True,
         )
 
@@ -1756,24 +1788,38 @@ Apply similar polish, spacing, and shadow quality to this page.
         save_debug(session_id, f"html_{slug}", html)
         return slug, html
 
-    # Generate pages in parallel batches of 2 to avoid rate limits
+    # ── Step 1: Generate homepage first ──
+    homepage_slug, homepage_html = await generate_one_page(homepage, _reference_css)
+    pages_html = {homepage_slug: homepage_html}
+    logger.info(f"[MULTIPAGE] Homepage generated → extracting CSS as design reference for subpages")
+
+    # Extract the homepage's full CSS to use as reference for subpages
+    import re as _re
+    homepage_style_match = _re.search(r'<style[^>]*>(.*?)</style>', homepage_html, _re.DOTALL)
+    homepage_css = homepage_style_match.group(1).strip() if homepage_style_match else _reference_css
+
+    if not subpages:
+        pages_html = _sync_multipage_shared_elements(pages_html)
+        return pages_html
+
+    # ── Step 2: Generate subpages in parallel using homepage CSS as reference ──
+    logger.info(f"[MULTIPAGE] Using {len(homepage_css):,} chars of homepage CSS as design reference")
     BATCH_SIZE = 2
     results = []
-    for batch_start in range(0, len(pages), BATCH_SIZE):
-        batch = pages[batch_start:batch_start + BATCH_SIZE]
-        batch_coros = [generate_one_page(p) for p in batch]
+    for batch_start in range(0, len(subpages), BATCH_SIZE):
+        batch = subpages[batch_start:batch_start + BATCH_SIZE]
+        batch_coros = [generate_one_page(p, homepage_css) for p in batch]
         batch_results = await asyncio.gather(*batch_coros, return_exceptions=True)
         results.extend(batch_results)
         # Longer delay between batches to respect rate limits
-        if batch_start + BATCH_SIZE < len(pages):
+        if batch_start + BATCH_SIZE < len(subpages):
             await asyncio.sleep(8)
 
-    pages_html = {}
     failed_pages = []
     for i, result in enumerate(results):
         if isinstance(result, Exception):
             logger.error(f"[MULTIPAGE] Page generation failed: {result}")
-            failed_pages.append(pages[i])
+            failed_pages.append(subpages[i])
             continue
         slug, html = result
         pages_html[slug] = html
@@ -1783,7 +1829,7 @@ Apply similar polish, spacing, and shadow quality to this page.
         try:
             logger.info(f"[MULTIPAGE] Retrying failed page '{page.get('title', page.get('slug'))}'...")
             await asyncio.sleep(5)
-            slug, html = await generate_one_page(page)
+            slug, html = await generate_one_page(page, homepage_css)
             pages_html[slug] = html
             logger.info(f"[MULTIPAGE] Retry succeeded for '{slug}'")
         except Exception as e:
