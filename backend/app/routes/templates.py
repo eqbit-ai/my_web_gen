@@ -266,7 +266,12 @@ TEMPLATE_CATALOG = [
 
 def _load_template_file(template_id: str) -> tuple[str, str]:
     """Load a template HTML file and split into HTML body + CSS."""
-    file_path = os.path.join(TEMPLATES_DIR, f"{template_id}.html")
+    # Sanitize template_id to prevent path traversal
+    safe_id = os.path.basename(template_id)
+    file_path = os.path.join(TEMPLATES_DIR, f"{safe_id}.html")
+    # Ensure resolved path stays within TEMPLATES_DIR
+    if not os.path.realpath(file_path).startswith(os.path.realpath(TEMPLATES_DIR)):
+        raise HTTPException(status_code=400, detail="Invalid template ID")
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Template file not found")
 

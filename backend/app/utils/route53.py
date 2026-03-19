@@ -18,6 +18,8 @@ import uuid
 import boto3
 from botocore.exceptions import ClientError
 
+from app.utils import sanitize_log
+
 logger = logging.getLogger(__name__)
 
 # CloudFront hosted zone ID — AWS constant for all CloudFront distributions
@@ -92,7 +94,7 @@ async def create_hosted_zone(domain: str) -> dict:
         zone_id = _clean_zone_id(resp["HostedZone"]["Id"])
         nameservers = resp["DelegationSet"]["NameServers"]
 
-        logger.info("Created hosted zone %s for %s (NS: %s)", zone_id, domain, nameservers)
+        logger.info("Created hosted zone %s for %s (NS: %s)", zone_id, sanitize_log(domain), nameservers)
         return {"zone_id": zone_id, "nameservers": nameservers}
 
     except ClientError as exc:
@@ -319,7 +321,7 @@ async def delete_record(
             },
         )
 
-        logger.info("Deleted %s record %s from zone %s", record_type, name, zone_id)
+        logger.info("Deleted %s record %s from zone %s", sanitize_log(record_type), sanitize_log(name), zone_id)
         return True
 
     except ClientError as exc:

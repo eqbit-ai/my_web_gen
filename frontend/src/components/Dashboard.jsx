@@ -10,7 +10,7 @@ import { listProjects, getProject, deleteProject, listTemplateCatalog, getTempla
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
 
 const buildSrcDoc = (css, html, withScripts = false) =>
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}${withScripts ? '' : ''}</body></html>`;
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}</body></html>`;
 
 
 const Dashboard = () => {
@@ -815,7 +815,7 @@ const Dashboard = () => {
                         ) : (
                             <div className="dash-projects-grid">
                                 {projects.map(project => (
-                                    <div key={project.id} className="dash-project-card" onClick={() => handleOpenProject(project.id)}>
+                                    <div key={project.id} className="dash-project-card" onClick={() => handleOpenProject(project.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpenProject(project.id); }} role="button" tabIndex={0}>
                                         <div className="dash-project-thumb">
                                             {project.html ? (
                                                 <iframe
@@ -838,7 +838,7 @@ const Dashboard = () => {
                                                 <span>{formatDate(project.updated_at)}</span>
                                             </div>
                                         </div>
-                                        <div className="dash-project-actions" onClick={e => e.stopPropagation()}>
+                                        <div className="dash-project-actions" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                                             <button className="dash-project-open" onClick={() => handleOpenProject(project.id)}>Open</button>
                                             <button className="dash-project-delete" onClick={() => setDeleteConfirm(project.id)}>
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -853,8 +853,8 @@ const Dashboard = () => {
 
                         {/* Delete confirmation */}
                         {deleteConfirm && (
-                            <div className="dash-domain-modal-overlay" onClick={() => setDeleteConfirm(null)}>
-                                <div className="dash-domain-modal" onClick={e => e.stopPropagation()}>
+                            <div className="dash-domain-modal-overlay" onClick={() => setDeleteConfirm(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDeleteConfirm(null); }} role="button" tabIndex={0}>
+                                <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                                     <h3>Delete Project</h3>
                                     <p>Are you sure? This will delete all versions and cannot be undone.</p>
                                     <div className="dash-domain-modal-actions">
@@ -885,7 +885,7 @@ const Dashboard = () => {
                                     const preview = templatePreviews[template.id];
                                     return (
                                         <div key={template.id} className="dash-template-card">
-                                            <div className="dash-template-thumb" onClick={() => setPreviewModal(template.id)}>
+                                            <div className="dash-template-thumb" onClick={() => setPreviewModal(template.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewModal(template.id); }} role="button" tabIndex={0}>
                                                 {preview ? (
                                                     <iframe
                                                         title={template.name}
@@ -934,8 +934,8 @@ const Dashboard = () => {
 
                         {/* Full-screen preview modal */}
                         {previewModal && templatePreviews[previewModal] && (
-                            <div className="dash-template-modal-overlay" onClick={() => setPreviewModal(null)}>
-                                <div className="dash-template-modal" onClick={e => e.stopPropagation()}>
+                            <div className="dash-template-modal-overlay" onClick={() => setPreviewModal(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewModal(null); }} role="button" tabIndex={0}>
+                                <div className="dash-template-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                                     <div className="dash-template-modal-header">
                                         <h3>{templates.find(t => t.id === previewModal)?.name}</h3>
                                         <div className="dash-template-modal-actions">
@@ -1347,8 +1347,8 @@ const Dashboard = () => {
 
                 {/* Connect Domain Modal — Multi-step */}
                 {connectModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); }}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+                    <div className="dash-domain-modal-overlay" onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); } }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 520 }}>
                             {/* Close button */}
                             <button onClick={() => { setConnectModal(null); setConnectResult(null); setConnectError(null); setConnectStep(1); setDomainSearchResults(null); setDomainInput(''); }} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: 18 }}>×</button>
 
@@ -1491,8 +1491,8 @@ const Dashboard = () => {
 
                 {/* Add DNS Record Modal */}
                 {addRecordModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => setAddRecordModal(null)}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                    <div className="dash-domain-modal-overlay" onClick={() => setAddRecordModal(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setAddRecordModal(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 420 }}>
                             <h3 style={{ marginBottom: 12 }}>Add DNS Record</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 <select value={newRecord.type} onChange={e => setNewRecord({ ...newRecord, type: e.target.value })}
@@ -1518,8 +1518,8 @@ const Dashboard = () => {
 
                 {/* Disconnect Confirmation Modal */}
                 {disconnectConfirm && (
-                    <div className="dash-domain-modal-overlay" onClick={() => setDisconnectConfirm(null)}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()}>
+                    <div className="dash-domain-modal-overlay" onClick={() => setDisconnectConfirm(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDisconnectConfirm(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                             <h3>Disconnect Domain?</h3>
                             <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 16px' }}>
                                 This will remove the custom domain, SSL certificate, CDN, and DNS zone from our platform. Your site will still be accessible via the S3 URL.
@@ -1537,8 +1537,8 @@ const Dashboard = () => {
 
                 {/* Delete Site Confirmation Modal */}
                 {deleteSiteConfirm && (
-                    <div className="dash-domain-modal-overlay" onClick={() => setDeleteSiteConfirm(null)}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()}>
+                    <div className="dash-domain-modal-overlay" onClick={() => setDeleteSiteConfirm(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDeleteSiteConfirm(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                             <h3>Delete Deployed Site?</h3>
                             <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 16px' }}>
                                 This will permanently remove the site from S3, delete all associated domain resources (SSL, DNS, CDN), and cannot be undone.
@@ -1553,8 +1553,8 @@ const Dashboard = () => {
 
                 {/* Delete DNS Record Confirmation Modal */}
                 {deleteRecordConfirm && (
-                    <div className="dash-domain-modal-overlay" onClick={() => setDeleteRecordConfirm(null)}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()}>
+                    <div className="dash-domain-modal-overlay" onClick={() => setDeleteRecordConfirm(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDeleteRecordConfirm(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                             <h3>Delete DNS Record?</h3>
                             <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 16px' }}>
                                 Deleting this record cannot be undone. This may affect email delivery, domain verification, or other services using this record.
@@ -1572,8 +1572,8 @@ const Dashboard = () => {
 
                 {/* Transfer Request Modal */}
                 {transferModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => { setTransferModal(null); setTransferResult(null); }}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                    <div className="dash-domain-modal-overlay" onClick={() => { setTransferModal(null); setTransferResult(null); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setTransferModal(null); setTransferResult(null); } }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 440 }}>
                             {transferResult ? (
                                 <>
                                     <div className="dash-domain-modal-icon" style={{ background: transferResult.status === 'error' ? '#fef2f2' : '#ecfdf5' }}>
@@ -1620,8 +1620,8 @@ const Dashboard = () => {
 
                 {/* Token Request Modal */}
                 {tokenRequestModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => setTokenRequestModal(false)}>
-                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                    <div className="dash-domain-modal-overlay" onClick={() => setTokenRequestModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTokenRequestModal(false); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 440 }}>
                             <div className="dash-domain-modal-icon" style={{ background: '#ede9fe' }}>
                                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
                             </div>
@@ -1680,8 +1680,8 @@ const Dashboard = () => {
 
                 {/* New Design Modal */}
                 {newDesignModal && (
-                    <div className="dash-domain-modal-overlay" onClick={() => { setNewDesignModal(false); setNewDesignPreview(null); }}>
-                        <div className="dash-newdesign-modal" onClick={e => e.stopPropagation()}>
+                    <div className="dash-domain-modal-overlay" onClick={() => { setNewDesignModal(false); setNewDesignPreview(null); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setNewDesignModal(false); setNewDesignPreview(null); } }} role="button" tabIndex={0}>
+                        <div className="dash-newdesign-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                             {!newDesignPreview ? (
                                 <>
                                     <div className="dash-newdesign-header">
@@ -1694,7 +1694,7 @@ const Dashboard = () => {
                                     </div>
 
                                     {/* Start from scratch */}
-                                    <div className="dash-newdesign-scratch" onClick={() => { setNewDesignModal(false); navigate('/generator', { state: { newSession: true } }); }}>
+                                    <div className="dash-newdesign-scratch" onClick={() => { setNewDesignModal(false); navigate('/generator', { state: { newSession: true } }); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setNewDesignModal(false); navigate('/generator', { state: { newSession: true } }); } }} role="button" tabIndex={0}>
                                         <div className="dash-newdesign-scratch-icon">
                                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />

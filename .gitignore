@@ -42,3 +42,4 @@ backend/pattern_history.json
 .DS_Store
 Thumbs.db
 *.heapsnapshot
+.scannerwork/

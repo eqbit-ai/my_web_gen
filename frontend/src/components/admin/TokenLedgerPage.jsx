@@ -185,6 +185,9 @@ export default function TokenLedgerPage() {
                                                 <div
                                                     key={u.id}
                                                     onClick={() => selectUser(u)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectUser(u); }}
+                                                    role="button"
+                                                    tabIndex={0}
                                                     style={{
                                                         padding: '8px 12px', cursor: 'pointer', fontSize: 13,
                                                         borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between',

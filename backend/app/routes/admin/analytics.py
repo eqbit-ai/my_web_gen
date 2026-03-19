@@ -122,10 +122,7 @@ async def analytics_generation_success(
             if day not in day_map:
                 day_map[day] = {"date": day, "completed": 0, "failed": 0, "pending": 0}
             status = r[1]
-            if status in day_map[day]:
-                day_map[day][status] = r[2]
-            else:
-                day_map[day][status] = r[2]
+            day_map[day][status] = r[2]
 
         daily_stats = list(day_map.values())
     except Exception:

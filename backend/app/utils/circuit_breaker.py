@@ -28,6 +28,8 @@ from openai import (
     APITimeoutError as OpenAITimeoutError,
 )
 
+from app.utils import sanitize_log
+
 logger = logging.getLogger(__name__)
 
 # Status codes considered transient (worth retrying)
@@ -291,5 +293,5 @@ async def reset_circuit(provider: str) -> bool:
         return False
     async with cb._lock:
         cb._metrics = CircuitMetrics()
-    logger.info("Circuit '%s' manually reset to CLOSED.", provider)
+    logger.info("Circuit '%s' manually reset to CLOSED.", sanitize_log(provider))
     return True

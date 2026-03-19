@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
   "memory": "2048",
-  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-execution-role",
-  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/meydan-ecs-task-role",
+  "executionRoleArn": "arn:aws:iam::371170753756:role/meydan-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::371170753756:role/meydan-ecs-task-role",
   "containerDefinitions": [
     {
       "name": "meydan-worker",
-      "image": "<ACCOUNT_ID>.dkr.ecr.me-south-1.amazonaws.com/meydan-api:latest",
+      "image": "371170753756.dkr.ecr.us-east-1.amazonaws.com/meydan-api:latest",
       "essential": true,
       "command": ["python", "-m", "app.worker"],
       "environment": [
@@ -20,35 +20,67 @@
         {
           "name": "WORKER_CONCURRENCY",
           "value": "5"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "AWS_S3_DEPLOY_BUCKET",
+          "value": "meydan-dev-deployed-sites"
         }
       ],
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/database-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/database-url-Hge1HD"
         },
         {
           "name": "REDIS_URL",
-          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/redis-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/redis-url-2Yody8"
         },
         {
-          "name": "JWT_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/jwt-secret"
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/jwt-secret-pPBHPs"
         },
         {
           "name": "OPENAI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/openai-api-key"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/openai-api-key-XiL603"
         },
         {
           "name": "ANTHROPIC_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:me-south-1:<ACCOUNT_ID>:secret:meydan/anthropic-api-key"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/anthropic-api-key-xmXVcE"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/gemini-api-key-gSvPYV"
+        },
+        {
+          "name": "PEXELS_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/pexels-api-key-wtuIHu"
+        },
+        {
+          "name": "UNSPLASH_ACCESS_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/unsplash-access-key-jLp3tf"
+        },
+        {
+          "name": "OPENPROVIDER_USERNAME",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/openprovider-username-95J2i9"
+        },
+        {
+          "name": "OPENPROVIDER_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/openprovider-password-v3FVty"
+        },
+        {
+          "name": "OPENPROVIDER_RESELLER_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:371170753756:secret:meydan/dev/openprovider-reseller-id-bxBsN5"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/meydan-worker",
-          "awslogs-region": "me-south-1",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "worker"
         }
       }

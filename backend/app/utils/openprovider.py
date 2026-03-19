@@ -11,6 +11,8 @@ import time
 
 import httpx
 
+from app.utils import sanitize_log
+
 logger = logging.getLogger(__name__)
 
 _token: str | None = None
@@ -106,7 +108,7 @@ async def _resolve_domain_id(domain_name: str, tld: str) -> int:
 
     domain_id = results[0]["id"]
     _domain_id_cache[key] = domain_id
-    logger.info("[OpenProvider] Resolved %s → ID %d", key, domain_id)
+    logger.info("[OpenProvider] Resolved %s → ID %d", sanitize_log(key), domain_id)
     return domain_id
 
 
@@ -338,7 +340,7 @@ async def update_nameservers(domain_name: str, tld: str, nameservers: list[str])
         "name_servers": [{"name": ns} for ns in nameservers],
     }
     data = await _request("PUT", f"/domains/{domain_id}", json=payload)
-    logger.info("[OpenProvider] Nameservers updated for %s.%s → %s", domain_name, tld, nameservers)
+    logger.info("[OpenProvider] Nameservers updated for %s.%s → %s", sanitize_log(domain_name), sanitize_log(tld), sanitize_log(str(nameservers)))
     return data
 
 

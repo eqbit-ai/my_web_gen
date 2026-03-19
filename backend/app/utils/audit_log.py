@@ -18,6 +18,9 @@ import traceback
 from app.database import async_session
 from app.models.audit import AuditLog
 
+# Set to prevent premature garbage collection of fire-and-forget tasks
+_background_tasks: set = set()
+
 
 async def log_event(
     user_id: str,
@@ -73,7 +76,7 @@ def log_event_bg(
     """
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(
+        task = loop.create_task(
             log_event(
                 user_id=user_id,
                 action=action,
@@ -83,6 +86,8 @@ def log_event_bg(
                 ip_address=ip_address,
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
     except RuntimeError:
         # No running loop — skip logging silently
         pass

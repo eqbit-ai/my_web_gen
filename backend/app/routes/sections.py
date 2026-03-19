@@ -6,6 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
+import aiofiles
+
+from app.utils import sanitize_log
 from app.utils.auth import decode_access_token
 from app.utils.content_moderation import check_prompt_safety
 from app.utils.design_system import design_system_to_prompt_context
@@ -475,7 +478,7 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
     t0 = time.time()
 
     _logger.info(
-        f'🟡 Section Regenerate Request → id="{req.sectionId}", prompt="{(req.prompt or "")[:80]}", pageSlug="{req.pageSlug}"'
+        f'🟡 Section Regenerate Request → id="{sanitize_log(req.sectionId)}", prompt="{sanitize_log((req.prompt or "")[:80])}", pageSlug="{sanitize_log(req.pageSlug)}"'
     )
 
     if req.prompt:
@@ -486,7 +489,7 @@ async def regenerate(req: RegenerateRequest, user: dict = Depends(require_auth))
     session = await _verify_session_ownership(req.sessionId, user)
 
     _logger.info(
-        f"📄 Session → multipage={session.get('multipage')}, pages={list(session.get('pages', {}).keys())}, pageSlug={req.pageSlug}"
+        f"📄 Session → multipage={session.get('multipage')}, pages={list(session.get('pages', {}).keys())}, pageSlug={sanitize_log(req.pageSlug)}"
     )
     page_html = _get_page_html(session, req.pageSlug)
     existing_section = extract_section_html(page_html, req.sectionId)
@@ -725,12 +728,12 @@ USER REQUEST: {req.prompt}"""
 
     _dbg_dir = f"/tmp/meydan_debug/regen_{req.sectionId}"
     _dbg_os.makedirs(_dbg_dir, exist_ok=True)
-    with open(f"{_dbg_dir}/raw_response.txt", "w") as f:
-        f.write(raw_text)
-    with open(f"{_dbg_dir}/parsed_html.html", "w") as f:
-        f.write(result.get("html", ""))
-    with open(f"{_dbg_dir}/parsed_js.js", "w") as f:
-        f.write(result.get("js", ""))
+    async with aiofiles.open(f"{_dbg_dir}/raw_response.txt", "w") as f:
+        await f.write(raw_text)
+    async with aiofiles.open(f"{_dbg_dir}/parsed_html.html", "w") as f:
+        await f.write(result.get("html", ""))
+    async with aiofiles.open(f"{_dbg_dir}/parsed_js.js", "w") as f:
+        await f.write(result.get("js", ""))
 
     # Extract <script> tags from HTML and move to JS result
     import re as _script_re

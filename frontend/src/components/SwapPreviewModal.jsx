@@ -29,8 +29,8 @@ const SwapPreviewModal = ({ isOpen, onClose, currentHtml, currentCss, previewHtm
     if (!isOpen) return null;
 
     return (
-        <div className="spm-overlay" onClick={onClose}>
-            <div className="spm-modal" onClick={e => e.stopPropagation()}>
+        <div className="spm-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="spm-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="spm-header">
                     <h3>Preview Changes</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>

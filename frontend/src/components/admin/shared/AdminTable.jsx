@@ -123,9 +123,11 @@ export default function AdminTable({
                                 className={selectedIds.includes(row[rowKey]) ? 'admin-row-selected' : ''}
                                 style={onRowClick ? { cursor: 'pointer' } : undefined}
                                 onClick={() => onRowClick && onRowClick(row)}
+                                onKeyDown={(e) => { if (onRowClick && (e.key === 'Enter' || e.key === ' ')) onRowClick(row); }}
+                                tabIndex={onRowClick ? 0 : undefined}
                             >
                                 {selectable && (
-                                    <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
+                                    <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                                         <input
                                             type="checkbox"
                                             className="admin-checkbox"

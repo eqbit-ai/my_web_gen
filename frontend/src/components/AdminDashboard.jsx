@@ -331,7 +331,7 @@ function SitesPage() {
                             </thead>
                             <tbody>
                                 {sites.map(s => (
-                                    <tr key={s.id} style={trHover} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                                    <tr key={s.id} style={trHover} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                         <td style={tdStyle}>{s.id}</td>
                                         <td style={tdStyle}>{s.user_id || s.user_email || '—'}</td>
                                         <td style={tdStyle}>{s.domain || '—'}</td>
@@ -377,7 +377,7 @@ function SitesPage() {
                             </thead>
                             <tbody>
                                 {gens.map(g => (
-                                    <tr key={g.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                                    <tr key={g.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                         <td style={tdStyle}>{g.id}</td>
                                         <td style={tdStyle}>{g.user_id || g.user_email || '—'}</td>
                                         <td style={tdStyle}><StatusBadge status={g.status} size="sm" /></td>
@@ -466,7 +466,7 @@ function DomainsPage() {
                             </thead>
                             <tbody>
                                 {domains.map(d => (
-                                    <tr key={d.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                                    <tr key={d.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                         <td style={tdStyle}>{d.domain || '—'}</td>
                                         <td style={tdStyle}>{d.site_name || '—'}</td>
                                         <td style={tdStyle}>{d.user_email || '—'}</td>
@@ -702,8 +702,8 @@ function UsersPage() {
                             </thead>
                             <tbody>
                                 {users.map(u => (
-                                    <tr key={u.id} style={trHover} onClick={() => openDetail(u.id)} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
-                                        <td style={tdStyle} onClick={e => e.stopPropagation()}>
+                                    <tr key={u.id} style={trHover} onClick={() => openDetail(u.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openDetail(u.id); }} tabIndex={0} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
+                                        <td style={tdStyle} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                                             <input type="checkbox" checked={selectedIds.includes(u.id)} onChange={() => toggleSelect(u.id)} />
                                         </td>
                                         <td style={tdStyle}>{u.company_name || u.name || '—'}</td>
@@ -902,7 +902,7 @@ function TokensPage() {
                             </thead>
                             <tbody>
                                 {transactions.map(t => (
-                                    <tr key={t.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                                    <tr key={t.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                         <td style={tdStyle}>{t.id}</td>
                                         <td style={tdStyle}>{t.user_id || '—'}</td>
                                         <td style={tdStyle}><StatusBadge status={t.type || t.transaction_type} size="sm" /></td>
@@ -983,7 +983,7 @@ function TemplatesTab() {
                     </thead>
                     <tbody>
                         {templates.map(t => (
-                            <tr key={t.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                            <tr key={t.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                 <td style={tdStyle}>
                                     {editing === t.id ? (
                                         <input style={inputStyle} value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} />
@@ -1051,7 +1051,7 @@ function AuditTab() {
                         </thead>
                         <tbody>
                             {logs.map((l, i) => (
-                                <tr key={l.id || i} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''}>
+                                <tr key={l.id || i} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
                                     <td style={tdStyle}>{formatDate(l.created_at || l.timestamp)}</td>
                                     <td style={tdStyle}>{l.user_id || l.user_email || '—'}</td>
                                     <td style={tdStyle}>{l.action || l.action_type}</td>
@@ -1413,7 +1413,9 @@ function Sidebar({ collapsed, onToggle }) {
                                 transition: 'all 0.15s ease', whiteSpace: 'nowrap',
                             }}
                             onMouseOver={e => { if (!active) e.currentTarget.style.background = T.surfaceHover; }}
+                            onFocus={e => { if (!active) e.currentTarget.style.background = T.surfaceHover; }}
                             onMouseOut={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                            onBlur={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
                         >
                             <Icon size={18} />
                             {!collapsed && <span style={{ fontSize: 13, fontWeight: active ? 600 : 400 }}>{item.label}</span>}
@@ -1427,7 +1429,9 @@ function Sidebar({ collapsed, onToggle }) {
                 <button onClick={() => navigate('/dashboard')}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: collapsed ? '10px 14px' : '10px 16px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: T.muted, whiteSpace: 'nowrap' }}
                     onMouseOver={e => e.currentTarget.style.background = T.surfaceHover}
+                    onFocus={e => e.currentTarget.style.background = T.surfaceHover}
                     onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                    onBlur={e => e.currentTarget.style.background = 'transparent'}
                 >
                     <ArrowLeft size={18} />
                     {!collapsed && <span style={{ fontSize: 13 }}>Back to App</span>}
@@ -1435,7 +1439,9 @@ function Sidebar({ collapsed, onToggle }) {
                 <button onClick={() => { logout(); navigate('/login'); }}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: collapsed ? '10px 14px' : '10px 16px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: T.danger, marginTop: 4, whiteSpace: 'nowrap' }}
                     onMouseOver={e => e.currentTarget.style.background = T.surfaceHover}
+                    onFocus={e => e.currentTarget.style.background = T.surfaceHover}
                     onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                    onBlur={e => e.currentTarget.style.background = 'transparent'}
                 >
                     <LogOut size={18} />
                     {!collapsed && <span style={{ fontSize: 13 }}>Logout</span>}

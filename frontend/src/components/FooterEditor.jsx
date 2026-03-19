@@ -90,8 +90,8 @@ const FooterEditor = ({ isOpen, onClose, sessionId, projectId, logoUrl, onUpdate
     if (!isOpen) return null;
 
     return (
-        <div className="fe-overlay" onClick={onClose}>
-            <div className="fe-modal" onClick={e => e.stopPropagation()}>
+        <div className="fe-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="fe-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="fe-header">
                     <h3><Columns size={16} /> Footer Editor</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>

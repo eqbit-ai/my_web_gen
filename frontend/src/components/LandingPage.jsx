@@ -601,7 +601,7 @@ const FAQSection = () => {
                 </div>
                 <div className="faq-list">
                     {faqData.map((item, i) => (
-                        <div className={`faq-item glow-card ${openIndex === i ? 'open' : ''}`} key={i} onClick={() => toggle(i)}>
+                        <div className={`faq-item glow-card ${openIndex === i ? 'open' : ''}`} key={i} onClick={() => toggle(i)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggle(i); }} role="button" tabIndex={0}>
                             <div className="faq-question">
                                 <span>{item.q}</span>
                                 <div className={`faq-icon ${openIndex === i ? 'open' : ''}`}>
@@ -1342,17 +1342,34 @@ const LandingPage = () => {
         const vid = videoRef.current;
         if (!vid || videoEndedRef.current) return;
         vid.currentTime = 0;
-        vid.play().catch(() => {
-            videoEndedRef.current = true;
-            setVideoEnded(true);
-        });
+        // Ensure muted (required for mobile autoplay)
+        vid.muted = true;
+        vid.setAttribute('playsinline', '');
+        vid.setAttribute('webkit-playsinline', '');
+        const tryPlay = () => {
+            vid.play().catch(() => {
+                // Retry once after a short delay (mobile sometimes needs a tick)
+                setTimeout(() => {
+                    vid.play().catch(() => {
+                        videoEndedRef.current = true;
+                        setVideoEnded(true);
+                    });
+                }, 300);
+            });
+        };
+        // If video data is ready, play immediately; otherwise wait for canplay
+        if (vid.readyState >= 3) {
+            tryPlay();
+        } else {
+            vid.addEventListener('canplay', tryPlay, { once: true });
+        }
         // Fallback timer in case onEnded doesn't fire
         const timer = setTimeout(() => {
             if (!videoEndedRef.current) {
                 videoEndedRef.current = true;
                 setVideoEnded(true);
             }
-        }, 5500);
+        }, 8000);
         return () => clearTimeout(timer);
     }, [loaded]);
 
@@ -1379,6 +1396,7 @@ const LandingPage = () => {
                         ref={videoRef}
                         className={`hero-video${videoEnded ? ' hero-video-hidden' : ''}`}
                         src="/Fawri-vid-opt.mp4"
+                        autoPlay
                         muted
                         playsInline
                         preload="auto"

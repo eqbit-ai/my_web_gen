@@ -190,6 +190,10 @@ def generate_query_variations(query: str, role: str, niche_key: str = None) -> l
     words = query.split()
     variations = [query]  # Original always first
 
+    # For people/team roles, add "professional photo" to ensure real headshots
+    if role in PEOPLE_ROLES:
+        variations.insert(0, f"{query} professional photo")
+
     # Variation 2: just the first 2-3 most important words
     if len(words) >= 3:
         variations.append(" ".join(words[:3]))
@@ -306,6 +310,20 @@ def _get_niche_qualifier(niche_key: str, role: str) -> str:
     return ""
 
 
+# Global negative keywords — applied to ALL images regardless of niche
+# Prevents art, paintings, illustrations from appearing as real photos
+GLOBAL_NEGATIVE_KEYWORDS = {
+    "painting", "portrait painting", "oil painting", "renaissance",
+    "artwork", "illustration", "drawing", "sketch", "sculpture",
+    "museum", "gallery art", "canvas", "watercolor", "baroque",
+    "medieval", "classical art", "fine art", "masterpiece",
+    "statue", "engraving", "fresco", "mural",
+}
+
+# Roles where we specifically want real photos of people (not art)
+PEOPLE_ROLES = {"team", "testimonial", "about", "staff", "founder", "portrait"}
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # IMAGE SCORING
 # ═══════════════════════════════════════════════════════════════════════
@@ -352,10 +370,16 @@ def score_unsplash_photo(photo: dict, keywords: list[str], orientation: str, nic
         if kw in tag_titles:
             score += 2
 
+    # Global negative keyword penalty — reject paintings, art, illustrations
+    all_text = desc + " " + " ".join(tag_titles)
+    for neg in GLOBAL_NEGATIVE_KEYWORDS:
+        if neg in all_text:
+            score -= 20  # Heavy penalty — paintings should never appear as real photos
+            break
+
     # Niche negative keyword penalty — reject images that match wrong context
     if niche_key and niche_key in NICHE_NEGATIVE_KEYWORDS:
         neg_words = NICHE_NEGATIVE_KEYWORDS[niche_key]
-        all_text = desc + " " + " ".join(tag_titles)
         for neg in neg_words:
             if neg in all_text:
                 score -= 15  # Heavy penalty — effectively disqualifies the image
@@ -395,6 +419,12 @@ def score_pexels_photo(photo: dict, keywords: list[str], orientation: str, niche
     alt = (photo.get("alt") or "").lower()
     matched_keywords = sum(1 for kw in keywords if kw in alt)
     score += matched_keywords * 3
+
+    # Global negative keyword penalty — reject paintings, art, illustrations
+    for neg in GLOBAL_NEGATIVE_KEYWORDS:
+        if neg in alt:
+            score -= 20
+            break
 
     # Niche negative keyword penalty
     if niche_key and niche_key in NICHE_NEGATIVE_KEYWORDS:

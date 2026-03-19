@@ -79,8 +79,8 @@ const ImageLibrary = ({ isOpen, onClose, projectId, onSelect }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="il-overlay" onClick={onClose}>
-            <div className="il-modal" onClick={e => e.stopPropagation()}>
+        <div className="il-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="il-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="il-header">
                     <h3><Image size={16} /> Image Library</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>
@@ -106,7 +106,7 @@ const ImageLibrary = ({ isOpen, onClose, projectId, onSelect }) => {
                         </label>
                         <div className="il-grid">
                             {uploads.map(img => (
-                                <div key={img.id} className="il-item" onClick={() => onSelect(img.url)}>
+                                <div key={img.id} className="il-item" onClick={() => onSelect(img.url)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(img.url); }} role="button" tabIndex={0}>
                                     <img src={img.url} alt={img.original_name || 'Upload'} />
                                     <div className="il-item-overlay">
                                         <button onClick={(e) => { e.stopPropagation(); handleDelete(img.id); }} title="Delete">
@@ -138,7 +138,7 @@ const ImageLibrary = ({ isOpen, onClose, projectId, onSelect }) => {
                         </div>
                         <div className="il-grid">
                             {stockResults.map(img => (
-                                <div key={img.id} className="il-item" onClick={() => onSelect(img.url)}>
+                                <div key={img.id} className="il-item" onClick={() => onSelect(img.url)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(img.url); }} role="button" tabIndex={0}>
                                     <img src={img.thumb || img.url} alt={img.alt || 'Stock photo'} />
                                     <div className="il-item-overlay">
                                         <span className="il-photographer">{img.photographer}</span>

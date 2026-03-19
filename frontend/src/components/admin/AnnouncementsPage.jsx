@@ -77,7 +77,7 @@ export default function AnnouncementsPage() {
             {/* Create/Edit Modal */}
             {showModal && (
                 <>
-                    <div className="admin-modal-backdrop" onClick={() => setShowModal(false)} />
+                    <div className="admin-modal-backdrop" onClick={() => setShowModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowModal(false); }} role="button" tabIndex={0} />
                     <div className="admin-modal" style={{ width: 520 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <h3>{editingId ? 'Edit' : 'New'} Announcement</h3>
@@ -123,7 +123,7 @@ export default function AnnouncementsPage() {
             {/* Preview Modal */}
             {preview && (
                 <>
-                    <div className="admin-modal-backdrop" onClick={() => setPreview(null)} />
+                    <div className="admin-modal-backdrop" onClick={() => setPreview(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreview(null); }} role="button" tabIndex={0} />
                     <div className="admin-modal">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                             <h3>{preview.title}</h3>

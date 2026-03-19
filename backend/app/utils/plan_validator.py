@@ -233,7 +233,7 @@ def _fix_item_counts(section: dict, stype: str, pattern: str, content: dict) -> 
             clone = copy.deepcopy(source)
             # Add a suffix to avoid exact duplicates
             if "title" in clone:
-                clone["title"] = clone["title"]
+                clone["title"] = clone["title"] + " "  # slight variation to avoid exact duplicate
             items.append(clone)
 
         fixes.append(f"[PLAN FIX] {stype}/{pattern}: padded {current_count} → {target} items")

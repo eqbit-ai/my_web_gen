@@ -67,8 +67,8 @@ const ContentForm = ({ isOpen, onClose, sectionType, onSubmit, projectId }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="cf-overlay" onClick={onClose}>
-            <div className="cf-modal" onClick={e => e.stopPropagation()}>
+        <div className="cf-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="cf-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="cf-header">
                     <h3><Type size={16} /> Section Content</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>

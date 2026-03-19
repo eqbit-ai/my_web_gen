@@ -164,8 +164,8 @@ const KeyboardShortcutsModal = ({ onClose }) => {
     }, [onClose]);
 
     return (
-        <div className="shortcuts-overlay" onClick={onClose}>
-            <div className="shortcuts-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="shortcuts-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="shortcuts-modal" onClick={(e) => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="shortcuts-header">
                     <h3><Keyboard size={18} /> Keyboard Shortcuts</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>
@@ -341,7 +341,7 @@ const OnboardingTour = ({ step, onNext, onSkip, totalSteps }) => {
 
     return (
         <>
-            <div className="onboarding-overlay" onClick={onSkip} />
+            <div className="onboarding-overlay" onClick={onSkip} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSkip(e); }} role="button" tabIndex={0} />
             <div className="onboarding-highlight" style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }} />
             <div className={`onboarding-tooltip arrow-${stepData.arrow}`} style={tooltipStyle}>
                 <div className="onboarding-step-count">Step {step + 1} of {totalSteps}</div>
@@ -921,7 +921,7 @@ const WebsiteGenerator = () => {
 
     const categories = useMemo(() => {
         const cats = new Set(templates.map(t => t.category).filter(Boolean));
-        return ['All', ...Array.from(cats).sort()];
+        return ['All', ...Array.from(cats).sort((a, b) => a.localeCompare(b))];
     }, [templates]);
 
     const filteredItems = useMemo(() => {
@@ -2049,7 +2049,7 @@ const WebsiteGenerator = () => {
                                 if (cmsMode) {
                                     const iframe = document.querySelector('.preview-iframe');
                                     if (iframe?.contentWindow) {
-                                        iframe.contentWindow.postMessage({ type: 'cms-finish-edit' }, '*');
+                                        iframe.contentWindow.postMessage({ type: 'cms-finish-edit' }, window.location.origin);
                                     }
                                     // Small delay to let the cms-edit message arrive before re-render
                                     setTimeout(() => setCmsMode(false), 50);
@@ -2256,7 +2256,7 @@ const WebsiteGenerator = () => {
             {/* Element Edit Modal */}
             {selectedElement && (
                 <>
-                    <div className="gn-backdrop" onClick={handleCancelEdit} />
+                    <div className="gn-backdrop" onClick={handleCancelEdit} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCancelEdit(); }} role="button" tabIndex={0} />
                     <div className="gn-element-panel">
                         <div className="gn-ep-header">
                             <div className="gn-ep-info">

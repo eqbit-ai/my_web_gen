@@ -23,6 +23,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
+from app.utils import sanitize_log
 from app.utils.audit_log import log_event_bg
 from app.utils.auth import decode_access_token
 from app.utils.circuit_breaker import CircuitOpenError, circuit_protected
@@ -75,6 +76,9 @@ from app.utils.session_store import (
 from app.utils.token_tracker import check_budget, deduct_tokens
 
 logger = logging.getLogger(__name__)
+
+# Set to prevent premature garbage collection of fire-and-forget tasks
+_background_tasks: set = set()
 
 router = APIRouter()
 
@@ -129,10 +133,12 @@ async def _complete_job(job_id: str, status: str = "completed", error: str = "")
 def _deduct_bg(user_id: int, usage: dict, provider: str, model: str, operation: str):
     """Fire-and-forget token deduction."""
     if usage.get("input_tokens") or usage.get("output_tokens"):
-        asyncio.create_task(deduct_tokens(
+        task = asyncio.create_task(deduct_tokens(
             user_id, usage.get("input_tokens", 0), usage.get("output_tokens", 0),
             provider, model, operation
         ))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
 
 def _log_generation_bg(
@@ -194,7 +200,9 @@ def _log_generation_bg(
 
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(_insert())
+        task = loop.create_task(_insert())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
     except RuntimeError:
         pass
 
@@ -336,10 +344,13 @@ def log_stage(stage_name: str, duration_ms: int, response_len: int, success: boo
 def save_debug(session_id: str, stage: str, content: str):
     """Save stage output to debug directory."""
     try:
-        debug_dir = os.path.join(DEBUG_DIR, session_id[:8])
+        # Sanitize inputs to prevent path traversal
+        safe_session = re.sub(r"[^a-zA-Z0-9_-]", "", session_id[:8])
+        safe_stage = re.sub(r"[^a-zA-Z0-9_-]", "", stage)
+        debug_dir = os.path.join(DEBUG_DIR, safe_session)
         os.makedirs(debug_dir, exist_ok=True)
-        ext = {"plan": "json", "html": "html", "css": "css", "js": "js"}.get(stage, "txt")
-        with open(os.path.join(debug_dir, f"{stage}.{ext}"), "w") as f:
+        ext = {"plan": "json", "html": "html", "css": "css", "js": "js"}.get(safe_stage, "txt")
+        with open(os.path.join(debug_dir, f"{safe_stage}.{ext}"), "w") as f:
             f.write(content)
     except Exception:
         pass  # Debug storage is best-effort
@@ -1316,7 +1327,7 @@ Study this reference's design quality: variable naming, spacing values, shadow d
     text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
-        16000,
+        28000,
         system,
         "Generate the HTML markup for this website using the specified layout patterns. Return only the html code block.",
         use_prompt_cache=True,
@@ -1363,7 +1374,7 @@ async def stage_2_html_from_template(
     text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
-        16000,
+        28000,
         system,
         "Customize this template for the business described in the plan. Return the complete HTML.",
         use_prompt_cache=True,
@@ -1583,7 +1594,7 @@ JS RULES:
     text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
-        16000,  # HTML ~12K + JS ~4K
+        28000,
         system,
         "Generate the complete HTML markup AND JavaScript. Return TWO code blocks: first ```html then ```js. Keep JS concise — only implement interactions for elements that exist in the HTML.",
         use_prompt_cache=True,
@@ -1728,7 +1739,7 @@ Apply similar polish, spacing, and shadow quality to this page.
         text, _usage = await _llm_stream(
             client,
             "claude-sonnet-4-20250514",
-            16000,
+            28000,
             prompt,
             f"Generate the {title} page HTML. Follow ALL pattern templates exactly.",
             use_prompt_cache=True,
@@ -2740,7 +2751,7 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
     ]
     prompt_lower = prompt.lower()
     is_redesign = any(kw in prompt_lower for kw in redesign_keywords)
-    max_tokens = 30000 if is_redesign else 16000
+    max_tokens = 30000 if is_redesign else 28000
     logger.info(f"⚙️ Rewrite Config → {'MAJOR REDESIGN' if is_redesign else 'standard edit'}, max_tokens={max_tokens:,}")
     logger.info(f"📦 Current Page → HTML={len(session['html']):,} chars, CSS={len(session['css']):,} chars")
 
@@ -2998,7 +3009,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
     mode = "NEW GENERATION" if is_new else "EDIT"
     logger.info(
-        f'{"🆕" if is_new else "✏️"} [{mode}] session={session_id[:8]}... prompt="{req.prompt[:80]}{"..." if len(req.prompt) > 80 else ""}"'
+        f'{"🆕" if is_new else "✏️"} [{mode}] session={sanitize_log(session_id[:8])}... prompt="{sanitize_log(req.prompt[:80])}{"..." if len(req.prompt) > 80 else ""}"'
     )
 
     # ── Track job for admin visibility ──────────────────────────────
@@ -3564,7 +3575,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     index_html = pages_dict.get("index", {}).get("html", "")
                     index_css = pages_dict.get("index", {}).get("css", "")
                     js_task = asyncio.create_task(
-                        stage_3_js(index_html, index_css, plan, session_id)
+                        stage_3_js(index_html, session_id)
                     )
                     while not js_task.done():
                         await asyncio.sleep(5)
@@ -3933,9 +3944,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
                     ref_html, ref_css = _load_template_file(req.templateId)
                     reference_html = f"<style>{ref_css}</style>\n{ref_html}"
-                    logger.info(f"[TEMPLATE] loaded '{req.templateId}' ({len(reference_html):,} chars)")
+                    logger.info(f"[TEMPLATE] loaded '{sanitize_log(req.templateId)}' ({len(reference_html):,} chars)")
                 except Exception as e:
-                    logger.warning(f"[TEMPLATE] failed to load '{req.templateId}': {e}")
+                    logger.warning(f"[TEMPLATE] failed to load '{sanitize_log(req.templateId)}': {e}")
 
             # Auto-match reference template from niche if none was explicitly chosen
             if not reference_html and niche_key:
@@ -4460,8 +4471,8 @@ def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] 
 @router.post("/edit-element")
 async def edit_element(req: EditElementRequest, user: dict = Depends(require_auth)):
     logger.info(
-        f'🖱️ [ELEMENT EDIT] path="{req.elementPath}" prompt="{req.prompt[:80]}" '
-        f'element={len(req.elementHtml):,}chars section={req.sectionType or "?"} page={req.currentPage}'
+        f'🖱️ [ELEMENT EDIT] path="{sanitize_log(req.elementPath)}" prompt="{sanitize_log(req.prompt[:80])}" '
+        f'element={len(req.elementHtml):,}chars section={sanitize_log(req.sectionType or "?")} page={sanitize_log(req.currentPage)}'
     )
 
     req.prompt = sanitize_prompt(req.prompt)

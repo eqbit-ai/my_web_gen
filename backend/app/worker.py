@@ -204,7 +204,7 @@ async def worker_loop():
             for t in active_tasks:
                 t.cancel()
             await asyncio.gather(*active_tasks, return_exceptions=True)
-            break
+            raise
         except Exception as e:
             logger.error("worker_loop_error", extra={"error": str(e)})
             await asyncio.sleep(2)

@@ -108,7 +108,7 @@ export default function GenerationStatsPage() {
                         <div className="admin-stat-label">Completed</div>
                     </div>
                 </div>
-                <div className="admin-stat-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/failed-generations')}>
+                <div className="admin-stat-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/failed-generations')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/admin/failed-generations'); }} role="button" tabIndex={0}>
                     <div className="admin-stat-body">
                         <div className="admin-stat-value" style={{ color: T.danger }}>{totalFailed}</div>
                         <div className="admin-stat-label">Failed <span style={{ fontSize: 10, color: T.muted }}>→ view all</span></div>

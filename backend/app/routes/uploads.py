@@ -6,6 +6,7 @@ import ipaddress
 import mimetypes
 import uuid
 from io import BytesIO
+import urllib.parse
 from urllib.parse import urlparse
 
 import httpx
@@ -205,18 +206,25 @@ async def upload_from_url(req: FromUrlRequest, user: dict = Depends(require_auth
         if hostname.lower() in blocked or hostname.endswith(".internal") or hostname.endswith(".local"):
             raise HTTPException(status_code=400, detail="URLs pointing to internal networks are not allowed") from None
 
+    # Reconstruct URL from validated components to prevent injection
+    safe_url = parsed._replace(
+        path="/".join(urllib.parse.quote(seg, safe="") for seg in parsed.path.split("/")),
+    ).geturl()
+
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=False, max_redirects=0) as client:
-            resp = await client.get(req.url)
+            resp = await client.get(safe_url)
             resp.raise_for_status()
     except httpx.HTTPError as e:
         raise HTTPException(status_code=400, detail=f"Failed to download: {str(e)}") from e
 
     file_bytes = resp.content
 
-    # Try to determine filename from URL
+    # Try to determine filename from URL (sanitize to prevent path traversal)
     url_path = req.url.split("?")[0].split("#")[0]
-    original_name = url_path.rsplit("/", 1)[-1] or "downloaded.jpg"
+    original_name = os.path.basename(url_path.rsplit("/", 1)[-1]) or "downloaded.jpg"
+    # Strip any remaining path separators or traversal attempts
+    original_name = original_name.replace("/", "").replace("\\", "").replace("..", "")
     if "." not in original_name:
         # Try to get extension from content-type
         ct = resp.headers.get("content-type", "image/jpeg")

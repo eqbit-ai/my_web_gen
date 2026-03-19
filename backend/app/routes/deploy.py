@@ -9,6 +9,7 @@ Flow:
   5. Stores deployment in sites table for dashboard tracking
 """
 
+import asyncio
 import logging
 import os
 
@@ -19,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.sql import func
 
 from app.database import async_session
+from app.utils import sanitize_log
 from app.models.site import Site
 from app.utils.auth import decode_access_token
 from app.utils.cloudfront_acm import (
@@ -44,6 +46,9 @@ from app.utils.s3_deploy import delete_site, deploy_site, verify_credentials
 from app.utils.session_store import get_session
 
 logger = logging.getLogger(__name__)
+
+# Set to prevent premature garbage collection of fire-and-forget tasks
+_background_tasks: set = set()
 
 router = APIRouter()
 security = HTTPBearer()
@@ -203,7 +208,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         except Exception as e:
             logger.warning("Cache invalidation failed for site %s: %s", site_id, e)
 
-    logger.info("Site deployed to S3: %s → %s", site_name, result["url"])
+    logger.info("Site deployed to S3: %s → %s", sanitize_log(site_name), result["url"])
 
     return {
         "success": True,
@@ -447,7 +452,7 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         except HTTPException:
             raise
         except Exception as e:
-            logger.warning("[DOMAIN] Availability check failed for %s: %s — proceeding anyway", domain, e)
+            logger.warning("[DOMAIN] Availability check failed for %s: %s — proceeding anyway", sanitize_log(domain), e)
 
     async with async_session() as db:
         result = await db.execute(
@@ -622,7 +627,7 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
             "SSL certificate will be validated automatically once DNS propagates."
         )
 
-    logger.info("Domain %s connected to site %s (status=%s, reused_infra=%s)", domain, site_id, domain_status_val, bool(has_existing_zone))
+    logger.info("Domain %s connected to site %s (status=%s, reused_infra=%s)", sanitize_log(domain), sanitize_log(str(site_id)), sanitize_log(domain_status_val), bool(has_existing_zone))
 
     return {
         "success": True,
@@ -799,8 +804,6 @@ async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
     For external domains:
       - Deletes CloudFront + ACM cert + Route53 zone (full cleanup)
     """
-    import asyncio
-
     async with async_session() as db:
         result = await db.execute(
             select(Site).where(Site.id == site_id, Site.user_id == user["user_id"])
@@ -901,7 +904,9 @@ async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
         except Exception as e:
             logger.warning("Background cleanup failed for %s: %s", domain_name, e)
 
-    asyncio.create_task(_cleanup())
+    task = asyncio.create_task(_cleanup())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
     msg = "Domain disconnected."
     if is_platform_domain:
@@ -984,8 +989,6 @@ async def get_available_domains(site_id: str, user: dict = Depends(require_auth)
 @router.delete("/{site_id}")
 async def delete_deployed_site(site_id: str, user: dict = Depends(require_auth)):
     """Permanently delete a deployed site — removes S3 files, domain resources, and DB record."""
-    import asyncio
-
     async with async_session() as db:
         result = await db.execute(
             select(Site).where(Site.id == site_id, Site.user_id == user["user_id"])
@@ -1033,7 +1036,9 @@ async def delete_deployed_site(site_id: str, user: dict = Depends(require_auth))
             logger.warning("Background cleanup failed for site %s: %s", site_id, e)
 
     if dist_id or cert_arn or zone_id:
-        asyncio.create_task(_cleanup())
+        task = asyncio.create_task(_cleanup())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
     return {"success": True, "message": "Site deleted"}
 

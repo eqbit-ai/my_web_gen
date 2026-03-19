@@ -157,7 +157,7 @@ export default function TemplateManagerPage() {
             {/* Edit Modal */}
             {editing && (
                 <>
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 999 }} onClick={() => setEditing(null)} />
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 999 }} onClick={() => setEditing(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditing(null); }} role="button" tabIndex={0} />
                     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, zIndex: 1000, width: 420, maxWidth: '90vw' }}>
                         <h3 style={{ color: T.text, marginTop: 0 }}>Edit Template</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
@@ -187,7 +187,7 @@ export default function TemplateManagerPage() {
             {/* Preview Modal */}
             {preview && (
                 <>
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999 }} onClick={() => setPreview(null)} />
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999 }} onClick={() => setPreview(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreview(null); }} role="button" tabIndex={0} />
                     <div style={{ position: 'fixed', top: '3%', left: '5%', right: '5%', bottom: '3%', background: '#fff', borderRadius: 12, zIndex: 1000, overflow: 'hidden' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', background: T.surface, borderBottom: `1px solid ${T.border}` }}>
                             <span style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>{preview.name}</span>
@@ -272,6 +272,9 @@ export default function TemplateManagerPage() {
                                 <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: T.muted }}>
                                     <div
                                         onClick={() => handleToggle(t)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleToggle(t); }}
+                                        role="button"
+                                        tabIndex={0}
                                         style={{
                                             width: 34, height: 18, borderRadius: 9, position: 'relative', cursor: 'pointer',
                                             background: t.enabled === false ? T.border : '#34d399',

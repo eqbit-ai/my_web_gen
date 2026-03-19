@@ -120,7 +120,7 @@ export default function AdminLayout() {
         <div className="admin-page admin-layout">
             {/* Mobile overlay */}
             {mobileOpen && (
-                <div className="admin-sidebar-overlay" onClick={() => setMobileOpen(false)} />
+                <div className="admin-sidebar-overlay" onClick={() => setMobileOpen(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setMobileOpen(false); }} role="button" tabIndex={0} />
             )}
 
             {/* Sidebar */}

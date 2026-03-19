@@ -153,6 +153,9 @@ export default function AuditLogPage() {
                                 <div
                                     key={u.id}
                                     onClick={() => selectUser(u)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectUser(u); }}
+                                    role="button"
+                                    tabIndex={0}
                                     style={{
                                         padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#e4e4e7',
                                         borderBottom: '1px solid #2a2a3a', display: 'flex', justifyContent: 'space-between',

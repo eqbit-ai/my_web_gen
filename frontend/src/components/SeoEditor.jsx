@@ -88,8 +88,8 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     if (!isOpen) return null;
 
     return (
-        <div className="seo-overlay" onClick={onClose}>
-            <div className="seo-modal" onClick={e => e.stopPropagation()}>
+        <div className="seo-overlay" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(e); }} role="button" tabIndex={0}>
+            <div className="seo-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <div className="seo-header">
                     <h3><Globe size={16} /> Site Settings</h3>
                     <button className="gn-icon-btn" onClick={onClose}><X size={18} /></button>

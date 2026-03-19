@@ -14,12 +14,16 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
+# Store references to background tasks to prevent premature garbage collection
+_background_tasks: set = set()
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import select, update
 
 from app.database import async_session
+from app.utils import sanitize_log
 from app.models.domain import Domain
 from app.models.site import Site
 from app.utils.audit_log import log_event_bg
@@ -211,7 +215,7 @@ async def purchase_domain(req: DomainPurchaseRequest, user: dict = Depends(requi
             raise HTTPException(status_code=409, detail=f"{full_domain} is already registered in our system")
 
     # Step 1: Register domain via OpenProvider
-    logger.info("[DOMAIN] Registering %s via OpenProvider...", full_domain)
+    logger.info("[DOMAIN] Registering %s via OpenProvider...", sanitize_log(full_domain))
     try:
         reg_result = await register_domain(
             domain_name=sld,
@@ -223,22 +227,22 @@ async def purchase_domain(req: DomainPurchaseRequest, user: dict = Depends(requi
         raise HTTPException(status_code=502, detail=f"Domain registration failed: {e}") from e
 
     # Step 2: Create Route53 hosted zone
-    logger.info("[DOMAIN] Creating Route53 hosted zone for %s...", full_domain)
+    logger.info("[DOMAIN] Creating Route53 hosted zone for %s...", sanitize_log(full_domain))
     try:
         zone_result = await create_hosted_zone(full_domain)
     except Exception as e:
-        logger.error("Route53 zone creation failed for %s: %s", full_domain, e)
+        logger.error("Route53 zone creation failed for %s: %s", sanitize_log(full_domain), e)
         raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}") from e
 
     zone_id = zone_result["zone_id"]
     nameservers = zone_result["nameservers"]
 
     # Step 3: Update nameservers at OpenProvider → Route53
-    logger.info("[DOMAIN] Updating nameservers for %s → %s", full_domain, nameservers)
+    logger.info("[DOMAIN] Updating nameservers for %s → %s", sanitize_log(full_domain), nameservers)
     try:
         await update_nameservers(sld, tld, nameservers)
     except Exception as e:
-        logger.warning("[DOMAIN] Failed to auto-update nameservers for %s: %s", full_domain, e)
+        logger.warning("[DOMAIN] Failed to auto-update nameservers for %s: %s", sanitize_log(full_domain), e)
         # Non-fatal: user can update manually if needed
 
     # Step 4: Save domain record
@@ -274,7 +278,7 @@ async def purchase_domain(req: DomainPurchaseRequest, user: dict = Depends(requi
         details={"domain": full_domain, "tld": tld, "period": req.period},
     )
 
-    logger.info("[DOMAIN] ✅ %s registered and DNS configured (zone=%s)", full_domain, zone_id)
+    logger.info("[DOMAIN] ✅ %s registered and DNS configured (zone=%s)", sanitize_log(full_domain), zone_id)
 
     # Step 5: If a site_id was provided, auto-connect the domain
     site_connection = None
@@ -351,7 +355,9 @@ async def _auto_connect_domain_to_site(
         await db.commit()
 
     # Background: poll for cert validation and auto-create CloudFront
-    asyncio.create_task(_poll_cert_and_create_cdn(site_id, user))
+    task = asyncio.create_task(_poll_cert_and_create_cdn(site_id, user))
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
     return {
         "status": "pending_validation",
@@ -441,9 +447,9 @@ async def _poll_cert_and_create_cdn(site_id: str, user: dict):
                 return
 
         except Exception as e:
-            logger.warning("[DOMAIN] Background cert poll error for site %s: %s", site_id, e)
+            logger.warning("[DOMAIN] Background cert poll error for site %s: %s", sanitize_log(site_id), e)
 
-    logger.warning("[DOMAIN] Cert validation timed out for site %s after %ds", site_id, MAX_WAIT)
+    logger.warning("[DOMAIN] Cert validation timed out for site %s after %ds", sanitize_log(site_id), MAX_WAIT)
 
 
 # ── Retry Domain Activation ────────────────────────────────────────────
@@ -488,12 +494,16 @@ async def retry_domain_activation(domain_id: str, user: dict = Depends(require_a
 
         if status == "ISSUED" and not site.cloudfront_distribution_id:
             # Cert is ready — kick off CloudFront creation immediately
-            asyncio.create_task(_poll_cert_and_create_cdn(str(site.id), user))
+            task = asyncio.create_task(_poll_cert_and_create_cdn(str(site.id), user))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
             return {"status": "creating_cdn", "message": "Certificate is valid — creating CloudFront distribution now"}
 
         if status == "PENDING_VALIDATION":
             # Re-start the polling background task
-            asyncio.create_task(_poll_cert_and_create_cdn(str(site.id), user))
+            task = asyncio.create_task(_poll_cert_and_create_cdn(str(site.id), user))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
             return {"status": "polling", "message": "Certificate still pending validation — re-started background polling (up to 30 min)"}
 
         if status == "FAILED":

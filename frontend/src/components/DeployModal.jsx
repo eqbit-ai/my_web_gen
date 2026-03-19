@@ -171,8 +171,8 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     // ── Render: Deploy Form ──
     if (!deployed) {
         return (
-            <div className="dm-overlay" onClick={handleClose}>
-                <div className="dm-container dm-deploy-form" onClick={e => e.stopPropagation()}>
+            <div className="dm-overlay" onClick={handleClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClose(); }} role="button" tabIndex={0}>
+                <div className="dm-container dm-deploy-form" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                     <button className="dm-close" onClick={handleClose}><X size={18} /></button>
                     <div className="dm-header">
                         <div className="dm-icon-wrap"><Rocket size={24} /></div>
@@ -216,8 +216,8 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
         const cdnDeploying = ds === 'pending_deployment';
 
         return (
-            <div className="dm-overlay" onClick={handleClose}>
-                <div className="dm-container dm-wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-overlay" onClick={handleClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClose(); }} role="button" tabIndex={0}>
+                <div className="dm-container dm-wide" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                     <button className="dm-close" onClick={handleClose}><X size={18} /></button>
                     <div className="dm-header dm-header-success">
                         <div className="dm-icon-wrap dm-icon-success"><CheckCircle2 size={24} /></div>
@@ -293,8 +293,8 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
 
     // ── Render: Post-Deploy (Success + Domain Search Tabs) ──
     return (
-        <div className="dm-overlay" onClick={handleClose}>
-            <div className="dm-container dm-wide" onClick={e => e.stopPropagation()}>
+        <div className="dm-overlay" onClick={handleClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClose(); }} role="button" tabIndex={0}>
+            <div className="dm-container dm-wide" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                 <button className="dm-close" onClick={handleClose}><X size={18} /></button>
 
                 {/* Tab Header */}
@@ -340,7 +340,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                             <div className="dm-meta">{deployed.page_count} pages deployed</div>
                         )}
 
-                        <div className="dm-upgrade-banner" onClick={() => setActiveTab('domain')}>
+                        <div className="dm-upgrade-banner" onClick={() => setActiveTab('domain')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('domain'); }} role="button" tabIndex={0}>
                             <div className="dm-upgrade-left">
                                 <Globe size={20} />
                                 <div>
@@ -425,7 +425,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                             <div className="dm-tld-row">
                                 <div className="dm-tld-chips">
                                     {selectedTlds.slice(0, 6).map(tld => (
-                                        <span key={tld} className="dm-tld-chip active" onClick={() => toggleTld(tld)}>
+                                        <span key={tld} className="dm-tld-chip active" onClick={() => toggleTld(tld)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleTld(tld); }} role="button" tabIndex={0}>
                                             .{tld} <X size={10} />
                                         </span>
                                     ))}

@@ -246,7 +246,11 @@ async def list_site_versions(
     s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
 
     try:
-        response = s3.list_object_versions(Bucket=bucket, Prefix=f"{s3_prefix}/")
+        expected_owner = os.getenv("AWS_ACCOUNT_ID", "")
+        s3_kwargs = {"Bucket": bucket, "Prefix": f"{s3_prefix}/"}
+        if expected_owner:
+            s3_kwargs["ExpectedBucketOwner"] = expected_owner
+        response = s3.list_object_versions(**s3_kwargs)
         versions_raw = response.get("Versions", [])
 
         # Group by LastModified (rounded to minute = one deployment)
@@ -309,7 +313,11 @@ async def restore_site_version(
     s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
 
     try:
-        response = s3.list_object_versions(Bucket=bucket, Prefix=f"{s3_prefix}/")
+        expected_owner = os.getenv("AWS_ACCOUNT_ID", "")
+        list_kwargs = {"Bucket": bucket, "Prefix": f"{s3_prefix}/"}
+        if expected_owner:
+            list_kwargs["ExpectedBucketOwner"] = expected_owner
+        response = s3.list_object_versions(**list_kwargs)
         versions_raw = response.get("Versions", [])
 
         # Find files from the target deployment time
@@ -325,7 +333,10 @@ async def restore_site_version(
         restored = 0
         for f in target_files:
             copy_source = {"Bucket": bucket, "Key": f["Key"], "VersionId": f["VersionId"]}
-            s3.copy_object(Bucket=bucket, CopySource=copy_source, Key=f["Key"])
+            copy_kwargs = {"Bucket": bucket, "CopySource": copy_source, "Key": f["Key"]}
+            if expected_owner:
+                copy_kwargs["ExpectedBucketOwner"] = expected_owner
+            s3.copy_object(**copy_kwargs)
             restored += 1
 
         from app.utils.audit_log import log_event_bg
