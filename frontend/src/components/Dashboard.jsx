@@ -2188,11 +2188,13 @@ const Dashboard = () => {
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-                                {galleryImages.map(img => (
+                                {galleryImages.map(img => {
+                                    const imgSrc = img.url?.startsWith('http') ? img.url : `${config.apiUrl}${img.url}`;
+                                    return (
                                     <div key={img.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 10, overflow: 'hidden', transition: 'all 0.15s' }}>
                                         <div style={{ position: 'relative', paddingBottom: '75%', overflow: 'hidden', background: '#111' }}>
                                             <img
-                                                src={img.url}
+                                                src={imgSrc}
                                                 alt={img.original_name}
                                                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                                                 loading="lazy"
@@ -2205,10 +2207,10 @@ const Dashboard = () => {
                                             </p>
                                             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                                                 <button
-                                                    onClick={() => handleCopyImageUrl(img.url)}
-                                                    style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: '1px solid #374151', background: 'none', color: galleryCopied === img.url ? '#34d399' : '#9ca3af', fontSize: 11, cursor: 'pointer' }}
+                                                    onClick={() => handleCopyImageUrl(imgSrc)}
+                                                    style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: '1px solid #374151', background: 'none', color: galleryCopied === imgSrc ? '#34d399' : '#9ca3af', fontSize: 11, cursor: 'pointer' }}
                                                 >
-                                                    {galleryCopied === img.url ? 'Copied!' : 'Copy URL'}
+                                                    {galleryCopied === imgSrc ? 'Copied!' : 'Copy URL'}
                                                 </button>
                                                 <button
                                                     onClick={() => setGalleryDeleteConfirm(img.filename)}
@@ -2219,7 +2221,8 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
 

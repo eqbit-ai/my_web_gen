@@ -3470,6 +3470,27 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
                     )
 
+                # ── Quality scoring + auto-fix ──
+                try:
+                    from app.utils.quality_scorer import score_generation
+                    _quality_html = html if not is_multipage else (pages_dict or {}).get("index", {}).get("html", html)
+                    _quality_css = css if not is_multipage else (pages_dict or {}).get("index", {}).get("css", css)
+                    _theme = plan.get("design", {}).get("theme", "light")
+                    quality_result = score_generation(_quality_html, _quality_css, _theme)
+                    quality_scores["design_score"] = quality_result["score"]
+                    quality_scores["design_issues"] = len(quality_result["issues"])
+                    if quality_result["auto_fixes"]:
+                        # Apply auto-fixes to CSS
+                        if is_multipage and pages_dict and "index" in pages_dict:
+                            pages_dict["index"]["css"] = quality_result["css"]
+                        else:
+                            css = quality_result["css"]
+                        logger.info(f"[QUALITY] Score: {quality_result['score']}/100, {len(quality_result['issues'])} issues, {len(quality_result['auto_fixes'])} auto-fixed")
+                    else:
+                        logger.info(f"[QUALITY] Score: {quality_result['score']}/100, {len(quality_result['issues'])} issues")
+                except Exception as e:
+                    logger.warning(f"[QUALITY] Scoring failed: {e}")
+
                 await _update_job_progress(job_id, 60, "HTML, CSS & JS ready, polishing...")
 
                 # ── Stage 3: JS — only needed for multipage (single-page already has JS from combined call)

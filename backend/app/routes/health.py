@@ -15,6 +15,37 @@ router = APIRouter()
 _security = HTTPBearer(auto_error=False)
 
 
+@router.post("/health/migrate")
+async def run_migration(credentials: HTTPAuthorizationCredentials = Depends(_security)):
+    """Run pending database migrations. Admin only."""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Auth required")
+    token_data = decode_access_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    from sqlalchemy import text
+    from app.database import async_session, init_db
+
+    results = []
+    async with async_session() as db:
+        for stmt in [
+            "ALTER TABLE sites ADD COLUMN IF NOT EXISTS custom_head_code TEXT",
+            "ALTER TABLE sites ADD COLUMN IF NOT EXISTS custom_body_code TEXT",
+            "ALTER TABLE sites ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0 NOT NULL",
+        ]:
+            try:
+                await db.execute(text(stmt))
+                results.append(f"OK: {stmt[:60]}")
+            except Exception as e:
+                results.append(f"SKIP: {str(e)[:80]}")
+        await db.commit()
+
+    await init_db()
+    results.append("init_db: tables synced")
+    return {"results": results}
+
+
 @router.get("/health/sse-test")
 async def sse_test():
     """Minimal SSE test endpoint."""

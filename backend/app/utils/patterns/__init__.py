@@ -397,6 +397,142 @@ STYLE_PRESETS = {
             "style": "playful",
         },
     },
+    "healthcare": {
+        "weight": 2,
+        "description": "Clean, trustworthy healthcare aesthetic. Soft white (#f8fafb) bg with calming teal (#0d9488) primary and warm coral (#f97066) accent. "
+        "Hero uses hero_split with friendly doctor/clinic photo. Rounded cards with soft shadows, generous whitespace. "
+        "Typography: approachable sans-serif (Plus Jakarta Sans headings, Inter body). Trust badges prominent. "
+        "Think modern telehealth apps — clean, accessible, confidence-inspiring.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "card_grid", "feature_split", "testimonial_cards", "stats_row", "cta_banner"],
+        "avoid_patterns": ["hero_asymmetric", "hero_video_bg", "cta_gradient"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "16px",
+            "button_radius": "12px",
+            "shadow_style": "soft",
+            "style": "minimal",
+        },
+    },
+    "restaurant_food": {
+        "weight": 2,
+        "description": "Warm, appetizing restaurant aesthetic. Deep charcoal (#1a1a1a) or warm cream (#fdf8f0) bg with rich amber (#d97706) or burgundy (#7f1d1d) accent. "
+        "Hero MUST use hero_full_image with stunning food photography + warm overlay. "
+        "Serif headings (Playfair Display or Cormorant Garamond) for elegance. Feature cards with large food images. "
+        "Think Michelin-starred restaurant websites — sensory, warm, inviting.",
+        "preferred_patterns": ["hero_full_image", "feature_cards", "gallery_grid", "testimonial_split", "stats_row", "cta_banner"],
+        "avoid_patterns": ["hero_minimal", "icon_grid", "comparison_table"],
+        "design_hints": {
+            "theme": "dark",
+            "spacing": "spacious",
+            "card_radius": "8px",
+            "button_radius": "4px",
+            "shadow_style": "none",
+            "style": "elegant",
+        },
+    },
+    "real_estate": {
+        "weight": 2,
+        "description": "Premium real estate aesthetic. Deep navy (#0c1b33) or clean white (#fafafa) with gold (#c5a55a) or emerald (#047857) accent. "
+        "Hero uses hero_full_image with stunning property/skyline photography + dark overlay. "
+        "Typography: authoritative serif headings (DM Serif Display), clean sans body. "
+        "Large property cards with image carousels. Stats row with transaction volume. "
+        "Think luxury property developer websites — aspirational, prestigious.",
+        "preferred_patterns": ["hero_full_image", "hero_split", "feature_cards", "image_carousel", "stats_row", "testimonial_cards", "cta_banner"],
+        "avoid_patterns": ["hero_minimal", "hero_video_bg", "icon_grid"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "8px",
+            "button_radius": "8px",
+            "shadow_style": "soft",
+            "style": "elegant",
+        },
+    },
+    "saas_product": {
+        "weight": 3,
+        "description": "Modern SaaS product aesthetic. Crisp white (#fafafa) or deep dark (#09090b) with vibrant purple (#7c3aed) or blue (#2563eb) primary. "
+        "Hero uses hero_split with product mockup/screenshot or hero_full_image with gradient. "
+        "Typography: geometric sans-serif (Space Grotesk or Sora headings, Inter body). "
+        "Pricing table, feature comparison, social proof prominent. Glass-morphism cards. "
+        "Think Vercel, Supabase, Clerk — technical but polished.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "icon_grid", "card_grid", "feature_split", "pricing_table", "cta_gradient", "stats_row"],
+        "avoid_patterns": ["hero_minimal", "gallery_grid", "team_masonry"],
+        "design_hints": {
+            "spacing": "normal",
+            "card_radius": "12px",
+            "button_radius": "8px",
+            "shadow_style": "soft",
+            "style": "bold",
+        },
+    },
+    "education": {
+        "weight": 2,
+        "description": "Warm, engaging education aesthetic. Light ivory (#fefce8) or soft blue-white (#f0f9ff) bg with royal blue (#1e40af) and amber (#f59e0b) accent. "
+        "Hero uses hero_split with students/campus photography. Friendly rounded design. "
+        "Typography: warm sans-serif (Outfit or Nunito headings, DM Sans body). "
+        "Course cards, instructor profiles, testimonials from students. Accessible and welcoming. "
+        "Think Coursera, Khan Academy — educational but not boring.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "feature_cards", "card_grid", "testimonial_cards", "stats_row", "cta_banner", "faq_accordion"],
+        "avoid_patterns": ["hero_minimal", "hero_asymmetric", "cta_gradient"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "16px",
+            "button_radius": "12px",
+            "shadow_style": "soft",
+            "style": "minimal",
+        },
+    },
+    "fitness_wellness": {
+        "weight": 2,
+        "description": "Bold, energetic fitness aesthetic. Near-black (#0a0a0a) or charcoal (#171717) bg with neon green (#22c55e) or fiery orange (#ea580c) accent. "
+        "Hero uses hero_full_image with dramatic gym/fitness photography + dark overlay. "
+        "Typography: heavy condensed uppercase (Barlow Condensed or Oswald headings). "
+        "Program cards with images, trainer profiles, class schedule. High energy, motivating. "
+        "Think CrossFit boxes, premium gyms — raw power meets modern design.",
+        "preferred_patterns": ["hero_full_image", "hero_split", "feature_cards", "card_grid", "testimonial_cards", "stats_row", "cta_banner"],
+        "avoid_patterns": ["hero_minimal", "hero_video_bg"],
+        "design_hints": {
+            "theme": "dark",
+            "spacing": "normal",
+            "card_radius": "8px",
+            "button_radius": "4px",
+            "shadow_style": "sharp",
+            "style": "bold",
+        },
+    },
+    "ecommerce_store": {
+        "weight": 2,
+        "description": "Clean, conversion-focused e-commerce aesthetic. Pure white (#ffffff) or warm cream (#faf8f5) bg with one strong accent (rose #e11d48 or indigo #4f46e5). "
+        "Hero uses hero_split with product hero shot or hero_full_image with lifestyle photography. "
+        "Typography: modern sans (Sora or Manrope headings, Inter body). "
+        "Product cards with hover effects, trust badges, free shipping banner. "
+        "Think Shopify themes, Glossier — product-first, clean, trustworthy.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "feature_cards", "card_grid", "testimonial_cards", "cta_banner", "stats_row"],
+        "avoid_patterns": ["hero_minimal", "hero_asymmetric", "pricing_table"],
+        "design_hints": {
+            "spacing": "normal",
+            "card_radius": "12px",
+            "button_radius": "8px",
+            "shadow_style": "soft",
+            "style": "minimal",
+        },
+    },
+    "law_finance": {
+        "weight": 2,
+        "description": "Authoritative, trust-driven legal/finance aesthetic. Deep navy (#0a1628) or warm ivory (#f7f4ef) bg with gold (#b8860b) or forest green (#14532d) accent. "
+        "Hero uses hero_split with professional cityscape/office photography. "
+        "Serif headings for authority (Playfair Display or DM Serif Display), clean sans body. "
+        "Practice areas, partner profiles with credentials, case results with figures. "
+        "Think white-shoe law firms, private banks — institutional gravitas.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "card_grid", "feature_split", "testimonial_cards", "stats_row", "cta_banner"],
+        "avoid_patterns": ["hero_asymmetric", "hero_video_bg", "cta_gradient", "gallery_grid"],
+        "design_hints": {
+            "spacing": "normal",
+            "card_radius": "8px",
+            "button_radius": "4px",
+            "shadow_style": "soft",
+            "style": "corporate",
+        },
+    },
 }
 
 

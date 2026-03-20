@@ -458,9 +458,11 @@ def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> st
             api_base = alb.rstrip("/")
 
     if not api_base or not site_id:
+        logger.warning("[FORM INJECT] Skipped — API_BASE_URL not set (api_base=%s, site_id=%s)", bool(api_base), bool(site_id))
         return html
 
     form_url = f"{api_base}/api/forms/submit/{site_id}"
+    logger.info("[FORM INJECT] Injecting form action: %s", form_url)
 
     # Replace template placeholders
     html = html.replace("{{FORM_ACTION}}", form_url)
@@ -510,6 +512,7 @@ def _inject_tracking_and_custom_code(
         alb = os.getenv("ALB_URL", "")
         if alb:
             api_base = alb.rstrip("/")
+    logger.info("[TRACKING INJECT] api_base=%s, site_id=%s", api_base or "NOT SET", site_id)
 
     # Build injection blocks
     head_inject = ""
