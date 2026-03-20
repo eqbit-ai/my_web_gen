@@ -185,8 +185,28 @@ def get_orientation(role: str, query: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 
+def _enrich_query(query: str, role: str) -> str:
+    """Add professional quality modifiers to image queries based on role."""
+    q = query.lower()
+    # Hero images need high-impact modifiers
+    if role == "hero":
+        if not any(w in q for w in ["aerial", "cinematic", "dramatic", "professional", "editorial"]):
+            return f"{query} professional high quality"
+    # Feature/card images need clean, clear photos
+    if role in ("feature", "card", "service"):
+        if not any(w in q for w in ["modern", "clean", "professional"]):
+            return f"{query} modern professional"
+    # About/company images
+    if role in ("about", "company"):
+        if "office" not in q and "team" not in q:
+            return f"{query} modern office"
+    return query
+
+
 def generate_query_variations(query: str, role: str, niche_key: str = None) -> list[str]:
     """Generate 2-3 search variations for broader coverage."""
+    # Enrich query with professional modifiers
+    query = _enrich_query(query, role)
     words = query.split()
     variations = [query]  # Original always first
 
@@ -503,10 +523,18 @@ async def search_unsplash_ranked(
 
     scored.sort(key=lambda x: x[0], reverse=True)
 
-    # Pick the best that has a URL
+    # Pick the best that has a URL — use higher resolution for hero/background images
+    is_hero = orientation == "landscape"  # Heroes are always landscape
     for _, photo in scored:
         pid = photo.get("id", "")
-        raw_url = photo.get("urls", {}).get("regular", "")
+        urls = photo.get("urls", {})
+        # Use "full" with width param for higher quality, fallback to "regular"
+        raw_url = urls.get("raw", "")
+        if raw_url:
+            # Append size params for optimal quality
+            raw_url = f"{raw_url}&w=1600&q=80&fit=crop" if is_hero else f"{raw_url}&w=800&q=80&fit=crop"
+        else:
+            raw_url = urls.get("regular", "")
         if raw_url:
             used_ids.add(pid)
             return raw_url
@@ -572,7 +600,9 @@ async def search_pexels_ranked(
 
     for _, photo in scored:
         pid = str(photo.get("id", ""))
-        url = photo.get("src", {}).get("large2x", "") or photo.get("src", {}).get("large", "")
+        # Use original for hero/bg, large2x for everything else
+        src = photo.get("src", {})
+        url = src.get("original", "") or src.get("large2x", "") or src.get("large", "")
         if url:
             used_ids.add(pid)
             return url
@@ -669,28 +699,16 @@ async def resolve_single_image(
         "food_blog",
         "organic_store",
     }
-    pexels_first = niche_key in food_niches
-
-    if pexels_first:
-        # Pexels has better food photography
-        url = await search_pexels_ranked(client, variations, keywords, used_ids, orientation, niche_key)
-        if url:
-            _image_cache[ck] = url
-            return url
-        url = await search_unsplash_ranked(client, variations, keywords, used_ids, orientation, niche_key)
-        if url:
-            _image_cache[ck] = url
-            return url
-    else:
-        # Default: Unsplash first
-        url = await search_unsplash_ranked(client, variations, keywords, used_ids, orientation, niche_key)
-        if url:
-            _image_cache[ck] = url
-            return url
-        url = await search_pexels_ranked(client, variations, keywords, used_ids, orientation, niche_key)
-        if url:
-            _image_cache[ck] = url
-            return url
+    # Pexels first for all niches (better image quality and availability)
+    url = await search_pexels_ranked(client, variations, keywords, used_ids, orientation, niche_key)
+    if url:
+        _image_cache[ck] = url
+        return url
+    # Fallback to Unsplash
+    url = await search_unsplash_ranked(client, variations, keywords, used_ids, orientation, niche_key)
+    if url:
+        _image_cache[ck] = url
+        return url
 
     # 3. Curated fallback — guaranteed to work
     fallback = get_fallback_image(role or "default")

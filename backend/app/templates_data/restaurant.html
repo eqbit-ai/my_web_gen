@@ -915,7 +915,7 @@
       <li><a href="#rest-contact" onclick="closeMenu()">Contact</a></li>
       <li><a href="#rest-reservation" onclick="closeMenu()" class="rest-btn" style="padding:0.5rem 1.5rem;font-size:0.75rem;">Reserve</a></li>
     </ul>
-    <div class="rest-hamburger" id="restHamburger" onclick="toggleMenu()">
+    <div class="rest-hamburger" id="restHamburger" onclick="toggleMenu()" onkeydown="if(event.key==='Enter')toggleMenu()" role="button" tabindex="0">
       <span></span><span></span><span></span>
     </div>
   </nav>
@@ -1159,6 +1159,7 @@
         </div>
         <h4>Opening Hours</h4>
         <table class="rest-hours-table">
+          <tr><th style="display:none">Day</th><th style="display:none">Hours</th></tr>
           <tr><td>Monday - Wednesday</td><td>6 PM - 11 PM</td></tr>
           <tr><td>Thursday - Friday</td><td>6 PM - 12 AM</td></tr>
           <tr><td>Saturday</td><td>12 PM - 12 AM</td></tr>

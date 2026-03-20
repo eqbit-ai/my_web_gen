@@ -36,6 +36,8 @@ from app.routes import components as component_routes
 from app.routes import deploy as deploy_routes
 from app.routes import dns as dns_routes
 from app.routes import domains as domain_routes
+from app.routes import forms as form_routes
+from app.routes import site_features as site_feature_routes
 from app.routes import generator as generator_routes
 from app.routes import health, metrics_route
 from app.routes import images as image_routes
@@ -159,6 +161,8 @@ app.include_router(dns_routes.router, prefix="/api/dns", tags=["DNS"])
 app.include_router(template_routes.router, prefix="/api/templates", tags=["Templates"])
 app.include_router(upload_routes.router, prefix="/api/uploads", tags=["Uploads"])
 app.include_router(domain_routes.router, prefix="/api/domains", tags=["Domains"])
+app.include_router(form_routes.router, prefix="/api/forms", tags=["Forms"])
+app.include_router(site_feature_routes.router, prefix="/api/sites", tags=["Site Features"])
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(metrics_route.router, prefix="/api/metrics", tags=["Metrics"])
 

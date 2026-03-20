@@ -93,6 +93,13 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
             });
             const data = await resp.json();
             if (!resp.ok) throw new Error(data.detail || 'Deployment failed');
+            // Derive CNAME target from URL if backend didn't return it
+            if (!data.cname_target && data.url) {
+                try {
+                    const hostname = new URL(data.url).hostname;
+                    data.cname_target = hostname;
+                } catch (_) { /* ignore */ }
+            }
             setDeployed(data);
             // Notify parent of site_id so future deploys overwrite the same S3 folder
             if (onDeployed && data.site_id) onDeployed(data.site_id);
@@ -338,6 +345,23 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
 
                         {deployed.is_multipage && (
                             <div className="dm-meta">{deployed.page_count} pages deployed</div>
+                        )}
+
+                        {/* CNAME Target */}
+                        {deployed.cname_target && (
+                            <div className="dm-cname-card">
+                                <div className="dm-cname-label">
+                                    <Shield size={14} />
+                                    <span>CNAME Target</span>
+                                </div>
+                                <div className="dm-cname-value">
+                                    <code>{deployed.cname_target}</code>
+                                    <button className="dm-copy-btn" onClick={() => handleCopyUrl(deployed.cname_target)}>
+                                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                                    </button>
+                                </div>
+                                <p className="dm-cname-hint">Point your domain's CNAME record to this address to use a custom domain</p>
+                            </div>
                         )}
 
                         <div className="dm-upgrade-banner" onClick={() => setActiveTab('domain')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('domain'); }} role="button" tabIndex={0}>

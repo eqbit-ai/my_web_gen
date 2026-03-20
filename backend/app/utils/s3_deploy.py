@@ -445,6 +445,109 @@ def _make_links_relative(html: str) -> str:
     return html
 
 
+def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> str:
+    """Inject the form submission API endpoint into contact forms.
+
+    Replaces {{FORM_ACTION}} placeholders and also patches any <form> with
+    class containing 'contact' that doesn't already point to our API.
+    """
+    api_base = os.getenv("API_BASE_URL", "").rstrip("/")
+    if not api_base:
+        alb = os.getenv("ALB_URL", "")
+        if alb:
+            api_base = alb.rstrip("/")
+
+    if not api_base or not site_id:
+        return html
+
+    form_url = f"{api_base}/api/forms/submit/{site_id}"
+
+    # Replace template placeholders
+    html = html.replace("{{FORM_ACTION}}", form_url)
+    html = html.replace("{{PAGE_SLUG}}", page_slug)
+
+    # Fallback: patch <form> tags that have contact/inquiry/get-in-touch related classes
+    # but no action or action="#" or action=""
+    def _patch_form(match):
+        tag = match.group(0)
+        # Skip if already pointing to our API
+        if "/api/forms/submit/" in tag:
+            return tag
+        # Add/replace action and method
+        tag = re.sub(r'action\s*=\s*["\'][^"\']*["\']', '', tag)
+        tag = re.sub(r'method\s*=\s*["\'][^"\']*["\']', '', tag)
+        tag = tag.rstrip(">")
+        tag += f' action="{form_url}" method="POST">'
+        # Add hidden page field
+        hidden = f'<input type="hidden" name="_page" value="{page_slug}">'
+        return tag + hidden
+
+    html = re.sub(
+        r'<form[^>]*class="[^"]*(?:contact|inquiry|get-in-touch|message)[^"]*"[^>]*>',
+        _patch_form,
+        html,
+        flags=re.IGNORECASE,
+    )
+
+    # Also patch forms with id containing "contact" or whose parent section is contact
+    html = re.sub(
+        r'<form[^>]*id="[^"]*contact[^"]*"[^>]*>',
+        _patch_form,
+        html,
+        flags=re.IGNORECASE,
+    )
+
+    return html
+
+
+def _inject_tracking_and_custom_code(
+    html: str, site_id: str,
+    custom_head: str = "", custom_body: str = "",
+) -> str:
+    """Inject page view tracking script and custom code into deployed HTML."""
+    api_base = os.getenv("API_BASE_URL", "").rstrip("/")
+    if not api_base:
+        alb = os.getenv("ALB_URL", "")
+        if alb:
+            api_base = alb.rstrip("/")
+
+    # Build injection blocks
+    head_inject = ""
+    body_inject = ""
+
+    # Custom head code (e.g. Google Analytics, meta tags, external CSS)
+    if custom_head:
+        head_inject += f"\n<!-- Custom Head Code -->\n{custom_head}\n"
+
+    # Page view tracking script
+    if api_base and site_id:
+        track_url = f"{api_base}/api/sites/track/{site_id}"
+        body_inject += f"""
+<!-- Page View Tracking -->
+<script>
+(function(){{
+  try {{
+    var d = {{path: location.pathname, referrer: document.referrer}};
+    navigator.sendBeacon ? navigator.sendBeacon("{track_url}", JSON.stringify(d))
+      : fetch("{track_url}", {{method:"POST", body:JSON.stringify(d), headers:{{"Content-Type":"application/json"}}, keepalive:true}});
+  }} catch(e) {{}}
+}})();
+</script>
+"""
+
+    # Custom body code (e.g. chat widgets, custom JS)
+    if custom_body:
+        body_inject += f"\n<!-- Custom Body Code -->\n{custom_body}\n"
+
+    # Inject into HTML
+    if head_inject and "</head>" in html:
+        html = html.replace("</head>", f"{head_inject}</head>", 1)
+    if body_inject and "</body>" in html:
+        html = html.replace("</body>", f"{body_inject}</body>", 1)
+
+    return html
+
+
 async def deploy_site(
     site_name: str,
     html: str,
@@ -453,6 +556,9 @@ async def deploy_site(
     pages: dict | None = None,
     is_multipage: bool = False,
     s3_prefix_override: str | None = None,
+    site_id: str | None = None,
+    custom_head_code: str = "",
+    custom_body_code: str = "",
 ) -> dict:
     """Deploy a website to S3 as static files.
 
@@ -495,6 +601,12 @@ async def deploy_site(
             full_html = _make_links_relative(full_html)
             # Upload local images to S3 and rewrite URLs
             full_html = _upload_local_images(full_html, project_name, s3, bucket)
+            # Inject form submission endpoint
+            if site_id:
+                full_html = _inject_form_action(full_html, site_id, slug)
+            # Inject tracking script + custom code
+            if site_id:
+                full_html = _inject_tracking_and_custom_code(full_html, site_id, custom_head_code, custom_body_code)
 
             if slug == "index":
                 files["index.html"] = full_html
@@ -503,6 +615,12 @@ async def deploy_site(
     else:
         full_html = _inline_css_js(html, css, js)
         full_html = _upload_local_images(full_html, project_name, s3, bucket)
+        # Inject form submission endpoint
+        if site_id:
+            full_html = _inject_form_action(full_html, site_id, "index")
+        # Inject tracking script + custom code
+        if site_id:
+            full_html = _inject_tracking_and_custom_code(full_html, site_id, custom_head_code, custom_body_code)
         files["index.html"] = full_html
 
     # Upload each file

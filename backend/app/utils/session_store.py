@@ -39,3 +39,38 @@ async def session_exists(session_id: str) -> bool:
     """Check if a session exists without loading it."""
     r = await get_redis()
     return bool(await r.exists(f"{SESSION_PREFIX}{session_id}"))
+
+
+# ── SSE Event Queue (for decoupled generation) ──────────────────────
+
+EVENT_PREFIX = "sse_events:"
+EVENT_TTL = 3600  # 1 hour
+
+
+async def push_sse_event(session_id: str, event_type: str, data: dict):
+    """Push an SSE event to the session's event queue."""
+    r = await get_redis()
+    key = f"{EVENT_PREFIX}{session_id}"
+    payload = json.dumps({"event": event_type, "data": data})
+    await r.rpush(key, payload)
+    await r.expire(key, EVENT_TTL)
+
+
+async def pop_sse_events(session_id: str, start: int = 0) -> list:
+    """Get all SSE events from index `start` onwards. Non-blocking."""
+    r = await get_redis()
+    key = f"{EVENT_PREFIX}{session_id}"
+    raw_events = await r.lrange(key, start, -1)
+    events = []
+    for raw in raw_events:
+        try:
+            events.append(json.loads(raw))
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return events
+
+
+async def clear_sse_events(session_id: str):
+    """Clear SSE event queue for a session."""
+    r = await get_redis()
+    await r.delete(f"{EVENT_PREFIX}{session_id}")

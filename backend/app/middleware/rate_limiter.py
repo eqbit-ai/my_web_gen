@@ -39,6 +39,20 @@ RATE_LIMIT_RULES = [
         "by_ip": True,
     },
     {
+        "prefixes": ["/api/sites/track"],
+        "limit": 60,
+        "window": 60,
+        "key_prefix": "rl:track",
+        "by_ip": True,
+    },
+    {
+        "prefixes": ["/api/forms/submit"],
+        "limit": 10,
+        "window": 60,
+        "key_prefix": "rl:form",
+        "by_ip": True,
+    },
+    {
         "prefixes": ["/api/"],
         "limit": 1000,
         "window": 60,

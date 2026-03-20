@@ -105,10 +105,12 @@ YOUR BRIEF MUST INCLUDE:
 2. **Color system**: One dominant dark/light base + one sharp accent color. Name exact mood.
 3. **Typography direction**: Describe the type personality (e.g. "military uppercase condensed" or "elegant serif with thin sans body"). NEVER suggest Inter, Roboto, Arial, or system-ui.
 4. **One unforgettable design element**: What makes this site visually memorable? (e.g. diagonal clip-path buttons, noise texture overlay, giant faded background numbers, animated gradient hero)
-5. **Content sections**: What sections make sense for this business (7-9 max)
-6. **Content direction**: What should headlines emphasize? Specific industry language.
-7. **Social proof**: Concrete stats and testimonials (realistic for the industry)
-8. **CTA strategy**: Primary conversion goal
+5. **Photography direction**: Describe the EXACT image style — lighting, mood, subjects. E.g. "warm natural light editorial photography", "dark moody architectural shots", "bright overhead food photography on marble". This determines image quality.
+6. **Hero section**: Describe the hero in detail — what background image, what overlay, what text treatment. E.g. "Full-bleed aerial city photo with 70% navy overlay, large white serif heading, gold CTA button"
+7. **Content sections**: What sections make sense for this business (7-9 max)
+8. **Content direction**: What should headlines emphasize? Specific industry language.
+9. **Social proof**: Concrete stats and testimonials (realistic for the industry)
+10. **CTA strategy**: Primary conversion goal
 
 EXAMPLES:
 
@@ -275,10 +277,10 @@ PREMIUM COLOR PALETTE RULES (CRITICAL — cheap colors = cheap website):
     }},
     {{
       "type": "hero",
-      "pattern": "hero_split or hero_center",
+      "pattern": "PICK ONE: hero_split, hero_center, hero_full_image, hero_asymmetric, hero_video_bg (ROTATE — use a DIFFERENT hero pattern each time)",
       "content": {{
-        "headline": "Compelling main headline",
-        "subheadline": "Supporting text that explains the value",
+        "headline": "Compelling main headline (bold, specific, benefit-driven)",
+        "subheadline": "Supporting text that explains the value proposition clearly",
         "cta_primary": "Primary Button Text",
         "cta_secondary": "Secondary Button Text",
         "trust_line": "Trusted by 500+ companies worldwide",
@@ -627,6 +629,17 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
     if rotation_hints:
         prompt += "\n" + rotation_hints
 
+    # Inject random hero pattern suggestion for variety
+    hero_options = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric", "hero_video_bg"]
+    suggested_hero = random.choice(hero_options)
+    secondary_hero = random.choice([h for h in hero_options if h != suggested_hero])
+    prompt += f"""
+
+HERO PATTERN FOR THIS GENERATION — USE: {suggested_hero}
+(Alternative if it doesn't fit the content: {secondary_hero})
+This is to ensure visual variety across generations. Follow this suggestion unless the website type demands a specific hero pattern (e.g., SaaS needs hero_product_mockup).
+"""
+
     # Style preset: inject almost always (95%) for premium design quality
     if random.random() < 0.95:
         preset_name, preset = get_random_style_preset()
@@ -808,6 +821,44 @@ def build_html_prompt(plan: dict, enhanced_brief: str = None) -> str:
         style_additions=style_additions,
     )
 
+    # ── QUALITY MANDATE — ensures every single generation looks premium ──
+    prompt += """
+
+ABSOLUTE QUALITY REQUIREMENTS (EVERY generation must meet ALL of these):
+
+HERO SECTION (most critical element — this makes or breaks the site):
+1. MUST have a full-width background image with a dark semi-transparent overlay (60-75% opacity)
+   Example: background: linear-gradient(rgba(10,10,15,0.7), rgba(10,10,15,0.8)), url('pexels-image'); background-size: cover;
+2. NEVER use a plain solid-color hero background. NEVER. Always use an image or dramatic gradient with depth.
+3. Hero heading must be LARGE (text-5xl to text-7xl / 3rem to 5rem), bold (font-weight 700-800), and white/light colored
+4. Add text-shadow to hero text for readability: text-shadow: 0 2px 20px rgba(0,0,0,0.3)
+5. At least ONE styled CTA button with hover effect (transform + shadow change)
+6. Minimum hero height: 80vh on desktop, 60vh on mobile
+7. Hero must feel DRAMATIC and PREMIUM — not generic or flat
+
+COLOR PALETTE:
+- NEVER use raw Tailwind defaults (#3b82f6, #22c55e, #ef4444). Always use unique, sophisticated colors.
+- Background must NOT be pure white (#ffffff) or pure black (#000000). Use tinted neutrals (#fafaf9, #0a0a0f, #f8f7f4).
+- Accent color must visibly POP against the background — high contrast.
+- All colors must feel intentional and curated, like a designer picked them.
+
+TYPOGRAPHY:
+- Heading font and body font must be DIFFERENT fonts (not the same).
+- Heading font must be distinctive — NEVER use Inter, Roboto, or Arial for headings.
+- Minimum font-size for body text: 16px (1rem). No tiny text.
+
+SECTIONS:
+- Every section must have generous padding (py-16 to py-24 / 4rem to 6rem)
+- Cards must have hover effects (translateY + shadow change)
+- Alternate between sections with background and without — create visual rhythm
+- Images must be high-quality (use Pexels or Unsplash URLs, never placeholder.com)
+
+OVERALL:
+- The website should look like it was designed by a premium agency charging $10,000+
+- Zero generic/template feel — every element should feel intentional
+- Responsive: everything must work on mobile (proper breakpoints, stacking, padding)
+"""
+
     # Pre-build the Google Fonts URL so the model doesn't get it wrong
     design = plan.get("design", {})
     heading_font = design.get("heading_font", "Space Grotesk").replace(" ", "+")
@@ -921,16 +972,41 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
     )
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
 
-    # Enforce strong hero sections and design consistency on every page
-    hero_rules = """
-SUBPAGE DESIGN RULES (CRITICAL — READ CAREFULLY):
+    # Extract design tokens from the plan for explicit color/font instructions
+    design = plan.get("design", {})
+    brand = plan.get("brand", {})
+    color_info = ""
+    if design:
+        colors = design.get("colors", {})
+        fonts = design.get("fonts", design.get("typography", {}))
+        if colors:
+            color_info += "\nEXACT COLOR PALETTE (use these EXACT values):\n"
+            for k, v in colors.items():
+                if isinstance(v, str):
+                    color_info += f"  - {k}: {v}\n"
+                elif isinstance(v, dict):
+                    for sub_k, sub_v in v.items():
+                        color_info += f"  - {k}.{sub_k}: {sub_v}\n"
+        if fonts:
+            color_info += "\nEXACT FONTS:\n"
+            for k, v in fonts.items():
+                color_info += f"  - {k}: {v}\n"
 
-HERO SECTION:
+    # Enforce strong hero sections and design consistency on every page
+    hero_rules = f"""
+SUBPAGE DESIGN RULES (CRITICAL — READ CAREFULLY):
+{color_info}
+HERO SECTION (THIS IS THE MOST IMPORTANT ELEMENT):
 - EVERY page MUST start with a visually striking hero section immediately after the navbar.
-- The hero MUST have a full-width background image (from Unsplash) or a bold gradient background — NEVER just text on a plain dark background.
-- Use hero patterns like: hero-bg-cover with overlay, hero-animated-bg with gradient, or a split hero with a large image.
-- The hero must have a clear heading, subtitle, and at least one CTA button.
-- Minimum hero height: 60vh on desktop.
+- The hero MUST have a full-width background image (use {{IMG:descriptive keywords}} placeholder) with a dark color overlay.
+- NEVER use a plain solid-color background for the hero. ALWAYS use a background-image with overlay.
+- Hero overlay: use a semi-transparent gradient matching the brand's primary/dark color, e.g.:
+  background: linear-gradient(135deg, rgba(primary_r,primary_g,primary_b,0.85), rgba(dark_r,dark_g,dark_b,0.9)), url('unsplash-image');
+  background-size: cover; background-position: center;
+- The hero must have: large bold heading (text-4xl/text-5xl), descriptive subtitle, and at least one styled CTA button.
+- Minimum hero height: 70vh on desktop, 50vh on mobile.
+- Hero text must be WHITE or very light colored with text-shadow for readability over the image.
+- The hero should feel premium, editorial, and high-end — NOT generic or plain.
 
 FOOTER (MANDATORY):
 - The page MUST end with a complete footer section with data-section-type="footer".
@@ -942,15 +1018,20 @@ FOOTER (MANDATORY):
 WHATSAPP BUTTON:
 - ALWAYS include a fixed WhatsApp float button at bottom-right of the page.
 
-DESIGN CONSISTENCY:
-- ALL pages must share the SAME visual language: same fonts, same color palette, same spacing scale, same button styles.
-- Use the SAME navbar design on every page (same background, logo, link style, CTA button).
-- Use the SAME footer design on every page.
-- Section styling (card borders, shadows, border-radius, heading sizes) must be consistent across all pages.
-- If the homepage uses a particular accent color (e.g., gold, blue), ALL subpages must use the same accent color.
+DESIGN CONSISTENCY (CRITICAL):
+- ALL pages must use the EXACT SAME color values from the plan above — do NOT approximate or guess.
+- Use the SAME navbar HTML structure and styling on every page (same background, logo, link style, CTA button).
+- Use the SAME footer HTML structure and styling on every page.
+- Button styles MUST be identical: same background color, same padding, same border-radius, same hover effect.
+- Card borders, shadows, border-radius, heading sizes, and section padding must be consistent.
+- If the homepage uses a particular accent color, ALL subpages MUST use that EXACT SAME accent color value.
+- Typography must be identical: same font-family imports, same size scale, same weights.
 
 CSS:
-- ALL CSS for this page must be in the SINGLE <style> block — include navbar styles, hero styles, section styles, footer styles — everything needed to render this page standalone.
+- ALL CSS for this page must be in the SINGLE <style> block.
+- Start your <style> block with :root {{ }} containing ALL design token variables (colors, fonts, spacing).
+- Include navbar styles, hero styles, section styles, footer styles — everything needed to render this page standalone.
+- If a DESIGN REFERENCE CSS is provided below, COPY its :root variables and key class definitions VERBATIM.
 """
 
     return base_prompt + nav_context + hero_rules

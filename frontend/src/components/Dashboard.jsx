@@ -4,7 +4,7 @@ import config from '../config';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains, getFormSubmissions, getUnreadCount, markSubmissionRead, deleteFormSubmission, exportSiteZip, getCustomCode, updateCustomCode, getSiteAnalytics, listAllUploads, uploadFile, deleteUpload } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
@@ -16,15 +16,20 @@ const buildSrcDoc = (css, html, withScripts = false) =>
 const Dashboard = () => {
     const { user, logout, refreshUser } = useAuth();
 
-    // Refresh user data on mount (updates token balance after generation)
-    useEffect(() => { refreshUser(); }, []);
+    // Refresh user data on mount and when window regains focus (updates token balance after generation)
+    useEffect(() => {
+        refreshUser();
+        const handleFocus = () => refreshUser();
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, []);
     const navigate = useNavigate();
     const [prompt, setPrompt] = useState('');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['home', 'projects', 'templates', 'domains'].includes(hash) ? hash : 'home';
+        return ['home', 'projects', 'templates', 'domains', 'inbox', 'gallery'].includes(hash) ? hash : 'home';
     });
     const [expandedSections, setExpandedSections] = useState({});
     const textareaRef = useRef(null);
@@ -76,6 +81,33 @@ const Dashboard = () => {
     const [tokenRequestSubmitting, setTokenRequestSubmitting] = useState(false);
     const [tokenRequests, setTokenRequests] = useState([]);
     const [tokenRequestsLoaded, setTokenRequestsLoaded] = useState(false);
+    // Gallery state
+    const [galleryImages, setGalleryImages] = useState([]);
+    const [galleryLoading, setGalleryLoading] = useState(false);
+    const [galleryUploading, setGalleryUploading] = useState(false);
+    const [galleryCopied, setGalleryCopied] = useState(null);
+    const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState(null);
+    const galleryFileRef = useRef(null);
+
+    // Site features state
+    const [customCodeModal, setCustomCodeModal] = useState(null); // site_id
+    const [customHeadCode, setCustomHeadCode] = useState('');
+    const [customBodyCode, setCustomBodyCode] = useState('');
+    const [customCodeSaving, setCustomCodeSaving] = useState(false);
+    const [analyticsModal, setAnalyticsModal] = useState(null); // site_id
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [exporting, setExporting] = useState(null); // site_id
+
+    // Inbox state
+    const [submissions, setSubmissions] = useState([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [inboxSiteFilter, setInboxSiteFilter] = useState('');
+    const [inboxReadFilter, setInboxReadFilter] = useState('');
+    const [expandedSubmission, setExpandedSubmission] = useState(null);
+    const [deleteSubmissionConfirm, setDeleteSubmissionConfirm] = useState(null);
+
     const domainPollRef = useRef(null);
     const [announcements, setAnnouncements] = useState([]);
     const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
@@ -223,12 +255,150 @@ const Dashboard = () => {
         setTokenRequestSubmitting(false);
     };
 
+    // ── Gallery handlers ──
+    const loadGallery = async () => {
+        setGalleryLoading(true);
+        try {
+            const data = await listAllUploads();
+            setGalleryImages(data.files || []);
+        } catch (e) { console.error('Failed to load gallery:', e); }
+        setGalleryLoading(false);
+    };
+
+    const handleGalleryUpload = async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        setGalleryUploading(true);
+        for (const file of files) {
+            try {
+                await uploadFile(file, '', 'image');
+            } catch (err) { console.error('Upload failed:', err); }
+        }
+        await loadGallery();
+        setGalleryUploading(false);
+        if (galleryFileRef.current) galleryFileRef.current.value = '';
+    };
+
+    const handleGalleryDelete = async (filename) => {
+        try {
+            await deleteUpload(filename);
+            setGalleryImages(prev => prev.filter(f => f.filename !== filename));
+            setGalleryDeleteConfirm(null);
+        } catch (e) { alert(e.message); }
+    };
+
+    const handleCopyImageUrl = (url) => {
+        const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+        navigator.clipboard.writeText(fullUrl);
+        setGalleryCopied(url);
+        setTimeout(() => setGalleryCopied(null), 2000);
+    };
+
+    // ── Site feature handlers ──
+    const handleExportZip = async (siteId, siteName) => {
+        setExporting(siteId);
+        try {
+            const blob = await exportSiteZip(siteId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${siteName || 'site'}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (e) { alert(e.message); }
+        setExporting(null);
+    };
+
+    const handleOpenCustomCode = async (siteId) => {
+        setCustomCodeModal(siteId);
+        try {
+            const data = await getCustomCode(siteId);
+            setCustomHeadCode(data.head_code || '');
+            setCustomBodyCode(data.body_code || '');
+        } catch (_) {
+            setCustomHeadCode('');
+            setCustomBodyCode('');
+        }
+    };
+
+    const handleSaveCustomCode = async () => {
+        if (!customCodeModal) return;
+        setCustomCodeSaving(true);
+        try {
+            await updateCustomCode(customCodeModal, customHeadCode, customBodyCode);
+            alert('Custom code saved! Redeploy to apply changes.');
+            setCustomCodeModal(null);
+        } catch (e) { alert(e.message); }
+        setCustomCodeSaving(false);
+    };
+
+    const handleOpenAnalytics = async (siteId) => {
+        setAnalyticsModal(siteId);
+        setAnalyticsLoading(true);
+        setAnalyticsData(null);
+        try {
+            const data = await getSiteAnalytics(siteId, 30);
+            setAnalyticsData(data);
+        } catch (e) { setAnalyticsData({ error: e.message }); }
+        setAnalyticsLoading(false);
+    };
+
+    // ── Inbox handlers ──
+    const loadSubmissions = async () => {
+        setSubmissionsLoading(true);
+        try {
+            const params = {};
+            if (inboxSiteFilter) params.siteId = inboxSiteFilter;
+            if (inboxReadFilter === 'unread') params.isRead = false;
+            if (inboxReadFilter === 'read') params.isRead = true;
+            const data = await getFormSubmissions(params.siteId || null, params.isRead ?? null);
+            setSubmissions(data.submissions || []);
+            setUnreadCount(data.unread_count || 0);
+        } catch (e) { console.error('Failed to load submissions:', e); }
+        setSubmissionsLoading(false);
+    };
+
+    const loadUnreadCount = async () => {
+        try {
+            const data = await getUnreadCount();
+            setUnreadCount(data.unread_count || 0);
+        } catch (_) { /* ignore */ }
+    };
+
+    const handleExpandSubmission = async (sub) => {
+        setExpandedSubmission(expandedSubmission?.id === sub.id ? null : sub);
+        if (!sub.is_read) {
+            try {
+                await markSubmissionRead(sub.id);
+                setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, is_read: true } : s));
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            } catch (_) { /* ignore */ }
+        }
+    };
+
+    const handleDeleteSubmission = async (id) => {
+        try {
+            await deleteFormSubmission(id);
+            setSubmissions(prev => prev.filter(s => s.id !== id));
+            setDeleteSubmissionConfirm(null);
+            loadUnreadCount();
+        } catch (e) { alert(e.message); }
+    };
+
     // ── Domain handlers ──
     const loadDeployedSites = async () => {
         setDomainsLoading(true);
         try {
             const data = await listDeployedSites();
-            const sites = data.sites || [];
+            const sites = (data.sites || []).map(s => {
+                // Derive cname_target from URL if backend didn't return it
+                if (!s.cname_target && s.url) {
+                    try { s.cname_target = new URL(s.url).hostname; } catch (_) { /* ignore */ }
+                }
+                return s;
+            });
             setDeployedSites(sites);
             // Auto-load DNS records and nameservers for connected domains
             for (const site of sites) {
@@ -435,15 +605,22 @@ const Dashboard = () => {
         navigate('/');
     };
 
-    // Load projects/templates when their tab is active
+    // Fetch unread count on mount (for inbox badge)
+    useEffect(() => { loadUnreadCount(); }, []);
+
+    // Load projects/templates/inbox when their tab is active
     useEffect(() => {
         if (activeTab === 'projects') {
             loadProjects();
         } else if (activeTab === 'templates') {
             loadTemplates();
+        } else if (activeTab === 'inbox') {
+            loadSubmissions();
+        } else if (activeTab === 'gallery') {
+            loadGallery();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
+    }, [activeTab, inboxSiteFilter, inboxReadFilter]);
 
     const loadProjects = async () => {
         setProjectsLoading(true);
@@ -607,7 +784,7 @@ const Dashboard = () => {
                     <nav className="dash-nav">
                         <button
                             className={`dash-nav-item ${activeTab === 'home' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('home')}
+                            onClick={() => { setActiveTab('home'); refreshUser(); }}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
@@ -640,6 +817,29 @@ const Dashboard = () => {
                                 <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                             </svg>
                             {sidebarOpen && <span>Domains</span>}
+                        </button>
+                        <button
+                            className={`dash-nav-item ${activeTab === 'gallery' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('gallery')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            {sidebarOpen && <span>Gallery</span>}
+                        </button>
+                        <button
+                            className={`dash-nav-item ${activeTab === 'inbox' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('inbox')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+                            </svg>
+                            {sidebarOpen && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    Inbox
+                                    {unreadCount > 0 && <span className="dash-inbox-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+                                </span>
+                            )}
                         </button>
                         {user?.is_admin && (
                             <button
@@ -1091,30 +1291,66 @@ const Dashboard = () => {
                                             )}
                                         </div>
 
-                                        {/* Domain Setup Instructions — shown when domain connected but pending */}
-                                        {site.domain && site.domain_status && site.domain_status !== 'active' && (
-                                            <div style={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: 8, padding: 16, margin: '12px 0' }}>
-                                                <h4 style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                                    Domain Setup Required
-                                                </h4>
-                                                <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>Add this CNAME record at your DNS provider to point your domain to this site:</p>
-                                                <div style={{ background: '#0f0f1a', borderRadius: 6, padding: '10px 14px', fontFamily: 'monospace', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div>
-                                                        <span style={{ color: '#818cf8' }}>www.{site.domain}</span>
-                                                        <span style={{ color: '#6b7280' }}> → CNAME → </span>
-                                                        <span style={{ color: '#34d399' }}>{site.cloudfront_domain || '(pending SSL validation)'}</span>
-                                                    </div>
-                                                    {site.cloudfront_domain && (
-                                                        <button onClick={() => navigator.clipboard.writeText(site.cloudfront_domain)} style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                        {/* CNAME Target — always shown */}
+                                        <div style={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: 8, padding: 16, margin: '12px 0' }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, color: site.domain_status === 'active' ? '#34d399' : site.domain ? '#fbbf24' : '#818cf8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    {site.domain_status === 'active'
+                                                        ? <><polyline points="20 6 9 17 4 12" /></>
+                                                        : <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>
+                                                    }
+                                                </svg>
+                                                {site.domain_status === 'active' ? 'Domain Active' : site.domain ? 'Domain Setup Required' : 'CNAME Target'}
+                                            </h4>
+
+                                            {/* CNAME record */}
+                                            <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
+                                                {site.domain
+                                                    ? 'Point your domain\'s CNAME record to this address:'
+                                                    : 'Use this CNAME target to connect a custom domain:'}
+                                            </p>
+                                            <div style={{ background: '#0f0f1a', borderRadius: 6, padding: '10px 14px', fontFamily: 'monospace', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    {site.domain && (
+                                                        <>
+                                                            <span style={{ color: '#818cf8' }}>www.{site.domain}</span>
+                                                            <span style={{ color: '#6b7280' }}> → CNAME → </span>
+                                                        </>
                                                     )}
+                                                    <span style={{ color: '#34d399' }}>{site.cname_target || site.cloudfront_domain || site.s3_hostname || '(pending)'}</span>
                                                 </div>
-                                                <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
-                                                    Status: <span style={{ color: site.domain_status === 'pending_validation' ? '#fbbf24' : site.domain_status === 'active' ? '#22c55e' : '#818cf8' }}>{(site.domain_status || '').replace(/_/g, ' ')}</span>
-                                                    {' · '}SSL and CDN will activate automatically once DNS propagates.
-                                                </p>
+                                                {(site.cname_target || site.cloudfront_domain || site.s3_hostname) && (
+                                                    <button onClick={() => navigator.clipboard.writeText(site.cname_target || site.cloudfront_domain || site.s3_hostname)} style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                                )}
                                             </div>
-                                        )}
+
+                                            {/* Status line */}
+                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                                {site.domain ? (
+                                                    <>
+                                                        Status: <span style={{ color: site.domain_status === 'pending_validation' ? '#fbbf24' : site.domain_status === 'active' ? '#22c55e' : '#818cf8' }}>{(site.domain_status || '').replace(/_/g, ' ')}</span>
+                                                        {site.domain_status !== 'active' && ' · SSL and CDN will activate automatically once DNS propagates.'}
+                                                    </>
+                                                ) : (
+                                                    <>Add a CNAME record at your DNS provider pointing to the address above, then click "Connect Domain".</>
+                                                )}
+                                            </p>
+
+                                            {/* DNS records from backend */}
+                                            {site.dns_records && site.dns_records.length > 0 && (
+                                                <div style={{ marginTop: 12, borderTop: '1px solid #374151', paddingTop: 10 }}>
+                                                    <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 6 }}>DNS Records</p>
+                                                    {site.dns_records.map((rec, i) => (
+                                                        <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, fontFamily: 'monospace', padding: '3px 0', color: '#d1d5db' }}>
+                                                            <span style={{ color: '#818cf8', minWidth: 50 }}>{rec.type}</span>
+                                                            <span style={{ color: '#9ca3af', flex: 1 }}>{rec.name}</span>
+                                                            <span style={{ color: '#34d399' }}>{rec.value}</span>
+                                                            <span style={{ color: '#6b7280', fontSize: 10 }}>{rec.purpose}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Actions Bar */}
                                         <div className="dsite-actions">
@@ -1148,6 +1384,23 @@ const Dashboard = () => {
                                                     Contact Info
                                                 </button>
                                             )}
+                                            {/* Export ZIP */}
+                                            {site.status === 'published' && (
+                                                <button className="dsite-action-btn" onClick={() => handleExportZip(site.id, site.name)} disabled={exporting === site.id}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                                    {exporting === site.id ? 'Exporting...' : 'Export ZIP'}
+                                                </button>
+                                            )}
+                                            {/* Custom Code */}
+                                            <button className="dsite-action-btn" onClick={() => handleOpenCustomCode(site.id)}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
+                                                Code Inject
+                                            </button>
+                                            {/* Analytics */}
+                                            <button className="dsite-action-btn" onClick={() => handleOpenAnalytics(site.id)}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+                                                Analytics
+                                            </button>
                                             <div className="dsite-actions-right">
                                                 {site.domain && (
                                                     <button className="dsite-action-btn dsite-action-danger" onClick={() => setDisconnectConfirm(site.id)}>Disconnect</button>
@@ -1621,6 +1874,113 @@ const Dashboard = () => {
                     </div>
                 )}
 
+                {/* Custom Code Modal */}
+                {customCodeModal && (
+                    <div className="dash-domain-modal-overlay" onClick={() => setCustomCodeModal(null)} onKeyDown={e => { if (e.key === 'Escape') setCustomCodeModal(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 560 }}>
+                            <button onClick={() => setCustomCodeModal(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: 18 }}>×</button>
+                            <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Custom Code Injection</h3>
+                            <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>Add custom HTML, CSS, or JavaScript. Takes effect on next deploy.</p>
+
+                            <div style={{ marginBottom: 14 }}>
+                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Head Code (before &lt;/head&gt;)</label>
+                                <textarea
+                                    value={customHeadCode}
+                                    onChange={e => setCustomHeadCode(e.target.value)}
+                                    placeholder="<!-- Google Analytics, custom meta tags, external CSS -->"
+                                    style={{ width: '100%', minHeight: 100, padding: '10px 12px', background: '#1f2937', color: '#e5e7eb', border: '1px solid #374151', borderRadius: 8, fontSize: 13, fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Body Code (before &lt;/body&gt;)</label>
+                                <textarea
+                                    value={customBodyCode}
+                                    onChange={e => setCustomBodyCode(e.target.value)}
+                                    placeholder="<!-- Chat widgets, custom scripts, tracking pixels -->"
+                                    style={{ width: '100%', minHeight: 100, padding: '10px 12px', background: '#1f2937', color: '#e5e7eb', border: '1px solid #374151', borderRadius: 8, fontSize: 13, fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button className="dash-domain-modal-cancel" onClick={() => setCustomCodeModal(null)}>Cancel</button>
+                                <button className="dash-domain-modal-confirm" onClick={handleSaveCustomCode} disabled={customCodeSaving}>
+                                    {customCodeSaving ? 'Saving...' : 'Save Code'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Analytics Modal */}
+                {analyticsModal && (
+                    <div className="dash-domain-modal-overlay" onClick={() => setAnalyticsModal(null)} onKeyDown={e => { if (e.key === 'Escape') setAnalyticsModal(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 560 }}>
+                            <button onClick={() => setAnalyticsModal(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: 18 }}>×</button>
+                            <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Site Analytics</h3>
+                            <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>Page views for the last 30 days</p>
+
+                            {analyticsLoading ? (
+                                <p style={{ color: '#9ca3af', textAlign: 'center', padding: 20 }}>Loading analytics...</p>
+                            ) : analyticsData?.error ? (
+                                <p style={{ color: '#ef4444', textAlign: 'center', padding: 20 }}>{analyticsData.error}</p>
+                            ) : analyticsData ? (
+                                <div>
+                                    {/* Summary stats */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+                                        <div style={{ background: '#1f2937', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                                            <div style={{ fontSize: 24, fontWeight: 700, color: '#f3f4f6' }}>{analyticsData.total_views}</div>
+                                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Views (30d)</div>
+                                        </div>
+                                        <div style={{ background: '#1f2937', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                                            <div style={{ fontSize: 24, fontWeight: 700, color: '#f3f4f6' }}>{analyticsData.unique_visitors}</div>
+                                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Unique Visitors</div>
+                                        </div>
+                                        <div style={{ background: '#1f2937', borderRadius: 10, padding: 14, textAlign: 'center' }}>
+                                            <div style={{ fontSize: 24, fontWeight: 700, color: '#f3f4f6' }}>{analyticsData.all_time_views}</div>
+                                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>All Time</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Top pages */}
+                                    {analyticsData.top_pages?.length > 0 && (
+                                        <div style={{ marginBottom: 16 }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#d1d5db', marginBottom: 8 }}>Top Pages</h4>
+                                            {analyticsData.top_pages.map((p, i) => (
+                                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #27272a', fontSize: 13 }}>
+                                                    <span style={{ color: '#e5e7eb' }}>{p.path}</span>
+                                                    <span style={{ color: '#9ca3af' }}>{p.views} views</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Top referrers */}
+                                    {analyticsData.top_referrers?.length > 0 && (
+                                        <div>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, color: '#d1d5db', marginBottom: 8 }}>Top Referrers</h4>
+                                            {analyticsData.top_referrers.map((r, i) => (
+                                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #27272a', fontSize: 13 }}>
+                                                    <span style={{ color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%' }}>{r.referrer}</span>
+                                                    <span style={{ color: '#9ca3af' }}>{r.views}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {analyticsData.total_views === 0 && (
+                                        <p style={{ color: '#6b7280', textAlign: 'center', padding: 20 }}>No page views recorded yet. Views are tracked automatically after deployment.</p>
+                                    )}
+                                </div>
+                            ) : null}
+
+                            <div style={{ marginTop: 16 }}>
+                                <button className="dash-domain-modal-confirm" onClick={() => setAnalyticsModal(null)}>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Token Request Modal */}
                 {tokenRequestModal && (
                     <div className="dash-domain-modal-overlay" onClick={() => setTokenRequestModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTokenRequestModal(false); }} role="button" tabIndex={0}>
@@ -1779,6 +2139,241 @@ const Dashboard = () => {
                                 </>
                             )}
                         </div>
+                    </div>
+                )}
+                {/* ── Gallery Tab ── */}
+                {activeTab === 'gallery' && (
+                    <div className="dash-domain-container">
+                        <div className="dash-domain-header">
+                            <div>
+                                <h1 className="dash-domain-title">Image Gallery</h1>
+                                <p className="dash-domain-subtitle">Upload and manage images for your websites</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <input
+                                    ref={galleryFileRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleGalleryUpload}
+                                    style={{ display: 'none' }}
+                                />
+                                <button
+                                    className="dsite-action-btn dsite-action-primary"
+                                    onClick={() => galleryFileRef.current?.click()}
+                                    disabled={galleryUploading}
+                                    style={{ padding: '8px 16px' }}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                    {galleryUploading ? 'Uploading...' : 'Upload Images'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {galleryLoading ? (
+                            <div className="dash-projects-empty"><p>Loading images...</p></div>
+                        ) : galleryImages.length === 0 ? (
+                            <div className="dsite-empty">
+                                <div className="dsite-empty-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                                    </svg>
+                                </div>
+                                <h3>No images yet</h3>
+                                <p>Upload images to use in your websites. You can also upload from the website editor.</p>
+                                <button className="dsite-cta-btn" onClick={() => galleryFileRef.current?.click()}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                    Upload Your First Image
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                                {galleryImages.map(img => (
+                                    <div key={img.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 10, overflow: 'hidden', transition: 'all 0.15s' }}>
+                                        <div style={{ position: 'relative', paddingBottom: '75%', overflow: 'hidden', background: '#111' }}>
+                                            <img
+                                                src={img.url}
+                                                alt={img.original_name}
+                                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div style={{ padding: '10px 12px' }}>
+                                            <p style={{ fontSize: 12, color: '#e5e7eb', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.original_name}</p>
+                                            <p style={{ fontSize: 11, color: '#6b7280', margin: '4px 0 0' }}>
+                                                {img.width && img.height ? `${img.width}×${img.height}` : ''}{img.size_bytes ? ` · ${(img.size_bytes / 1024).toFixed(0)}KB` : ''}
+                                            </p>
+                                            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                                                <button
+                                                    onClick={() => handleCopyImageUrl(img.url)}
+                                                    style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: '1px solid #374151', background: 'none', color: galleryCopied === img.url ? '#34d399' : '#9ca3af', fontSize: 11, cursor: 'pointer' }}
+                                                >
+                                                    {galleryCopied === img.url ? 'Copied!' : 'Copy URL'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setGalleryDeleteConfirm(img.filename)}
+                                                    style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Delete Image Confirmation */}
+                        {galleryDeleteConfirm && (
+                            <div className="dash-domain-modal-overlay" onClick={() => setGalleryDeleteConfirm(null)} onKeyDown={e => { if (e.key === 'Enter') setGalleryDeleteConfirm(null); }} role="button" tabIndex={0}>
+                                <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
+                                    <h3>Delete Image?</h3>
+                                    <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 16px' }}>This image will be permanently deleted and any sites using it will show a broken image.</p>
+                                    <div className="dash-domain-modal-actions">
+                                        <button className="dash-domain-modal-cancel" onClick={() => setGalleryDeleteConfirm(null)}>Cancel</button>
+                                        <button className="dash-domain-modal-confirm" style={{ background: '#ef4444' }} onClick={() => handleGalleryDelete(galleryDeleteConfirm)}>Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── Inbox Tab ── */}
+                {activeTab === 'inbox' && (
+                    <div className="dash-domain-container">
+                        <div className="dash-domain-header">
+                            <div>
+                                <h1 className="dash-domain-title">Inbox</h1>
+                                <p className="dash-domain-subtitle">Contact form submissions from your deployed websites</p>
+                            </div>
+                        </div>
+
+                        {/* Filters */}
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+                            <select
+                                value={inboxSiteFilter}
+                                onChange={e => setInboxSiteFilter(e.target.value)}
+                                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #374151', background: '#1f2937', color: '#e5e7eb', fontSize: 13 }}
+                            >
+                                <option value="">All sites</option>
+                                {deployedSites.map(s => <option key={s.id} value={s.id}>{s.name || s.domain || s.id}</option>)}
+                            </select>
+                            <select
+                                value={inboxReadFilter}
+                                onChange={e => setInboxReadFilter(e.target.value)}
+                                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #374151', background: '#1f2937', color: '#e5e7eb', fontSize: 13 }}
+                            >
+                                <option value="">All messages</option>
+                                <option value="unread">Unread only</option>
+                                <option value="read">Read only</option>
+                            </select>
+                            <button onClick={loadSubmissions} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>
+                                Refresh
+                            </button>
+                        </div>
+
+                        {submissionsLoading ? (
+                            <div className="dash-projects-empty"><p>Loading submissions...</p></div>
+                        ) : submissions.length === 0 ? (
+                            <div className="dsite-empty">
+                                <div className="dsite-empty-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                                        <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+                                    </svg>
+                                </div>
+                                <h3>No submissions yet</h3>
+                                <p>When visitors submit contact forms on your deployed websites, they'll appear here.</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                {submissions.map(sub => {
+                                    const isExpanded = expandedSubmission?.id === sub.id;
+                                    const senderName = sub.fields?.name || sub.fields?.full_name || sub.fields?.first_name || 'Anonymous';
+                                    const senderEmail = sub.fields?.email || '';
+                                    const message = sub.fields?.message || sub.fields?.inquiry || sub.fields?.comments || '';
+                                    const timeAgo = sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : '';
+
+                                    return (
+                                        <div key={sub.id} style={{ background: sub.is_read ? '#18181b' : '#1a1a2e', border: `1px solid ${sub.is_read ? '#27272a' : '#374191'}`, borderRadius: 10, overflow: 'hidden', transition: 'all 0.15s' }}>
+                                            {/* Row */}
+                                            <div
+                                                onClick={() => handleExpandSubmission(sub)}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', cursor: 'pointer' }}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={e => { if (e.key === 'Enter') handleExpandSubmission(sub); }}
+                                            >
+                                                {/* Unread dot */}
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: sub.is_read ? 'transparent' : '#3b82f6', flexShrink: 0 }} />
+                                                {/* Sender info */}
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                                        <span style={{ fontWeight: sub.is_read ? 400 : 600, color: '#f3f4f6', fontSize: 14 }}>{senderName}</span>
+                                                        {senderEmail && <span style={{ fontSize: 12, color: '#6b7280' }}>{senderEmail}</span>}
+                                                    </div>
+                                                    {message && (
+                                                        <p style={{ margin: 0, fontSize: 13, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                                            {message.slice(0, 120)}{message.length > 120 ? '...' : ''}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {/* Meta */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                                                    <span style={{ fontSize: 11, color: '#6b7280' }}>{timeAgo}</span>
+                                                    <span style={{ fontSize: 11, color: '#4b5563', background: '#27272a', padding: '2px 6px', borderRadius: 4 }}>{sub.site_name || 'Unknown site'}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Expanded detail */}
+                                            {isExpanded && (
+                                                <div style={{ borderTop: '1px solid #27272a', padding: '16px 18px', background: '#111114' }}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', marginBottom: 16 }}>
+                                                        {Object.entries(sub.fields || {}).map(([key, value]) => (
+                                                            <div key={key} style={key === 'message' || key === 'inquiry' || key === 'comments' || String(value).length > 80 ? { gridColumn: '1 / -1' } : {}}>
+                                                                <span style={{ fontSize: 11, color: '#6b7280', textTransform: 'capitalize', display: 'block', marginBottom: 2 }}>{key.replace(/_/g, ' ')}</span>
+                                                                <span style={{ fontSize: 13, color: '#e5e7eb', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{String(value)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <div style={{ fontSize: 11, color: '#4b5563' }}>
+                                                            {sub.source_page && <span>Page: {sub.source_page}</span>}
+                                                            {sub.ip_address && <span style={{ marginLeft: 12 }}>IP: {sub.ip_address}</span>}
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: 8 }}>
+                                                            {senderEmail && (
+                                                                <a href={`mailto:${senderEmail}`} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#3b82f6', fontSize: 12, textDecoration: 'none', cursor: 'pointer' }}>
+                                                                    Reply via Email
+                                                                </a>
+                                                            )}
+                                                            <button onClick={(e) => { e.stopPropagation(); setDeleteSubmissionConfirm(sub.id); }} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#ef4444', fontSize: 12, cursor: 'pointer' }}>
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Delete Submission Confirmation */}
+                        {deleteSubmissionConfirm && (
+                            <div className="dash-domain-modal-overlay" onClick={() => setDeleteSubmissionConfirm(null)} onKeyDown={e => { if (e.key === 'Enter') setDeleteSubmissionConfirm(null); }} role="button" tabIndex={0}>
+                                <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
+                                    <h3>Delete Submission?</h3>
+                                    <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 16px' }}>This submission will be permanently deleted.</p>
+                                    <div className="dash-domain-modal-actions">
+                                        <button className="dash-domain-modal-cancel" onClick={() => setDeleteSubmissionConfirm(null)}>Cancel</button>
+                                        <button className="dash-domain-modal-confirm" style={{ background: '#ef4444' }} onClick={() => handleDeleteSubmission(deleteSubmissionConfirm)}>Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </main>

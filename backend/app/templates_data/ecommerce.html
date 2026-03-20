@@ -803,7 +803,7 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <span class="ec-nav__cart-count">3</span>
       </button>
-      <div class="ec-nav__hamburger" onclick="this.classList.toggle('active')">
+      <div class="ec-nav__hamburger" onclick="this.classList.toggle('active')" onkeydown="if(event.key==='Enter')this.classList.toggle('active')" role="button" tabindex="0">
         <span></span><span></span><span></span>
       </div>
     </div>

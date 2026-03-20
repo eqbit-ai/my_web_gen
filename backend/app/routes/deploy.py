@@ -141,8 +141,35 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         if not site_name:
             site_name = f"site-{req.session_id[:8]}"
 
-    # 4. Deploy to S3 — use existing S3 prefix if we have one, otherwise derive from site_name
+    # 4. Create or get site record BEFORE deploy (so we have site_id for form injection)
     s3_project_name = existing_site.cloudflare_project_name if existing_site and existing_site.cloudflare_project_name else None
+    page_count = len(pages) if pages else 1
+    async with async_session() as db:
+        if existing_site:
+            refetch = await db.execute(select(Site).where(Site.id == existing_site.id))
+            site = refetch.scalar_one_or_none()
+        else:
+            site = None
+
+        if not site:
+            # Create draft record to get the site_id for form action injection
+            site = Site(
+                user_id=user["user_id"],
+                name=site_name,
+                status="draft",
+                session_id=req.session_id,
+                is_multipage=is_multipage,
+                page_count=page_count,
+            )
+            db.add(site)
+            await db.commit()
+            await db.refresh(site)
+
+    deploy_site_id = str(site.id)
+    custom_head = getattr(site, "custom_head_code", "") or ""
+    custom_body = getattr(site, "custom_body_code", "") or ""
+
+    # 5. Deploy to S3
     try:
         result = await deploy_site(
             site_name=site_name,
@@ -152,48 +179,35 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             pages=pages,
             is_multipage=is_multipage,
             s3_prefix_override=s3_project_name,
+            site_id=deploy_site_id,
+            custom_head_code=custom_head,
+            custom_body_code=custom_body,
         )
     except Exception as e:
         logger.error("Deployment failed: %s", e, exc_info=True)
         raise HTTPException(status_code=502, detail=f"Deployment failed: {str(e)}") from e
 
-    # 5. Store in database
-    page_count = len(pages) if pages else 1
+    # 6. Update site record with deploy result
+    site_id = deploy_site_id
     async with async_session() as db:
-        # Re-fetch inside this session to avoid detached instance
-        if existing_site:
-            refetch = await db.execute(select(Site).where(Site.id == existing_site.id))
-            site = refetch.scalar_one_or_none()
-        else:
-            site = None
+        refetch = await db.execute(select(Site).where(Site.id == deploy_site_id))
+        site = refetch.scalar_one_or_none()
 
         if site:
             site.name = site_name
             site.status = "published"
             site.deployed_url = result["url"]
-            site.cloudflare_project_name = result["project_name"]  # reuse column for S3 prefix
-            site.session_id = req.session_id  # update to new session
+            site.cloudflare_project_name = result["project_name"]
+            site.session_id = req.session_id
             site.is_multipage = is_multipage
             site.page_count = page_count
             site.deploy_error = None
             site.last_deployed_at = func.now()
+            await db.commit()
+            await db.refresh(site)
+            site_id = str(site.id)
         else:
-            site = Site(
-                user_id=user["user_id"],
-                name=site_name,
-                status="published",
-                deployed_url=result["url"],
-                cloudflare_project_name=result["project_name"],  # reuse column for S3 prefix
-                session_id=req.session_id,
-                is_multipage=is_multipage,
-                page_count=page_count,
-                last_deployed_at=func.now(),
-            )
-            db.add(site)
-
-        await db.commit()
-        await db.refresh(site)
-        site_id = str(site.id)
+            await db.commit()
 
     # Invalidate CloudFront cache if site has a distribution (overwrote existing files)
     cache_invalidated = False
@@ -208,6 +222,11 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         except Exception as e:
             logger.warning("Cache invalidation failed for site %s: %s", site_id, e)
 
+    # Build CNAME target from S3 hostname
+    bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
+    region = os.getenv("AWS_REGION", "me-central-1")
+    s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
+
     logger.info("Site deployed to S3: %s → %s", sanitize_log(site_name), result["url"])
 
     return {
@@ -216,6 +235,8 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         "url": result["url"],
         "deployment_url": result["url"],
         "project_name": result["project_name"],
+        "cname_target": s3_hostname,
+        "s3_hostname": s3_hostname,
         "is_multipage": is_multipage,
         "page_count": page_count,
         "cache_invalidated": cache_invalidated,
@@ -262,6 +283,7 @@ async def redeploy_website(site_id: str, req: RedeployRequest, user: dict = Depe
                 js=js,
                 pages=pages,
                 is_multipage=is_multipage,
+                site_id=site_id,
             )
         except Exception as e:
             site.deploy_error = str(e)
@@ -310,6 +332,11 @@ async def get_deploy_status(site_id: str, user: dict = Depends(require_auth)):
         if not site:
             raise HTTPException(status_code=404, detail="Site not found")
 
+    bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
+    region = os.getenv("AWS_REGION", "me-central-1")
+    s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
+    cname_target = site.cloudfront_domain or s3_hostname
+
     return {
         "site_id": str(site.id),
         "name": site.name,
@@ -318,6 +345,8 @@ async def get_deploy_status(site_id: str, user: dict = Depends(require_auth)):
         "domain": site.domain,
         "domain_status": site.domain_status,
         "cloudfront_domain": site.cloudfront_domain,
+        "cname_target": cname_target,
+        "s3_hostname": s3_hostname,
         "dns_records": site.dns_records,
         "is_multipage": site.is_multipage,
         "page_count": site.page_count,
@@ -353,6 +382,12 @@ async def list_deployed_sites(user: dict = Depends(require_auth)):
 
     site_list = []
     for s in sites:
+        # Build CNAME target: CloudFront domain if available, else S3 website hostname
+        bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
+        region = os.getenv("AWS_REGION", "me-central-1")
+        s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
+        cname_target = s.cloudfront_domain or s3_hostname
+
         entry = {
             "id": str(s.id),
             "name": s.name,
@@ -362,6 +397,9 @@ async def list_deployed_sites(user: dict = Depends(require_auth)):
             "domain_status": s.domain_status,
             "cloudfront_domain": s.cloudfront_domain,
             "route53_zone_id": s.route53_zone_id,
+            "dns_records": s.dns_records or [],
+            "cname_target": cname_target,
+            "s3_hostname": s3_hostname,
             "is_multipage": s.is_multipage,
             "page_count": s.page_count,
             "last_deployed_at": s.last_deployed_at.isoformat() if s.last_deployed_at else None,
@@ -867,7 +905,8 @@ async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
         if s3_prefix:
             bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
             region = os.getenv("AWS_REGION", "me-central-1")
-            site.deployed_url = f"http://{bucket}.s3-website.{region}.amazonaws.com/{s3_prefix}/"
+            # S3 static website hosting only supports HTTP — HTTPS requires CloudFront (added when domain connected)
+            site.deployed_url = f"http://{bucket}.s3-website.{region}.amazonaws.com/{s3_prefix}/"  # noqa: S105
 
         await db.commit()
 

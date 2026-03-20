@@ -4,6 +4,7 @@ Upload routes — file upload, list, delete, download-from-URL, and image transf
 
 import ipaddress
 import mimetypes
+import os
 import uuid
 from io import BytesIO
 import urllib.parse
@@ -130,6 +131,38 @@ async def upload_file(
             "height": media.height,
             "category": media.category,
             "created_at": media.created_at.isoformat() if media.created_at else None,
+        }
+
+
+@router.get("/gallery")
+async def list_all_uploads(user: dict = Depends(require_auth)):
+    """List all uploads for the current user (across all projects)."""
+    async for db in get_tenant_db(user["db_schema"]):
+        result = await db.execute(
+            select(Media)
+            .where(Media.user_id == user["user_id"])
+            .order_by(Media.created_at.desc())
+            .limit(200)
+        )
+        items = result.scalars().all()
+
+        return {
+            "files": [
+                {
+                    "id": m.id,
+                    "filename": m.filename,
+                    "original_name": m.original_name,
+                    "url": m.url,
+                    "mime_type": m.mime_type,
+                    "size_bytes": m.size_bytes,
+                    "width": m.width,
+                    "height": m.height,
+                    "category": m.category,
+                    "project_id": m.project_id,
+                    "created_at": m.created_at.isoformat() if m.created_at else None,
+                }
+                for m in items
+            ]
         }
 
 

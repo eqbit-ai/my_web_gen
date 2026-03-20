@@ -285,26 +285,13 @@ def get_rotation_hints() -> str:
 # ─── Style Presets ──────────────────────────────────────────────────
 
 STYLE_PRESETS = {
-    "apple": {
-        "description": "Ultra-clean minimalism inspired by Apple. Massive whitespace, refined typography, "
-        "barely-there shadows, generous rounded corners, mono-color palette with one warm accent. "
-        "Content-first layout. Colors: #fafafa bg, #1d1d1f text, one muted blue accent.",
-        "preferred_patterns": ["hero_minimal", "hero_text_reveal", "icon_grid", "feature_bento_grid", "feature_split", "cta_centered", "stats_row", "about_numbers", "contact_minimal"],
-        "avoid_patterns": ["hero_full_image", "hero_video_bg", "cta_gradient"],
-        "design_hints": {
-            "spacing": "spacious",
-            "card_radius": "16px",
-            "button_radius": "12px",
-            "shadow_style": "soft",
-            "style": "minimal",
-        },
-    },
     "stripe": {
+        "weight": 3,  # Higher weight = more likely to be picked
         "description": "Stripe-inspired premium SaaS. Deep navy (#0a2540) + vibrant indigo (#635bff) + teal accent (#00d4aa). "
         "Diagonal gradient hero backgrounds, frosted glass cards, technical but warm. "
         "Typography: clean geometric sans-serif. Surface cards on pure white.",
-        "preferred_patterns": ["hero_split", "card_grid", "feature_bento_grid", "feature_split", "pricing_toggle", "cta_gradient"],
-        "avoid_patterns": ["hero_full_image", "team_masonry"],
+        "preferred_patterns": ["hero_split", "hero_full_image", "card_grid", "feature_split", "cta_gradient", "stats_row"],
+        "avoid_patterns": ["hero_minimal", "team_masonry"],
         "design_hints": {
             "spacing": "normal",
             "card_radius": "12px",
@@ -313,50 +300,47 @@ STYLE_PRESETS = {
             "style": "bold",
         },
     },
-    "linear": {
-        "description": "Linear.app dark mode aesthetic. Near-black (#0c0a14) bg with violet (#7c5cfc) accents, "
-        "subtle purple glow effects, glass-morphism cards with 1px borders, monospace code touches. "
-        "Single-hue palette — everything is shades of violet on black. Sharp, precise, dev-tool quality.",
-        "preferred_patterns": [
-            "hero_mockup_center",
-            "hero_text_reveal",
-            "icon_grid",
-            "feature_bento_grid",
-            "feature_stacked",
-            "pricing_comparison",
-            "cta_centered",
-        ],
-        "avoid_patterns": ["hero_full_image", "team_masonry", "gallery_grid"],
+    "agency": {
+        "weight": 3,
+        "description": "Top-tier creative agency aesthetic. Clean white (#fafafa) bg with one bold accent (deep blue #1e3a5f or vivid coral #e85d4a). "
+        "Hero MUST use hero_full_image with stunning photography + dark overlay. Large serif headings (DM Serif Display, Playfair Display). "
+        "Generous whitespace, editorial feel, alternating full-width and grid sections. Think award-winning portfolio sites. "
+        "Every section should feel like a magazine spread.",
+        "preferred_patterns": ["hero_full_image", "hero_split", "feature_split", "feature_cards", "testimonial_split", "cta_banner", "stats_row", "gallery_grid"],
+        "avoid_patterns": ["hero_minimal", "hero_video_bg", "icon_grid"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "12px",
+            "button_radius": "8px",
+            "shadow_style": "soft",
+            "style": "elegant",
+        },
+    },
+    "modern_dark": {
+        "weight": 3,
+        "description": "Premium dark theme. Near-black (#0a0a0f) bg with a single vibrant accent (electric blue #3d7aed, emerald #2dd4a8, or amber #f5a623). "
+        "Hero MUST use hero_full_image with dramatic photography + 60% dark overlay, or hero_split with large image. "
+        "Clean sans-serif typography (Space Grotesk headings, Inter body). Subtle card borders (1px rgba(255,255,255,0.06)), "
+        "no heavy shadows. Glowing accent on hover states and CTAs. Think Linear, Vercel, Raycast.",
+        "preferred_patterns": ["hero_full_image", "hero_split", "icon_grid", "feature_split", "card_grid", "cta_gradient", "stats_row"],
+        "avoid_patterns": ["hero_minimal", "team_masonry"],
         "design_hints": {
             "theme": "dark",
             "spacing": "normal",
-            "card_radius": "8px",
+            "card_radius": "12px",
             "button_radius": "8px",
             "shadow_style": "none",
             "style": "minimal",
         },
     },
-    "framer": {
-        "description": "Framer-style bold design. Rich black (#0a0a0a) + one electric accent color (coral, lime, or cyan). "
-        "Oversized display typography (Cabinet Grotesk or Syne), playful asymmetric layouts, "
-        "generous spacing, pill buttons, creative grid breaking. Bold but refined, not chaotic.",
-        "preferred_patterns": ["hero_asymmetric", "hero_parallax_layers", "feature_hover_cards", "testimonial_marquee", "cta_split", "marquee_text"],
-        "avoid_patterns": ["hero_minimal", "icon_grid", "cta_centered"],
-        "design_hints": {
-            "spacing": "spacious",
-            "card_radius": "16px",
-            "button_radius": "50px",
-            "shadow_style": "sharp",
-            "style": "playful",
-        },
-    },
     "luxury": {
+        "weight": 2,
         "description": "Maison-level luxury aesthetic. True black (#060606) bg + champagne gold (#c9a96e) accents. "
         "Serif headings (Cormorant Garamond or Playfair Display), dramatic full-bleed imagery, "
         "extravagant negative space, zero visual noise. Colors should feel aged, warm, and rich — "
         "never bright or saturated. Think Chanel, Cartier, Aesop.",
-        "preferred_patterns": ["hero_full_image", "hero_scroll_morph", "feature_accordion_visual", "testimonial_video", "gallery_grid", "cta_parallax", "about_split_scroll", "portfolio_case_study"],
-        "avoid_patterns": ["icon_grid", "comparison_table", "pricing_table"],
+        "preferred_patterns": ["hero_full_image", "feature_split", "gallery_grid", "testimonial_split", "cta_banner", "stats_row"],
+        "avoid_patterns": ["icon_grid", "comparison_table", "hero_minimal"],
         "design_hints": {
             "theme": "dark",
             "spacing": "spacious",
@@ -366,28 +350,51 @@ STYLE_PRESETS = {
             "style": "elegant",
         },
     },
+    "clean_light": {
+        "weight": 3,
+        "description": "Ultra-clean light theme inspired by Apple and Notion. Off-white (#fafaf9) bg, warm gray surface (#ffffff), "
+        "one sophisticated accent (indigo #4f46e5 or slate blue #475569). Hero uses hero_split with large image or hero_full_image with light overlay. "
+        "Generous whitespace, rounded corners, soft shadows. Heading: Sora or Plus Jakarta Sans. Body: Inter. "
+        "Every element breathes — nothing feels cramped. Professional but approachable.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "feature_split", "card_grid", "testimonial_cards", "cta_centered", "stats_row", "feature_cards"],
+        "avoid_patterns": ["hero_minimal", "hero_video_bg"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "16px",
+            "button_radius": "12px",
+            "shadow_style": "soft",
+            "style": "minimal",
+        },
+    },
     "corporate": {
+        "weight": 2,
         "description": "Fortune 500 corporate style. Deep navy (#0a1628) or warm ivory (#f7f4ef) base. "
         "Muted, trustworthy colors — no bright accents. Serif headings for authority (DM Serif Display), "
-        "clean sans-serif body. Data-driven layout, trust signals prominent, institutional weight. "
-        "Think McKinsey, Goldman Sachs, Deloitte.",
-        "preferred_patterns": [
-            "hero_split",
-            "card_grid",
-            "stats_row",
-            "testimonial_cards",
-            "pricing_comparison",
-            "cta_banner",
-            "about_numbers",
-            "vertical_tabs",
-        ],
-        "avoid_patterns": ["hero_asymmetric", "team_masonry", "gallery_grid"],
+        "clean sans-serif body. Hero MUST use hero_split or hero_full_image with professional photography. "
+        "Data-driven layout, trust signals prominent, institutional weight. Think McKinsey, Goldman Sachs.",
+        "preferred_patterns": ["hero_split", "hero_full_image", "card_grid", "stats_row", "testimonial_cards", "cta_banner", "feature_split"],
+        "avoid_patterns": ["hero_asymmetric", "hero_minimal", "hero_video_bg"],
         "design_hints": {
-            "spacing": "compact",
+            "spacing": "normal",
             "card_radius": "8px",
             "button_radius": "8px",
             "shadow_style": "soft",
             "style": "corporate",
+        },
+    },
+    "bold_creative": {
+        "weight": 2,
+        "description": "Bold creative studio aesthetic. Rich black (#0a0a0a) + one electric accent color (coral #ff6b6b, lime #84cc16, or cyan #06b6d4). "
+        "Oversized display typography (Cabinet Grotesk or Clash Display), hero_asymmetric or hero_full_image with dramatic imagery. "
+        "Generous spacing, pill buttons, creative but polished. Think Framer, Webflow showcase sites.",
+        "preferred_patterns": ["hero_asymmetric", "hero_full_image", "hero_split", "feature_cards", "testimonial_split", "cta_gradient"],
+        "avoid_patterns": ["hero_minimal", "icon_grid", "cta_centered"],
+        "design_hints": {
+            "spacing": "spacious",
+            "card_radius": "16px",
+            "button_radius": "50px",
+            "shadow_style": "sharp",
+            "style": "playful",
         },
     },
 }
@@ -441,8 +448,10 @@ def enforce_pattern_rotation(plan: dict) -> dict:
 
 
 def get_random_style_preset() -> tuple[str, dict]:
-    """Pick a random style preset. Returns (name, preset_dict)."""
-    name = random.choice(list(STYLE_PRESETS.keys()))
+    """Pick a weighted random style preset. Higher weight = more likely. Returns (name, preset_dict)."""
+    names = list(STYLE_PRESETS.keys())
+    weights = [STYLE_PRESETS[n].get("weight", 1) for n in names]
+    name = random.choices(names, weights=weights, k=1)[0]
     return name, STYLE_PRESETS[name]
 
 

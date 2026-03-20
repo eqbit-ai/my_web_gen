@@ -35,8 +35,7 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
     const body = { prompt, sessionId, niche, currentPage };
     if (templateId) body.templateId = templateId;
 
-    // Prevent browser from freezing the connection when tab is backgrounded
-    // by acquiring a Web Lock (keeps the event loop active)
+    // ── Keep-alive: Web Lock (keeps event loop active in background tabs) ──
     let lockRelease = null;
     if (navigator.locks) {
         navigator.locks.request('generate-stream-lock', { mode: 'exclusive', ifAvailable: true }, (lock) => {
@@ -45,7 +44,61 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
         });
     }
 
-    const releaseLock = () => { if (lockRelease) { lockRelease(); lockRelease = null; } };
+    // ── Keep-alive: Wake Lock (prevents screen sleep from killing connection) ──
+    let wakeLock = null;
+    const acquireWakeLock = async () => {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            }
+        } catch (_) { /* Wake Lock not available or denied */ }
+    };
+    acquireWakeLock();
+
+    // Re-acquire wake lock when tab becomes visible again
+    const handleVisibility = () => {
+        if (document.visibilityState === 'visible' && !wakeLock) acquireWakeLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    const cleanup = () => {
+        if (lockRelease) { lockRelease(); lockRelease = null; }
+        if (wakeLock) { try { wakeLock.release(); } catch (_) {} wakeLock = null; }
+        document.removeEventListener('visibilitychange', handleVisibility);
+    };
+
+    // ── Recovery: poll session if stream drops to check if generation finished ──
+    const pollForRecovery = async (sid) => {
+        if (!sid) return false;
+        onStage({ stage: -2, name: 'recovering', status: 'running', message: 'Reconnecting — checking if your website is ready...' });
+        for (let attempt = 0; attempt < 20; attempt++) {
+            await new Promise(r => setTimeout(r, 5000));
+            try {
+                const session = await getSession(sid);
+                if (session && session.html) {
+                    // Generation completed in the background!
+                    onComplete({
+                        html: session.html,
+                        css: session.css || '',
+                        js: session.js || '',
+                        sessionId: sid,
+                        plan: session.plan || {},
+                        multipage: session.multipage || false,
+                        pages: session.pages || null,
+                        recovered: true,
+                    });
+                    return true;
+                }
+                // Session exists but no HTML yet — still generating
+                if (session && session.status === 'generating') continue;
+            } catch (_) { /* session not found or network error, keep polling */ }
+        }
+        return false;
+    };
+
+    // Track the session ID from stream events for recovery
+    let trackedSessionId = sessionId;
 
     fetch(`${API_BASE_URL}/generator/generate-stream`, {
         method: 'POST',
@@ -54,7 +107,7 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
         signal: controller.signal,
     }).then(async (response) => {
         if (!response.ok) {
-            releaseLock();
+            cleanup();
             try {
                 const data = await response.json();
                 onError(data.detail || 'Stream failed');
@@ -83,6 +136,8 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
                 } else if (line.startsWith('data: ') && eventType) {
                     try {
                         const data = JSON.parse(line.slice(6));
+                        // Track session ID for recovery
+                        if (data.sessionId) trackedSessionId = data.sessionId;
                         if (eventType === 'stage') onStage(data);
                         else if (eventType === 'complete') { completed = true; onComplete(data); }
                         else if (eventType === 'error') { completed = true; onError(data.message); }
@@ -91,11 +146,22 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
                 }
             }
         }
-        releaseLock();
-        if (!completed) onError('Connection lost — generation may still be processing. Please try again.');
-    }).catch((err) => {
-        releaseLock();
-        if (err.name !== 'AbortError') onError(err.message);
+        cleanup();
+        if (!completed) {
+            // Stream dropped — try to recover by polling the session
+            const recovered = await pollForRecovery(trackedSessionId);
+            if (!recovered) {
+                onError('Connection lost — generation may still be processing. Check your session or try again.');
+            }
+        }
+    }).catch(async (err) => {
+        cleanup();
+        if (err.name === 'AbortError') return;
+        // Network error — try recovery polling
+        const recovered = await pollForRecovery(trackedSessionId);
+        if (!recovered) {
+            onError(err.message || 'Network error — please check your connection and try again.');
+        }
     });
 
     return controller;
@@ -598,6 +664,15 @@ export const uploadFile = async (file, projectId = null, category = 'image') => 
     } catch (error) { console.error('API Error:', error); throw error; }
 };
 
+export const listAllUploads = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/uploads/gallery`, { headers: getAuthHeaders() });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Failed to list uploads');
+        return data;
+    } catch (error) { console.error('API Error:', error); throw error; }
+};
+
 export const listUploads = async (projectId) => {
     try {
         const response = await fetch(`${API_BASE_URL}/uploads/list/${projectId}`, { headers: getAuthHeaders() });
@@ -817,6 +892,78 @@ export const getDnsNameservers = async (siteId) => {
     const response = await fetch(`${API_BASE_URL}/dns/${siteId}/nameservers`, { headers: getAuthHeaders() });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || 'Failed to get nameservers');
+    return data;
+};
+
+// ── Site Features (Export, Custom Code, Analytics) ───────────────────
+
+export const exportSiteZip = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/sites/${siteId}/export`, { headers: getAuthHeaders() });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || 'Export failed');
+    }
+    return response.blob();
+};
+
+export const getCustomCode = async (siteId) => {
+    const response = await fetch(`${API_BASE_URL}/sites/${siteId}/custom-code`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get custom code');
+    return data;
+};
+
+export const updateCustomCode = async (siteId, headCode, bodyCode) => {
+    const response = await fetch(`${API_BASE_URL}/sites/${siteId}/custom-code`, {
+        method: 'PUT', headers: getAuthHeaders(),
+        body: JSON.stringify({ head_code: headCode, body_code: bodyCode }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to save custom code');
+    return data;
+};
+
+export const getSiteAnalytics = async (siteId, days = 30) => {
+    const response = await fetch(`${API_BASE_URL}/sites/${siteId}/analytics?days=${days}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get analytics');
+    return data;
+};
+
+// ── Form Inbox ────────────────────────────────────────────────────────
+
+export const getFormSubmissions = async (siteId = null, isRead = null, limit = 50, offset = 0) => {
+    const params = new URLSearchParams({ limit, offset });
+    if (siteId) params.append('site_id', siteId);
+    if (isRead !== null) params.append('is_read', isRead);
+    const response = await fetch(`${API_BASE_URL}/forms/submissions?${params}`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to fetch submissions');
+    return data;
+};
+
+export const getUnreadCount = async () => {
+    const response = await fetch(`${API_BASE_URL}/forms/unread-count`, { headers: getAuthHeaders() });
+    const data = await response.json();
+    if (!response.ok) return { unread_count: 0 };
+    return data;
+};
+
+export const markSubmissionRead = async (submissionId) => {
+    const response = await fetch(`${API_BASE_URL}/forms/submissions/${submissionId}/read`, {
+        method: 'PATCH', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to mark as read');
+    return data;
+};
+
+export const deleteFormSubmission = async (submissionId) => {
+    const response = await fetch(`${API_BASE_URL}/forms/submissions/${submissionId}`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to delete');
     return data;
 };
 

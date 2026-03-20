@@ -362,43 +362,92 @@ def save_debug(session_id: str, stage: str, content: str):
 
 
 def polish_css(css: str, theme: str = "light") -> str:
-    """Auto-inject premium CSS polish if missing."""
+    """Auto-inject premium CSS polish if missing.
+
+    Covers: scroll behavior, image rendering, selection, focus, transitions,
+    font rendering, whitespace enforcement, card hover effects, responsive
+    safeguards, section spacing, and image object-fit.
+    """
     additions = []
 
-    # Smooth scroll behavior
+    # ── Core polish ──
     if "scroll-behavior" not in css:
         additions.append("html { scroll-behavior: smooth; }")
-
-    # Better image rendering
     if "image-rendering" not in css:
         additions.append("img { image-rendering: -webkit-optimize-contrast; }")
-
-    # Selection color matching brand
     if "::selection" not in css:
-        additions.append("::selection { background: var(--primary); color: white; }")
-
-    # Focus visible for accessibility
+        additions.append("::selection { background: var(--primary, #3b82f6); color: white; }")
     if ":focus-visible" not in css:
-        additions.append(":focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }")
-
-    # Smooth transitions on all interactive elements
-    if "transition" not in css or "a, button" not in css:
-        additions.append("a, button { transition: all 0.3s ease; }")
-
-    # Better font rendering
+        additions.append(":focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }")
     if "-webkit-font-smoothing" not in css:
         additions.append("body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }")
 
-    # Dark theme specific polish
+    # ── Quality Improvement 3: CSS post-polish ──
+
+    # Smooth transitions on interactive elements
+    if "a, button" not in css:
+        additions.append("a, button, input, textarea { transition: all 0.3s ease; }")
+
+    # Quality Improvement 7: Whitespace enforcement — generous section padding
+    if "section" not in css or "padding" not in css[:500]:
+        additions.append("section { padding: 5rem 0; }")
+    # Ensure sections have max-width container
+    if "max-width" not in css[:1000]:
+        additions.append(".container, .max-w-7xl, .mx-auto { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }")
+
+    # Quality Improvement 5: Image object-fit enforcement
+    if "object-fit" not in css:
+        additions.append("img { max-width: 100%; height: auto; }")
+    additions.append("img[src*='pexels'], img[src*='unsplash'], img[src*='images.'] { object-fit: cover; }")
+
+    # Card hover effects (if cards exist but no hover)
+    if "card" in css.lower() and "card" not in css.split(":hover")[0][-50:] if ":hover" in css else True:
+        additions.append("""
+[class*="card"]:hover, .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}""")
+
+    # Button hover enhancement
+    if "btn" in css.lower() and "btn:hover" not in css.lower():
+        additions.append("""
+[class*="btn"]:hover, button[class]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}""")
+
+    # ── Quality Improvement 6: Footer & navbar quality ──
+    if "footer" in css.lower():
+        additions.append("footer a { opacity: 0.7; transition: opacity 0.2s; }")
+        additions.append("footer a:hover { opacity: 1; }")
+
+    # ── Responsive safeguards ──
+    if "@media" not in css:
+        additions.append("""
+@media (max-width: 768px) {
+  section { padding: 3rem 0; }
+  h1 { font-size: 2rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  .grid { grid-template-columns: 1fr !important; }
+}""")
+
+    # Dark theme scrollbar
     if theme == "dark":
         if "scrollbar" not in css:
             additions.append("::-webkit-scrollbar { width: 8px; }")
-            additions.append("::-webkit-scrollbar-track { background: var(--bg); }")
-            additions.append("::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }")
+            additions.append("::-webkit-scrollbar-track { background: var(--bg, #0a0a0f); }")
+            additions.append("::-webkit-scrollbar-thumb { background: var(--primary, #3b82f6); border-radius: 4px; }")
+
+    # ── Section visual rhythm: alternating backgrounds ──
+    if "nth-child" not in css and "section:nth" not in css:
+        if theme == "dark":
+            additions.append("section:nth-child(even) { background: rgba(255,255,255,0.02); }")
+        else:
+            additions.append("section:nth-child(even) { background: rgba(0,0,0,0.015); }")
 
     if additions:
         polish = "\n/* === Auto-polish === */\n" + "\n".join(additions) + "\n"
-        # Insert before closing </style> or append to end
         css = css.rstrip() + "\n" + polish
 
     return css
@@ -1740,7 +1789,100 @@ async def generate_multipage_html(
         if style_match:
             _reference_css = style_match.group(1).strip()
 
-    async def generate_one_page(page: dict, design_reference_css: str = "") -> tuple:
+    def _extract_smart_css_reference(full_css: str, max_chars: int = 20000) -> str:
+        """Extract a smart CSS reference that preserves design tokens and critical styles.
+
+        Priority order:
+        1. CSS custom properties / :root variables (ALWAYS preserved in full)
+        2. @import / @font-face rules (font loading)
+        3. Navbar styles (shared across all pages)
+        4. Hero styles (critical for visual quality)
+        5. Button / CTA styles
+        6. Footer styles
+        7. Everything else (truncated if needed)
+        """
+        import re as _re
+
+        # Step 1: Minify — collapse whitespace, remove comments
+        minified = _re.sub(r'/\*.*?\*/', '', full_css, flags=_re.DOTALL)
+        minified = _re.sub(r'\n\s*\n', '\n', minified)
+        minified = _re.sub(r'  +', ' ', minified)
+
+        # If minified fits, return it all
+        if len(minified) <= max_chars:
+            return minified
+
+        # Step 2: Extract priority sections
+        sections = {
+            "variables": [],    # :root, CSS vars
+            "imports": [],      # @import, @font-face
+            "navbar": [],       # nav, navbar, header
+            "hero": [],         # hero section styles
+            "buttons": [],      # btn, button, cta
+            "footer": [],       # footer styles
+            "other": [],        # everything else
+        }
+
+        # Split into rule blocks (approximate — split on } at line start)
+        blocks = _re.split(r'(?<=\})\s*\n', minified)
+
+        for block in blocks:
+            block = block.strip()
+            if not block:
+                continue
+            lower = block.lower()
+            if ':root' in lower or 'var(--' in lower[:100]:
+                sections["variables"].append(block)
+            elif '@import' in lower or '@font-face' in lower:
+                sections["imports"].append(block)
+            elif any(k in lower[:80] for k in ['nav', '.navbar', '.header', '.nav-']):
+                sections["navbar"].append(block)
+            elif any(k in lower[:80] for k in ['hero', '.hero']):
+                sections["hero"].append(block)
+            elif any(k in lower[:80] for k in ['.btn', 'button', '.cta', '.primary-btn']):
+                sections["buttons"].append(block)
+            elif any(k in lower[:80] for k in ['footer', '.footer']):
+                sections["footer"].append(block)
+            else:
+                sections["other"].append(block)
+
+        # Step 3: Assemble in priority order
+        result_parts = []
+        remaining = max_chars
+
+        for key in ["variables", "imports", "navbar", "hero", "buttons", "footer", "other"]:
+            for block in sections[key]:
+                if len(block) + 2 <= remaining:
+                    result_parts.append(block)
+                    remaining -= len(block) + 2
+                elif key in ("variables", "imports"):
+                    # Always include variables even if tight — they're critical
+                    result_parts.append(block)
+                    remaining -= len(block) + 2
+
+        return "\n\n".join(result_parts)
+
+    def _extract_hero_html(homepage_html: str) -> str:
+        """Extract the hero section HTML from the homepage for visual reference."""
+        import re as _re
+        # Try data-section-type="hero"
+        match = _re.search(
+            r'<section[^>]*data-section-type="hero"[^>]*>.*?</section>',
+            homepage_html, _re.DOTALL
+        )
+        if match:
+            hero = match.group(0)
+            return hero[:3000]  # Cap to avoid token bloat
+        # Fallback: first <section> after navbar
+        match = _re.search(
+            r'</nav>.*?(<section[^>]*>.*?</section>)',
+            homepage_html, _re.DOTALL
+        )
+        if match:
+            return match.group(1)[:3000]
+        return ""
+
+    async def generate_one_page(page: dict, design_reference_css: str = "", homepage_hero_html: str = "") -> tuple:
         slug = page.get("slug", "index")
         title = page.get("title", slug)
         logger.info(f"[MULTIPAGE] Starting page '{title}' (slug: {slug})")
@@ -1750,21 +1892,46 @@ async def generate_multipage_html(
 
         # Inject full CSS design reference for consistent styling across pages
         if design_reference_css:
-            # Trim to avoid token overflow but keep enough for full design system
-            css_ref = design_reference_css[:8000]
+            css_ref = _extract_smart_css_reference(design_reference_css, max_chars=20000)
+
             prompt += f"""
 
-DESIGN REFERENCE CSS (CRITICAL — USE THIS EXACT DESIGN SYSTEM):
-You MUST copy the exact same visual design from this CSS into your page.
-Use the same colors, fonts, spacing, shadows, border-radius, button styles, and layout patterns.
-The subpage should look like it belongs to the same website as the homepage.
+DESIGN REFERENCE CSS (CRITICAL — COPY THIS EXACT DESIGN SYSTEM):
+You MUST replicate the exact same visual design from this CSS into your page.
+Copy the same CSS custom properties, colors, fonts, spacing, shadows, border-radius, button styles, and layout patterns EXACTLY.
+The subpage MUST look like it belongs to the same website as the homepage — identical visual language.
 
 ```css
 {css_ref}
 ```
 
-IMPORTANT: Your <style> block must reuse the same CSS variables, class naming conventions,
-and visual treatments from the reference above. Do NOT invent new colors or fonts.
+CRITICAL RULES:
+1. Your <style> block MUST start with the SAME :root {{ }} variables from the reference above — copy them VERBATIM.
+2. Use the EXACT SAME class names for navbar, buttons, and footer as the reference.
+3. Match the EXACT SAME color values — do NOT approximate or pick similar colors.
+4. If the reference uses Tailwind utilities in HTML, use the SAME utility classes.
+5. Do NOT invent new colors, fonts, or spacing values. Everything must come from the reference.
+"""
+
+            # Add homepage hero as visual reference for subpage hero quality
+            if homepage_hero_html and slug != "index":
+                prompt += f"""
+
+HOMEPAGE HERO REFERENCE (MATCH THIS VISUAL QUALITY):
+Below is the homepage hero section HTML. Your hero section must match this SAME level of visual quality,
+using the SAME color scheme, overlay style, and typography. Adapt the content for this page but keep the design language identical.
+
+```html
+{homepage_hero_html}
+```
+
+Your hero section MUST:
+- Use the SAME overlay/gradient colors as the homepage hero
+- Use the SAME font sizes and weights for headings
+- Use the SAME button styles (colors, padding, border-radius)
+- Have a full-width background image (use an Unsplash URL relevant to this page's topic)
+- Be at least 60vh tall on desktop
+- Look equally polished and professional as the homepage hero
 """
 
         client = get_anthropic_client()
@@ -1791,24 +1958,29 @@ and visual treatments from the reference above. Do NOT invent new colors or font
     # ── Step 1: Generate homepage first ──
     homepage_slug, homepage_html = await generate_one_page(homepage, _reference_css)
     pages_html = {homepage_slug: homepage_html}
-    logger.info(f"[MULTIPAGE] Homepage generated → extracting CSS as design reference for subpages")
+    logger.info("[MULTIPAGE] Homepage generated → extracting CSS as design reference for subpages")
 
     # Extract the homepage's full CSS to use as reference for subpages
     import re as _re
     homepage_style_match = _re.search(r'<style[^>]*>(.*?)</style>', homepage_html, _re.DOTALL)
     homepage_css = homepage_style_match.group(1).strip() if homepage_style_match else _reference_css
 
+    # Extract homepage hero HTML for visual reference
+    homepage_hero = _extract_hero_html(homepage_html)
+    if homepage_hero:
+        logger.info(f"[MULTIPAGE] Extracted homepage hero ({len(homepage_hero):,} chars) as visual reference")
+
     if not subpages:
         pages_html = _sync_multipage_shared_elements(pages_html)
         return pages_html
 
-    # ── Step 2: Generate subpages in parallel using homepage CSS as reference ──
+    # ── Step 2: Generate subpages in parallel using homepage CSS + hero as reference ──
     logger.info(f"[MULTIPAGE] Using {len(homepage_css):,} chars of homepage CSS as design reference")
     BATCH_SIZE = 2
     results = []
     for batch_start in range(0, len(subpages), BATCH_SIZE):
         batch = subpages[batch_start:batch_start + BATCH_SIZE]
-        batch_coros = [generate_one_page(p, homepage_css) for p in batch]
+        batch_coros = [generate_one_page(p, homepage_css, homepage_hero) for p in batch]
         batch_results = await asyncio.gather(*batch_coros, return_exceptions=True)
         results.extend(batch_results)
         # Longer delay between batches to respect rate limits
@@ -1829,7 +2001,7 @@ and visual treatments from the reference above. Do NOT invent new colors or font
         try:
             logger.info(f"[MULTIPAGE] Retrying failed page '{page.get('title', page.get('slug'))}'...")
             await asyncio.sleep(5)
-            slug, html = await generate_one_page(page, homepage_css)
+            slug, html = await generate_one_page(page, homepage_css, homepage_hero)
             pages_html[slug] = html
             logger.info(f"[MULTIPAGE] Retry succeeded for '{slug}'")
         except Exception as e:
@@ -3065,11 +3237,19 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     if is_new:
         await redis_save_session(session_id, {"prompt": req.prompt[:500], "status": "generating"})
 
-    async def event_stream():
-        def sse(event: str, data: dict):
-            return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    # ── Launch generation as a background task (survives client disconnect) ──
+    from app.utils.session_store import push_sse_event, pop_sse_events, clear_sse_events
 
-        logger.info(f"[STREAM START] session={session_id[:8]}...")
+    async def _run_generation():
+        """Run the full generation pipeline in the background, pushing SSE events to Redis."""
+        # Clear old SSE events before starting new generation
+        await clear_sse_events(session_id)
+
+        async def emit(event: str, data: dict):
+            data["sessionId"] = session_id
+            await push_sse_event(session_id, event, data)
+
+        logger.info(f"[BG GEN START] session={session_id[:8]}...")
         pipeline_start = time.time()
         metrics_increment("generations_total")
         quality_scores = {}
@@ -3079,7 +3259,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
         try:
             if is_new:
                 # ── Stage 0: Prompt Enhancement ───────────────────────
-                yield sse(
+                await emit(
                     "stage",
                     {"stage": -1, "name": "enhance", "status": "running", "message": "Understanding your vision..."},
                 )
@@ -3087,7 +3267,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 enhanced_prompt = await enhance_prompt(req.prompt)
                 await _update_job_progress(job_id, 10, "Prompt enhanced")
 
-                yield sse(
+                await emit(
                     "stage",
                     {
                         "stage": -1,
@@ -3131,7 +3311,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 multipage_requested = is_multipage_request(req.prompt)
 
                 # ── Stage 1: Plan ──────────────────────────────────────
-                yield sse(
+                await emit(
                     "stage",
                     {
                         "stage": 0,
@@ -3147,7 +3327,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 while not plan_task.done():
                     await asyncio.sleep(3)
                     if not plan_task.done():
-                        yield ": keepalive\n\n"
+                        await asyncio.sleep(0)  # yield control
                 plan = plan_task.result()
                 is_multipage = plan.get("multipage", False)
 
@@ -3155,7 +3335,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 if is_multipage:
                     n_pages = len(plan.get("pages", []))
                     n_sections = sum(len(p.get("sections", [])) for p in plan.get("pages", []))
-                    yield sse(
+                    await emit(
                         "stage",
                         {
                             "stage": 0,
@@ -3169,7 +3349,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     )
                 else:
                     n_sections = len(plan.get("sections", []))
-                    yield sse(
+                    await emit(
                         "stage",
                         {
                             "stage": 0,
@@ -3187,7 +3367,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                 if is_multipage:
                     # Multi-page: generate all pages in parallel
-                    yield sse(
+                    await emit(
                         "stage",
                         {
                             "stage": 1,
@@ -3203,11 +3383,11 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     while not html_task.done():
                         await asyncio.sleep(3)
                         if not html_task.done():
-                            yield ": keepalive\n\n"
+                            await asyncio.sleep(0)  # yield control
                     pages_html = html_task.result()  # {slug: html_string}
 
                     total_html_chars = sum(len(h) for h in pages_html.values())
-                    yield sse(
+                    await emit(
                         "stage",
                         {
                             "stage": 1,
@@ -3234,7 +3414,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     css = index_data["css"]
                     save_debug(session_id, "css", css)
 
-                    yield sse(
+                    await emit(
                         "stage",
                         {
                             "stage": 2,
@@ -3247,12 +3427,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     # Single-page: COMBINED HTML+JS in one LLM call (saves 5-10s)
                     use_template_path = reference_html is not None
                     if use_template_path:
-                        yield sse(
+                        await emit(
                             "stage",
                             {"stage": 1, "name": "html", "status": "running", "message": "Customizing template + adding interactions..."},
                         )
                     else:
-                        yield sse(
+                        await emit(
                             "stage",
                             {"stage": 1, "name": "html", "status": "running", "message": "Building page structure + interactions..."},
                         )
@@ -3270,10 +3450,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     while not combined_task.done():
                         await asyncio.sleep(3)
                         if not combined_task.done():
-                            yield ": keepalive\n\n"
+                            await asyncio.sleep(0)  # yield control
                     html, js = combined_task.result()
 
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 1, "name": "html", "status": "done", "message": f"HTML + JS ready ({len(html):,} + {len(js):,} chars)"},
                     )
@@ -3285,7 +3465,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     css = polish_css(css, theme)
                     save_debug(session_id, "css", css)
 
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
                     )
@@ -3294,19 +3474,19 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                 # ── Stage 3: JS — only needed for multipage (single-page already has JS from combined call)
                 if is_multipage and pages_dict:
-                    yield sse("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
+                    await emit("stage", {"stage": 2, "name": "js", "status": "running", "message": "Adding interactions..."})
                     combined_html = "\n".join(pd["html"] for pd in pages_dict.values())
                     js = await stage_3_js(combined_html, session_id)
-                    yield sse(
+                    await emit(
                         "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
                     )
                 else:
-                    yield sse(
+                    await emit(
                         "stage", {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js):,} chars)"}
                     )
 
                 # ── Stage 4: Quality checks + auto-fix ─────────────────
-                yield sse(
+                await emit(
                     "stage",
                     {
                         "stage": 3,
@@ -3413,7 +3593,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 perf_score = quality_scores.get("performance_score", "—")
                 seo_score_val = quality_scores.get("seo_score", "—")
                 fixes = quality_scores.get("issues_fixed", 0)
-                yield sse(
+                await emit(
                     "stage",
                     {
                         "stage": 3,
@@ -3461,7 +3641,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 # ── Iteration (component-based) ───────────────────────
                 session = await redis_get_session(session_id)
                 if not session:
-                    yield sse("error", {"message": "Session not found"})
+                    await emit("error", {"message": "Session not found"})
                     return
 
                 # ── Check for "add WhatsApp button" BEFORE normal routing ──
@@ -3501,8 +3681,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         code = {"html": html, "css": session["css"], "js": session.get("js", "")}
                         plan = session.get("plan") or {}
 
-                        yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": "Adding WhatsApp button"})
-                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button added — update the phone number in site settings"})
+                        await emit("stage", {"stage": 0, "name": "route", "status": "done", "message": "Adding WhatsApp button"})
+                        await emit("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button added — update the phone number in site settings"})
 
                         # Skip to finalization (don't go through router/LLM)
                         # Save session and emit complete
@@ -3519,15 +3699,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         if session.get("multipage"):
                             complete_payload["isMultipage"] = True
                             complete_payload["pages"] = session.get("pages", {})
-                        yield sse("complete", complete_payload)
+                        await emit("complete", complete_payload)
                         return
                     else:
-                        yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": "WhatsApp button already exists"})
-                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button is already on the page — update number in site settings"})
+                        await emit("stage", {"stage": 0, "name": "route", "status": "done", "message": "WhatsApp button already exists"})
+                        await emit("stage", {"stage": 1, "name": "edit", "status": "done", "message": "WhatsApp button is already on the page — update number in site settings"})
                         code = {"html": html, "css": session["css"], "js": session.get("js", "")}
                         plan = session.get("plan") or {}
                         sections_list = parse_sections(html)
-                        yield sse("complete", {
+                        await emit("complete", {
                             "success": True,
                             "website": {"html": html, "css": session["css"], "js": session.get("js", "")},
                             "sessionId": session_id,
@@ -3553,7 +3733,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     # Keep the same design/brand but regenerate everything with multiple pages
                     page_names = ", ".join(p["title"] for p in add_page_list[:4])
 
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 0, "name": "plan", "status": "running", "message": f"Converting to multipage: {page_names}..."},
                     )
@@ -3574,17 +3754,17 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     while not plan_task.done():
                         await asyncio.sleep(3)
                         if not plan_task.done():
-                            yield ": keepalive\n\n"
+                            await asyncio.sleep(0)  # yield control
                     plan = plan_task.result()
 
                     n_pages = len(plan.get("pages", []))
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 0, "name": "plan", "status": "done", "message": f"Plan ready: {brand_name or 'Multipage'} ({n_pages} pages)"},
                     )
 
                     # Generate all pages
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 1, "name": "html", "status": "running", "message": f"Building {n_pages} pages..."},
                     )
@@ -3596,11 +3776,11 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     while not html_task.done():
                         await asyncio.sleep(3)
                         if not html_task.done():
-                            yield ": keepalive\n\n"
+                            await asyncio.sleep(0)  # yield control
                     pages_html = html_task.result()
 
                     total_html_chars = sum(len(h) for h in pages_html.values())
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 1, "name": "html", "status": "done", "message": f"{len(pages_html)} pages generated ({total_html_chars:,} chars)"},
                     )
@@ -3614,7 +3794,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         pages_dict[slug] = {"html": page_html_clean, "css": page_css}
 
                     # Generate JS
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 2, "name": "js", "status": "running", "message": "Generating interactions..."},
                     )
@@ -3626,10 +3806,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     while not js_task.done():
                         await asyncio.sleep(5)
                         if not js_task.done():
-                            yield ": keepalive\n\n"
+                            await asyncio.sleep(0)  # yield control
                     js_code = js_task.result()
 
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 2, "name": "js", "status": "done", "message": f"JS ready ({len(js_code):,} chars)"},
                     )
@@ -3649,14 +3829,14 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     page_count = len(existing_pages)
                     available_slots = 5 - page_count
                     if available_slots <= 0:
-                        yield sse("error", {"message": "Maximum 5 pages reached."})
+                        await emit("error", {"message": "Maximum 5 pages reached."})
                         return
 
                     pages_to_add = add_page_list[:available_slots]
                     page_names = ", ".join(p["title"] for p in pages_to_add)
 
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "running", "message": f"Adding pages: {page_names}..."})
-                    yield sse("stage", {"stage": 0, "name": "route", "status": "done", "message": f"Target: {len(pages_to_add)} new page(s)"})
+                    await emit("stage", {"stage": 0, "name": "route", "status": "running", "message": f"Adding pages: {page_names}..."})
+                    await emit("stage", {"stage": 0, "name": "route", "status": "done", "message": f"Target: {len(pages_to_add)} new page(s)"})
 
                     pages_dict = {**existing_pages}
                     last_slug = None
@@ -3665,18 +3845,18 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         page_slug = page_info["slug"]
                         page_title = page_info["title"]
 
-                        yield sse("stage", {"stage": 1, "name": "edit", "status": "running", "message": f"Generating {page_title} page ({i+1}/{len(pages_to_add)})..."})
+                        await emit("stage", {"stage": 1, "name": "edit", "status": "running", "message": f"Generating {page_title} page ({i+1}/{len(pages_to_add)})..."})
 
                         new_page_code = await _add_new_page(req.prompt, session, page_slug, page_title)
 
                         if not new_page_code.get("html"):
-                            yield sse("error", {"message": f"Failed to generate {page_title} page"})
+                            await emit("error", {"message": f"Failed to generate {page_title} page"})
                             return
 
                         pages_dict[page_slug] = {"html": new_page_code["html"], "css": new_page_code["css"]}
                         last_slug = page_slug
 
-                        yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": f"{page_title} page created ({i+1}/{len(pages_to_add)})"})
+                        await emit("stage", {"stage": 1, "name": "edit", "status": "done", "message": f"{page_title} page created ({i+1}/{len(pages_to_add)})"})
 
                     pages_dict = _rebuild_multipage_navbars(pages_dict)
 
@@ -3704,7 +3884,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                             session["css"] = page_data.get("css", session["css"])
 
                     # Route to target component(s)
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 0, "name": "route", "status": "running", "message": "Identifying target sections..."},
                     )
@@ -3725,13 +3905,13 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         target_names = [sid_to_type.get(t, t) for t in targets]
                         target_desc = ", ".join(target_names)
 
-                    yield sse(
+                    await emit(
                         "stage", {"stage": 0, "name": "route", "status": "done", "message": f"Target: {target_desc}"}
                     )
 
                     # Edit the component(s)
                     edit_action = "Adding" if append_targets else "Editing"
-                    yield sse(
+                    await emit(
                         "stage",
                         {"stage": 1, "name": "edit", "status": "running", "message": f"{edit_action} {target_desc}..."},
                     )
@@ -3742,10 +3922,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     plan = session.get("plan")
 
                     if not code.get("html"):
-                        yield sse("error", {"message": "Failed to apply changes"})
+                        await emit("error", {"message": "Failed to apply changes"})
                         return
 
-                    yield sse("stage", {"stage": 1, "name": "edit", "status": "done", "message": "Changes applied"})
+                    await emit("stage", {"stage": 1, "name": "edit", "status": "done", "message": "Changes applied"})
 
             # ── Finalize ───────────────────────────────────────────
             code["html"] = inject_section_ids(code["html"])
@@ -3894,7 +4074,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     seo_score=quality_scores.get("seo_score"),
                 )
 
-            yield sse("complete", complete_payload)
+            await emit("complete", complete_payload)
 
         except CircuitOpenError:
             metrics_increment("generation_errors")
@@ -3907,13 +4087,14 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
                 error_message="AI service temporarily unavailable (circuit open)",
             )
-            yield sse("error", {"message": "AI service is temporarily unavailable. Please try again in a few minutes."})
-        except (BrokenPipeError, ConnectionResetError, asyncio.CancelledError):
-            logger.info(f"[STREAM] Client disconnected (session={session_id[:8]})")
-            await _complete_job(job_id, "failed", "Client disconnected")
+            await emit("error", {"message": "AI service is temporarily unavailable. Please try again in a few minutes."})
+        except asyncio.CancelledError:
+            logger.info(f"[BG GEN] Task cancelled (session={session_id[:8]})")
+            await _complete_job(job_id, "failed", "Generation cancelled")
+            raise  # Must re-raise CancelledError per asyncio contract
         except Exception as e:
             metrics_increment("generation_errors")
-            logger.error(f"[STREAM ERROR] {e}", exc_info=True)
+            logger.error(f"[BG GEN ERROR] {e}", exc_info=True)
             await _complete_job(job_id, "failed", str(e)[:200])
             _log_generation_bg(
                 user_id=user["user_id"],
@@ -3924,9 +4105,40 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 error_message=str(e)[:500],
             )
             try:
-                yield sse("error", {"message": str(e)})
-            except (BrokenPipeError, ConnectionResetError):
+                await emit("error", {"message": str(e)})
+            except Exception:
                 pass
+
+    # Launch generation as background task (survives client disconnect)
+    gen_task = asyncio.create_task(_run_generation())
+    _background_tasks.add(gen_task)
+    gen_task.add_done_callback(_background_tasks.discard)
+
+    # SSE stream: tail the Redis event queue and relay to client
+    async def event_stream():
+        event_index = 0
+        idle_count = 0
+        max_idle = 600  # 10 minutes max wait
+
+        while idle_count < max_idle:
+            events = await pop_sse_events(session_id, event_index)
+            if events:
+                idle_count = 0
+                for ev in events:
+                    event_type = ev.get("event", "stage")
+                    data = ev.get("data", {})
+                    yield f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+                    event_index += 1
+                    # Stop streaming after complete or error
+                    if event_type in ("complete", "error"):
+                        return
+            else:
+                idle_count += 1
+                yield ": keepalive\n\n"
+                await asyncio.sleep(1)
+
+        # Timed out waiting
+        yield f"event: error\ndata: {json.dumps({'message': 'Generation timed out'})}\n\n"
 
     return StreamingResponse(
         event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}

@@ -21,7 +21,7 @@ import SeoEditor from './SeoEditor';
 import {
     generateWebsiteStream, clearSession, editElement, uploadFile,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
-    submitJob, getJobStatus, restoreSession,
+    submitJob, getJobStatus, restoreSession, getSession,
 } from '../services/api';
 import config from '../config';
 
@@ -1009,6 +1009,41 @@ const WebsiteGenerator = () => {
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
     }, []);
 
+    // ── Auto-recovery on screen wake / tab focus ─────────────────────────
+    // When browser suspends JS (screen sleep, tab background), the SSE stream dies.
+    // On wake, check if the backend finished generating while we were away.
+    useEffect(() => {
+        const handleVisibility = async () => {
+            if (document.visibilityState !== 'visible') return;
+            if (!isGeneratingRef.current || !sessionId) return;
+
+            // Tab just became visible and we were generating — check if done
+            try {
+                const session = await getSession(sessionId);
+                if (session && session.html) {
+                    // Generation completed while screen was off!
+                    setHtml(session.html);
+                    setCss(session.css || '');
+                    setJs(session.js || '');
+                    if (session.pages) setPages(session.pages);
+                    if (session.multipage) setIsMultipage(true);
+                    setIsLoading(false);
+                    setLoadingMessage('');
+                    isGeneratingRef.current = false;
+                    if (streamControllerRef.current) {
+                        streamControllerRef.current.abort();
+                        streamControllerRef.current = null;
+                    }
+                    setErrorBanner(null);
+                    addToast('Connection recovered — website ready!', 'success');
+                }
+            } catch (_) { /* session not ready yet, stream will handle it */ }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // ── Generation ──────────────────────────────────────────────────────
 
     const streamControllerRef = useRef(null);
@@ -1166,7 +1201,7 @@ const WebsiteGenerator = () => {
                     setIsLoading(false); setLoadingMessage('');
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
                     isGeneratingRef.current = false;
-                    addToast(result.addedPage ? `${result.addedPage.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} page added!` : (isNew && mp) ? `${Object.keys(result.pages || {}).length}-page website generated!` : isNew ? 'Website generated successfully!' : 'Changes applied!', 'success');
+                    addToast(result.recovered ? 'Connection recovered — website ready!' : result.addedPage ? `${result.addedPage.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} page added!` : (isNew && mp) ? `${Object.keys(result.pages || {}).length}-page website generated!` : isNew ? 'Website generated successfully!' : 'Changes applied!', 'success');
                 },
                 // onError
                 (errorMsg) => {

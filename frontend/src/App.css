@@ -1996,7 +1996,7 @@ body {
 @keyframes dmFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes dmSlideUp { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-.dm-container { position: relative; width: 92vw; max-width: 480px; max-height: 90vh; overflow-y: auto; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset; animation: dmSlideUp 0.25s ease; }
+.dm-container { position: relative; width: 92vw; max-width: 480px; max-height: 85vh; overflow-y: auto; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset; animation: dmSlideUp 0.25s ease; display: flex; flex-direction: column; }
 .dm-container.dm-wide { max-width: 560px; }
 .dm-container.dm-deploy-form { max-width: 440px; }
 
@@ -2013,7 +2013,7 @@ body {
 .dm-header-success { border-bottom: 1px solid var(--border); }
 
 /* Body */
-.dm-body { padding: 20px 24px 24px; }
+.dm-body { padding: 20px 24px 24px; flex: 1; overflow-y: auto; min-height: 0; }
 
 /* Form field */
 .dm-field { margin-bottom: 16px; }
@@ -2069,6 +2069,13 @@ body {
 .dm-live-url a:hover { color: var(--accent-hover); }
 .dm-copy-btn { flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
 .dm-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── CNAME Card ── */
+.dm-cname-card { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+.dm-cname-label { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+.dm-cname-value { display: flex; align-items: center; gap: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.dm-cname-value code { flex: 1; font-size: 0.875rem; color: #34d399; word-break: break-all; }
+.dm-cname-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; }
 
 /* ── Upgrade Banner ── */
 .dm-upgrade-banner { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06)); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; cursor: pointer; transition: all 0.2s; margin-top: 14px; }
@@ -2133,7 +2140,7 @@ body {
 .dm-searching { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 0; color: var(--text-muted); font-size: 0.875rem; }
 
 /* ── Results ── */
-.dm-results { display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
+.dm-results { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px; }
 
 /* Featured result */
 .dm-result-featured { background: linear-gradient(135deg, rgba(134,239,203,0.06), rgba(99,102,241,0.04)); border: 1px solid rgba(134,239,203,0.2); border-radius: 14px; padding: 16px; position: relative; overflow: hidden; }
@@ -2197,7 +2204,7 @@ body {
 .dm-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 @media (max-width: 600px) {
-  .dm-container { width: 96vw; max-height: 94vh; border-radius: 12px; }
+  .dm-container { width: 96vw; max-height: 90vh; border-radius: 12px; }
   .dm-container.dm-wide { max-width: 100%; }
   .dm-featured-body { flex-direction: column; align-items: flex-start; }
   .dm-featured-right { width: 100%; justify-content: space-between; }
@@ -3847,6 +3854,20 @@ body {
 .dash-nav-item.active {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
+}
+
+.dash-inbox-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .dash-sidebar.collapsed .dash-nav-item {
