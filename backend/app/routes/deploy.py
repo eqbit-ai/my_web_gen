@@ -42,7 +42,7 @@ from app.utils.route53 import (
     delete_hosted_zone,
     get_nameservers,
 )
-from app.utils.s3_deploy import delete_site, deploy_site, verify_credentials
+from app.utils.s3_deploy import delete_site, deploy_site, verify_credentials, _sanitize_project_name as _sanitize_name
 from app.utils.session_store import get_session
 
 logger = logging.getLogger(__name__)
@@ -122,12 +122,27 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             existing_site = result_q.scalar_one_or_none()
 
         # Second try: match by session_id (same generation = same site)
+        # Prefer published sites over drafts, and latest first
         if not existing_site:
             result_q = await db.execute(
                 select(Site).where(
                     Site.user_id == user["user_id"],
                     Site.session_id == req.session_id,
-                )
+                ).order_by(
+                    # Prefer published > draft, then most recent
+                    Site.status.desc(), Site.updated_at.desc()
+                ).limit(1)
+            )
+            existing_site = result_q.scalar_one_or_none()
+
+        # Third try: match by site name + S3 prefix (same website, different session)
+        if not existing_site and site_name:
+            result_q = await db.execute(
+                select(Site).where(
+                    Site.user_id == user["user_id"],
+                    Site.cloudflare_project_name == _sanitize_name(site_name),
+                    Site.status == "published",
+                ).limit(1)
             )
             existing_site = result_q.scalar_one_or_none()
 

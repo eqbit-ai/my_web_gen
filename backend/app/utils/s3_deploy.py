@@ -484,6 +484,7 @@ def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> st
         hidden = f'<input type="hidden" name="_page" value="{page_slug}">'
         return tag + hidden
 
+    # Match forms with contact-related classes
     html = re.sub(
         r'<form[^>]*class="[^"]*(?:contact|inquiry|get-in-touch|message)[^"]*"[^>]*>',
         _patch_form,
@@ -491,13 +492,31 @@ def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> st
         flags=re.IGNORECASE,
     )
 
-    # Also patch forms with id containing "contact" or whose parent section is contact
+    # Match forms with contact-related ids
     html = re.sub(
         r'<form[^>]*id="[^"]*contact[^"]*"[^>]*>',
         _patch_form,
         html,
         flags=re.IGNORECASE,
     )
+
+    # Match forms with data-form-handler attribute (LLM-generated placeholder)
+    html = re.sub(
+        r'<form[^>]*data-form-handler[^>]*>',
+        _patch_form,
+        html,
+        flags=re.IGNORECASE,
+    )
+
+    # Fallback: match ANY form tag that doesn't already have our API action
+    # (catches forms without class/id/data attributes)
+    if "/api/forms/submit/" not in html:
+        html = re.sub(
+            r'<form(?![^>]*/api/forms/submit)[^>]*>',
+            _patch_form,
+            html,
+            flags=re.IGNORECASE,
+        )
 
     return html
 

@@ -4656,11 +4656,13 @@ def _is_structural_edit(prompt: str) -> bool:
         r'\bplace\b.*\b(image|picture|photo|logo|img)\b',
         # ── Alignment ──
         r'\b(center|left|right)\s*(align|alignment)', r'\balign.*(center|left|right)',
-        r'\btext.align', r'\bfix.*align',
+        r'\balign\b', r'\btext.align', r'\bfix.*align',
         r'\bmake\b.*\bcenter', r'\bcenter\b.*\b(text|heading|title|button|cta|content|everything|all|it)',
         r'\b(text|heading|title|button|cta|content|everything|all)\b.*\bcenter',
         r'\bmiddle\b', r'\bcentered\b', r'\bcentrali[sz]e', r'\bjustify.*center',
         r'\bmove\b.*\bcenter', r'\bput\b.*\bcenter',
+        r'\bposition\b.*\b(center|left|right|middle)\b',
+        r'\bcenter\b.*\b(position|place|this|it)\b',
         # ── Spacing & padding ──
         r'\b(more|less|reduce|increase|add)\b.*\b(space|spacing|gap|padding|margin)\b',
         r'\b(space|spacing|gap|padding|margin)\b.*\b(between|around|inside)\b',

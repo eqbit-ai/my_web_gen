@@ -96,6 +96,22 @@ def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 # ── Public Submission Endpoint ──────────────────────────────────────────
 
 
+@router.options("/submit/{site_id}")
+async def submit_form_preflight(site_id: str, request: Request):
+    """Handle CORS preflight for form submissions from deployed sites."""
+    from fastapi.responses import Response
+    origin = request.headers.get("origin", "*")
+    return Response(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "86400",
+        },
+    )
+
+
 @router.post("/submit/{site_id}", response_class=HTMLResponse)
 async def submit_form(site_id: str, request: Request):
     """Receive a contact form submission from a deployed website.
@@ -164,13 +180,17 @@ async def submit_form(site_id: str, request: Request):
 
     logger.info("Form submission received")
 
+    # CORS headers for cross-origin form submissions from deployed S3 sites
+    origin = request.headers.get("origin", "*")
+    cors_headers = {"Access-Control-Allow-Origin": origin}
+
     # Return JSON if client prefers it (AJAX), otherwise HTML
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
         from fastapi.responses import JSONResponse
-        return JSONResponse({"success": True, "message": "Submission received"})
+        return JSONResponse({"success": True, "message": "Submission received"}, headers=cors_headers)
 
-    return HTMLResponse(THANK_YOU_HTML, status_code=200)
+    return HTMLResponse(THANK_YOU_HTML, status_code=200, headers=cors_headers)
 
 
 # ── Authenticated Inbox Endpoints ───────────────────────────────────────

@@ -134,6 +134,60 @@ _allowed_origins = os.getenv(
     "http://localhost:3000",
 ).split(",")
 
+# Public CORS paths — these accept requests from ANY origin (deployed sites on S3/custom domains)
+_PUBLIC_CORS_PREFIXES = ("/api/forms/submit", "/api/sites/track")
+
+
+class PublicCORSMiddleware:
+    """Allow any origin for public endpoints (form submit, page tracking).
+
+    Deployed sites live on S3 or custom domains — we can't predict their origins.
+    This runs BEFORE the main CORSMiddleware to handle these paths with open CORS.
+    """
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        path = scope.get("path", "")
+        if not any(path.startswith(p) for p in _PUBLIC_CORS_PREFIXES):
+            return await self.app(scope, receive, send)
+
+        # Extract origin from headers
+        headers = dict(scope.get("headers", []))
+        origin = headers.get(b"origin", b"*").decode()
+
+        if scope["method"] == "OPTIONS":
+            # Handle preflight
+            response_headers = [
+                (b"access-control-allow-origin", origin.encode()),
+                (b"access-control-allow-methods", b"POST, OPTIONS, GET"),
+                (b"access-control-allow-headers", b"Content-Type"),
+                (b"access-control-max-age", b"86400"),
+                (b"content-length", b"0"),
+            ]
+
+            async def send_preflight(message):
+                pass
+
+            await send({"type": "http.response.start", "status": 204, "headers": response_headers})
+            await send({"type": "http.response.body", "body": b""})
+            return
+
+        # For actual requests, inject CORS header into response
+        async def send_with_cors(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"access-control-allow-origin", origin.encode()))
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send_with_cors)
+
+
 # Middleware (applied bottom-to-top: CORS → Security → Rate Limiter → Request Tracker → Logging)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(RequestTrackerMiddleware)
@@ -146,6 +200,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept"],
 )
+app.add_middleware(PublicCORSMiddleware)  # Runs FIRST (outermost) for public endpoints
 
 # Routes
 app.include_router(health.router, prefix="/api", tags=["Health"])
