@@ -640,6 +640,28 @@ HERO PATTERN FOR THIS GENERATION — USE: {suggested_hero}
 This is to ensure visual variety across generations. Follow this suggestion unless the website type demands a specific hero pattern (e.g., SaaS needs hero_product_mockup).
 """
 
+    # Inject curated color palette (proven combinations, not random LLM colors)
+    try:
+        from app.utils.premium_postcss import get_random_palette
+        theme_hint = "dark" if random.random() < 0.4 else "light"  # 40% dark, 60% light
+        palette = get_random_palette(theme_hint)
+        prompt += f"""
+
+CURATED COLOR PALETTE (USE THESE EXACT COLORS — do NOT invent your own):
+  Background: {palette['bg']}
+  Surface/Card: {palette['surface']}
+  Primary: {palette['primary']}
+  Accent: {palette['accent']}
+  Text: {palette['text']}
+  Muted text: {palette['muted']}
+  Theme: {theme_hint}
+  Palette name: {palette['name']}
+
+These colors are pre-tested and proven to look premium together. Use them EXACTLY as specified in the design.colors section of your JSON output. Do NOT substitute with similar colors.
+"""
+    except Exception:
+        pass
+
     # Style preset: inject almost always (95%) for premium design quality
     if random.random() < 0.95:
         preset_name, preset = get_random_style_preset()

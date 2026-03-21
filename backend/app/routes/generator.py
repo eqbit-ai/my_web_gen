@@ -3491,6 +3491,22 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 except Exception as e:
                     logger.warning(f"[QUALITY] Scoring failed: {e}")
 
+                # ── Premium post-processing (hero, whitespace, cards, animations) ──
+                try:
+                    from app.utils.premium_postcss import apply_premium_postprocessing
+                    _theme = plan.get("design", {}).get("theme", "light")
+                    if is_multipage and pages_dict:
+                        for _slug, _pd in pages_dict.items():
+                            _pd["html"], _pd["css"] = apply_premium_postprocessing(_pd["html"], _pd["css"], _theme)
+                        # Update main html/css from index
+                        if "index" in pages_dict:
+                            html = pages_dict["index"]["html"]
+                            css = pages_dict["index"]["css"]
+                    else:
+                        html, css = apply_premium_postprocessing(html, css, _theme)
+                except Exception as e:
+                    logger.warning(f"[PREMIUM] Post-processing failed: {e}")
+
                 await _update_job_progress(job_id, 60, "HTML, CSS & JS ready, polishing...")
 
                 # ── Stage 3: JS — only needed for multipage (single-page already has JS from combined call)
