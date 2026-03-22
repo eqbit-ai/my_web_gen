@@ -139,7 +139,7 @@ footer, footer[data-section-type], footer section[data-section-type] {{ opacity:
   section[data-section-type] {{ padding: 5rem 0; }}
 }}
 .section-header {{ text-align: center; margin-bottom: 2rem; }}
-.section-title {{ font-size: clamp(1.75rem, 3vw, 2.5rem); margin-bottom: 0.75rem; }}
+.section-title {{ font-size: clamp(1.5rem, 3vw, 2.25rem); margin-bottom: 0.75rem; }}
 .section-subtitle {{ font-size: 1.05rem; color: var(--text-muted); max-width: 36rem; margin: 0 auto; line-height: 1.7; }}
 
 /* Section background rhythm */
@@ -167,16 +167,16 @@ section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--pri
 .card:hover::before {{ left: 100%; }}
 .card:hover h3 {{ color: var(--accent); transition: color 0.3s ease; }}
 .card-title {{ font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }}
-.card-text {{ color: var(--text-muted); line-height: 1.7; font-size: 0.9rem; }}
+.card-text {{ color: var(--text-muted); line-height: 1.7; font-size: 0.95rem; }}
 .card-body {{ padding: 1.25rem; }}
-.card-image {{ width: 100%; height: 12rem; object-fit: cover; display: block; }}
+.card-image {{ width: 100%; height: 12rem; max-height: 240px; object-fit: cover; display: block; }}
 .icon-box {{ width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--accent); margin-bottom: 1.25rem; flex-shrink: 0; }}
 
 /* ═══ Images ═══ */
 .img-cover {{ width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.4s ease; }}
 .img-cover:hover {{ transform: scale(1.02); }}
 .img-wrapper {{ overflow: hidden; border-radius: var(--radius); }}
-.team-photo {{ width: 100%; height: 16rem; object-fit: cover; display: block; }}
+.team-photo {{ width: 100%; height: 14rem; max-height: 240px; object-fit: cover; display: block; }}
 
 /* ═══ Navbar ═══ */
 .navbar {{ position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(12px); transition: var(--transition); padding: 1rem 0; }}
@@ -203,11 +203,11 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 }}
 
 /* ═══ Hero ═══ */
-.hero-section {{ padding: 7rem 0 4rem; position: relative; overflow: hidden; min-height: 85vh; display: flex; align-items: center; }}
+.hero-section {{ padding: 7rem 0 4rem; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }}
 @media (min-width: 769px) {{ .hero-section {{ padding: 8rem 0 4rem; }} }}
 .hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0; min-height: 100vh; }}
-.hero-heading {{ font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; color: var(--text); }}
-.hero-subtitle {{ font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
+.hero-heading {{ font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); }}
+.hero-subtitle {{ font-size: clamp(1rem, 1.2vw, 1.15rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
 .hero-center-content .hero-subtitle {{ margin-left: auto; margin-right: auto; }}
 .trust-line {{ font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }}
 .hero-ctas {{ display: flex; flex-wrap: wrap; gap: 1rem; }}
@@ -220,7 +220,7 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .hero-split-asymmetric {{ grid-template-columns: 55% 45%; }}
 @media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; min-height: auto; }} }}
 .hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; width: 100%; }}
-.hero-bg-cover {{ position: relative; width: 100%; min-height: 100vh; background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }}
+.hero-bg-cover {{ position: relative; width: 100%; min-height: min(90vh, 800px); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }}
 .hero-bg-cover > .container, .hero-bg-cover > .container-wide, .hero-bg-cover > .container-narrow {{ width: 100%; }}
 .hero-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }}
 .hero-overlay-left {{ background: linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.35), rgba(0,0,0,0.1)); }}
@@ -318,7 +318,7 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 
 /* ═══ Gallery & Carousel ═══ */
 .gallery-item {{ overflow: hidden; border-radius: var(--radius); cursor: pointer; }}
-.gallery-image {{ width: 100%; height: 16rem; object-fit: cover; transition: transform 0.5s ease; }}
+.gallery-image {{ width: 100%; height: 14rem; max-height: 280px; object-fit: cover; transition: transform 0.5s ease; }}
 .gallery-item:hover .gallery-image {{ transform: scale(1.1); }}
 .gallery-lightbox {{ position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; padding: 1rem; }}
 .gallery-lightbox.active {{ display: flex; }}
@@ -331,8 +331,8 @@ footer {{ margin-top: 4rem; position: relative; z-index: 1; }}
 .carousel-container {{ position: relative; overflow: hidden; border-radius: var(--radius); }}
 .carousel-track {{ display: flex; transition: transform 0.5s ease-in-out; }}
 .carousel-slide {{ min-width: 100%; position: relative; }}
-.carousel-image {{ width: 100%; height: 25rem; object-fit: cover; }}
-@media (min-width: 769px) {{ .carousel-image {{ height: 31rem; }} }}
+.carousel-image {{ width: 100%; height: 20rem; max-height: 380px; object-fit: cover; }}
+@media (min-width: 769px) {{ .carousel-image {{ height: 24rem; max-height: 400px; }} }}
 .carousel-caption {{ position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); padding: 2rem; color: white; }}
 .carousel-prev, .carousel-next {{ position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; z-index: 10; }}
 .carousel-prev {{ left: 1rem; }}
@@ -456,8 +456,8 @@ HERO DEPTH ELEMENTS — add at least 1 of these to every hero section for visual
   2. Trust line below CTAs: <p class="trust-line">Trust signal text</p>
   Do NOT add custom animation classes (no hero-stagger, no hero-anim, no fade-in-up). AOS handles animations.
 
-HERO HEADLINE SIZE — hero-heading class gives clamp(2.5rem, 6vw, 4.5rem). For display fonts (Oswald, Bebas Neue), add style="font-size: clamp(3rem, 7vw, 5.5rem)" inline.
-  Use line-height: 1.05 on hero headlines (tight = more impact).
+HERO HEADLINE SIZE — hero-heading class gives clamp(2rem, 5vw, 3.5rem). Do NOT override with larger inline font-size values. Max heading size is 3.5rem.
+  Use line-height: 1.08 on hero headlines (tight = more impact).
   NEVER use gradient-text, -webkit-text-fill-color: transparent, or background-clip: text on hero headings.
 
 SECTION PATTERNS (use ONLY these — match each section's "pattern" field exactly):
@@ -548,7 +548,8 @@ DESIGN QUALITY — what makes a website look "designed" vs "generated":
   - Glass-morphism on dark: background rgba(255,255,255,0.05), backdrop-filter blur(16px), border rgba(255,255,255,0.1)
 
   IMAGES:
-  - Hero images: min-height 500px via inline style if needed, object-fit cover
+  - Section images: max-height 400px, object-fit cover. Card images max-height 240px.
+  - Do NOT add min-height > 400px on images. Let natural aspect ratio + max-height constrain them.
   - EVERY <img> must have loading="lazy" decoding="async" (except hero)
 
 SEO META — after </style>, add: <!-- SEO_META --> with meta description (150 chars), og:title, og:description, og:type, twitter:card, robots, canonical. <!-- END_SEO_META -->

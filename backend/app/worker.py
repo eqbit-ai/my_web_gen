@@ -154,11 +154,22 @@ async def _handle_job(job_id: str, semaphore: asyncio.Semaphore):
 
         payload = job["payload"] if isinstance(job["payload"], dict) else json.loads(job["payload"])
 
+        # Restore correlation ID from the originating API request
+        from app.middleware.correlation import set_correlation_id
+
+        cid = job.get("correlation_id", "")
+        if cid:
+            set_correlation_id(cid)
+
         try:
             await process_generate_job(job_id, payload)
             logger.info("job_completed", extra={"job_id": job_id})
+            from app.utils import metrics as app_metrics
+            app_metrics.increment("jobs_completed")
         except Exception as e:
             logger.error("job_failed", extra={"job_id": job_id, "error": str(e)}, exc_info=True)
+            from app.utils import metrics as app_metrics
+            app_metrics.increment("jobs_failed")
             await update_job(job_id, status="failed", progress=0, progress_message="Failed", error=str(e))
 
 
@@ -174,6 +185,14 @@ async def worker_loop():
         "queue": "queue:generate",
         "concurrency": concurrency,
     })
+
+    # Start CloudWatch metrics flusher for worker service
+    _cw_task = None
+    try:
+        from app.utils.cloudwatch_metrics import start_metrics_flusher
+        _cw_task = await start_metrics_flusher(service="worker")
+    except Exception as e:
+        logger.warning("cloudwatch_metrics_init_failed", extra={"error": str(e)})
 
     while True:
         try:

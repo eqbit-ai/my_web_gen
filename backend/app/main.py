@@ -2,6 +2,7 @@
 Meydan Free Zone - Website Generator Backend
 """
 
+import asyncio
 import logging
 import os
 import time
@@ -23,6 +24,7 @@ setup_logging(os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
 from app.database import init_db
+from app.middleware.correlation import CorrelationIDMiddleware
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.request_tracker import (
     RequestTrackerMiddleware,
@@ -84,9 +86,19 @@ class RequestLoggingMiddleware:
             duration_ms = round((time.time() - start) * 1000, 2)
             app_metrics.increment("requests_total")
             app_metrics.observe("request_duration_ms", duration_ms)
+            # Track error rates for CloudWatch alarms
+            if status_code >= 500:
+                app_metrics.increment("errors_5xx")
+            elif status_code >= 400:
+                app_metrics.increment("errors_4xx")
             if not silent:
                 method = scope.get("method", "")
-                logger.info(f"[REQUEST] {method} {path} {status_code} in {duration_ms}ms")
+                from app.middleware.correlation import get_correlation_id
+                cid = get_correlation_id()
+                logger.info(
+                    f"[REQUEST] {method} {path} {status_code} in {duration_ms}ms",
+                    extra={"correlation_id": cid, "status_code": status_code, "duration_ms": duration_ms},
+                )
 
 
 @asynccontextmanager
@@ -113,7 +125,23 @@ async def lifespan(app: FastAPI):
 
     logger.info("server_ready", extra={"url": "http://localhost:8000"})
 
+    # Start CloudWatch metrics flusher (non-blocking, logs warning if AWS creds missing)
+    _cw_task = None
+    try:
+        from app.utils.cloudwatch_metrics import start_metrics_flusher
+        _cw_task = await start_metrics_flusher(service="api")
+    except Exception as e:
+        logger.warning("cloudwatch_metrics_init_failed", extra={"error": str(e)})
+
     yield
+
+    # Cancel CloudWatch flusher
+    if _cw_task:
+        _cw_task.cancel()
+        try:
+            await _cw_task
+        except asyncio.CancelledError:
+            pass
 
     # Wait for in-flight requests to drain
     await wait_for_inflight_requests()
@@ -201,6 +229,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept"],
 )
 app.add_middleware(PublicCORSMiddleware)  # Runs FIRST (outermost) for public endpoints
+app.add_middleware(CorrelationIDMiddleware)  # Outermost — assigns X-Correlation-ID before anything else
 
 # Routes
 app.include_router(health.router, prefix="/api", tags=["Health"])

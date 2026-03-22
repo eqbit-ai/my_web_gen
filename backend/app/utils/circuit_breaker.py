@@ -155,14 +155,22 @@ class _CircuitBreaker:
 
     async def call(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
         """Execute a function through the circuit breaker with retry logic."""
+        from app.utils import metrics as app_metrics
+
         await self._pre_call()
 
         last_exc: Exception | None = None
+        call_start = time.time()
 
         for attempt in range(1 + self.max_retries):
             try:
                 result = await func(*args, **kwargs)
                 await self._record_success()
+                # Record LLM call duration
+                duration_ms = round((time.time() - call_start) * 1000, 2)
+                app_metrics.observe("llm_call_duration_ms", duration_ms)
+                app_metrics.observe(f"llm_{self.provider}_duration_ms", duration_ms)
+                app_metrics.increment(f"llm_{self.provider}_calls")
                 return result
             except Exception as exc:
                 last_exc = exc
@@ -182,6 +190,7 @@ class _CircuitBreaker:
 
                 # Non-transient or retries exhausted
                 await self._record_failure()
+                app_metrics.increment(f"llm_{self.provider}_errors")
                 raise
 
         # Should not reach here, but just in case

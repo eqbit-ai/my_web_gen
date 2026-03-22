@@ -1,0 +1,193 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0, "y": 0, "width": 24, "height": 1,
+      "properties": {
+        "markdown": "# Meydan Dev — Operations Dashboard"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 1, "width": 8, "height": 6,
+      "properties": {
+        "title": "Request Count (per minute)",
+        "metrics": [
+          ["Meydan/dev", "requests_total", "Service", "api", { "stat": "Sum", "period": 60 }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "period": 60
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 1, "width": 8, "height": 6,
+      "properties": {
+        "title": "API Latency P95 / P99 (ms)",
+        "metrics": [
+          ["Meydan/dev", "request_duration_ms_p95", "Service", "api", { "stat": "Maximum", "period": 60, "label": "P95" }],
+          ["Meydan/dev", "request_duration_ms_p99", "Service", "api", { "stat": "Maximum", "period": 60, "label": "P99" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "yAxis": { "left": { "min": 0 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 1, "width": 8, "height": 6,
+      "properties": {
+        "title": "Error Rate (5xx / 4xx)",
+        "metrics": [
+          ["Meydan/dev", "errors_5xx", "Service", "api", { "stat": "Sum", "period": 60, "label": "5xx", "color": "#d13212" }],
+          ["Meydan/dev", "errors_4xx", "Service", "api", { "stat": "Sum", "period": 60, "label": "4xx", "color": "#ff9900" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0, "y": 7, "width": 24, "height": 1,
+      "properties": {
+        "markdown": "## LLM Performance"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 8, "width": 8, "height": 6,
+      "properties": {
+        "title": "LLM Call Duration (ms) — OpenAI vs Anthropic",
+        "metrics": [
+          ["Meydan/dev", "llm_openai_duration_ms_p95", "Service", "api", { "stat": "Maximum", "period": 60, "label": "OpenAI P95" }],
+          ["Meydan/dev", "llm_anthropic_duration_ms_p95", "Service", "api", { "stat": "Maximum", "period": 60, "label": "Anthropic P95" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "yAxis": { "left": { "min": 0 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 8, "width": 8, "height": 6,
+      "properties": {
+        "title": "LLM Calls & Errors",
+        "metrics": [
+          ["Meydan/dev", "llm_openai_calls", "Service", "api", { "stat": "Sum", "period": 300, "label": "OpenAI Calls" }],
+          ["Meydan/dev", "llm_anthropic_calls", "Service", "api", { "stat": "Sum", "period": 300, "label": "Anthropic Calls" }],
+          ["Meydan/dev", "llm_openai_errors", "Service", "api", { "stat": "Sum", "period": 300, "label": "OpenAI Errors", "color": "#d13212" }],
+          ["Meydan/dev", "llm_anthropic_errors", "Service", "api", { "stat": "Sum", "period": 300, "label": "Anthropic Errors", "color": "#ff9900" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 8, "width": 8, "height": 6,
+      "properties": {
+        "title": "Circuit Breaker State (0=closed, 1=half_open, 2=open)",
+        "metrics": [
+          ["Meydan/dev", "circuit_breaker_state", "Service", "api", "Provider", "openai", { "stat": "Maximum", "period": 60, "label": "OpenAI" }],
+          ["Meydan/dev", "circuit_breaker_state", "Service", "api", "Provider", "anthropic", { "stat": "Maximum", "period": 60, "label": "Anthropic" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "yAxis": { "left": { "min": 0, "max": 2 } }
+      }
+    },
+    {
+      "type": "text",
+      "x": 0, "y": 14, "width": 24, "height": 1,
+      "properties": {
+        "markdown": "## Worker & Queue"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 15, "width": 8, "height": 6,
+      "properties": {
+        "title": "Queue Depth",
+        "metrics": [
+          ["Meydan/dev", "queue_depth", "Service", "worker", { "stat": "Maximum", "period": 60, "label": "Queue Depth", "color": "#1f77b4" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "yAxis": { "left": { "min": 0 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 15, "width": 8, "height": 6,
+      "properties": {
+        "title": "Jobs Completed vs Failed",
+        "metrics": [
+          ["Meydan/dev", "jobs_completed", "Service", "worker", { "stat": "Sum", "period": 300, "label": "Completed", "color": "#2ca02c" }],
+          ["Meydan/dev", "jobs_failed", "Service", "worker", { "stat": "Sum", "period": 300, "label": "Failed", "color": "#d13212" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 15, "width": 8, "height": 6,
+      "properties": {
+        "title": "Rate Limit Hits",
+        "metrics": [
+          ["Meydan/dev", "rate_limit_hits", "Service", "api", { "stat": "Sum", "period": 300, "label": "429s Served", "color": "#ff9900" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0, "y": 21, "width": 24, "height": 1,
+      "properties": {
+        "markdown": "## Infrastructure (ECS / RDS / ALB)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 22, "width": 8, "height": 6,
+      "properties": {
+        "title": "ECS CPU Utilization",
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "meydan-dev-api", "ClusterName", "meydan-dev-cluster", { "stat": "Average", "period": 60, "label": "API" }],
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "meydan-dev-worker", "ClusterName", "meydan-dev-cluster", { "stat": "Average", "period": 60, "label": "Worker" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1",
+        "yAxis": { "left": { "min": 0, "max": 100 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 22, "width": 8, "height": 6,
+      "properties": {
+        "title": "RDS CPU & Connections",
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "meydan-dev-db", { "stat": "Average", "period": 60, "label": "CPU %" }],
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "meydan-dev-db", { "stat": "Maximum", "period": 60, "label": "Connections", "yAxis": "right" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 22, "width": 8, "height": 6,
+      "properties": {
+        "title": "ALB Request Count & Response Time",
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "app/meydan-dev-alb/889896533", { "stat": "Sum", "period": 60, "label": "Requests" }],
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/meydan-dev-alb/889896533", { "stat": "Average", "period": 60, "label": "Avg Response Time (s)", "yAxis": "right" }]
+        ],
+        "view": "timeSeries",
+        "region": "us-east-1"
+      }
+    }
+  ]
+}

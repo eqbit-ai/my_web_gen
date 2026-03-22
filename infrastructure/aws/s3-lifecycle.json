@@ -1,0 +1,37 @@
+{
+  "Rules": [
+    {
+      "ID": "TransitionToIA",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": ""
+      },
+      "Transitions": [
+        {
+          "Days": 90,
+          "StorageClass": "STANDARD_IA"
+        }
+      ]
+    },
+    {
+      "ID": "CleanupIncompleteUploads",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": ""
+      },
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 7
+      }
+    },
+    {
+      "ID": "DeleteNoncurrentVersions",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": ""
+      },
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 30
+      }
+    }
+  ]
+}

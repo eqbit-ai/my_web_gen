@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Meydan Dev — CloudWatch Alarms + SNS Alerting'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, production]
+  AlertEmail:
+    Type: String
+    Description: Email address for alarm notifications
+    Default: meydan.ai.center@gmail.com
+  ClusterName:
+    Type: String
+    Default: meydan-dev-cluster
+  ALBFullName:
+    Type: String
+    Description: Full name of the ALB (from ALB ARN suffix)
+    Default: app/meydan-dev-alb/889896533
+  RDSInstanceId:
+    Type: String
+    Default: meydan-dev-db
+  RedisClusterId:
+    Type: String
+    Default: meydan-dev-redis
+
+Resources:
+  # ── SNS Topic ──────────────────────────────────────────────────
+  AlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'meydan-${Environment}-alerts'
+      DisplayName: !Sub 'Meydan ${Environment} Alerts'
+
+  AlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlertsTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # ── API Alarms ─────────────────────────────────────────────────
+
+  Api5xxSpike:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-api-5xx-spike'
+      AlarmDescription: 'API returning >10 server errors in 5 minutes'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: errors_5xx
+      Dimensions:
+        - Name: Service
+          Value: api
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+      OKActions:
+        - !Ref AlertsTopic
+
+  ApiP99Latency:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-api-p99-latency'
+      AlarmDescription: 'API P99 latency exceeds 5 seconds for 3 consecutive minutes'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: request_duration_ms_p99
+      Dimensions:
+        - Name: Service
+          Value: api
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  RateLimitSpike:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-rate-limit-spike'
+      AlarmDescription: 'Rate limiting >50 requests in 5 minutes — possible abuse'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: rate_limit_hits
+      Dimensions:
+        - Name: Service
+          Value: api
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 50
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  # ── Worker Alarms ──────────────────────────────────────────────
+
+  WorkerQueueDepth:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-worker-queue-depth'
+      AlarmDescription: 'Job queue exceeds 100 for 5 minutes — workers may be stuck'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: queue_depth
+      Dimensions:
+        - Name: Service
+          Value: worker
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  WorkerJobFailures:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-worker-job-failures'
+      AlarmDescription: 'More than 5 job failures in 10 minutes'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: jobs_failed
+      Dimensions:
+        - Name: Service
+          Value: worker
+      Statistic: Sum
+      Period: 600
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  # ── LLM Circuit Breaker Alarms ─────────────────────────────────
+
+  CircuitBreakerOpenAI:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-circuit-openai-open'
+      AlarmDescription: 'OpenAI circuit breaker is OPEN — all LLM plans will fail'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: circuit_breaker_state
+      Dimensions:
+        - Name: Service
+          Value: api
+        - Name: Provider
+          Value: openai
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+      OKActions:
+        - !Ref AlertsTopic
+
+  CircuitBreakerAnthropic:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-circuit-anthropic-open'
+      AlarmDescription: 'Anthropic circuit breaker is OPEN — all LLM HTML/JS generation will fail'
+      Namespace: !Sub 'Meydan/${Environment}'
+      MetricName: circuit_breaker_state
+      Dimensions:
+        - Name: Service
+          Value: api
+        - Name: Provider
+          Value: anthropic
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+      OKActions:
+        - !Ref AlertsTopic
+
+  # ── Infrastructure Alarms ──────────────────────────────────────
+
+  RdsCpuHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-rds-cpu-high'
+      AlarmDescription: 'RDS CPU > 80% for 5 minutes'
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  RdsConnectionsHigh:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-rds-connections-high'
+      AlarmDescription: 'RDS connections > 80 for 5 minutes — approaching limit'
+      Namespace: AWS/RDS
+      MetricName: DatabaseConnections
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+  AlbTarget5xx:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'meydan-${Environment}-alb-target-5xx'
+      AlarmDescription: 'ALB targets returning >20 5xx errors in 5 minutes'
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_Target_5XX_Count
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref ALBFullName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 20
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+Outputs:
+  AlertsTopicArn:
+    Description: SNS topic ARN for alarm notifications
+    Value: !Ref AlertsTopic
+    Export:
+      Name: !Sub 'meydan-${Environment}-alerts-topic'

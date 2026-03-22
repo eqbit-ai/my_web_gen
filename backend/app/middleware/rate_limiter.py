@@ -102,6 +102,8 @@ class RateLimitMiddleware:
             return
 
         if remaining < 0:
+            from app.utils import metrics as app_metrics
+            app_metrics.increment("rate_limit_hits")
             response = JSONResponse(
                 status_code=429,
                 content={"detail": "Rate limit exceeded. Please try again later."},

@@ -70,6 +70,11 @@ async def create_job(
     job_id = str(uuid.uuid4())
     now = time.time()
 
+    # Propagate correlation ID so the worker can trace back to the original request
+    from app.middleware.correlation import get_correlation_id
+
+    correlation_id = get_correlation_id() or ""
+
     job_data = {
         "id": job_id,
         "type": job_type,
@@ -78,6 +83,7 @@ async def create_job(
         "result": "",
         "error": "",
         "user_id": user_id,
+        "correlation_id": correlation_id,
         "created_at": now,
         "updated_at": now,
         "progress": 0,

@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Meydan Dev — WAF Web ACL for ALB'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+  ALBArn:
+    Type: String
+    Description: ARN of the ALB to associate with the WAF
+
+Resources:
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub 'meydan-${Environment}-waf'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub 'meydan-${Environment}-waf'
+      Rules:
+        # AWS Managed — Common Rule Set (XSS, SQLi, bad bots, etc.)
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules:
+                # Exclude SizeRestrictions_BODY — our LLM payloads are large
+                - Name: SizeRestrictions_BODY
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesCommonRuleSet
+
+        # AWS Managed — Known Bad Inputs
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 2
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesKnownBadInputsRuleSet
+
+        # Rate limiting — block IPs exceeding 2000 requests per 5 minutes
+        - Name: RateLimitRule
+          Priority: 3
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: 2000
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ALBArn
+      WebACLArn: !GetAtt WebACL.Arn
+
+Outputs:
+  WebACLArn:
+    Value: !GetAtt WebACL.Arn
+  WebACLId:
+    Value: !GetAtt WebACL.Id

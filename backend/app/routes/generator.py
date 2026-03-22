@@ -3580,7 +3580,16 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
                     if has_contact_form(html):
                         html, js = inject_form_handler(html, js)
-                        logger.info("[FORMS] contact form handler injected")
+                        logger.info("[FORMS] contact form handler injected (index)")
+
+                    # Also inject form handler into multipage subpages
+                    if is_multipage and pages_dict:
+                        for _slug, _pd in pages_dict.items():
+                            if _slug == "index":
+                                continue  # index already handled above
+                            if has_contact_form(_pd["html"]):
+                                _pd["html"], js = inject_form_handler(_pd["html"], js)
+                                logger.info(f"[FORMS] contact form handler injected ({_slug})")
                 except Exception as e:
                     logger.warning(f"[FORMS] injection failed: {e}")
 
@@ -4304,6 +4313,14 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
                 if has_contact_form(html):
                     html, js = inject_form_handler(html, js)
+
+                # Also inject form handler into multipage subpages
+                if is_multipage_gen and pages_dict:
+                    for _slug, _pd in pages_dict.items():
+                        if _slug == "index":
+                            continue
+                        if has_contact_form(_pd["html"]):
+                            _pd["html"], js = inject_form_handler(_pd["html"], js)
             except Exception:
                 pass
 

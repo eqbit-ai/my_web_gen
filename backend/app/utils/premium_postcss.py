@@ -449,10 +449,52 @@ def inject_premium_animations(html: str, css: str) -> tuple[str, str]:
 # MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════
 
+def enforce_sizing(css: str) -> str:
+    """Enforce sensible image heights and font sizes across all sections.
+
+    Prevents oversized section images and excessively large typography that
+    make generated sites look unpolished on standard screens.
+    """
+    sizing_rules = """
+/* Sizing: constrain section images */
+section img:not(.logo):not(.icon):not([width]) {
+  max-height: 400px;
+  object-fit: cover;
+  width: 100%;
+}
+.card-image, [class*="card"] img {
+  max-height: 240px;
+  object-fit: cover;
+}
+.team-photo {
+  height: 14rem;
+  max-height: 14rem;
+  object-fit: cover;
+}
+.gallery-image {
+  max-height: 280px;
+  object-fit: cover;
+}
+
+/* Sizing: tame font sizes */
+h1, .hero-heading { font-size: clamp(2rem, 5vw, 3.5rem) !important; }
+h2, .section-title { font-size: clamp(1.5rem, 3vw, 2.25rem) !important; }
+h3 { font-size: clamp(1.15rem, 2vw, 1.5rem) !important; }
+h4 { font-size: clamp(1rem, 1.5vw, 1.25rem) !important; }
+p, .card-text, li { font-size: clamp(0.95rem, 1vw, 1.05rem); line-height: 1.7; }
+.hero-subtitle { font-size: clamp(1rem, 1.2vw, 1.15rem) !important; }
+
+/* Sizing: hero max height */
+.hero-section { min-height: min(80vh, 700px); }
+.hero-bg-cover { min-height: min(90vh, 800px); }
+"""
+    return css.rstrip() + "\n" + sizing_rules + "\n"
+
+
 def apply_premium_postprocessing(html: str, css: str, theme: str = "light") -> tuple[str, str]:
     """Apply all premium post-processing to generated HTML/CSS.
 
-    Runs: hero hardening → whitespace → card normalization → animations.
+    Runs: hero hardening → whitespace → card normalization → sizing → animations.
     """
     # 1. Hero hardening
     html, css = harden_hero(html, css)
@@ -463,8 +505,11 @@ def apply_premium_postprocessing(html: str, css: str, theme: str = "light") -> t
     # 3. Card normalization
     css = normalize_cards(css, theme)
 
-    # 4. Premium animations
+    # 4. Image & font sizing constraints
+    css = enforce_sizing(css)
+
+    # 5. Premium animations
     html, css = inject_premium_animations(html, css)
 
-    logger.info("[PREMIUM] All post-processing applied (hero, whitespace, cards, animations)")
+    logger.info("[PREMIUM] All post-processing applied (hero, whitespace, cards, sizing, animations)")
     return html, css
