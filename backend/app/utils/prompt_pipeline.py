@@ -1146,27 +1146,47 @@ def detect_add_page_request(prompt: str) -> list[dict] | None:
       - "add trainers and classes pages"
       - "add 2 new pages trainers and classes"
       - "create pages: about, contact, pricing"
+      - "make my website multiple pages. i want the about page to be separate"
     """
     p = prompt.lower().strip()
 
     # Must contain an add-verb
     if not re.search(r"\b(?:add|create|make|build|generate|include)\b", p):
         return None
-    # Must contain "page" or "pages"
-    if not re.search(r"\bpages?\b", p):
+    # Must contain "page", "pages", or "multipage"
+    if not re.search(r"\bpages?\b|\bmulti-?page\b", p):
         return None
 
     results = []
 
-    # ── Pattern 1: "add X and Y pages" / "add X, Y, and Z pages"
-    # (page names BEFORE "pages")
+    # ── Pattern 0: "make it multipage / multiple pages" — extract specific page names
+    # mentioned elsewhere in the prompt (e.g. "i want the about page to be separate")
+    if re.search(r"\b(?:make|convert)\b.*\b(?:multipage|multi-page|multiple\s+pages?)\b", p):
+        # Scan for known page types mentioned anywhere in the prompt
+        for page_name, slug in _PAGE_TYPES.items():
+            if slug == "index" or slug in ("home",):
+                continue
+            if re.search(r"\b" + re.escape(page_name) + r"\b", p):
+                resolved = {"slug": slug, "title": slug.replace("-", " ").title()}
+                if resolved not in results:
+                    results.append(resolved)
+        if results:
+            return results
+        # Generic "make it multipage" without specific pages — return common set
+        return [
+            {"slug": "about", "title": "About"},
+            {"slug": "services", "title": "Services"},
+            {"slug": "contact", "title": "Contact"},
+        ]
+
+    # ── Pattern 1: "add pages: X, Y, Z" / "add new pages X and Y"
+    # (page names AFTER "pages")
     m = re.search(
-        r"\b(?:add|create|make|build|generate|include)\b.*?\b(\d+\s+(?:new\s+)?)?pages?\s*[:\-]?\s*([\w\s,&]+)",
+        r"\b(?:add|create|make|build|generate|include)\b.*?\bpages?\s*[:\-]\s*([\w\s,&]+)",
         p,
     )
     if m:
-        names_str = m.group(2).strip()
-        # Split by comma, "and", "&"
+        names_str = m.group(1).strip()
         names = re.split(r"\s*(?:,|&|\band\b)\s*", names_str)
         for name in names:
             name = name.strip()
@@ -1188,7 +1208,7 @@ def detect_add_page_request(prompt: str) -> list[dict] | None:
         names = re.split(r"\s*(?:,|&|\band\b)\s*", names_str)
         for name in names:
             name = re.sub(r"^(a|an|the|new|another|\d+)\s+", "", name).strip()
-            if name and name not in ("page", "pages", "new", "for", "to", "the", "my"):
+            if name and name not in ("page", "pages", "new", "for", "to", "the", "my", "website", "multiple", "it"):
                 resolved = _resolve_page_name(name)
                 if resolved:
                     results.append(resolved)
