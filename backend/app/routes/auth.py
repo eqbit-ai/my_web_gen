@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -137,10 +138,10 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
     user = User(
         email=data.email,
         hashed_password=hash_password(data.password),
-        full_name=data.full_name,
-        company_name=data.company_name,
-        license_number=data.license_number,
-        mobile=data.mobile,
+        full_name=data.full_name or "",
+        company_name=data.company_name or "",
+        license_number=data.license_number if data.license_number else None,
+        mobile=data.mobile or "",
         db_schema=schema_name,
         is_approved=False,
         token_balance=0,
@@ -160,6 +161,15 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         details={"email": user.email, "company": user.company_name},
         ip_address=request.client.host if request.client else None,
     )
+
+    # Send welcome email + admin notification (fire-and-forget)
+    try:
+        from app.utils.email import send_welcome, send_admin_new_signup
+        send_welcome(user.email, user.full_name)
+        admin_email = os.getenv("ADMIN_EMAIL", "meydan.ai.center@gmail.com")
+        send_admin_new_signup(admin_email, user.email, user.full_name, user.company_name)
+    except Exception as e:
+        logger.warning(f"[AUTH] Failed to send signup emails: {e}")
 
     return AuthResponse(
         token=token,
@@ -317,9 +327,16 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
 
     logger.info(f"[AUTH] Password reset token generated for user {user.email}")
 
-    # In development, return the token directly. In production, send email.
+    # Send reset email via SES
+    try:
+        from app.utils.email import send_password_reset
+        send_password_reset(user.email, reset_token)
+    except Exception as e:
+        logger.warning(f"[AUTH] Failed to send reset email: {e}")
+
+    # In dev mode, also return token directly for testing
     import os
-    response = {"message": "If an account with that email exists, a reset link has been generated."}
+    response = {"message": "If an account with that email exists, a reset link has been sent."}
     if os.getenv("DEV_MODE", "false").lower() == "true":
         response["reset_token"] = reset_token
         response["reset_url"] = f"/reset-password?token={reset_token}"

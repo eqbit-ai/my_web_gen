@@ -2969,7 +2969,7 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
     ]
     prompt_lower = prompt.lower()
     is_redesign = any(kw in prompt_lower for kw in redesign_keywords)
-    max_tokens = 30000 if is_redesign else 28000
+    max_tokens = 64000 if is_redesign else 28000
     logger.info(f"⚙️ Rewrite Config → {'MAJOR REDESIGN' if is_redesign else 'standard edit'}, max_tokens={max_tokens:,}")
     logger.info(f"📦 Current Page → HTML={len(session['html']):,} chars, CSS={len(session['css']):,} chars")
 

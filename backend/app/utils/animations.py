@@ -686,38 +686,51 @@ ANIMATION_JS = """
 document.addEventListener('DOMContentLoaded', function() {
 
   /* ------------------------------------------------------------------
-     Mobile Hamburger Menu Toggle
+     Mobile Hamburger Menu Toggle — Event Delegation
      ------------------------------------------------------------------ */
   (function() {
-    var toggle = document.querySelector('.nav-toggle');
-    var navLinks = document.querySelector('.nav-links');
-    if (!toggle || !navLinks) return;
+    var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label="Menu"],.mobile-menu-btn,.burger';
+    var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav';
 
-    toggle.addEventListener('click', function(e) {
-      e.stopPropagation();
-      navLinks.classList.toggle('active');
-      var isOpen = navLinks.classList.contains('active');
-      toggle.setAttribute('aria-expanded', isOpen);
-      toggle.innerHTML = isOpen
-        ? '<i class="fa-solid fa-xmark"></i>'
-        : '<i class="fa-solid fa-bars"></i>';
-    });
-
-    // Close menu when a nav link is clicked
-    navLinks.querySelectorAll('a').forEach(function(link) {
-      link.addEventListener('click', function() {
-        navLinks.classList.remove('active');
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
-      });
-    });
-
-    // Close menu when clicking outside
     document.addEventListener('click', function(e) {
-      if (!navLinks.contains(e.target) && !toggle.contains(e.target)) {
-        navLinks.classList.remove('active');
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      var btn = e.target.closest(tSel);
+      if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var m = document.querySelector(mSel);
+        if (m) {
+          m.classList.toggle('active');
+          m.classList.toggle('open');
+          btn.classList.toggle('active');
+          var isOpen = m.classList.contains('active');
+          btn.setAttribute('aria-expanded', isOpen);
+          btn.innerHTML = isOpen
+            ? '<i class="fa-solid fa-xmark"></i>'
+            : '<i class="fa-solid fa-bars"></i>';
+        }
+        return;
+      }
+      // Close on nav link click
+      var nl = e.target.closest(mSel + ' a');
+      if (nl) {
+        var t = document.querySelector(tSel);
+        var m2 = document.querySelector(mSel);
+        if (t && m2) {
+          m2.classList.remove('active', 'open');
+          t.classList.remove('active');
+          t.setAttribute('aria-expanded', 'false');
+          t.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        }
+        return;
+      }
+      // Close on outside click
+      var t2 = document.querySelector(tSel);
+      var m3 = document.querySelector(mSel);
+      if (t2 && m3 && m3.classList.contains('active') && !t2.contains(e.target) && !m3.contains(e.target)) {
+        m3.classList.remove('active', 'open');
+        t2.classList.remove('active');
+        t2.setAttribute('aria-expanded', 'false');
+        t2.innerHTML = '<i class="fa-solid fa-bars"></i>';
       }
     });
   })();

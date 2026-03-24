@@ -1,16 +1,30 @@
 """
-File storage abstraction — local disk now, S3/R2 later.
-Handles save, delete, list operations for uploaded media.
+File storage — S3 for production (ECS), local disk as fallback.
+
+Uploaded files go to S3 bucket and return a public URL.
+Falls back to local /uploads/ directory if S3 is not configured.
 """
 
+import logging
+import os
 import uuid
+from io import BytesIO
 from pathlib import Path
 
 import aiofiles
 import aiofiles.os
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 
-# Base upload directory
+logger = logging.getLogger(__name__)
+
+# Base upload directory (local fallback)
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
+
+# S3 config
+S3_UPLOAD_BUCKET = os.getenv("AWS_S3_UPLOAD_BUCKET", os.getenv("AWS_S3_DEPLOY_BUCKET", ""))
+S3_REGION = os.getenv("AWS_REGION", "us-east-1")
+S3_UPLOAD_PREFIX = "user-uploads"
 
 # Allowed extensions by category
 ALLOWED_EXTENSIONS = {
@@ -28,17 +42,27 @@ SIZE_LIMITS = {
     "video": 50 * 1024 * 1024,  # 50 MB
 }
 
+# MIME type mapping for S3 content type
+EXT_TO_MIME = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+    "webp": "image/webp", "gif": "image/gif", "svg": "image/svg+xml",
+    "ico": "image/x-icon", "mp4": "video/mp4", "webm": "video/webm",
+}
+
 
 def _get_extension(filename: str) -> str:
-    """Extract lowercase extension from filename."""
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
 
+def _use_s3() -> bool:
+    return bool(S3_UPLOAD_BUCKET)
+
+
+def _s3_client():
+    return boto3.client("s3", region_name=S3_REGION)
+
+
 def validate_file(filename: str, size: int, category: str) -> str | None:
-    """
-    Validate file extension and size.
-    Returns error message string or None if valid.
-    """
     ext = _get_extension(filename)
     allowed = ALLOWED_EXTENSIONS.get(category)
     if allowed is None:
@@ -59,14 +83,54 @@ async def save_file(
     project_id: str | None,
     category: str = "image",
 ) -> dict:
-    """
-    Save a file to local disk.
-    Returns dict with url, stored_filename, size, etc.
-    """
     ext = _get_extension(filename)
     stored_name = f"{uuid.uuid4()}.{ext}"
 
-    # Build path: uploads/{user_id}/{project_id}/{uuid}.{ext}
+    if _use_s3():
+        return await _save_to_s3(file_bytes, stored_name, ext, user_id, project_id, filename, category)
+    else:
+        return await _save_to_disk(file_bytes, stored_name, ext, user_id, project_id, filename, category)
+
+
+async def _save_to_s3(file_bytes, stored_name, ext, user_id, project_id, original_name, category):
+    """Save file to S3 and return public URL."""
+    parts = [S3_UPLOAD_PREFIX, str(user_id)]
+    if project_id:
+        parts.append(project_id)
+    parts.append(stored_name)
+    s3_key = "/".join(parts)
+
+    content_type = EXT_TO_MIME.get(ext, "application/octet-stream")
+
+    try:
+        s3 = _s3_client()
+        s3.put_object(
+            Bucket=S3_UPLOAD_BUCKET,
+            Key=s3_key,
+            Body=file_bytes,
+            ContentType=content_type,
+        )
+
+        # Build URL — use S3 website endpoint or direct URL
+        url = f"https://{S3_UPLOAD_BUCKET}.s3.{S3_REGION}.amazonaws.com/{s3_key}"
+        logger.info(f"[STORAGE] Uploaded to S3: {s3_key} ({len(file_bytes)} bytes)")
+
+        return {
+            "filename": stored_name,
+            "original_name": original_name,
+            "url": url,
+            "size_bytes": len(file_bytes),
+            "category": category,
+            "ext": ext,
+        }
+    except (BotoCoreError, ClientError) as e:
+        logger.error(f"[STORAGE] S3 upload failed: {e}")
+        # Fallback to local disk
+        return await _save_to_disk(file_bytes, stored_name, ext, int(str(user_id)), None, original_name, category)
+
+
+async def _save_to_disk(file_bytes, stored_name, ext, user_id, project_id, original_name, category):
+    """Save file to local disk (development/fallback)."""
     rel_parts = [str(user_id)]
     if project_id:
         rel_parts.append(project_id)
@@ -79,12 +143,11 @@ async def save_file(
     async with aiofiles.open(str(abs_path), "wb") as f:
         await f.write(file_bytes)
 
-    # URL path served by StaticFiles mount
     url = f"/uploads/{rel_dir}/{stored_name}"
 
     return {
         "filename": stored_name,
-        "original_name": filename,
+        "original_name": original_name,
         "url": url,
         "size_bytes": len(file_bytes),
         "category": category,
@@ -93,27 +156,32 @@ async def save_file(
 
 
 async def delete_file(file_url: str) -> bool:
-    """
-    Delete a file given its URL path (e.g. /uploads/1/proj/uuid.png).
-    Returns True if deleted, False if not found.
-    """
-    # Strip leading /uploads/ to get relative path
-    rel = file_url.lstrip("/")
-    if rel.startswith("uploads/"):
-        rel = rel[len("uploads/") :]
-    abs_path = UPLOAD_DIR / rel
-
-    if await aiofiles.os.path.exists(str(abs_path)):
-        await aiofiles.os.remove(str(abs_path))
-        return True
-    return False
+    """Delete a file given its URL."""
+    if file_url.startswith("https://") and S3_UPLOAD_BUCKET in file_url:
+        # S3 file — extract key from URL
+        try:
+            # URL format: https://{bucket}.s3.{region}.amazonaws.com/{key}
+            key = file_url.split(f"{S3_UPLOAD_BUCKET}.s3.{S3_REGION}.amazonaws.com/", 1)[1]
+            _s3_client().delete_object(Bucket=S3_UPLOAD_BUCKET, Key=key)
+            logger.info(f"[STORAGE] Deleted from S3: {key}")
+            return True
+        except Exception as e:
+            logger.warning(f"[STORAGE] S3 delete failed: {e}")
+            return False
+    else:
+        # Local file
+        rel = file_url.lstrip("/")
+        if rel.startswith("uploads/"):
+            rel = rel[len("uploads/"):]
+        abs_path = UPLOAD_DIR / rel
+        if await aiofiles.os.path.exists(str(abs_path)):
+            await aiofiles.os.remove(str(abs_path))
+            return True
+        return False
 
 
 async def list_files(user_id: int, project_id: str | None = None) -> list[dict]:
-    """
-    List all uploaded files for a user (and optionally a project).
-    Returns list of dicts with filename, url, size_bytes.
-    """
+    """List all uploaded files for a user (local disk only — S3 uses DB queries)."""
     parts = [str(user_id)]
     if project_id:
         parts.append(project_id)
@@ -129,27 +197,22 @@ async def list_files(user_id: int, project_id: str | None = None) -> list[dict]:
         if await aiofiles.os.path.isfile(str(entry_path)):
             stat = await aiofiles.os.stat(str(entry_path))
             rel = str(entry_path.relative_to(UPLOAD_DIR))
-            results.append(
-                {
-                    "filename": entry,
-                    "url": f"/uploads/{rel}",
-                    "size_bytes": stat.st_size,
-                }
-            )
+            results.append({
+                "filename": entry,
+                "url": f"/uploads/{rel}",
+                "size_bytes": stat.st_size,
+            })
         elif await aiofiles.os.path.isdir(str(entry_path)):
-            # Recurse one level for project subdirectories
             sub_entries = await aiofiles.os.listdir(str(entry_path))
             for sub in sub_entries:
                 sub_path = entry_path / sub
                 if await aiofiles.os.path.isfile(str(sub_path)):
                     stat = await aiofiles.os.stat(str(sub_path))
                     rel = str(sub_path.relative_to(UPLOAD_DIR))
-                    results.append(
-                        {
-                            "filename": sub,
-                            "url": f"/uploads/{rel}",
-                            "size_bytes": stat.st_size,
-                        }
-                    )
+                    results.append({
+                        "filename": sub,
+                        "url": f"/uploads/{rel}",
+                        "size_bytes": stat.st_size,
+                    })
 
     return results

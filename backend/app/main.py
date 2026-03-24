@@ -112,6 +112,21 @@ async def lifespan(app: FastAPI):
     # Initialize database
     await init_db()
 
+    # Fix NOT NULL constraints on optional user columns (one-time migration)
+    try:
+        from sqlalchemy import text
+        from app.database import async_session
+        async with async_session() as db:
+            await db.execute(text("ALTER TABLE users ALTER COLUMN company_name DROP NOT NULL"))
+            await db.execute(text("ALTER TABLE users ALTER COLUMN full_name DROP NOT NULL"))
+            await db.execute(text("ALTER TABLE users ALTER COLUMN mobile DROP NOT NULL"))
+            await db.execute(text("ALTER TABLE users ALTER COLUMN license_number DROP NOT NULL"))
+            await db.commit()
+            logger.info("db_migration: dropped NOT NULL on optional user columns")
+    except Exception as e:
+        # Already done or column doesn't exist — safe to ignore
+        logger.debug(f"db_migration: skipped ({e})")
+
     # Initialize Redis connection
     try:
         r = await get_redis()

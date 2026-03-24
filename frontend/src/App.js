@@ -1,49 +1,110 @@
 // src/App.js
 
-import React, { lazy, Suspense } from 'react';
+import React, { Component, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './meydan-theme.css';
 import './App.css';
 
-// Lazy-load route components for code splitting
-const LandingPage = lazy(() => import('./components/LandingPage'));
-const Login = lazy(() => import('./components/Login'));
-const Signup = lazy(() => import('./components/Signup'));
-const WebsiteGenerator = lazy(() => import('./components/WebsiteGenerator'));
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
-const ResetPassword = lazy(() => import('./components/ResetPassword'));
-const ForceResetPassword = lazy(() => import('./components/ForceResetPassword'));
-const PendingApproval = lazy(() => import('./components/PendingApproval'));
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('[ErrorBoundary]', error, info?.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#f8f9fa', fontFamily: 'system-ui, sans-serif', padding: 20,
+        }}>
+          <div style={{
+            textAlign: 'center', maxWidth: 420, background: '#fff', padding: '3rem 2rem',
+            borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>⚠</div>
+            <h2 style={{ margin: '0 0 8px', color: '#111827', fontSize: 20 }}>Something went wrong</h2>
+            <p style={{ color: '#6b7280', fontSize: 15, lineHeight: 1.6, margin: '0 0 20px' }}>
+              The page encountered an error. This is usually fixed by refreshing.
+            </p>
+            <button
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+              style={{
+                background: '#4f46e5', color: '#fff', border: 'none', padding: '10px 24px',
+                borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Retry wrapper for lazy imports — handles chunk load failures gracefully
+function lazyRetry(importFn) {
+  return lazy(() =>
+    importFn().catch((err) => {
+      // If chunk failed, try a full page reload once (clears any stale service worker / cache)
+      const hasReloaded = sessionStorage.getItem('chunk_reload');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_reload', '1');
+        window.location.reload();
+        return new Promise(() => {}); // never resolves — page will reload
+      }
+      sessionStorage.removeItem('chunk_reload');
+      throw err; // let ErrorBoundary catch it
+    })
+  );
+}
+
+// Lazy-load route components with retry
+const LandingPage = lazyRetry(() => import('./components/LandingPage'));
+const Login = lazyRetry(() => import('./components/Login'));
+const Signup = lazyRetry(() => import('./components/Signup'));
+const WebsiteGenerator = lazyRetry(() => import('./components/WebsiteGenerator'));
+const Dashboard = lazyRetry(() => import('./components/Dashboard'));
+const ForgotPassword = lazyRetry(() => import('./components/ForgotPassword'));
+const ResetPassword = lazyRetry(() => import('./components/ResetPassword'));
+const ForceResetPassword = lazyRetry(() => import('./components/ForceResetPassword'));
+const PendingApproval = lazyRetry(() => import('./components/PendingApproval'));
 
 // Admin — Layout + Pages
-const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
-const OverviewPage = lazy(() => import('./components/admin/OverviewPage'));
-const SitesListPage = lazy(() => import('./components/admin/SitesListPage'));
-const SiteDetailPage = lazy(() => import('./components/admin/SiteDetailPage'));
-const GenerationQueuePage = lazy(() => import('./components/admin/GenerationQueuePage'));
-const FailedGenerationsPage = lazy(() => import('./components/admin/FailedGenerationsPage'));
-const DomainsListPage = lazy(() => import('./components/admin/DomainsListPage'));
-const DomainDetailPage = lazy(() => import('./components/admin/DomainDetailPage'));
-const InternalDomainsPage = lazy(() => import('./components/admin/InternalDomainsPage'));
-const InternalDomainDetailPage = lazy(() => import('./components/admin/InternalDomainDetailPage'));
-const UsersListPage = lazy(() => import('./components/admin/UsersListPage'));
-const UserDetailPage = lazy(() => import('./components/admin/UserDetailPage'));
-const TokenLedgerPage = lazy(() => import('./components/admin/TokenLedgerPage'));
-const TokenPoolPage = lazy(() => import('./components/admin/TokenPoolPage'));
-const ExpiringTokensPage = lazy(() => import('./components/admin/ExpiringTokensPage'));
-const TemplateManagerPage = lazy(() => import('./components/admin/TemplateManagerPage'));
-const AuditLogPage = lazy(() => import('./components/admin/AuditLogPage'));
-const AnnouncementsPage = lazy(() => import('./components/admin/AnnouncementsPage'));
-const PromptManagerPage = lazy(() => import('./components/admin/PromptManagerPage'));
-const SystemHealthPage = lazy(() => import('./components/admin/SystemHealthPage'));
-const GrowthChartPage = lazy(() => import('./components/admin/GrowthChartPage'));
-const GenerationStatsPage = lazy(() => import('./components/admin/GenerationStatsPage'));
-const TokenTrendPage = lazy(() => import('./components/admin/TokenTrendPage'));
-const PendingApprovalsPage = lazy(() => import('./components/admin/PendingApprovalsPage'));
-const TokenRequestsPage = lazy(() => import('./components/admin/TokenRequestsPage'));
+const AdminLayout = lazyRetry(() => import('./components/admin/AdminLayout'));
+const OverviewPage = lazyRetry(() => import('./components/admin/OverviewPage'));
+const SitesListPage = lazyRetry(() => import('./components/admin/SitesListPage'));
+const SiteDetailPage = lazyRetry(() => import('./components/admin/SiteDetailPage'));
+const GenerationQueuePage = lazyRetry(() => import('./components/admin/GenerationQueuePage'));
+const FailedGenerationsPage = lazyRetry(() => import('./components/admin/FailedGenerationsPage'));
+const DomainsListPage = lazyRetry(() => import('./components/admin/DomainsListPage'));
+const DomainDetailPage = lazyRetry(() => import('./components/admin/DomainDetailPage'));
+const InternalDomainsPage = lazyRetry(() => import('./components/admin/InternalDomainsPage'));
+const InternalDomainDetailPage = lazyRetry(() => import('./components/admin/InternalDomainDetailPage'));
+const UsersListPage = lazyRetry(() => import('./components/admin/UsersListPage'));
+const UserDetailPage = lazyRetry(() => import('./components/admin/UserDetailPage'));
+const TokenLedgerPage = lazyRetry(() => import('./components/admin/TokenLedgerPage'));
+const TokenPoolPage = lazyRetry(() => import('./components/admin/TokenPoolPage'));
+const ExpiringTokensPage = lazyRetry(() => import('./components/admin/ExpiringTokensPage'));
+const TemplateManagerPage = lazyRetry(() => import('./components/admin/TemplateManagerPage'));
+const AuditLogPage = lazyRetry(() => import('./components/admin/AuditLogPage'));
+const AnnouncementsPage = lazyRetry(() => import('./components/admin/AnnouncementsPage'));
+const PromptManagerPage = lazyRetry(() => import('./components/admin/PromptManagerPage'));
+const SystemHealthPage = lazyRetry(() => import('./components/admin/SystemHealthPage'));
+const GrowthChartPage = lazyRetry(() => import('./components/admin/GrowthChartPage'));
+const GenerationStatsPage = lazyRetry(() => import('./components/admin/GenerationStatsPage'));
+const TokenTrendPage = lazyRetry(() => import('./components/admin/TokenTrendPage'));
+const PendingApprovalsPage = lazyRetry(() => import('./components/admin/PendingApprovalsPage'));
+const TokenRequestsPage = lazyRetry(() => import('./components/admin/TokenRequestsPage'));
 
 function ProtectedRoute({ children, allowForceReset, allowPending }) {
   const { user, loading } = useAuth();
@@ -125,11 +186,13 @@ function AppLayout() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppLayout />
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppLayout />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

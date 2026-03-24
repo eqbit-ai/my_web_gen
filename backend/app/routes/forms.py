@@ -178,6 +178,18 @@ async def submit_form(site_id: str, request: Request):
         db.add(submission)
         await db.commit()
 
+        # Send email notification to site owner (fire-and-forget)
+        try:
+            from app.models.user import User
+            from app.utils.email import send_form_notification
+
+            owner_result = await db.execute(select(User).where(User.id == site.user_id))
+            owner = owner_result.scalar_one_or_none()
+            if owner and owner.email:
+                send_form_notification(owner.email, site.name or "Your Website", fields, source_page)
+        except Exception as e:
+            logger.warning(f"[FORMS] Failed to send notification email: {e}")
+
     logger.info("Form submission received")
 
     # CORS headers for cross-origin form submissions from deployed S3 sites

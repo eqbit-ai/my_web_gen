@@ -763,41 +763,60 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       document.head.appendChild(s);
     }, 2000);
 
-    // Mobile hamburger menu — universal fallback
+    // Mobile hamburger menu — event delegation (works regardless of DOM timing)
     (function() {
-      var toggleSelectors = ['.nav-toggle', '.hamburger', '.mobile-toggle', '.menu-toggle', '.navbar-toggle', '[data-toggle="menu"]', 'button[aria-label="Menu"]', 'button[aria-label="menu"]', '.mobile-menu-btn', '.burger'];
-      var menuSelectors = ['.nav-links', '.nav-menu', '.mobile-menu', '.navbar-menu', '.navbar-links', '.menu-items', 'nav ul', '.mobile-nav'];
-      var navToggle = null, navLinks = null;
-      for (var i = 0; i < toggleSelectors.length; i++) {
-        navToggle = document.querySelector(toggleSelectors[i]);
-        if (navToggle) break;
+      var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,[data-toggle="menu"],button[aria-label="Menu"],button[aria-label="menu"],.mobile-menu-btn,.burger';
+      var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav';
+
+      function findToggle() {
+        return document.querySelector(tSel);
       }
-      for (var j = 0; j < menuSelectors.length; j++) {
-        navLinks = document.querySelector(menuSelectors[j]);
-        if (navLinks) break;
+      function findMenu() {
+        return document.querySelector(mSel);
       }
-      if (navToggle && navLinks) {
-        navToggle.addEventListener('click', function(e) {
+      function toggleMenu(btn, menu) {
+        menu.classList.toggle('active');
+        menu.classList.toggle('open');
+        btn.classList.toggle('active');
+        var isOpen = menu.classList.contains('active');
+        btn.setAttribute('aria-expanded', isOpen);
+        btn.innerHTML = isOpen ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+      }
+      function closeMenu(btn, menu) {
+        menu.classList.remove('active');
+        menu.classList.remove('open');
+        btn.classList.remove('active');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      }
+
+      // Event delegation on document — works even if elements are added later
+      document.addEventListener('click', function(e) {
+        var btn = e.target.closest(tSel);
+        if (btn) {
+          e.preventDefault();
           e.stopPropagation();
-          navLinks.classList.toggle('active');
-          navLinks.classList.toggle('open');
-          navToggle.classList.toggle('active');
-        });
-        navLinks.querySelectorAll('a').forEach(function(link) {
-          link.addEventListener('click', function() {
-            navLinks.classList.remove('active');
-            navLinks.classList.remove('open');
-            navToggle.classList.remove('active');
-          });
-        });
-        document.addEventListener('click', function(e) {
-          if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) {
-            navLinks.classList.remove('active');
-            navLinks.classList.remove('open');
-            navToggle.classList.remove('active');
+          var menu = findMenu();
+          if (menu) toggleMenu(btn, menu);
+          return;
+        }
+        // Close menu when clicking a nav link inside the menu
+        var navLink = e.target.closest(mSel + ' a');
+        if (navLink) {
+          var toggle = findToggle();
+          var menu2 = findMenu();
+          if (toggle && menu2) closeMenu(toggle, menu2);
+          return;
+        }
+        // Close menu when clicking outside
+        var toggle2 = findToggle();
+        var menu3 = findMenu();
+        if (toggle2 && menu3 && menu3.classList.contains('active')) {
+          if (!toggle2.contains(e.target) && !menu3.contains(e.target)) {
+            closeMenu(toggle2, menu3);
           }
-        });
-      }
+        }
+      });
     })();
 
     // Universal testimonial slider fallback

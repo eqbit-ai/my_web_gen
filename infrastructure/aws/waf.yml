@@ -32,8 +32,12 @@ Resources:
               VendorName: AWS
               Name: AWSManagedRulesCommonRuleSet
               ExcludedRules:
-                # Exclude SizeRestrictions_BODY — our LLM payloads are large
+                # Exclude body inspection rules — our app sends large LLM payloads,
+                # file uploads (multipart), and HTML content that triggers false positives
                 - Name: SizeRestrictions_BODY
+                - Name: CrossSiteScripting_BODY
+                - Name: GenericRFI_BODY
+                - Name: NoUserAgent_HEADER
           VisibilityConfig:
             SampledRequestsEnabled: true
             CloudWatchMetricsEnabled: true

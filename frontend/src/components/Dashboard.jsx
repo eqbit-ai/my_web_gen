@@ -108,6 +108,15 @@ const Dashboard = () => {
     const [expandedSubmission, setExpandedSubmission] = useState(null);
     const [deleteSubmissionConfirm, setDeleteSubmissionConfirm] = useState(null);
 
+    // Toast notification state
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+    const showToast = (message, type = 'info') => {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast({ message, type });
+        toastTimer.current = setTimeout(() => setToast(null), 4000);
+    };
+
     const domainPollRef = useRef(null);
     const [announcements, setAnnouncements] = useState([]);
     const [dismissedAnnouncements, setDismissedAnnouncements] = useState(() => {
@@ -197,7 +206,7 @@ const Dashboard = () => {
             setContactInfo(prev => ({ ...prev, [domainRecordId]: { ...prev[domainRecordId], ...contactForm } }));
             setContactEditing(null);
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         } finally {
             setContactSaving(false);
         }
@@ -225,7 +234,7 @@ const Dashboard = () => {
             const data = await listDeployedSites();
             setDeployedSites(data.sites || []);
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         }
     };
 
@@ -248,9 +257,9 @@ const Dashboard = () => {
             setTokenRequestAmount('500000');
             setTokenRequestReason('');
             loadTokenRequests();
-            alert('Token request submitted! Admin will review it shortly.');
+            showToast('Token request submitted! Admin will review it shortly.', 'success');
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         }
         setTokenRequestSubmitting(false);
     };
@@ -284,7 +293,7 @@ const Dashboard = () => {
             await deleteUpload(filename);
             setGalleryImages(prev => prev.filter(f => f.filename !== filename));
             setGalleryDeleteConfirm(null);
-        } catch (e) { alert(e.message); }
+        } catch (e) { showToast(e.message, 'error'); }
     };
 
     const handleCopyImageUrl = (url) => {
@@ -307,7 +316,7 @@ const Dashboard = () => {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-        } catch (e) { alert(e.message); }
+        } catch (e) { showToast(e.message, 'error'); }
         setExporting(null);
     };
 
@@ -328,9 +337,9 @@ const Dashboard = () => {
         setCustomCodeSaving(true);
         try {
             await updateCustomCode(customCodeModal, customHeadCode, customBodyCode);
-            alert('Custom code saved! Redeploy to apply changes.');
+            showToast('Custom code saved! Redeploy to apply changes.', 'success');
             setCustomCodeModal(null);
-        } catch (e) { alert(e.message); }
+        } catch (e) { showToast(e.message, 'error'); }
         setCustomCodeSaving(false);
     };
 
@@ -384,7 +393,7 @@ const Dashboard = () => {
             setSubmissions(prev => prev.filter(s => s.id !== id));
             setDeleteSubmissionConfirm(null);
             loadUnreadCount();
-        } catch (e) { alert(e.message); }
+        } catch (e) { showToast(e.message, 'error'); }
     };
 
     // ── Domain handlers ──
@@ -513,10 +522,10 @@ const Dashboard = () => {
             setConnectError(null);
             setDomainSearchResults(null);
             loadDeployedSites();
-            alert(`${sld}.${tld} purchased and connected successfully!`);
+            showToast(`${sld}.${tld} purchased and connected successfully!`, 'success');
         } catch (e) {
             const msg = typeof e.message === 'string' ? e.message : JSON.stringify(e.message);
-            alert(msg || 'Purchase failed');
+            showToast(msg || 'Purchase failed', 'error');
         }
         setPurchasing(false);
     };
@@ -526,7 +535,7 @@ const Dashboard = () => {
             await disconnectDomain(siteId);
             setDisconnectConfirm(null);
             loadDeployedSites();
-        } catch (e) { alert(e.message || 'Failed to disconnect'); }
+        } catch (e) { showToast(e.message || 'Failed to disconnect', 'error'); }
     };
 
     const handleAddRecord = async () => {
@@ -537,7 +546,7 @@ const Dashboard = () => {
             setAddRecordModal(null);
             setNewRecord({ name: '', type: 'A', value: '', ttl: 300 });
             loadDnsRecords(addRecordModal);
-        } catch (e) { alert(e.message || 'Failed to add record'); }
+        } catch (e) { showToast(e.message || 'Failed to add record', 'error'); }
         setAddingRecord(false);
     };
 
@@ -547,7 +556,7 @@ const Dashboard = () => {
         try {
             await deleteDnsRecord(siteId, { name: record.name, type: record.type, value: record.value });
             loadDnsRecords(siteId);
-        } catch (e) { alert(e.message || 'Failed to delete record'); }
+        } catch (e) { showToast(e.message || 'Failed to delete record', 'error'); }
     };
 
     const handleDeleteSite = async (siteId) => {
@@ -555,7 +564,7 @@ const Dashboard = () => {
             await deleteDeployedSite(siteId);
             setDeleteSiteConfirm(null);
             loadDeployedSites();
-        } catch (e) { alert(e.message || 'Failed to delete site'); }
+        } catch (e) { showToast(e.message || 'Failed to delete site', 'error'); }
     };
 
     const statusColor = (s) => {
@@ -733,6 +742,20 @@ const Dashboard = () => {
 
     return (
         <div className={`dashboard${impersonateInfo ? ' impersonating' : ''}`}>
+            {/* Toast notification */}
+            {toast && (
+                <div style={{
+                    position: 'fixed', top: 24, right: 24, zIndex: 99999,
+                    background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3b82f6',
+                    color: '#fff', padding: '12px 20px', borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)', fontSize: 14, fontWeight: 500,
+                    maxWidth: 380, animation: 'fadeInDown 0.3s ease',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                }} onClick={() => setToast(null)}>
+                    <span>{toast.type === 'error' ? '✕' : toast.type === 'success' ? '✓' : 'ℹ'}</span>
+                    <span>{toast.message}</span>
+                </div>
+            )}
             {impersonateInfo && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,

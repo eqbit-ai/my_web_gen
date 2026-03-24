@@ -11,13 +11,14 @@ import {
     Save, Search, Palette, RotateCcw, Settings,
     Monitor, Smartphone, ExternalLink, Layers,
     AlertTriangle, CheckCircle, Info, Keyboard, Wifi, WifiOff,
-    ChevronRight, Type, MessageSquare, FileText, Paperclip, Square
+    ChevronRight, Type, MessageSquare, FileText, Paperclip, Square, ImageIcon
 } from 'lucide-react';
 import Preview from './Preview';
 import CodeEditor from './CodeEditor';
 import DeployModal from './DeployModal';
 import SectionEditor from './SectionEditor';
 import SeoEditor from './SeoEditor';
+import GalleryPicker from './GalleryPicker';
 import {
     generateWebsiteStream, clearSession, editElement, uploadFile,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
@@ -509,6 +510,7 @@ const WebsiteGenerator = () => {
     const [sections, setSections] = useState([]);
     const [showSiteSettings, setShowSiteSettings] = useState(false);
     const [showSectionEditor, setShowSectionEditor] = useState(false);
+    const [showGallery, setShowGallery] = useState(false);
     // Templates (for empty state marketplace)
     const [templates, setTemplates] = useState([]);
     const [templatePreviews, setTemplatePreviews] = useState({});
@@ -1462,6 +1464,15 @@ const WebsiteGenerator = () => {
         setSelectedElement(null); setElementPrompt(''); setEditMode(false); setElementAttachment(null);
     };
 
+    // ── Gallery Image Insert ─────────────────────────────────────────────
+    const handleGallerySelect = (url, name) => {
+        const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+        const insertPrompt = `Replace an image on the page with my uploaded image "${name}". Use this exact image URL: ${fullUrl}`;
+        setPrompt(insertPrompt);
+        setShowGallery(false);
+        setTimeout(() => textareaRef.current?.focus(), 100);
+    };
+
     // ── Save ────────────────────────────────────────────────────────────
 
     const handleSaveProject = async (overrideData) => {
@@ -1563,18 +1574,15 @@ const WebsiteGenerator = () => {
             '      if(typeof AOS!=="undefined"){AOS.init({duration:800,once:true,offset:0});setTimeout(function(){AOS.refresh()},300);}',
             '      // Force visibility fallback',
             '      setTimeout(function(){document.querySelectorAll("[data-aos]").forEach(function(el){el.style.opacity="1";el.style.transform="none";el.classList.add("aos-animate")})},2000);',
-            '      // Mobile hamburger — universal',
+            '      // Mobile hamburger — event delegation (works regardless of DOM timing)',
             '      (function(){',
-            '        var tSel=[".nav-toggle",".hamburger",".mobile-toggle",".menu-toggle",".navbar-toggle","button[aria-label=\\"Menu\\"]",".mobile-menu-btn",".burger"];',
-            '        var mSel=[".nav-links",".nav-menu",".mobile-menu",".navbar-menu",".navbar-links",".menu-items","nav ul",".mobile-nav"];',
-            '        var tog=null,men=null;',
-            '        for(var i=0;i<tSel.length;i++){tog=document.querySelector(tSel[i]);if(tog)break;}',
-            '        for(var j=0;j<mSel.length;j++){men=document.querySelector(mSel[j]);if(men)break;}',
-            '        if(tog&&men){',
-            '          tog.addEventListener("click",function(e){e.stopPropagation();men.classList.toggle("active");men.classList.toggle("open");tog.classList.toggle("active")});',
-            '          men.querySelectorAll("a").forEach(function(a){a.addEventListener("click",function(){men.classList.remove("active");men.classList.remove("open");tog.classList.remove("active")})});',
-            '          document.addEventListener("click",function(e){if(!tog.contains(e.target)&&!men.contains(e.target)){men.classList.remove("active");men.classList.remove("open");tog.classList.remove("active")}});',
-            '        }',
+            '        var tSel=".nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label=\\"Menu\\"],.mobile-menu-btn,.burger";',
+            '        var mSel=".nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav";',
+            '        document.addEventListener("click",function(e){',
+            '          var btn=e.target.closest(tSel);if(btn){e.preventDefault();e.stopPropagation();var m=document.querySelector(mSel);if(m){m.classList.toggle("active");m.classList.toggle("open");btn.classList.toggle("active");var o=m.classList.contains("active");btn.setAttribute("aria-expanded",o);btn.innerHTML=o?"<i class=\\"fa-solid fa-xmark\\"></i>":"<i class=\\"fa-solid fa-bars\\"></i>";}return;}',
+            '          var nl=e.target.closest(mSel+" a");if(nl){var t2=document.querySelector(tSel);var m2=document.querySelector(mSel);if(t2&&m2){m2.classList.remove("active","open");t2.classList.remove("active");t2.setAttribute("aria-expanded","false");t2.innerHTML="<i class=\\"fa-solid fa-bars\\"></i>";}return;}',
+            '          var t3=document.querySelector(tSel);var m3=document.querySelector(mSel);if(t3&&m3&&m3.classList.contains("active")&&!t3.contains(e.target)&&!m3.contains(e.target)){m3.classList.remove("active","open");t3.classList.remove("active");t3.setAttribute("aria-expanded","false");t3.innerHTML="<i class=\\"fa-solid fa-bars\\"></i>";}',
+            '        });',
             '      })();',
             '      // Testimonial carousel — universal',
             '      (function(){',
@@ -1856,13 +1864,13 @@ const WebsiteGenerator = () => {
     const impersonateInfo = (() => { try { const v = localStorage.getItem('impersonating'); return v ? JSON.parse(v) : null; } catch { return null; } })();
 
     return (
-        <div className="gn-layout">
+        <div className="gn-layout" style={impersonateInfo ? { paddingTop: 40 } : undefined}>
             {impersonateInfo && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-                    background: '#f59e0b', color: '#000', padding: '8px 16px',
+                    background: '#f59e0b', color: '#000', padding: '6px 16px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                    fontSize: 14, fontWeight: 600,
+                    fontSize: 13, fontWeight: 600, height: 40,
                 }}>
                     <span>Viewing as: {impersonateInfo.email} (read-only)</span>
                     <button onClick={() => {
@@ -2095,6 +2103,9 @@ const WebsiteGenerator = () => {
                                 }
                             }} title="Edit Content (CMS)">
                                 <Type size={15} />
+                            </button>
+                            <button className={`gn-tb-btn ${showGallery ? 'active' : ''}`} onClick={() => setShowGallery(!showGallery)} title="My Images">
+                                <ImageIcon size={15} />
                             </button>
                             <span className="gn-tb-divider" />
                             {/* Undo / Redo */}
@@ -2348,6 +2359,12 @@ const WebsiteGenerator = () => {
                 sessionId={sessionId}
                 onUpdate={handleSectionUpdate}
                 pageSlug={currentPage}
+            />
+
+            <GalleryPicker
+                isOpen={showGallery}
+                onClose={() => setShowGallery(false)}
+                onSelectImage={handleGallerySelect}
             />
 
             {/* Error Banner (fixed top-center) */}

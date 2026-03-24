@@ -10,10 +10,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    full_name = Column(String, nullable=False)
-    company_name = Column(String, nullable=True)
+    full_name = Column(String, nullable=False, default="")
+    company_name = Column(String, nullable=False, default="")
     license_number = Column(String, unique=True, nullable=True, index=True)
-    mobile = Column(String, nullable=True)
+    mobile = Column(String, nullable=False, default="")
     db_schema = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

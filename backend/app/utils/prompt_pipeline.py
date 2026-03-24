@@ -1373,6 +1373,12 @@ RULES:
 - Maintain existing design and functionality unless changes are requested
 - Do NOT include any explanation, just the two code blocks
 
+CRITICAL — PRESERVE ALL SECTIONS:
+- You MUST return ALL sections that exist in the current HTML. Count them before starting.
+- If the current page has 8 sections, your output must have 8 sections. Do NOT drop any.
+- "Redesign" means change the visual style (colors, fonts, layout) — NOT remove sections.
+- NEVER return a partial page. Every section from the original must appear in your output.
+
 SECTION SIZE CONSTRAINTS:
 - Hero: max height 80vh. NEVER taller than viewport.
 - All sections: keep same size as original. No excessive padding.

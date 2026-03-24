@@ -570,6 +570,13 @@ async def approve_user(
         details={"email": user.email, "tokens_granted": 1_000_000},
     )
 
+    # Send approval notification email (fire-and-forget)
+    try:
+        from app.utils.email import send_approval_notification
+        send_approval_notification(user.email, _safe_getattr(user, "full_name", ""))
+    except Exception as e:
+        logger.warning(f"[ADMIN] Failed to send approval email: {e}")
+
     return {"message": f"User {user.email} has been approved with 1,000,000 tokens"}
 
 
