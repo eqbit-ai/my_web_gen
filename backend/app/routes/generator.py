@@ -3788,7 +3788,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     original_plan = session.get("plan", {})
                     original_prompt = session.get("original_prompt", req.prompt)
                     brand_name = original_plan.get("brand", {}).get("name", "")
-                    niche_key = original_plan.get("niche", "") or detect_niche(original_prompt)
+                    from app.utils.niches import detect_niche as _detect_niche
+                    niche_key = original_plan.get("niche", "") or _detect_niche(original_prompt)
 
                     # Build multipage prompt from original context
                     multipage_prompt = f"{original_prompt}. Make this a multipage website with pages: Home, {page_names}"

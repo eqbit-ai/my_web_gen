@@ -13,6 +13,7 @@ export default function FailedGenerationsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [retrying, setRetrying] = useState(null);
+    const [expandedRow, setExpandedRow] = useState(null);
     const limit = 20;
 
     const load = useCallback(async () => {
@@ -118,7 +119,8 @@ export default function FailedGenerationsPage() {
                         </thead>
                         <tbody>
                             {dbFailures.map(f => (
-                                <tr key={f.id}>
+                                <React.Fragment key={f.id}>
+                                <tr style={{ cursor: 'pointer' }} onClick={() => setExpandedRow(expandedRow === f.id ? null : f.id)}>
                                     <td><span className="admin-date-cell">{formatDate(f.created_at)}</span></td>
                                     <td>{f.user_email || f.user_id || '—'}</td>
                                     <td><StatusBadge status={f.stage_failed || 'unknown'} size="sm" /></td>
@@ -131,12 +133,27 @@ export default function FailedGenerationsPage() {
                                         <button
                                             className="admin-btn admin-btn-sm"
                                             disabled={retrying === f.id}
-                                            onClick={() => handleRetry(f.id)}
+                                            onClick={(e) => { e.stopPropagation(); handleRetry(f.id); }}
                                         >
                                             {retrying === f.id ? '...' : 'Retry'}
                                         </button>
                                     </td>
                                 </tr>
+                                {expandedRow === f.id && (
+                                    <tr>
+                                        <td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.05)', borderTop: 'none' }}>
+                                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Full Error</div>
+                                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#f87171', fontSize: 13, margin: 0, fontFamily: 'monospace', lineHeight: 1.5 }}>{f.error_message || '—'}</pre>
+                                            {f.prompt && (
+                                                <>
+                                                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 12, marginBottom: 6 }}>Prompt</div>
+                                                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#e2e8f0', fontSize: 13, margin: 0, fontFamily: 'monospace', lineHeight: 1.5 }}>{f.prompt}</pre>
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
+                                </React.Fragment>
                             ))}
                         </tbody>
                     </table>

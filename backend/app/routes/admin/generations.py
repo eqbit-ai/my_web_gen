@@ -166,22 +166,30 @@ async def failed_generations(
 ):
     """List failed generation logs with error details."""
     try:
-        query = select(GenerationLog).where(GenerationLog.status == "failed")
+        from app.models.user import User
 
-        count_query = select(func.count()).select_from(query.subquery())
+        base_query = select(GenerationLog).where(GenerationLog.status == "failed")
+
+        count_query = select(func.count()).select_from(base_query.subquery())
         count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
-        result = await db.execute(
-            query.order_by(GenerationLog.created_at.desc()).limit(limit).offset(offset)
+        query = (
+            select(GenerationLog, User.email.label("user_email"))
+            .outerjoin(User, GenerationLog.user_id == User.id)
+            .where(GenerationLog.status == "failed")
+            .order_by(GenerationLog.created_at.desc())
+            .limit(limit).offset(offset)
         )
-        logs = result.scalars().all()
+        result = await db.execute(query)
+        rows = result.all()
 
         return {
             "failed_generations": [
                 {
                     "id": str(log.id),
                     "user_id": log.user_id,
+                    "user_email": email or "",
                     "prompt": log.prompt[:200] if log.prompt else "",
                     "stage_failed": log.stage_failed,
                     "error_message": log.error_message,
@@ -189,7 +197,7 @@ async def failed_generations(
                     "duration_ms": log.duration_ms,
                     "created_at": _serialize_datetime(log.created_at),
                 }
-                for log in logs
+                for log, email in rows
             ],
             "total": total,
             "limit": limit,

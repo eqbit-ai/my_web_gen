@@ -1050,9 +1050,119 @@ const WebsiteGenerator = () => {
 
     const streamControllerRef = useRef(null);
 
+    // ── Help response detection ────────────────────────────────────────
+    const helpResponses = [
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(change|replace|add|use|upload).*(image|photo|picture|img)/i, /gallery/i, /my\s+images/i, /uploaded?\s+(image|photo)/i],
+            answer: 'Use the **Gallery icon** (image icon) in the toolbar to browse your uploaded images and insert them into your site. Or simply type what you want, e.g. "change the hero image to a modern office photo".'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(add|connect|change|set).*(whatsapp|whats\s+app)/i, /whatsapp\s*(number|button|icon)/i],
+            answer: 'Click the **Settings icon** (gear) in the toolbar → go to the **WhatsApp tab** → enter your phone number with country code (e.g. +971501234567). The floating WhatsApp button on your site will use that number.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(deploy|publish|launch|go\s+live|make.*live)/i, /deploy\s+my/i, /publish\s+my/i],
+            answer: 'Click the **Deploy** button (green, top-right corner). Enter a site name and click Deploy. You\'ll get a live URL you can share with anyone.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(change|edit|modify|update).*(color|colour|font|theme|design\s+system)/i, /change\s+(the\s+)?color/i, /change\s+(the\s+)?font/i],
+            answer: 'Click the **Settings icon** (gear) in the toolbar to open the design panel where you can change colors and fonts. Or type in chat: "change primary color to blue" or "use a dark theme".'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(add|remove|delete|reorder|move|rearrange).*(section)/i, /add\s+a?\s*new\s+section/i],
+            answer: 'Click **Sections** in the top-left toolbar to see all sections. You can drag to reorder, delete, or duplicate sections. Or type in chat: "add a testimonials section" or "remove the pricing section".'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(edit|change|modify)\s+(the\s+)?text\s*(directly|inline|on\s+page)?/i, /cms\s+mode/i, /inline\s+edit/i, /edit\s+text\s+directly/i],
+            answer: 'Click the **T icon** in the toolbar to enter CMS mode. Then click any text on the page to edit it directly — just type your changes and they\'ll update live.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(click|select|pick).*(edit|element|component)/i, /edit\s+mode/i, /element\s+edit/i, /click.*to.*edit/i, /pointer.*icon/i],
+            answer: 'Click the **pointer icon** (↗) in the toolbar to enter Edit mode. Hover over any element — it highlights in blue. Click to select it, then describe what you want to change in the edit panel (e.g. "make this red", "change this image"). You can also attach an image to replace the selected element\'s image.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*save/i, /save\s+(my|the)\s+(work|project|site)/i],
+            answer: 'Click **Save** in the toolbar, or press **Ctrl+S** (Cmd+S on Mac). Your project is saved to your Dashboard → Projects tab.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(undo|redo|revert|go\s+back|restore)/i, /undo/i, /redo/i],
+            answer: 'Click the **undo/redo arrows** in the toolbar, or press **Ctrl+Z** to undo and **Ctrl+Shift+Z** to redo. You can also click **"Restore this version"** on any previous message in the chat to go back to that version.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(download|export|zip)/i, /download\s+(my|the)/i, /export/i],
+            answer: 'Click the **download icon** (↓) in the toolbar to export your website as a ZIP file containing HTML, CSS, and JS files.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(switch|navigate|go\s+to).*(page)/i, /multipage/i, /other\s+page/i, /page\s+tab/i],
+            answer: 'Use the **page tabs** above the preview area to switch between pages (Home, About, Contact, etc.). To add a new page, type: "add an About page".'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(add|create).*(contact\s+form|form)/i, /contact\s+form/i],
+            answer: 'Type in chat: "add a contact form section". After deploying, all form submissions will appear in your **Dashboard → Inbox** tab.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(preview|view|see).*(mobile|phone|responsive)/i, /mobile\s+(view|preview)/i],
+            answer: 'Click the **phone icon** next to the Preview button to toggle mobile view. All generated websites are mobile-responsive by default.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(connect|add|buy|register).*(domain|url|website\s+address)/i, /custom\s+domain/i, /my\s+own\s+domain/i],
+            answer: 'After deploying, go to **Dashboard → Domains** tab → find your site → click **Connect Domain**. You can buy a new domain or connect one you already own by pointing its CNAME record.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(seo|meta|search\s+engine|google)/i, /seo\s+settings/i],
+            answer: 'Click the **Settings icon** (gear) → **SEO & Meta tab**. Set your page title, meta description, keywords, and upload a favicon. These help your site rank in Google.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(custom\s+code|inject|script|tracking|analytics\s+code|google\s+tag)/i],
+            answer: 'Go to **Dashboard → Domains** tab → find your deployed site → click **Code Inject**. You can add custom HTML/scripts to the head or body (e.g. Google Analytics, Facebook Pixel).'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(view|see|check|read).*(form|submission|inbox|message)/i, /form\s+submission/i, /inbox/i],
+            answer: 'Go to **Dashboard → Inbox** tab. You can filter by site and read/unread status. Click any submission to see the full message and reply via email.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*upload/i, /upload\s+(image|photo|logo|file)/i],
+            answer: 'Go to **Dashboard → Gallery** tab → click **Upload Images**. Then in the generator, click the **Gallery icon** in the toolbar to browse and use your uploaded images.'
+        },
+        {
+            patterns: [/how\s+(do\s+i|to|can\s+i)\s+.*(start\s+over|reset|new\s+design|fresh|from\s+scratch)/i, /start\s+over/i],
+            answer: 'Click the **refresh icon** (↻) next to the logo in the chat header to start a new design. Or click **Start Over** in the toolbar to reset everything.'
+        },
+        {
+            patterns: [/keyboard\s+shortcut/i, /shortcut/i, /hotkey/i],
+            answer: 'Press the **?** key to see all keyboard shortcuts. Quick ones: **Ctrl+Z** (undo), **Ctrl+S** (save), **Ctrl+Shift+Z** (redo), **Enter** (send message).'
+        },
+        {
+            patterns: [/^help$/i, /what\s+can\s+(i|you)\s+do/i, /how\s+does\s+this\s+work/i, /how\s+to\s+use/i, /guide\s+me/i, /tutorial/i, /^what\s+is\s+this/i],
+            answer: "I'm your AI website builder! Here's what you can do:\n\n• **Type a description** to generate a website (e.g. \"build a restaurant website\")\n• **Type changes** to edit (e.g. \"make the hero bigger\", \"add a team section\")\n• **Toolbar icons**: Sections, Settings, Click-to-Edit, CMS, Gallery\n• **Deploy** to publish your site live with one click\n• **Press ?** for keyboard shortcuts\n\nJust describe what you want and I'll make it happen!"
+        },
+    ];
+
+    const getHelpResponse = (text) => {
+        const trimmed = text.trim();
+        for (const entry of helpResponses) {
+            for (const pattern of entry.patterns) {
+                if (pattern.test(trimmed)) return entry.answer;
+            }
+        }
+        return null;
+    };
+
     const handleGenerate = async (text, niche, templateId = null) => {
         const promptText = text || prompt.trim();
         if (!promptText || isGeneratingRef.current) return;
+
+        // Check if this is a help question — answer instantly without using LLM tokens
+        const helpAnswer = getHelpResponse(promptText);
+        if (helpAnswer && versions.length > 0) {
+            setPrompt('');
+            setMessages(prev => [
+                ...prev,
+                { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                { role: 'assistant', text: helpAnswer, timestamp: new Date().toLocaleTimeString(), isHelp: true },
+            ]);
+            return;
+        }
 
         isGeneratingRef.current = true;
         setIsLoading(true);

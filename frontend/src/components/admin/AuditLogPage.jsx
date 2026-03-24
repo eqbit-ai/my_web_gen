@@ -85,10 +85,25 @@ export default function AuditLogPage() {
         { key: 'action', label: 'Action', render: (v, row) => v || row.action_type || '—' },
         { key: 'details', label: 'Details', render: (v, row) => {
             const val = v || row.description;
-            const text = !val ? '—' : typeof val === 'object' ? Object.values(val).filter(Boolean).join(', ') : String(val);
+            if (!val) return '—';
+            const text = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+            const short = text.length > 60 ? text.slice(0, 60) + '...' : text;
             return (
-                <span style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={text}>
-                    {text}
+                <span
+                    style={{ maxWidth: 400, display: 'block', cursor: text.length > 60 ? 'pointer' : 'default', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12.5 }}
+                    title="Click to expand"
+                    onClick={(e) => {
+                        const el = e.currentTarget;
+                        if (el.dataset.expanded === 'true') {
+                            el.textContent = short;
+                            el.dataset.expanded = 'false';
+                        } else {
+                            el.textContent = text;
+                            el.dataset.expanded = 'true';
+                        }
+                    }}
+                >
+                    {short}
                 </span>
             );
         }},
