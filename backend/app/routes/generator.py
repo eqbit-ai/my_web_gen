@@ -3233,9 +3233,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     # ── Track job for admin visibility ──────────────────────────────
     job_id = await _track_job(session_id, user["user_id"], "generate" if is_new else "edit")
 
-    # ── Save initial session so it shows as "active" in admin ─────
+    # ── Mark session as "generating" so recovery polling waits ─────
     if is_new:
         await redis_save_session(session_id, {"prompt": req.prompt[:500], "status": "generating"})
+    else:
+        # For edits: mark existing session as generating so recovery doesn't pick up stale data
+        existing_sess = await redis_get_session(session_id)
+        if existing_sess:
+            existing_sess["status"] = "generating"
+            await redis_save_session(session_id, existing_sess)
 
     # ── Launch generation as a background task (survives client disconnect) ──
     from app.utils.session_store import push_sse_event, pop_sse_events, clear_sse_events
@@ -3380,10 +3386,13 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     html_task = asyncio.create_task(
                         generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
                     )
+                    _progress_tick = 0
                     while not html_task.done():
-                        await asyncio.sleep(3)
-                        if not html_task.done():
-                            await asyncio.sleep(0)  # yield control
+                        await asyncio.sleep(5)
+                        _progress_tick += 1
+                        if not html_task.done() and _progress_tick % 6 == 0:
+                            elapsed = _progress_tick * 5
+                            await emit("stage", {"stage": 1, "name": "html", "status": "running", "message": f"Building pages... ({elapsed}s elapsed)"})
                     pages_html = html_task.result()  # {slug: html_string}
 
                     total_html_chars = sum(len(h) for h in pages_html.values())
@@ -3820,10 +3829,13 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     html_task = asyncio.create_task(
                         generate_multipage_html(plan, session_id, niche_key=niche_key, reference_html=reference_html)
                     )
+                    _progress_tick = 0
                     while not html_task.done():
-                        await asyncio.sleep(3)
-                        if not html_task.done():
-                            await asyncio.sleep(0)  # yield control
+                        await asyncio.sleep(5)
+                        _progress_tick += 1
+                        if not html_task.done() and _progress_tick % 6 == 0:
+                            elapsed = _progress_tick * 5
+                            await emit("stage", {"stage": 1, "name": "html", "status": "running", "message": f"Building pages... ({elapsed}s elapsed)"})
                     pages_html = html_task.result()
 
                     total_html_chars = sum(len(h) for h in pages_html.values())

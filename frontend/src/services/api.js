@@ -72,20 +72,19 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
     const pollForRecovery = async (sid) => {
         if (!sid) return false;
         onStage({ stage: -2, name: 'recovering', status: 'running', message: 'Reconnecting — checking if your website is ready...' });
-        for (let attempt = 0; attempt < 20; attempt++) {
+        for (let attempt = 0; attempt < 80; attempt++) {
             await new Promise(r => setTimeout(r, 5000));
             try {
                 const session = await getSession(sid);
-                if (session && session.html) {
+                if (session && session.html && session.status !== 'generating') {
                     // Generation completed in the background!
                     onComplete({
-                        html: session.html,
-                        css: session.css || '',
-                        js: session.js || '',
+                        website: { html: session.html, css: session.css || '', js: session.js || '' },
                         sessionId: sid,
                         plan: session.plan || {},
-                        multipage: session.multipage || false,
+                        isMultipage: session.multipage || false,
                         pages: session.pages || null,
+                        isNewDesign: false,
                         recovered: true,
                     });
                     return true;
