@@ -181,7 +181,7 @@ body {
 .wizard-confirm-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
 .wizard-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.wizard-palettes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 4px; }
+.wizard-palettes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 4px; max-height: 320px; overflow-y: auto; }
 .wizard-palette { display: flex; align-items: center; gap: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s; text-align: left; }
 .wizard-palette:hover { border-color: var(--accent); }
 .wizard-palette-colors { display: flex; gap: 3px; flex-shrink: 0; }

@@ -468,13 +468,29 @@ window.showToast=function(msg,type,dur){type=type||"info";dur=dur||3000;var ex=d
 // Onboarding Wizard Configuration
 // ---------------------------------------------------------------------------
 const WIZARD_PALETTES = [
+    // Premium & Corporate
     { name: 'Ocean Blue', colors: ['#1e3a5f', '#4a90d9', '#e8f4fd'], desc: 'Professional & trustworthy' },
-    { name: 'Forest Green', colors: ['#1b4332', '#2d6a4f', '#d8f3dc'], desc: 'Natural & growth' },
-    { name: 'Royal Purple', colors: ['#2d1b69', '#7c3aed', '#ede9fe'], desc: 'Creative & premium' },
-    { name: 'Sunset Warm', colors: ['#7c2d12', '#ea580c', '#fff7ed'], desc: 'Energetic & bold' },
+    { name: 'Navy & Gold', colors: ['#0c1b33', '#c8a951', '#f5f0e3'], desc: 'Corporate & prestigious' },
     { name: 'Elegant Dark', colors: ['#1a1a2e', '#334155', '#e2e8f0'], desc: 'Sleek & modern' },
+    { name: 'Midnight Onyx', colors: ['#0d0d0d', '#1f1f1f', '#d4af37'], desc: 'Ultra-premium & luxe' },
+    // Nature & Organic
+    { name: 'Forest Green', colors: ['#1b4332', '#2d6a4f', '#d8f3dc'], desc: 'Natural & growth' },
+    { name: 'Earth Tones', colors: ['#3c2415', '#8b6f47', '#f5ebe0'], desc: 'Organic & grounded' },
+    { name: 'Teal & Orange', colors: ['#134e4a', '#14b8a6', '#fb923c'], desc: 'Tech & startup' },
+    // Warm & Vibrant
+    { name: 'Sunset Warm', colors: ['#7c2d12', '#ea580c', '#fff7ed'], desc: 'Energetic & bold' },
+    { name: 'Coral & Cream', colors: ['#9f1239', '#fb7185', '#fff1f2'], desc: 'Warm & friendly' },
+    { name: 'Warm Gold', colors: ['#451a03', '#b45309', '#fef3c7'], desc: 'Luxury & warmth' },
+    // Cool & Creative
+    { name: 'Royal Purple', colors: ['#2d1b69', '#7c3aed', '#ede9fe'], desc: 'Creative & premium' },
+    { name: 'Rose Pink', colors: ['#831843', '#ec4899', '#fdf2f8'], desc: 'Beauty & feminine' },
+    { name: 'Ice Blue', colors: ['#0c4a6e', '#38bdf8', '#f0f9ff'], desc: 'Medical & healthcare' },
+    // Neutral & Clean
     { name: 'Clean Minimal', colors: ['#0f172a', '#64748b', '#ffffff'], desc: 'Simple & clean' },
-    { name: 'Warm Gold', colors: ['#451a03', '#b45309', '#fef3c7'], desc: 'Luxury & premium' },
+    { name: 'Pastel Soft', colors: ['#6366f1', '#a78bfa', '#fef9c3'], desc: 'Playful & gentle' },
+    { name: 'Black & Red', colors: ['#0a0a0a', '#dc2626', '#fef2f2'], desc: 'Bold & powerful' },
+    { name: 'Champagne', colors: ['#1c1917', '#a8926a', '#faf7f2'], desc: 'Refined & sophisticated' },
+    // AI choice
     { name: 'Surprise Me', colors: ['#6366f1', '#ec4899', '#fbbf24'], desc: 'Let AI choose!', isSurprise: true },
 ];
 
