@@ -599,7 +599,7 @@ const Dashboard = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!prompt.trim()) return;
-        navigate('/generator', { state: { initialPrompt: prompt.trim() } });
+        navigate('/generator', { state: { newSession: true, wizardPrefill: prompt.trim() } });
     };
 
     const handleKeyDown = (e) => {

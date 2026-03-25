@@ -512,7 +512,9 @@ const composeWizardPrompt = (data) => {
 
 // Wizard question renderer (inline in chat)
 const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates }) => {
-    const [textVal, setTextVal] = React.useState('');
+    // Pre-fill text input from wizard data (e.g. dashboard chatbox prefill)
+    const prefillMap = { 0: data.companyName, 1: data.businessDescription, 2: data.tagline };
+    const [textVal, setTextVal] = React.useState(prefillMap[step] || '');
     const [selectedPages, setSelectedPages] = React.useState(data.pages || ['Home', 'About', 'Services', 'Contact']);
     const [contactPhone, setContactPhone] = React.useState(data.contactInfo?.phone || '');
     const [contactEmail, setContactEmail] = React.useState(data.contactInfo?.email || '');
@@ -1009,9 +1011,15 @@ const WebsiteGenerator = () => {
                 startWizard();
             }
         }
-        // newSession flag with no prompt — start the onboarding wizard
+        // newSession flag — start the onboarding wizard (with optional prefill from dashboard prompt)
         else if (isNewNavigation && state?.newSession && !state?.initialPrompt) {
             startWizard();
+            // If user typed something in the dashboard chatbox, pre-fill as business description
+            if (state.wizardPrefill) {
+                const prefill = state.wizardPrefill;
+                setWizardData(prev => ({ ...prev, businessDescription: prefill }));
+                setWizardStep(0); // still start at company name, but step 1 will be pre-filled
+            }
         }
 
         // Clear navigation state so browser back/forward doesn't re-trigger
