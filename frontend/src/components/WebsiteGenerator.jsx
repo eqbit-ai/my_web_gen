@@ -464,6 +464,232 @@ window.showToast=function(msg,type,dur){type=type||"info";dur=dur||3000;var ex=d
 });
 `;
 
+// ---------------------------------------------------------------------------
+// Onboarding Wizard Configuration
+// ---------------------------------------------------------------------------
+const WIZARD_PALETTES = [
+    { name: 'Ocean Blue', colors: ['#1e3a5f', '#4a90d9', '#e8f4fd'], desc: 'Professional & trustworthy' },
+    { name: 'Forest Green', colors: ['#1b4332', '#2d6a4f', '#d8f3dc'], desc: 'Natural & growth' },
+    { name: 'Royal Purple', colors: ['#2d1b69', '#7c3aed', '#ede9fe'], desc: 'Creative & premium' },
+    { name: 'Sunset Warm', colors: ['#7c2d12', '#ea580c', '#fff7ed'], desc: 'Energetic & bold' },
+    { name: 'Elegant Dark', colors: ['#1a1a2e', '#334155', '#e2e8f0'], desc: 'Sleek & modern' },
+    { name: 'Clean Minimal', colors: ['#0f172a', '#64748b', '#ffffff'], desc: 'Simple & clean' },
+    { name: 'Warm Gold', colors: ['#451a03', '#b45309', '#fef3c7'], desc: 'Luxury & premium' },
+    { name: 'Surprise Me', colors: ['#6366f1', '#ec4899', '#fbbf24'], desc: 'Let AI choose!', isSurprise: true },
+];
+
+const WIZARD_PURPOSES = [
+    { value: 'lead_generation', label: 'Get leads & inquiries' },
+    { value: 'portfolio', label: 'Showcase my work' },
+    { value: 'ecommerce', label: 'Sell products online' },
+    { value: 'informational', label: 'Share information' },
+    { value: 'booking', label: 'Take bookings / appointments' },
+];
+
+const WIZARD_PAGES = ['Home', 'About', 'Services', 'Contact', 'Blog', 'Gallery', 'FAQ', 'Team', 'Pricing', 'Portfolio'];
+
+const composeWizardPrompt = (data) => {
+    const isMulti = data.siteType === 'multi';
+    let prompt = `Create a ${isMulti ? 'multi-page' : 'single-page'} website for "${data.companyName}".`;
+    prompt += `\n\nBusiness description: ${data.businessDescription}`;
+    if (data.tagline) prompt += `\nTagline: "${data.tagline}"`;
+    prompt += `\nWebsite purpose: ${data.purpose.replace(/_/g, ' ')}`;
+    if (isMulti && data.pages.length > 0) {
+        prompt += `\nPages: ${data.pages.join(', ')}`;
+    }
+    if (data.colorScheme && !data.colorScheme.isSurprise) {
+        prompt += `\nColor scheme: ${data.colorScheme.name} — use these colors: ${data.colorScheme.colors.join(', ')}`;
+    }
+    const ci = data.contactInfo;
+    if (ci.phone || ci.email || ci.address) {
+        prompt += '\nContact details:';
+        if (ci.phone) prompt += ` Phone: ${ci.phone}.`;
+        if (ci.email) prompt += ` Email: ${ci.email}.`;
+        if (ci.address) prompt += ` Address: ${ci.address}.`;
+    }
+    return prompt;
+};
+
+// Wizard question renderer (inline in chat)
+const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates }) => {
+    const [textVal, setTextVal] = React.useState('');
+    const [selectedPages, setSelectedPages] = React.useState(data.pages || ['Home', 'About', 'Services', 'Contact']);
+    const [contactPhone, setContactPhone] = React.useState(data.contactInfo?.phone || '');
+    const [contactEmail, setContactEmail] = React.useState(data.contactInfo?.email || '');
+    const [contactAddress, setContactAddress] = React.useState(data.contactInfo?.address || '');
+
+    const handleTextSubmit = (e) => {
+        e?.preventDefault();
+        if (textVal.trim()) { onAnswer(textVal.trim()); setTextVal(''); }
+    };
+
+    const renderInput = () => {
+        switch (step) {
+            case 0: // Company name
+            case 1: // Business description
+            case 2: // Tagline
+                return (
+                    <form onSubmit={handleTextSubmit} className="wizard-text-input">
+                        <input
+                            type="text"
+                            value={textVal}
+                            onChange={e => setTextVal(e.target.value)}
+                            placeholder={step === 0 ? 'e.g. Falcon Trading LLC' : step === 1 ? 'e.g. We import and distribute premium coffee beans across the UAE...' : 'e.g. Quality You Can Trust'}
+                            autoFocus
+                        />
+                        <button type="submit" disabled={!textVal.trim()}>Next</button>
+                        {step === 2 && <button type="button" className="wizard-skip-btn" onClick={() => onSkip()}>Skip</button>}
+                    </form>
+                );
+            case 3: // Purpose
+                return (
+                    <div className="wizard-options">
+                        {WIZARD_PURPOSES.map(p => (
+                            <button key={p.value} className="wizard-option" onClick={() => onAnswer(p.value, p.label)}>
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                );
+            case 4: // Single vs multi
+                return (
+                    <div className="wizard-cards">
+                        <button className="wizard-card" onClick={() => onAnswer('single')}>
+                            <strong>Single Page</strong>
+                            <span>All content on one scrollable page. Fast to generate (1-2 min). Great for most businesses.</span>
+                            <span className="wizard-card-tag">Recommended</span>
+                        </button>
+                        <button className="wizard-card" onClick={() => onAnswer('multi')}>
+                            <strong>Multiple Pages</strong>
+                            <span>Separate pages (Home, About, Services, etc). Takes longer to generate (5-7 min). Better for content-heavy sites.</span>
+                        </button>
+                    </div>
+                );
+            case 5: // Pages (multipage only)
+                return (
+                    <div className="wizard-pages-select">
+                        <div className="wizard-pages-grid">
+                            {WIZARD_PAGES.map(p => (
+                                <button
+                                    key={p}
+                                    className={`wizard-page-chip ${selectedPages.includes(p) ? 'selected' : ''} ${p === 'Home' ? 'locked' : ''}`}
+                                    onClick={() => {
+                                        if (p === 'Home') return;
+                                        setSelectedPages(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
+                                    }}
+                                >
+                                    {p === 'Home' ? 'Home (always included)' : p}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            className="wizard-confirm-btn"
+                            disabled={selectedPages.length < 2}
+                            onClick={() => onAnswer(selectedPages)}
+                        >
+                            Continue with {selectedPages.length} pages
+                        </button>
+                    </div>
+                );
+            case 6: // Color scheme
+                return (
+                    <div className="wizard-palettes">
+                        {WIZARD_PALETTES.map(p => (
+                            <button key={p.name} className="wizard-palette" onClick={() => onAnswer(p)}>
+                                <div className="wizard-palette-colors">
+                                    {p.colors.map((c, i) => <span key={i} style={{ background: c }} />)}
+                                </div>
+                                <div className="wizard-palette-info">
+                                    <strong>{p.name}</strong>
+                                    <span>{p.desc}</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                );
+            case 7: // Contact info
+                return (
+                    <div className="wizard-contact-fields">
+                        <input type="text" placeholder="Phone (e.g. +971 50 123 4567)" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
+                        <input type="email" placeholder="Email (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                        <input type="text" placeholder="Address (optional)" value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
+                        <div className="wizard-contact-actions">
+                            <button
+                                className="wizard-confirm-btn"
+                                onClick={() => onAnswer({ phone: contactPhone.trim(), email: contactEmail.trim(), address: contactAddress.trim() })}
+                            >
+                                Continue
+                            </button>
+                            <button className="wizard-skip-btn" onClick={() => onSkip()}>Skip</button>
+                        </div>
+                    </div>
+                );
+            case 8: // Summary
+                return (
+                    <div className="wizard-summary">
+                        <div className="wizard-summary-items">
+                            <div><strong>Company:</strong> {data.companyName}</div>
+                            <div><strong>Business:</strong> {data.businessDescription}</div>
+                            {data.tagline && <div><strong>Tagline:</strong> {data.tagline}</div>}
+                            <div><strong>Purpose:</strong> {data.purposeLabel || data.purpose}</div>
+                            <div><strong>Type:</strong> {data.siteType === 'multi' ? `Multi-page (${data.pages.join(', ')})` : 'Single page'}</div>
+                            <div><strong>Colors:</strong> {data.colorScheme?.name || 'AI choice'}
+                                {data.colorScheme && !data.colorScheme.isSurprise && (
+                                    <span className="wizard-summary-colors">{data.colorScheme.colors.map((c, i) => <span key={i} style={{ background: c }} />)}</span>
+                                )}
+                            </div>
+                            {(data.contactInfo?.phone || data.contactInfo?.email) && (
+                                <div><strong>Contact:</strong> {[data.contactInfo.phone, data.contactInfo.email].filter(Boolean).join(' | ')}</div>
+                            )}
+                        </div>
+                        <div className="wizard-disclaimer">
+                            <strong>Before we start:</strong>
+                            <ul>
+                                <li>AI-generated content may not be 100% accurate — please review all text after generation.</li>
+                                <li>Generation takes {data.siteType === 'multi' ? '5-7 minutes' : '1-3 minutes'}. <strong>Please stay on this screen</strong> and do not close or refresh the browser.</li>
+                                <li>You can edit anything after — colors, text, images, layout — using the chat.</li>
+                            </ul>
+                        </div>
+                        <div className="wizard-summary-actions">
+                            <button className="wizard-generate-btn" onClick={onGenerate}>Generate My Website</button>
+                            <button className="wizard-back-link" onClick={onBack}>Edit answers</button>
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const questions = [
+        "What's the name of your company or business?",
+        "Tell me briefly — what does your business do? What products or services do you offer?",
+        "Do you have a tagline or slogan? (You can skip this)",
+        "What's the main purpose of your website?",
+        "Would you like a single-page or multi-page website?",
+        "Which pages would you like? Tap to select or deselect.",
+        "Pick a color scheme that fits your brand:",
+        "Any contact details to include on the website? (Phone, email, address)",
+        null, // summary has no question text
+    ];
+
+    return (
+        <div className="wizard-step">
+            {questions[step] && (
+                <div className="gn-msg gn-msg-assistant wizard-msg">
+                    <div className="gn-avatar">AI</div>
+                    <div className="gn-bubble">{questions[step]}</div>
+                </div>
+            )}
+            {renderInput()}
+            <div className="wizard-nav">
+                {step > 0 && step < 8 && <button className="wizard-back-btn" onClick={onBack}>Back</button>}
+                {step === 0 && <button className="wizard-browse-link" onClick={onBrowseTemplates}>or browse templates instead</button>}
+            </div>
+        </div>
+    );
+};
+
 const WebsiteGenerator = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -584,6 +810,15 @@ const WebsiteGenerator = () => {
     pagesRef.current = pages;
     const currentPageRef = useRef(currentPage);
     currentPageRef.current = currentPage;
+
+    // ── Onboarding Wizard State ───────────────────────────────────────
+    const [wizardStep, setWizardStep] = useState(-1); // -1 = inactive
+    const [wizardData, setWizardData] = useState({
+        companyName: '', businessDescription: '', tagline: '', purpose: '', purposeLabel: '',
+        siteType: '', pages: ['Home', 'About', 'Services', 'Contact'],
+        colorScheme: null, contactInfo: { phone: '', email: '', address: '' },
+    });
+    const wizardActive = wizardStep >= 0;
 
     // ── UX Enhancement State ────────────────────────────────────────────
     const [showShortcuts, setShowShortcuts] = useState(false);
@@ -769,9 +1004,15 @@ const WebsiteGenerator = () => {
                         setSessionId(d.sessionId);
                     }
                 } catch (e) { sessionStorage.removeItem(SESSION_STORAGE_KEY); }
+            } else {
+                // No saved session — start the onboarding wizard
+                startWizard();
             }
         }
-        // else: newSession flag with no prompt — fresh empty state (nothing to do)
+        // newSession flag with no prompt — start the onboarding wizard
+        else if (isNewNavigation && state?.newSession && !state?.initialPrompt) {
+            startWizard();
+        }
 
         // Clear navigation state so browser back/forward doesn't re-trigger
         if (isNewNavigation) {
@@ -830,7 +1071,7 @@ const WebsiteGenerator = () => {
     // Scroll chat to bottom
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading]);
+    }, [messages, isLoading, wizardStep]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -918,6 +1159,83 @@ const WebsiteGenerator = () => {
         return () => window.removeEventListener('keydown', handler);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [html, addToast]);
+
+    // ── Onboarding Wizard Handlers ──────────────────────────────────────
+
+    const startWizard = useCallback(() => {
+        setWizardStep(0);
+        setWizardData({
+            companyName: '', businessDescription: '', tagline: '', purpose: '', purposeLabel: '',
+            siteType: '', pages: ['Home', 'About', 'Services', 'Contact'],
+            colorScheme: null, contactInfo: { phone: '', email: '', address: '' },
+        });
+        setMessages([{
+            role: 'assistant',
+            text: "Welcome! I'll help you build your website step by step. Let's start with a few quick questions so I can create something perfect for your business.",
+            timestamp: new Date().toLocaleTimeString(),
+        }]);
+    }, []);
+
+    const handleWizardAnswer = useCallback((value, displayLabel) => {
+        const step = wizardStep;
+        let displayText = '';
+        const updated = { ...wizardData };
+
+        switch (step) {
+            case 0: updated.companyName = value; displayText = value; break;
+            case 1: updated.businessDescription = value; displayText = value; break;
+            case 2: updated.tagline = value; displayText = value; break;
+            case 3: updated.purpose = value; updated.purposeLabel = displayLabel || value; displayText = displayLabel || value; break;
+            case 4: updated.siteType = value; displayText = value === 'single' ? 'Single page' : 'Multiple pages'; break;
+            case 5: updated.pages = value; displayText = value.join(', '); break;
+            case 6: updated.colorScheme = value; displayText = value.name || 'Custom'; break;
+            case 7: updated.contactInfo = value; displayText = [value.phone, value.email, value.address].filter(Boolean).join(', ') || 'Provided'; break;
+            default: break;
+        }
+
+        setWizardData(updated);
+
+        // Add user's answer as a message
+        setMessages(prev => [...prev, {
+            role: 'user', text: displayText, timestamp: new Date().toLocaleTimeString(),
+        }]);
+
+        // Advance to next step (skip step 5 if single page)
+        let nextStep = step + 1;
+        if (nextStep === 5 && updated.siteType === 'single') nextStep = 6;
+        setWizardStep(nextStep);
+    }, [wizardStep, wizardData]);
+
+    const handleWizardSkip = useCallback(() => {
+        setMessages(prev => [...prev, {
+            role: 'user', text: 'Skipped', timestamp: new Date().toLocaleTimeString(),
+        }]);
+        let nextStep = wizardStep + 1;
+        if (nextStep === 5 && wizardData.siteType === 'single') nextStep = 6;
+        setWizardStep(nextStep);
+    }, [wizardStep, wizardData.siteType]);
+
+    const handleWizardBack = useCallback(() => {
+        let prevStep = wizardStep - 1;
+        if (prevStep === 5 && wizardData.siteType === 'single') prevStep = 4;
+        // Remove last user+assistant message pair
+        setMessages(prev => {
+            const msgs = [...prev];
+            // Remove last user message
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                if (msgs[i].role === 'user') { msgs.splice(i, 1); break; }
+            }
+            return msgs;
+        });
+        setWizardStep(prevStep < 0 ? 0 : prevStep);
+    }, [wizardStep, wizardData.siteType]);
+
+    // handleWizardGenerate is defined after handleGenerate — see below
+
+    const handleBrowseTemplates = useCallback(() => {
+        setWizardStep(-1);
+        setMessages([]);
+    }, []);
 
     // ── Computed ─────────────────────────────────────────────────────────
 
@@ -1338,6 +1656,14 @@ const WebsiteGenerator = () => {
                 currentPage,
             );
         }
+    };
+
+    // ── Wizard: trigger generation after handleGenerate is defined ─────
+    const handleWizardGenerate = () => {
+        const composedPrompt = composeWizardPrompt(wizardData);
+        setProjectName(wizardData.companyName);
+        setWizardStep(-1);
+        handleGenerate(composedPrompt, null, null);
     };
 
     // ── Rollback to a specific message version ──────────────────────────
@@ -2015,7 +2341,7 @@ const WebsiteGenerator = () => {
 
                 {/* Chat messages */}
                 <div className="gn-chat-messages">
-                    {messages.length === 0 && !isLoading && (
+                    {messages.length === 0 && !isLoading && !wizardActive && (
                         <div className="gn-chat-welcome">
                             <Sparkles size={24} />
                             <h3>Welcome to Meydan AI</h3>
@@ -2100,10 +2426,24 @@ const WebsiteGenerator = () => {
                         </div>
                     )}
 
+                    {/* Wizard step UI */}
+                    {wizardActive && !isLoading && (
+                        <WizardQuestionUI
+                            step={wizardStep}
+                            data={wizardData}
+                            onAnswer={handleWizardAnswer}
+                            onSkip={handleWizardSkip}
+                            onBack={handleWizardBack}
+                            onGenerate={handleWizardGenerate}
+                            onBrowseTemplates={handleBrowseTemplates}
+                        />
+                    )}
+
                     <div ref={chatEndRef} />
                 </div>
 
-                {/* Chat input */}
+                {/* Chat input — hidden during wizard (wizard provides its own inputs) */}
+                {!wizardActive && (
                 <div className="gn-chat-input-area">
                     {!html && !isLoading && (
                         <div className="gn-project-name-row">
@@ -2137,6 +2477,7 @@ const WebsiteGenerator = () => {
                         </button>
                     </div>
                 </div>
+                )}
             </aside>
 
             {/* ─── Resize Handle ─── */}
