@@ -1490,7 +1490,8 @@ RULES:
 - If the request mentions "contact", "form" → target the contact section
 - If the request mentions "FAQ", "questions" → target the faq section
 - If the request mentions "team", "members" → target the team section
-- If the request mentions "gallery", "images", "photos" → target the gallery section
+- If the request mentions "gallery", "images", "photos", "food images", "portfolio", "pictures" → target the gallery section
+- If the request mentions "menu", "dishes", "food menu" → use ["__append__:gallery"] (food items need images, not icons)
 - If the request mentions "stats", "numbers", "counters" → target the stats section
 - FOLLOW-UP DETECTION: If the user's message is a follow-up about a previous edit (e.g., "it's broken", "I don't see it", "still wrong", "fix that", "looks bad", "change the image there"), target the SAME section from the most recent edit shown in LAST EDITED below
 - If ambiguous AND there is a recent edit, prefer the last-edited section
@@ -1703,6 +1704,19 @@ RULES:
 - Do NOT include any explanation, just the html code block
 - Use standard section padding consistent with the existing page
 - Footer sections: use dark background (style="background: #1a1a2e")
+
+IMAGE SECTIONS — CRITICAL:
+- If the user asks for images, photos, gallery, food images, portfolio, or any visual content: you MUST include actual {{{{IMG:...}}}} image placeholders in <img> tags. Do NOT use icon cards instead.
+- Gallery sections: use .gallery-item with .gallery-image <img> tags in a .grid-3 layout
+- Food/menu sections: use image-top cards (.card with .card-image <img> tags) — NOT icon-only cards
+- NEVER substitute images with Font Awesome icons when the user explicitly asks for images/photos
+- Each image MUST have a unique, descriptive {{{{IMG:role specific query}}}} placeholder (e.g. {{{{IMG:feature grilled salmon plated dish}}}}, {{{{IMG:gallery pasta carbonara closeup}}}})
+
+FOLLOW THE PATTERN TEMPLATE:
+- You MUST follow the PATTERN TEMPLATE structure provided above. It shows the exact HTML structure to use.
+- If the pattern template shows <img> tags, your output MUST include <img> tags with {{{{IMG:...}}}} placeholders.
+- If the pattern template shows .gallery-item containers, use them exactly.
+- Do NOT replace image-based patterns with icon-based patterns.
 
 SECTION SIZE CONSTRAINTS:
 - Keep sections compact and content-dense. No min-h-screen.

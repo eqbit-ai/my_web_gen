@@ -2832,7 +2832,7 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
     # Map section_type to a default pattern
     _TYPE_TO_PATTERN = {
         "footer": "footer_columns",
-        "features": "card_grid",
+        "features": "feature_cards",
         "services": "service_modal",
         "stats": "stats_row",
         "testimonials": "testimonial_cards",
@@ -2846,6 +2846,10 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
         "timeline": "timeline",
         "newsletter": "newsletter_cta",
         "hero": "hero_center",
+        "menu": "feature_cards",
+        "portfolio": "gallery_grid",
+        "photos": "gallery_grid",
+        "images": "gallery_grid",
     }
 
     pattern_name = _TYPE_TO_PATTERN.get(section_type, "card_grid")
