@@ -46,7 +46,7 @@ RULES:
   5. The H1 heading MUST contain PLAIN, STATIC TEXT — NOT Typed.js spans, NOT data-typed attributes, NOT empty elements that rely on JS to fill text. The heading must be fully readable with JavaScript disabled. If you want typing animation effects, put them in a SEPARATE element BELOW the H1, never inside it.
 - HERO ALIGNMENT CONSISTENCY: ALL elements inside the hero (heading, subtitle, CTAs, trust line) MUST have the SAME alignment. If the hero uses .hero-center-content, everything is centered. If it uses .hero-full-overlay (left-aligned), EVERYTHING must be left-aligned — do NOT center the subtitle or CTAs while left-aligning the heading. Never mix text-align values within a hero.
 - NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
-- HERO NAVBAR CLEARANCE: The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. Use the .hero-section class which has padding-top: 7rem (8rem on desktop). For full-bleed heroes with background images, use .hero-bg-cover which includes padding-top: 80px. NEVER let hero content start at the very top of the viewport.
+- HERO NAVBAR CLEARANCE (CRITICAL — THIS IS A RECURRING BUG): The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. The .hero-section class has padding-top: 10rem. Do NOT override this padding with smaller values in your custom CSS. Do NOT set padding-top: 0 on .hero-section (only .hero-section-flush can have padding-top: 0 because it uses margin-top: -80px with .hero-bg-cover that has its own padding-top: 80px). For non-flush heroes, NEVER add padding-top less than 8rem. NEVER let hero content start at the very top of the viewport — the heading must be FULLY visible below the navbar.
 - HERO IMAGES: EVERY page's hero section MUST include a high-quality image — either as a background image (using .hero-bg-cover with background-image) or as a side image in a split layout (using .hero-split-grid). No hero section should be text-only without any imagery. Use relevant Unsplash/Pexels images.
 - HERO IS MANDATORY: The FIRST section after navbar MUST be the hero section. It MUST contain: a compelling headline (H1), a subtitle, at least one CTA button, and an image. The hero must be visually impactful and take up at least 80vh. NEVER skip the hero or make it empty. If the plan includes a hero, render ALL its content (headline, subtitle, CTAs, trust line, image). Do NOT output a page that starts with a content section instead of the hero.
 - PATTERN COMPLIANCE:
@@ -205,9 +205,9 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 }}
 
 /* ═══ Hero ═══ */
-.hero-section {{ padding: 7rem 0 4rem; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }}
-@media (min-width: 769px) {{ .hero-section {{ padding: 8rem 0 4rem; }} }}
-.hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0; min-height: 100vh; }}
+.hero-section {{ padding: 10rem 0 4rem !important; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }}
+@media (min-width: 769px) {{ .hero-section {{ padding: 10rem 0 5rem !important; }} }}
+.hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0 !important; min-height: 100vh; }}
 .hero-heading {{ font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.02em; }}
 .hero-subtitle {{ font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
 .hero-center-content .hero-subtitle {{ margin-left: auto; margin-right: auto; }}
