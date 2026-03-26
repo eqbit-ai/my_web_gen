@@ -82,17 +82,7 @@ PATTERNS = {
       </div>
     </div>
   </div>
-  If plan has NO image_query for hero (rare), use solid background variant:
-  <div class="container-wide hero-center-content hero-center-padded">
-    <h1 class="hero-heading">Headline</h1>
-    <p class="hero-subtitle">Subheadline</p>
-    <div class="hero-ctas hero-ctas-center">
-      <a href="#" class="btn-primary">Primary CTA</a>
-      <a href="#" class="btn-secondary">Secondary CTA</a>
-    </div>
-    <p class="trust-line">Trust line</p>
-  </div>
-  NOTE: The mini stat counters in the hero add social proof and visual weight. Customize the numbers and labels to match the business. Overlay uses a gradient (NOT flat bg-black/70) — image must be clearly visible. Max 50% opacity.""",
+  NOTE: ALWAYS use the background image variant — hero_center MUST have an image_query and background image. NEVER output a hero without a background image. The mini stat counters add social proof and visual weight. Customize the numbers and labels to match the business. Overlay uses a gradient (NOT flat bg-black/70) — image must be clearly visible. Max 50% opacity.""",
 
     "hero_full_image": """hero_full_image pattern:
   SECTION WRAPPER: <section data-section-type="hero" class="hero-section hero-section-flush"> (negative margin pulls hero behind navbar — NO gap)

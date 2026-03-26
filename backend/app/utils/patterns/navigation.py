@@ -88,7 +88,7 @@ PATTERNS = {
   - Footer MUST have EXACTLY 4 columns: Brand+Social, Quick Links, Services, Contact
   - Quick Links column: use anchor links (#services, #about, etc.) matching actual page sections
   - Services column: list 4-5 real services from the plan — NOT placeholder text
-  - Contact column: include address, phone, email, and business hours with icons
+  - Contact column: include address, phone, email, and business hours with icons. CRITICAL: If the user provided specific contact details (phone, email, address) in their prompt, use those EXACT values — do NOT make up different ones.
   - Footer section element MUST have an inline dark background: style="background: #1a1a2e" — this is MANDATORY regardless of theme. Footer is ALWAYS dark.
   - ALL footer text uses white/white-opacity colors. NEVER use dark text in footer.
   - NEVER output a minimal footer with just logo + address. ALL 4 columns + newsletter strip are mandatory.""",

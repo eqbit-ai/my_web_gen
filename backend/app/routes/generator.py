@@ -1035,7 +1035,7 @@ async def stage_1_plan(prompt: str, session_id: str = "", niche_key: str = None,
 
     # Force pattern variety by randomly assigning patterns to key sections
     import random as _rnd
-    _hero_variants = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric", "hero_video_bg", "hero_minimal"]
+    _hero_variants = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric"]
     _feature_variants = ["card_grid", "icon_grid", "feature_split", "feature_cards", "feature_stacked"]
     _testimonial_variants = ["testimonial_cards", "testimonial_slider", "testimonial_split"]
     _cta_variants = ["cta_banner", "cta_gradient", "cta_split", "cta_centered"]

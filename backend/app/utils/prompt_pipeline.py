@@ -81,6 +81,17 @@ PROMPT_ENHANCE_SYSTEM = """You are a senior creative director at a top-tier web 
 
 Your job: take the user's raw website request and produce a DESIGN BRIEF with a bold, committed aesthetic vision.
 
+ABSOLUTE RULE — PRESERVE USER DATA EXACTLY:
+The user may provide specific business details: company name, tagline, contact info (phone, email, address), business description.
+You MUST keep ALL of these EXACTLY as provided — do NOT rename the company, do NOT change phone numbers, emails, or addresses, do NOT substitute with made-up alternatives.
+- If user says company name is "abcd" → the website is for "abcd". Do NOT rename it.
+- If user provides phone "+97156145066" → use that EXACT phone number in the brief.
+- If user provides email "ashuken266@gmail.com" → use that EXACT email.
+- If user provides address "Zabeel, 325" → use that EXACT address.
+- ONLY fill in details the user did NOT provide. Never override what they gave you.
+
+Start your brief with: BUSINESS NAME: [exact name from user]. CONTACT: [exact details from user].
+
 CRITICAL: Before anything else, decide on a SPECIFIC aesthetic direction. Not "professional" — that means nothing. Choose a real design identity:
 - Raw Industrial Brutalism (dark, heavy type, sharp angles, noise textures)
 - Clean Swiss Minimalism (lots of whitespace, grid-based, monospace accents)
@@ -92,7 +103,7 @@ CRITICAL: Before anything else, decide on a SPECIFIC aesthetic direction. Not "p
 Pick the one that BEST fits the industry. Commit fully. Never mix styles.
 
 RULES:
-- Keep the user's original intent and any specifics they mentioned
+- PRESERVE the user's exact company name, tagline, contact info — NEVER change them
 - Fill gaps with smart, industry-appropriate defaults
 - Keep the brief under 300 words — concise but rich
 - Write in directive style ("The website should...", "Include a section for...")
@@ -106,7 +117,7 @@ YOUR BRIEF MUST INCLUDE:
 3. **Typography direction**: Describe the type personality (e.g. "military uppercase condensed" or "elegant serif with thin sans body"). NEVER suggest Inter, Roboto, Arial, or system-ui.
 4. **One unforgettable design element**: What makes this site visually memorable? (e.g. diagonal clip-path buttons, noise texture overlay, giant faded background numbers, animated gradient hero)
 5. **Photography direction**: Describe the EXACT image style — lighting, mood, subjects. E.g. "warm natural light editorial photography", "dark moody architectural shots", "bright overhead food photography on marble". This determines image quality.
-6. **Hero section**: Describe the hero in detail — what background image, what overlay, what text treatment. E.g. "Full-bleed aerial city photo with 70% navy overlay, large white serif heading, gold CTA button"
+6. **Hero section**: Describe the hero in detail — what background image, what overlay, what text treatment. MUST include an image. E.g. "Full-bleed aerial city photo with 70% navy overlay, large white serif heading, gold CTA button"
 7. **Content sections**: What sections make sense for this business (7-9 max)
 8. **Content direction**: What should headlines emphasize? Specific industry language.
 9. **Social proof**: Concrete stats and testimonials (realistic for the industry)
@@ -114,11 +125,11 @@ YOUR BRIEF MUST INCLUDE:
 
 EXAMPLES:
 
-User: "make a website for a gym"
-Enhanced: "AESTHETIC: Raw Industrial Brutalism. Dark iron-black background (#0a0a0a) with blood-red accent (#c0392b). Typography: heavy condensed uppercase for headlines (like Oswald or Barlow Condensed), clean sans-serif body. UNFORGETTABLE ELEMENT: Large faded numbers as background texture (opacity 0.04) behind each section + diagonal clip-path on CTA buttons. Create a website for 'IRONBLOOD MMA' — an elite combat training facility in Dubai. Include: full-viewport hero with animated counter stats (12+ years, 340+ fighters, 47+ champions), 6 discipline cards (Muay Thai, Wrestling, BJJ, Boxing, S&C, MMA), 3 elite coach profiles with fight records and specialties, interactive program selector (Beginner/Competitor/Fight Fitness/Youth/Private), weekly schedule grid color-coded by difficulty, 3-tier pricing (AED 999/1,999/3,499), and auto-scrolling testimonial marquee. Copy should be direct and tough — no corporate fluff. Stats should show real fighting credentials."
+User: 'Create a single-page website for "Falcon Gym". Business description: boxing and MMA training. Contact details: Phone: +97150000000. Email: falcon@gym.ae. Address: JLT, Dubai.'
+Enhanced: "BUSINESS NAME: Falcon Gym. CONTACT: Phone: +97150000000, Email: falcon@gym.ae, Address: JLT, Dubai. AESTHETIC: Raw Industrial Brutalism. Dark iron-black background (#0a0a0a) with blood-red accent (#c0392b). Typography: heavy condensed uppercase for headlines (like Oswald or Barlow Condensed), clean sans-serif body. UNFORGETTABLE ELEMENT: Diagonal clip-path on CTA buttons. Create a website for 'Falcon Gym' — a boxing and MMA training facility in JLT, Dubai. Include: full-viewport hero with background image of boxing ring, animated counter stats (12+ years, 340+ fighters), 6 discipline cards, 3 coach profiles, testimonials, 3-tier pricing, and CTA. Footer must include: Phone: +97150000000, Email: falcon@gym.ae, Address: JLT, Dubai."
 
-User: "law firm website"
-Enhanced: "AESTHETIC: Luxury Editorial. Deep navy (#0d1b3e) with warm gold accent (#c9a84c) on ivory (#faf9f6). Typography: classic serif for headlines (like Playfair Display), thin sans-serif body (like Outfit or DM Sans). UNFORGETTABLE ELEMENT: Subtle parallax scroll on hero image + gold underline animations on section headings. Create a website for 'Al Rashid & Partners' — a corporate law firm in Dubai DIFC. Include: hero with Dubai skyline silhouette overlay, 5 practice area cards (Corporate, Real Estate, IP, Dispute Resolution, Compliance), 4 senior partner profiles with credentials and bar admissions, notable case results with anonymized outcomes (AED 50M+ recovered, 200+ cases), client testimonials from business leaders, FAQ for free zone legal questions, and consultation booking CTA. Copy should be authoritative and specific — cite real legal frameworks (UAE Commercial Companies Law, DIFC Courts). No generic 'trusted legal partner' language."
+User: 'Create a single-page website for "Al Rashid & Partners". Business description: corporate law firm. Contact details: Phone: +97140000000. Email: info@alrashid.ae. Address: DIFC, Dubai.'
+Enhanced: "BUSINESS NAME: Al Rashid & Partners. CONTACT: Phone: +97140000000, Email: info@alrashid.ae, Address: DIFC, Dubai. AESTHETIC: Luxury Editorial. Deep navy (#0d1b3e) with warm gold accent (#c9a84c) on ivory (#faf9f6). Typography: classic serif for headlines (like Playfair Display), thin sans-serif body. UNFORGETTABLE ELEMENT: Gold underline animations on section headings. Create a website for 'Al Rashid & Partners' — a corporate law firm in DIFC, Dubai. Include: hero with Dubai skyline, 5 practice area cards, partner profiles, testimonials, FAQ, and CTA. Footer must include: Phone: +97140000000, Email: info@alrashid.ae, Address: DIFC, Dubai."
 
 Return ONLY the enhanced brief text. No preamble, no explanations."""
 
@@ -232,11 +243,17 @@ PATTERN SELECTION GUIDANCE (choose based on website type):
 - SaaS with competitors / products with differentiators → prefer comparison_table
 - Trust building / many partners → prefer logo_carousel over logo_cloud for dynamic feel
 
+ABSOLUTE RULE — USE THE USER'S EXACT BUSINESS DATA:
+- If the user provides a company name (e.g. "abcd", "Falcon Gym"), use it EXACTLY as brand.name. Do NOT rename it or make up a different name.
+- If the user provides a tagline, use it EXACTLY as brand.tagline.
+- If the user provides contact details (phone, email, address), include them EXACTLY in the contact/footer section content. Do NOT substitute with made-up numbers or emails.
+- Only fill in details the user did NOT provide. Never override what they gave you.
+
 You MUST return ONLY valid JSON:
 {{
   "brand": {{
-    "name": "Company/brand name",
-    "tagline": "A compelling tagline",
+    "name": "EXACT company name from user prompt — do NOT change it",
+    "tagline": "EXACT tagline from user prompt, or generate one if not provided",
     "industry": "specific industry"
   }},
   "image_style": "cohesive visual theme for all images on this site — e.g. clean modern architecture photography natural light sustainable materials glass buildings greenery",
@@ -634,7 +651,7 @@ def build_plan_prompt(base_prompt: str = None, niche_key: str = None, multipage:
         prompt += "\n" + rotation_hints
 
     # Inject random hero pattern suggestion for variety
-    hero_options = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric", "hero_video_bg"]
+    hero_options = ["hero_split", "hero_center", "hero_full_image", "hero_asymmetric"]
     suggested_hero = random.choice(hero_options)
     secondary_hero = random.choice([h for h in hero_options if h != suggested_hero])
     prompt += f"""
