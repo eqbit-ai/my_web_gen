@@ -138,8 +138,8 @@ footer, footer[data-section-type], footer section[data-section-type] {{ opacity:
 @media (min-width: 769px) {{
   section[data-section-type] {{ padding: 5rem 0; }}
 }}
-.section-header {{ text-align: center; margin-bottom: 2rem; }}
-.section-title {{ font-size: clamp(1.5rem, 3vw, 2.25rem); margin-bottom: 0.75rem; }}
+.section-header {{ text-align: center; margin-bottom: 3rem; }}
+.section-title {{ font-size: clamp(1.75rem, 3vw, 2.5rem); margin-bottom: 0.75rem; letter-spacing: -0.02em; }}
 .section-subtitle {{ font-size: 1.05rem; color: var(--text-muted); max-width: 36rem; margin: 0 auto; line-height: 1.7; }}
 
 /* Section background rhythm */
@@ -149,8 +149,8 @@ section[data-section-type="testimonials"],
 section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }}
 
 /* ═══ Buttons ═══ */
-.btn-primary {{ display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; }}
-.btn-primary:hover {{ transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.25); }}
+.btn-primary {{ display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.8rem 2rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 0.95rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; letter-spacing: 0.01em; }}
+.btn-primary:hover {{ transform: translateY(-2px); box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 30%, transparent); }}
 .btn-secondary {{ display: inline-block; border: 2px solid var(--primary); color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; background: transparent; cursor: pointer; transition: var(--transition); text-align: center; }}
 .btn-secondary:hover {{ background: var(--primary); color: white; transform: translateY(-2px); }}
 .btn-primary-light {{ display: inline-block; background: white; color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }}
@@ -161,16 +161,18 @@ section[data-section-type="pricing"] {{ background: color-mix(in srgb, var(--pri
 .btn-group.center {{ justify-content: center; }}
 
 /* ═══ Cards ═══ */
-.card {{ background: var(--bg-surface); border-radius: var(--radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }}
+.card {{ background: var(--bg-surface); border-radius: var(--radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); position: relative; overflow: hidden; }}
 .card:hover {{ transform: translateY(-8px); box-shadow: var(--shadow-hover); }}
-.card::before {{ content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent); transition: left 0.6s ease; }}
-.card:hover::before {{ left: 100%; }}
+.card::after {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0; transition: opacity 0.3s; }}
+.card:hover::after {{ opacity: 1; }}
 .card:hover h3 {{ color: var(--accent); transition: color 0.3s ease; }}
 .card-title {{ font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }}
 .card-text {{ color: var(--text-muted); line-height: 1.7; font-size: 0.95rem; }}
 .card-body {{ padding: 1.25rem; }}
-.card-image {{ width: 100%; height: 12rem; max-height: 240px; object-fit: cover; display: block; }}
-.icon-box {{ width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--accent); margin-bottom: 1.25rem; flex-shrink: 0; }}
+.card-image {{ width: 100%; height: 14rem; max-height: 260px; object-fit: cover; display: block; }}
+.icon-box {{ width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; margin-bottom: 1.25rem; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); }}
+.card-link {{ color: var(--primary); font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: gap 0.3s; }}
+.card-link:hover {{ gap: 0.75rem; }}
 
 /* ═══ Images ═══ */
 .img-cover {{ width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.4s ease; }}
@@ -206,8 +208,8 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .hero-section {{ padding: 7rem 0 4rem; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }}
 @media (min-width: 769px) {{ .hero-section {{ padding: 8rem 0 4rem; }} }}
 .hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0; min-height: 100vh; }}
-.hero-heading {{ font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); }}
-.hero-subtitle {{ font-size: clamp(1rem, 1.2vw, 1.15rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
+.hero-heading {{ font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.02em; }}
+.hero-subtitle {{ font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
 .hero-center-content .hero-subtitle {{ margin-left: auto; margin-right: auto; }}
 .trust-line {{ font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }}
 .hero-ctas {{ display: flex; flex-wrap: wrap; gap: 1rem; }}

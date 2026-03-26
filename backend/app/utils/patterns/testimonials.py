@@ -6,14 +6,19 @@ PATTERNS = {
     "testimonial_cards": """testimonial_cards pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-3">
-    <div class="card" data-aos="flip-up" data-aos-delay="100">
+    <div class="card" data-aos="fade-up" data-aos-delay="100" style="padding:2rem;position:relative;">
+      <!-- Large decorative quote mark -->
+      <div style="font-size:3rem;line-height:1;color:var(--primary);opacity:0.15;font-family:serif;position:absolute;top:1rem;right:1.5rem;">&ldquo;</div>
       <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
       <p class="testimonial-quote">"Quote text"</p>
-      <div class="testimonial-author">
-        <div><strong>Name</strong><span>Role, Company</span></div>
+      <div class="testimonial-author" style="display:flex;align-items:center;gap:0.75rem;">
+        <!-- Avatar initial circle -->
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0;">AB</div>
+        <div><strong style="display:block;">Name</strong><span style="font-size:0.85rem;color:var(--text-muted);">Role, Company</span></div>
       </div>
     </div>
-  </div>""",
+  </div>
+  NOTE: Each card has a decorative quote mark and an avatar initial circle for the author (use their initials). This creates a much more polished look than plain text.""",
     "testimonial_slider": """testimonial_slider pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container-narrow text-center" data-aos="fade-up">

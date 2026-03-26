@@ -22,10 +22,23 @@ PATTERNS = {
   NAVBAR RULES: Use navbar-light class for light themes, navbar-dark class for dark themes.""",
     "footer_columns": """footer_columns pattern:
   CRITICAL: Footer MUST have ALL 4 columns. Do NOT skip any column. Do NOT output a minimal footer.
+  <!-- Newsletter strip above footer columns -->
+  <div class="container" style="border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:2.5rem;margin-bottom:2.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <h3 style="color:white;font-size:1.25rem;margin-bottom:0.25rem;">Stay Updated</h3>
+        <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin:0;">Subscribe to our newsletter for the latest updates.</p>
+      </div>
+      <form class="newsletter-form" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <input type="email" placeholder="Enter your email" class="form-input" style="min-width:250px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:white;">
+        <button type="submit" class="btn-primary">Subscribe</button>
+      </form>
+    </div>
+  </div>
   <div class="container footer-grid">
     <!-- COLUMN 1: Brand + description + social icons -->
     <div>
-      <a href="#" class="nav-brand">
+      <a href="#" class="nav-brand" style="color:white;margin-bottom:1rem;display:inline-flex;">
         SAME_LOGO_MARK_AS_NAVBAR (use the exact same logo mark from the navbar — keep it consistent)
         <span>Brand</span>
       </a>
@@ -71,11 +84,12 @@ PATTERNS = {
     <p>&copy; <span id="year"></span> Brand. All rights reserved.</p>
   </div>
   FOOTER RULES (CRITICAL — follow ALL):
+  - Footer MUST include the newsletter strip above the 4 columns — this is standard for premium templates
   - Footer MUST have EXACTLY 4 columns: Brand+Social, Quick Links, Services, Contact
   - Quick Links column: use anchor links (#services, #about, etc.) matching actual page sections
   - Services column: list 4-5 real services from the plan — NOT placeholder text
   - Contact column: include address, phone, email, and business hours with icons
   - Footer section element MUST have an inline dark background: style="background: #1a1a2e" — this is MANDATORY regardless of theme. Footer is ALWAYS dark.
   - ALL footer text uses white/white-opacity colors. NEVER use dark text in footer.
-  - NEVER output a minimal footer with just logo + address. ALL 4 columns are mandatory.""",
+  - NEVER output a minimal footer with just logo + address. ALL 4 columns + newsletter strip are mandatory.""",
 }

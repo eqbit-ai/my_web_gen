@@ -1,50 +1,74 @@
-"""Feature section pattern templates."""
+"""Feature section pattern templates — PREMIUM quality, Envato-level design."""
 
 PATTERNS = {
     "card_grid": """card_grid pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-3">
-    <div class="card" data-aos="fade-up" data-aos-delay="100">
-      <div class="icon-box" style="background: color-mix(in srgb, var(--accent) 12%, transparent)"><i class="fa-solid fa-xxx"></i></div>
+    <div class="card" data-aos="fade-up" data-aos-delay="100" style="padding:2rem;position:relative;overflow:hidden;">
+      <!-- Accent top border -->
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent));opacity:0;transition:opacity 0.3s;"></div>
+      <div class="icon-box" style="background:linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, transparent), color-mix(in srgb, var(--accent) 10%, transparent));"><i class="fa-solid fa-xxx"></i></div>
       <h3 class="card-title">Title</h3>
       <p class="card-text">Description</p>
     </div>
   </div>
-  NOTE: Light themes use subtle borders. Card borders are handled by the .card class in the style block.""",
+  NOTE: Each card has a gradient top border that appears on hover (add CSS: .card:hover > div:first-child { opacity: 1; }). Icon boxes use gradient backgrounds instead of flat color. Light themes use subtle borders.""",
     "icon_grid": """icon_grid pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-4 text-center">
-    <div class="p-6" data-aos="zoom-in" data-aos-delay="100">
-      <div class="icon-box" style="background: color-mix(in srgb, var(--accent) 10%, transparent)"><i class="fa-solid fa-xxx"></i></div>
+    <div style="padding:2rem;" data-aos="zoom-in" data-aos-delay="100">
+      <div class="icon-box" style="background:linear-gradient(135deg, var(--primary), var(--secondary));color:white;width:3.5rem;height:3.5rem;margin:0 auto 1.25rem;"><i class="fa-solid fa-xxx"></i></div>
       <h4 class="card-title">Title</h4>
       <p class="card-text">Short description</p>
     </div>
-  </div>""",
+  </div>
+  NOTE: Icon boxes use gradient backgrounds with white icons for a premium, polished look.""",
     "feature_split": """feature_split pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container feature-split-list">
-    <div class="grid-2" data-aos="fade-right">
-      <div><h3 class="feature-title">Title</h3><p class="feature-text">Description</p></div>
-      <div class="img-wrapper"><img src="{{IMG:feature specific query from plan}}" alt="Feature name" class="img-cover"></div>
+    <div class="grid-2" data-aos="fade-right" style="gap:4rem;">
+      <div>
+        <span class="section-label"><span class="label-line"></span>FEATURE</span>
+        <h3 class="feature-title" style="font-size:1.5rem;margin-bottom:1rem;">Title</h3>
+        <p class="feature-text" style="margin-bottom:1.5rem;">Description</p>
+        <!-- Feature bullet points -->
+        <ul style="list-style:none;padding:0;margin:0;">
+          <li style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:0.8rem;"></i><span style="color:var(--text-muted);font-size:0.9rem;">Key benefit point</span></li>
+          <li style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:0.8rem;"></i><span style="color:var(--text-muted);font-size:0.9rem;">Key benefit point</span></li>
+        </ul>
+      </div>
+      <div class="img-wrapper" style="border-radius:var(--radius);overflow:hidden;"><img src="{{IMG:feature specific query from plan}}" alt="Feature name" class="img-cover"></div>
     </div>
-    <div class="grid-2" data-aos="fade-left">
-      <div class="md-order-2"><h3 class="feature-title">Title</h3><p class="feature-text">Description</p></div>
-      <div class="img-wrapper md-order-1"><img src="{{IMG:feature different query}}" alt="Feature name" class="img-cover"></div>
+    <div class="grid-2" data-aos="fade-left" style="gap:4rem;">
+      <div class="md-order-2">
+        <span class="section-label"><span class="label-line"></span>FEATURE</span>
+        <h3 class="feature-title" style="font-size:1.5rem;margin-bottom:1rem;">Title</h3>
+        <p class="feature-text" style="margin-bottom:1.5rem;">Description</p>
+        <ul style="list-style:none;padding:0;margin:0;">
+          <li style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:0.8rem;"></i><span style="color:var(--text-muted);font-size:0.9rem;">Key benefit point</span></li>
+          <li style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;"><i class="fa-solid fa-check" style="color:var(--accent);font-size:0.8rem;"></i><span style="color:var(--text-muted);font-size:0.9rem;">Key benefit point</span></li>
+        </ul>
+      </div>
+      <div class="img-wrapper md-order-1" style="border-radius:var(--radius);overflow:hidden;"><img src="{{IMG:feature different query}}" alt="Feature name" class="img-cover"></div>
     </div>
   </div>
-  NOTE: Alternate rows. Second row uses md-order to flip text/image.""",
+  NOTE: Each feature row has a section label, larger title, description, AND bullet-point benefits. This creates much richer content blocks. Alternate rows — second row uses md-order to flip text/image. Customize the label text, bullet points to match the business.""",
     "feature_cards": """feature_cards pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-3">
-    <div class="card" data-aos="fade-up" data-aos-delay="100">
-      <div class="img-wrapper"><img src="{{IMG:feature image query from plan}}" alt="Feature name" class="card-image"></div>
-      <div class="card-body">
+    <div class="card" data-aos="fade-up" data-aos-delay="100" style="padding:0;overflow:hidden;">
+      <div class="img-wrapper" style="position:relative;">
+        <img src="{{IMG:feature image query from plan}}" alt="Feature name" class="card-image">
+        <!-- Category badge on image -->
+        <span style="position:absolute;top:1rem;left:1rem;background:var(--primary);color:white;font-size:0.7rem;font-weight:600;padding:0.25rem 0.75rem;border-radius:50px;text-transform:uppercase;letter-spacing:0.05em;">Category</span>
+      </div>
+      <div class="card-body" style="padding:1.5rem;">
         <h3 class="card-title">Title</h3>
         <p class="card-text">Description</p>
       </div>
     </div>
   </div>
-  NOTE: Each card MUST have a unique {{IMG:feature ...}} with the image_query from the plan.""",
+  NOTE: Each card has a category badge overlaying the image for a polished editorial look. Each card MUST have a unique {{IMG:feature ...}} with the image_query from the plan. Customize the category badge text per card.""",
     "feature_stacked": """feature_stacked pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container-narrow stacked-list">

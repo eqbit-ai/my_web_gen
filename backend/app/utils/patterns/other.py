@@ -39,30 +39,37 @@ PATTERNS = {
   </div>
   NOTE: FAQ toggle handled by JS + <style> block.""",
     "stats_row": """stats_row pattern:
-  <div class="container grid-4 text-center">
-    <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
-      <div class="stat-icon" style="background: color-mix(in srgb, var(--accent) 12%, transparent)">
-        <i class="fa-solid fa-building"></i>
+  <div class="container">
+    <div class="grid-4 text-center" style="background:var(--bg-surface);border-radius:var(--radius);padding:3rem 2rem;border:1px solid color-mix(in srgb, var(--text) 6%, transparent);">
+      <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
+        <div class="stat-number" style="color:var(--primary);">500+</div>
+        <div class="stat-label">Projects Completed</div>
       </div>
-      <div class="stat-number">500+</div>
-      <div class="stat-label">Projects Completed</div>
-    </div>
-    <div class="stat-item" data-aos="fade-up" data-aos-delay="200">
-      <div class="stat-icon" style="background: color-mix(in srgb, var(--accent) 12%, transparent)">
-        <i class="fa-solid fa-leaf"></i>
+      <div class="stat-item" data-aos="fade-up" data-aos-delay="200" style="border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent);">
+        <div class="stat-number" style="color:var(--primary);">45%</div>
+        <div class="stat-label">Energy Reduction</div>
       </div>
-      <div class="stat-number">45%</div>
-      <div class="stat-label">Energy Reduction</div>
+      <div class="stat-item" data-aos="fade-up" data-aos-delay="300" style="border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent);">
+        <div class="stat-number" style="color:var(--primary);">18</div>
+        <div class="stat-label">Awards Won</div>
+      </div>
+      <div class="stat-item" data-aos="fade-up" data-aos-delay="400" style="border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent);">
+        <div class="stat-number" style="color:var(--primary);">26M</div>
+        <div class="stat-label">Sq Ft Optimized</div>
+      </div>
     </div>
   </div>
   STATS RULES:
-  - Each stat: icon box -> .stat-number (MASSIVE size) -> label (tiny uppercase)
-  - Stat numbers must be large — this size contrast IS the design
+  - Stats are wrapped in a card-like container with border and padding for a polished look
+  - Vertical dividers between stats (border-left) — skip border-left on the first stat
+  - Stat numbers use primary color for emphasis
+  - No icon boxes needed — the numbers themselves ARE the visual
   - Number AND suffix (+, %, M, K, M+) MUST be in the SAME .stat-number element
   - CORRECT: <div class="stat-number">120+</div>
   - WRONG: <span>120</span><span>+</span> (NEVER split number and suffix)
   - Labels should be SHORT (2-3 words max) — they wrap badly at small sizes
-  - Do NOT use data-target attributes. JS handles counter animation automatically via IntersectionObserver.""",
+  - Do NOT use data-target attributes. JS handles counter animation automatically via IntersectionObserver.
+  - On mobile: the grid-4 becomes 2-column, so hide border-left on first item of each row via CSS if needed.""",
     "gallery_grid": """gallery_grid pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-3" style="gap: 1rem;">
@@ -428,18 +435,38 @@ PATTERNS = {
 
     "contact_split": """contact_split pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
-  <div class="container grid-2">
+  <div class="container grid-2" style="gap:4rem;">
     <div class="contact-info">
-      <div class="contact-item"><i class="fa-solid fa-location-dot contact-icon"></i><p>Address</p></div>
-      <div class="contact-item"><i class="fa-solid fa-phone contact-icon"></i><p>Phone</p></div>
-      <div class="contact-item"><i class="fa-solid fa-envelope contact-icon"></i><p>Email</p></div>
+      <p style="color:var(--text-muted);margin-bottom:2rem;line-height:1.7;">Brief message about how you'd love to hear from visitors and will respond promptly.</p>
+      <div class="contact-item" style="margin-bottom:1.5rem;">
+        <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:color-mix(in srgb, var(--primary) 10%, transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-location-dot" style="color:var(--primary);"></i>
+        </div>
+        <div><span style="font-weight:600;display:block;margin-bottom:0.15rem;">Address</span><span style="color:var(--text-muted);font-size:0.9rem;">Full address here</span></div>
+      </div>
+      <div class="contact-item" style="margin-bottom:1.5rem;">
+        <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:color-mix(in srgb, var(--primary) 10%, transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-phone" style="color:var(--primary);"></i>
+        </div>
+        <div><span style="font-weight:600;display:block;margin-bottom:0.15rem;">Phone</span><span style="color:var(--text-muted);font-size:0.9rem;">Phone number</span></div>
+      </div>
+      <div class="contact-item" style="margin-bottom:1.5rem;">
+        <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:color-mix(in srgb, var(--primary) 10%, transparent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-envelope" style="color:var(--primary);"></i>
+        </div>
+        <div><span style="font-weight:600;display:block;margin-bottom:0.15rem;">Email</span><span style="color:var(--text-muted);font-size:0.9rem;">Email address</span></div>
+      </div>
     </div>
-    <form class="contact-form">
-      <input type="text" placeholder="Your Name" required class="form-input">
-      <input type="email" placeholder="Your Email" required class="form-input">
-      <textarea placeholder="Your Message" rows="5" required class="form-input form-textarea"></textarea>
-      <button type="submit" class="btn-primary">Send Message</button>
+    <form class="contact-form" style="background:var(--bg-surface);padding:2rem;border-radius:var(--radius);border:1px solid color-mix(in srgb, var(--text) 6%, transparent);">
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <input type="text" placeholder="First Name" required class="form-input">
+        <input type="text" placeholder="Last Name" required class="form-input">
+      </div>
+      <input type="email" placeholder="Your Email" required class="form-input" style="margin-bottom:1rem;">
+      <input type="tel" placeholder="Phone Number" class="form-input" style="margin-bottom:1rem;">
+      <textarea placeholder="Your Message" rows="4" required class="form-input form-textarea" style="margin-bottom:1.5rem;"></textarea>
+      <button type="submit" class="btn-primary" style="width:100%;">Send Message</button>
     </form>
   </div>
-  NOTE: Light themes use border-gray-200 instead of border-white/10.""",
+  NOTE: Contact info items have icon boxes with tinted backgrounds for a polished look. The form is wrapped in a card with surface background. Much more premium than plain text + form.""",
 }

@@ -205,13 +205,17 @@ OTHER:
 VARIETY RULE: Do NOT always default to hero_split + card_grid + testimonial_cards. Actively choose DIFFERENT variants for each generation to make every website feel unique.
 AVOID feature_steps and timeline — these numbered step layouts are overused and look generic. Prefer card_grid, icon_grid, feature_split, or feature_cards instead. Only use feature_steps if the user EXPLICITLY asks for a step-by-step process section.
 
-PREMIUM DESIGN MANDATE: Every website should look like it was designed by a top-tier agency. Think Apple, Stripe, Linear quality.
-- Hero sections should feel ALIVE: floating elements, depth layers, subtle glow effects, premium imagery
-- Content sections need visual rhythm: alternating layouts, whitespace, card hover effects
-- Color palettes should feel curated and intentional — not random
-- Typography should be bold and distinctive — large hero headings (3.5-5rem), generous line-height
-- Every section transition should feel smooth — consistent spacing and visual flow
-- Prefer hero_asymmetric, hero_parallax_layers, hero_scroll_morph for premium feel over basic hero_split
+PREMIUM DESIGN MANDATE — ENVATO ELEMENTS / THEMEFOREST QUALITY:
+Every website MUST look like a $59+ premium template from ThemeForest/Envato Elements. NOT a free template. NOT a basic Bootstrap page.
+- Hero sections MUST have DEPTH: floating stat cards, trust indicators, decorative accents, layered backgrounds
+- Content sections need visual rhythm: alternating layouts, whitespace, polished hover effects
+- Color palettes must feel curated — use the provided palette EXACTLY
+- Typography should be bold and distinctive — large hero headings, generous line-height
+- Every card/feature section must have premium details: gradient icon backgrounds, hover borders, benefit lists
+- Stats sections should feel like a polished dashboard strip — numbers with dividers in a card container
+- Testimonials need decorative quote marks and avatar initial circles
+- Footer MUST include a newsletter subscribe strip above the 4-column grid
+- EVERY hero must include social proof: floating cards with metrics, trust checkmarks, or mini counter stats
 
 PATTERN SELECTION GUIDANCE (choose based on website type):
 - SaaS / Software products → prefer hero_product_mockup or hero_mockup_center for hero
@@ -846,39 +850,51 @@ def build_html_prompt(plan: dict, enhanced_brief: str = None) -> str:
     # ── QUALITY MANDATE — ensures every single generation looks premium ──
     prompt += """
 
-ABSOLUTE QUALITY REQUIREMENTS (EVERY generation must meet ALL of these):
+ABSOLUTE QUALITY REQUIREMENTS — ENVATO ELEMENTS / THEMEFOREST PREMIUM LEVEL:
+Your output MUST look like a $59+ premium ThemeForest template. Study these design principles:
 
-HERO SECTION (most critical element — this makes or breaks the site):
-1. MUST have a full-width background image with a dark semi-transparent overlay (60-75% opacity)
-   Example: background: linear-gradient(rgba(10,10,15,0.7), rgba(10,10,15,0.8)), url('pexels-image'); background-size: cover;
-2. NEVER use a plain solid-color hero background. NEVER. Always use an image or dramatic gradient with depth.
-3. Hero heading must be LARGE (text-5xl to text-7xl / 3rem to 5rem), bold (font-weight 700-800), and white/light colored
-4. Add text-shadow to hero text for readability: text-shadow: 0 2px 20px rgba(0,0,0,0.3)
-5. At least ONE styled CTA button with hover effect (transform + shadow change)
+HERO SECTION (the #1 most important element — visitors decide in 3 seconds):
+1. MUST have a full-width background image with a sophisticated overlay OR a split layout with a high-quality hero image
+2. NEVER use a plain solid-color hero background. NEVER. Always include imagery or dramatic depth.
+3. Hero heading: LARGE (3rem-3.5rem via clamp), bold (700-800 weight), high contrast against background
+4. Add text-shadow on hero text over images: text-shadow: 0 2px 20px rgba(0,0,0,0.3)
+5. Hero MUST include social proof: floating stat cards, trust indicators, mini counters, or partner logos
 6. Minimum hero height: 80vh on desktop, 60vh on mobile
-7. Hero must feel DRAMATIC and PREMIUM — not generic or flat
+7. Hero must have DEPTH: layered elements, gradient overlays, floating cards, decorative accents
+8. NEVER output a flat, boring hero with just text + button on a plain background. That's amateur-hour.
+
+VISUAL DEPTH & PREMIUM DETAILS (what separates $10 templates from $59 templates):
+- Floating cards/badges: position:absolute elements overlapping hero images with stats, ratings, or metrics
+- Decorative accents: gradient borders behind images, subtle background shapes, tinted circles
+- Section labels: use <span class="section-label"> before section headings for editorial feel
+- Card top borders: 3px gradient top borders that appear on hover
+- Icon gradient backgrounds: icon-box with linear-gradient(135deg, var(--primary), var(--secondary)) + white icons
+- Stat dividers: vertical borders between stat items in stats_row
+- Testimonial polish: decorative quote marks, avatar initial circles, star ratings
+- Contact form cards: wrap forms in a surface-background card with border
+- CTA depth: decorative background circles/shapes inside gradient CTAs
+- Footer newsletter: include a newsletter subscribe strip above the 4-column footer grid
+- Trust signals: checkmark lists, "No commitment required" lines, shield icons
 
 COLOR PALETTE:
 - NEVER use raw Tailwind defaults (#3b82f6, #22c55e, #ef4444). Always use unique, sophisticated colors.
-- Background must NOT be pure white (#ffffff) or pure black (#000000). Use tinted neutrals (#fafaf9, #0a0a0f, #f8f7f4).
+- Background must NOT be pure white (#ffffff) or pure black (#000000). Use tinted neutrals.
 - Accent color must visibly POP against the background — high contrast.
-- All colors must feel intentional and curated, like a designer picked them.
 
 TYPOGRAPHY:
-- Heading font and body font must be DIFFERENT fonts (not the same).
+- Heading font and body font must be DIFFERENT fonts.
 - Heading font must be distinctive — NEVER use Inter, Roboto, or Arial for headings.
-- Minimum font-size for body text: 16px (1rem). No tiny text.
 
 SECTIONS:
-- Every section must have generous padding (py-16 to py-24 / 4rem to 6rem)
-- Cards must have hover effects (translateY + shadow change)
-- Alternate between sections with background and without — create visual rhythm
-- Images must be high-quality (use Pexels or Unsplash URLs, never placeholder.com)
+- Every section: generous padding (4rem-6rem vertical)
+- Cards: hover effects (translateY + shadow + optional border-color change)
+- Alternate backgrounds: create visual rhythm between sections
+- Feature split sections: include bullet-point benefit lists (check icon + text), not just paragraphs
 
 OVERALL:
-- The website should look like it was designed by a premium agency charging $10,000+
-- Zero generic/template feel — every element should feel intentional
-- Responsive: everything must work on mobile (proper breakpoints, stacking, padding)
+- The website MUST look like a premium Envato Elements template — polished, layered, rich with detail
+- Zero generic/template feel — every element must feel intentionally designed
+- Responsive: proper breakpoints, mobile stacking, adequate touch targets
 """
 
     # Pre-build the Google Fonts URL so the model doesn't get it wrong
@@ -913,15 +929,26 @@ CUSTOM CSS EFFECTS — add these in the <style> block:
     if not enhanced_brief:
         prompt += """
 
-PREMIUM CSS EFFECTS — add these in the <style> block to make the site feel high-end:
-- Floating cards in hero: position: absolute with subtle box-shadow and backdrop-filter: blur(10px)
-- Gradient accent lines: use ::after pseudo-elements with background: linear-gradient(90deg, var(--primary), var(--accent))
-- Card hover lifts: transform: translateY(-8px); box-shadow: var(--shadow-hover); on hover
-- Glass-morphism cards: background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08)
-- Button gradient shifts: background-size: 200% 200%; animation: gradientShift 3s ease infinite on primary buttons
-- Subtle section separators: border-top: 1px solid rgba(var(--text-rgb), 0.06) between sections
-- Trust indicators in hero: small counter stats (75+ clients, 98% success) with animated numbers
-- Depth layering in hero: use z-index layers with floating decorative elements at different scales
+PREMIUM CSS EFFECTS — add these in the <style> block (MANDATORY for Envato-level quality):
+
+HERO DEPTH (add ALL of these):
+- Floating stat cards: position: absolute; background: var(--bg-surface); border-radius: var(--radius); padding: 1rem 1.25rem; box-shadow: var(--shadow-hover); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+- Decorative accent behind hero images: position: absolute; border: 2px solid color-mix(in srgb, var(--primary) 20%, transparent); offset by 1rem
+- Trust indicator rows: display: flex; gap: 1.5rem; with check icons + small trust text
+- Mini stat counters in hero: large number + tiny label for social proof
+
+CARD EFFECTS (add ALL):
+- Gradient top border on hover: .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0; transition: opacity 0.3s; } .card:hover::after { opacity: 1; }
+- Icon gradient backgrounds: background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white;
+- Card hover lifts: transform: translateY(-8px); box-shadow: var(--shadow-hover);
+
+SECTION POLISH:
+- Section labels before headings: font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.25em; with accent color line
+- Feature split bullet lists: check icon + benefit text items inside feature descriptions
+- Stat card container: wrap stats in a background card with border and dividers between items
+- CTA decorative shapes: background circles (rgba(255,255,255,0.05)) positioned absolute inside gradient CTAs
+- Contact form card: wrap form in surface background with border
+- Footer newsletter strip: email input + subscribe button above the 4-column footer grid
 """
 
     # Inject animation guidance

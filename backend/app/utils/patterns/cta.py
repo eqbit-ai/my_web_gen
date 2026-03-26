@@ -1,44 +1,56 @@
-"""CTA section pattern templates."""
+"""CTA section pattern templates — PREMIUM quality, Envato-level design."""
 
 PATTERNS = {
     "cta_banner": """cta_banner pattern:
-  <div class="container" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: var(--radius); padding: 3rem 2rem; text-align: center;">
-    <h2 class="section-title" style="color: white;">Headline</h2>
-    <p class="section-subtitle" style="color: rgba(255,255,255,0.8);">Description</p>
-    <div class="btn-group center">
+  <div class="container" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: var(--radius); padding: 4rem 3rem; text-align: center; position:relative; overflow:hidden;">
+    <!-- Decorative circles for depth -->
+    <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.05);"></div>
+    <div style="position:absolute;bottom:-60px;left:-30px;width:250px;height:250px;border-radius:50%;background:rgba(255,255,255,0.03);"></div>
+    <h2 class="section-title" style="color: white; position:relative;">Headline</h2>
+    <p class="section-subtitle" style="color: rgba(255,255,255,0.85); position:relative;">Description</p>
+    <div class="btn-group center" style="position:relative;">
       <a href="#" class="btn-primary-light">Primary CTA</a>
       <a href="#" class="btn-secondary-light">Secondary CTA</a>
     </div>
-  </div>""",
+  </div>
+  NOTE: Decorative background circles add depth and visual interest to the gradient banner.""",
     "cta_split": """cta_split pattern:
-  <div class="container grid-2">
+  <div class="container grid-2" style="gap:4rem;">
     <div>
-      <h2 class="section-title">Headline</h2>
+      <span class="section-label"><span class="label-line"></span>GET STARTED</span>
+      <h2 class="section-title" style="margin-bottom:1rem;">Headline</h2>
       <p class="section-subtitle" style="margin-bottom: 1.5rem;">Description</p>
       <div class="btn-group">
         <a href="#" class="btn-primary">Primary CTA</a>
         <a href="#" class="btn-secondary">Secondary CTA</a>
       </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:1rem;"><i class="fa-solid fa-shield-halved" style="margin-right:0.5rem;"></i>No commitment required</p>
     </div>
-    <div class="img-wrapper">
+    <div class="img-wrapper" style="border-radius:var(--radius);overflow:hidden;">
       <img src="{{IMG:cta image query from plan}}" alt="Call to action" class="img-cover">
     </div>
-  </div>""",
+  </div>
+  NOTE: Added section label, trust signal below CTAs for premium feel.""",
     "cta_gradient": """cta_gradient pattern:
-  <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); text-align: center; padding: 4rem 0; position: relative;">
-    <div class="container-narrow">
-      <h2 class="section-title" style="color: white;">Headline</h2>
-      <p class="section-subtitle" style="color: rgba(255,255,255,0.8);">Description</p>
-      <a href="#" class="btn-primary-light">Primary CTA</a>
+  <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); text-align: center; padding: 5rem 0; position: relative; overflow:hidden;">
+    <!-- Decorative elements -->
+    <div style="position:absolute;top:50%;left:10%;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04);transform:translateY(-50%);"></div>
+    <div style="position:absolute;top:20%;right:5%;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.06);"></div>
+    <div class="container-narrow" style="position:relative;">
+      <h2 class="section-title" style="color: white; font-size:clamp(1.75rem, 3.5vw, 2.5rem);">Headline</h2>
+      <p class="section-subtitle" style="color: rgba(255,255,255,0.85); margin-bottom:2rem;">Description</p>
+      <a href="#" class="btn-primary-light" style="padding:1rem 2.5rem;font-size:1.05rem;">Primary CTA</a>
     </div>
-  </div>""",
+  </div>
+  NOTE: Decorative circles add depth. Larger button for emphasis.""",
     "cta_centered": """cta_centered pattern:
   <div class="container-narrow" style="text-align: center;">
+    <span class="section-label" style="justify-content:center;"><span class="label-line"></span>READY TO START<span class="label-line"></span></span>
     <h2 class="section-title">Headline</h2>
-    <p class="section-subtitle" style="margin-bottom: 1.5rem;">Description</p>
-    <a href="#" class="btn-primary">Primary CTA</a>
+    <p class="section-subtitle" style="margin-bottom: 2rem;">Description</p>
+    <a href="#" class="btn-primary" style="padding:0.875rem 2.5rem;">Primary CTA</a>
   </div>
-  NOTE: Simple, clean centered CTA. No gradient background.""",
+  NOTE: Added section label for visual hierarchy. Slightly larger button padding.""",
 
     "cta_sticky_reveal": """cta_sticky_reveal pattern:
   <div style="position: relative; overflow: hidden;">
