@@ -1477,7 +1477,8 @@ RULES:
 - Return ONLY a JSON array of section IDs that need editing
 - Most requests target 1 section. Multi-section edits are rare.
 - If the request is ONLY about colors, fonts, or spacing (e.g., "change color to blue", "use different font"), return ["__style__"]
-- If the request mentions "animation", "effects", "more beautiful", "redesign", "make it better", "more modern", "more professional", "improve design" → these require HTML changes, NOT just CSS. Return ["__full__"]
+- If the request mentions "animation", "effects", "more beautiful", "make it better", "more modern", "more professional", "improve design" WITHOUT specifying a section → return ["__full__"]
+- IMPORTANT: If the request mentions a SPECIFIC section + redesign/improve (e.g. "redesign hero", "make hero better", "improve the footer", "redesign testimonials"), target THAT SECTION — do NOT do a full rewrite. "redesign hero" → target the hero section ID. "make footer better" → target the footer section ID.
 - If the request asks to ADD/INSERT a new section (e.g., "add a footer", "add testimonials section", "add a gallery"), return ["__append__:SECTION_TYPE"] where SECTION_TYPE is one of: hero, features, services, stats, testimonials, pricing, faq, cta, team, gallery, about, contact, footer, timeline, newsletter
   Examples: "add footer" → ["__append__:footer"], "add a testimonials section" → ["__append__:testimonials"], "add gallery section" → ["__append__:gallery"]
 - If the request is about the whole page layout, rearranging sections, or a full redesign, return ["__full__"]

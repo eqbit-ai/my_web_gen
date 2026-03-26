@@ -698,6 +698,48 @@ def validate_html(html: str) -> str:
             html = html.replace("</style>", f"</style>\n{mobile_menu_css}", 1)
         logger.info("🔧 Mobile Nav Fix → Injected .nav-links.active CSS")
 
+    # ── Hero split-grid fix: detect empty image column ──────────────────
+    # If hero uses hero-split-grid but the image column has no <img> tag,
+    # the left/right side will be empty (wasted space). Convert to centered.
+    hero_section_match = re.search(
+        r'(<section[^>]*data-section-type="hero"[^>]*>)(.*?)(</section>)',
+        html, re.DOTALL
+    )
+    if hero_section_match:
+        hero_inner = hero_section_match.group(2)
+        has_split_grid = "hero-split-grid" in hero_inner
+        has_img = "<img" in hero_inner
+        has_bg_cover = "hero-bg-cover" in hero_inner
+        # If split grid but no image at all → convert to centered layout
+        if has_split_grid and not has_img and not has_bg_cover:
+            logger.info("🔧 Hero Fix → hero-split-grid has no image, converting to centered layout")
+            # Remove the split-grid class and convert to centered
+            hero_inner = hero_inner.replace("hero-split-grid", "")
+            hero_inner = hero_inner.replace("hero-split-asymmetric", "")
+            # Find the content div and add hero-center-content
+            hero_inner = re.sub(
+                r'<div([^>]*class="[^"]*container[^"]*"[^>]*)>',
+                lambda m: m.group(0).replace('class="', 'class="hero-center-content ') if 'hero-center-content' not in m.group(0) else m.group(0),
+                hero_inner,
+                count=1
+            )
+            # Remove empty hero-image-wrapper divs
+            hero_inner = re.sub(
+                r'<div[^>]*class="[^"]*hero-image-wrapper[^"]*"[^>]*>\s*</div>',
+                '',
+                hero_inner,
+                flags=re.DOTALL
+            )
+            # Also remove floating cards that reference missing images
+            hero_inner = re.sub(
+                r'<div[^>]*class="[^"]*floating-card[^"]*"[^>]*>.*?</div>\s*</div>',
+                '',
+                hero_inner,
+                flags=re.DOTALL
+            )
+            html = html[:hero_section_match.start(2)] + hero_inner + html[hero_section_match.end(2):]
+            logger.info("🔧 Hero Fix → Converted empty split-grid hero to centered layout")
+
     # ── Hero class enforcement: fix invented class names ──────────────────
     # LLM often invents classes like .hero-content, .hero-buttons instead of framework ones.
     # Enforce proper alignment classes so the CSS framework works correctly.
@@ -795,7 +837,7 @@ def validate_html(html: str) -> str:
     # ── Force hero navbar clearance: inject padding override ──────────────
     # LLM often overrides hero padding with smaller values, causing text to hide under navbar.
     # This is a bulletproof fix: inject a CSS rule that FORCES minimum padding-top on hero.
-    hero_padding_fix = '\n/* Hero navbar clearance fix */\nsection[data-section-type="hero"]:not(.hero-section-flush) { padding-top: 10rem !important; }\nsection[data-section-type="hero"].hero-section-flush .hero-bg-cover { padding-top: 100px !important; }\nsection[data-section-type="hero"].hero-section-flush .hero-animated-bg { padding-top: 100px !important; }\n'
+    hero_padding_fix = '\n/* Hero navbar clearance fix */\nsection[data-section-type="hero"]:not(.hero-section-flush) { padding-top: 10rem !important; }\nsection[data-section-type="hero"].hero-section-flush .hero-bg-cover { padding-top: 100px !important; }\nsection[data-section-type="hero"].hero-section-flush .hero-animated-bg { padding-top: 100px !important; }\n/* Hero split-grid: if image column is empty, let text take full width */\n.hero-split-grid > div:only-child { grid-column: 1 / -1; text-align: center; max-width: 800px; margin: 0 auto; }\n.hero-split-grid > .hero-image-wrapper:empty { display: none; }\n.hero-split-grid > .hero-image-wrapper:not(:has(img)) { display: none; }\n'
     if "</style>" in html:
         # Insert before the LAST </style> tag
         last_style_pos = html.rfind("</style>")
