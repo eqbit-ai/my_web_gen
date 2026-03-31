@@ -121,8 +121,14 @@ async def lifespan(app: FastAPI):
             await db.execute(text("ALTER TABLE users ALTER COLUMN full_name DROP NOT NULL"))
             await db.execute(text("ALTER TABLE users ALTER COLUMN mobile DROP NOT NULL"))
             await db.execute(text("ALTER TABLE users ALTER COLUMN license_number DROP NOT NULL"))
+            # Usage limits columns
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS edit_count INTEGER NOT NULL DEFAULT 0"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS max_generations INTEGER NOT NULL DEFAULT 2"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS max_edits INTEGER NOT NULL DEFAULT 30"))
+            # One-time fix: reset generation_count for users where count exceeds max (test data)
+            await db.execute(text("UPDATE users SET generation_count = 0 WHERE generation_count > max_generations"))
             await db.commit()
-            logger.info("db_migration: dropped NOT NULL on optional user columns")
+            logger.info("db_migration: schema updated")
     except Exception as e:
         # Already done or column doesn't exist — safe to ignore
         logger.debug(f"db_migration: skipped ({e})")

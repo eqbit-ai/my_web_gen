@@ -4,12 +4,13 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import JSZip from 'jszip';
 import {
     Download, Code, Eye, RefreshCw, Rocket, Sparkles,
     MousePointer2, X, Send, ArrowLeft, Undo2, Redo2,
     Save, Search, Palette, RotateCcw, Settings,
-    Monitor, Smartphone, ExternalLink, Layers,
+    Monitor, Smartphone, Layers,
     AlertTriangle, CheckCircle, Info, Keyboard, Wifi, WifiOff,
     ChevronRight, Type, MessageSquare, FileText, Paperclip, Square, ImageIcon
 } from 'lucide-react';
@@ -497,7 +498,6 @@ const WIZARD_PALETTES = [
 const WIZARD_PURPOSES = [
     { value: 'lead_generation', label: 'Get leads & inquiries' },
     { value: 'portfolio', label: 'Showcase my work' },
-    { value: 'ecommerce', label: 'Sell products online' },
     { value: 'informational', label: 'Share information' },
     { value: 'booking', label: 'Take bookings / appointments' },
 ];
@@ -711,6 +711,7 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
 const WebsiteGenerator = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { refreshUser } = useAuth();
     const [html, setHtml] = useState('');
     const [css, setCss] = useState('');
     const [js, setJs] = useState('');
@@ -1327,6 +1328,7 @@ const WebsiteGenerator = () => {
                     setIsLoading(false);
                     setLoadingMessage('');
                     isGeneratingRef.current = false;
+                    refreshUser(); // Update generation/edit counts
                 } else if (job.status === 'failed') {
                     clearInterval(pollRef.current);
                     pollRef.current = null;
@@ -1341,6 +1343,11 @@ const WebsiteGenerator = () => {
                     setIsLoading(false);
                     setLoadingMessage('');
                     isGeneratingRef.current = false;
+                    if (versions.length === 0) {
+                        localStorage.removeItem(ONBOARDING_KEY);
+                        onboardingShown.current = false;
+                        setTimeout(() => setOnboardingStep(0), 1500);
+                    }
                 }
             } catch (err) {
                 console.error('Poll error:', err);
@@ -1494,6 +1501,24 @@ const WebsiteGenerator = () => {
         const promptText = text || prompt.trim();
         if (!promptText || isGeneratingRef.current) return;
 
+        // Block e-commerce requests immediately
+        const _lower = promptText.toLowerCase();
+        const _ecomKeywords = ['e-commerce', 'ecommerce', 'e commerce', 'online store', 'online shop', 'shopping cart', 'add to cart', 'checkout', 'product listing', 'sell online', 'selling online', 'payment gateway', 'shopify', 'woocommerce', 'magento', 'webshop', 'web shop'];
+        if (_ecomKeywords.some(kw => _lower.includes(kw))) {
+            setPrompt('');
+            setMessages(prev => [...prev,
+                { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                { role: 'assistant', text: 'E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce.', timestamp: new Date().toLocaleTimeString(), isError: true },
+            ]);
+            // Restart wizard if no website generated yet
+            if (versions.length === 0) {
+                localStorage.removeItem(ONBOARDING_KEY);
+                onboardingShown.current = false;
+                setTimeout(() => setOnboardingStep(0), 1000);
+            }
+            return;
+        }
+
         // Check if this is a help question — answer instantly without using LLM tokens
         const helpAnswer = getHelpResponse(promptText);
         if (helpAnswer && versions.length > 0) {
@@ -1526,6 +1551,11 @@ const WebsiteGenerator = () => {
                 setError(err.message || 'Failed to submit job');
                 setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}`, timestamp: new Date().toLocaleTimeString(), isError: true }]);
                 setIsLoading(false); setLoadingMessage(''); isGeneratingRef.current = false;
+                if (versions.length === 0) {
+                    localStorage.removeItem(ONBOARDING_KEY);
+                    onboardingShown.current = false;
+                    setTimeout(() => setOnboardingStep(0), 1500);
+                }
                 return;
             }
         }
@@ -1655,6 +1685,7 @@ const WebsiteGenerator = () => {
                     setIsLoading(false); setLoadingMessage('');
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
                     isGeneratingRef.current = false;
+                    refreshUser(); // Update generation/edit counts
                     addToast(result.recovered ? 'Connection recovered — website ready!' : result.addedPage ? `${result.addedPage.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} page added!` : (isNew && mp) ? `${Object.keys(result.pages || {}).length}-page website generated!` : isNew ? 'Website generated successfully!' : 'Changes applied!', 'success');
                 },
                 // onError
@@ -1675,6 +1706,12 @@ const WebsiteGenerator = () => {
                     setIsLoading(false); setLoadingMessage('');
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
                     isGeneratingRef.current = false;
+                    // Restart wizard if no website generated yet
+                    if (versions.length === 0) {
+                        localStorage.removeItem(ONBOARDING_KEY);
+                        onboardingShown.current = false;
+                        setTimeout(() => setOnboardingStep(0), 1500);
+                    }
                 },
                 templateId,
                 currentPage,
@@ -2037,7 +2074,7 @@ const WebsiteGenerator = () => {
             '      // Mobile hamburger — event delegation (works regardless of DOM timing)',
             '      (function(){',
             '        var tSel=".nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label=\\"Menu\\"],.mobile-menu-btn,.burger";',
-            '        var mSel=".nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav";',
+            '        var mSel=".nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav,nav>ul:not(.footer-links)";',
             '        document.addEventListener("click",function(e){',
             '          var btn=e.target.closest(tSel);if(btn){e.preventDefault();e.stopPropagation();var m=document.querySelector(mSel);if(m){m.classList.toggle("active");m.classList.toggle("open");btn.classList.toggle("active");var o=m.classList.contains("active");btn.setAttribute("aria-expanded",o);btn.innerHTML=o?"<i class=\\"fa-solid fa-xmark\\"></i>":"<i class=\\"fa-solid fa-bars\\"></i>";}return;}',
             '          var nl=e.target.closest(mSel+" a");if(nl){var t2=document.querySelector(tSel);var m2=document.querySelector(mSel);if(t2&&m2){m2.classList.remove("active","open");t2.classList.remove("active");t2.setAttribute("aria-expanded","false");t2.innerHTML="<i class=\\"fa-solid fa-bars\\"></i>";}return;}',
@@ -2115,12 +2152,6 @@ const WebsiteGenerator = () => {
             a.href = url; a.download = 'website.html'; a.click(); URL.revokeObjectURL(url);
             addToast('Downloaded successfully', 'success');
         }
-    };
-
-    const handleFullPreview = () => {
-        const full = buildFullHTML(siteMeta.title || 'Preview', false);
-        const blob = new Blob([full], { type: 'text/html' });
-        window.open(URL.createObjectURL(blob), '_blank');
     };
 
     const handleReset = async () => {
@@ -2528,9 +2559,6 @@ const WebsiteGenerator = () => {
                                     </button>
                                     <button className={`gn-dt-btn ${previewDevice === 'mobile' ? 'active' : ''}`} onClick={() => setPreviewDevice('mobile')} title="Mobile view">
                                         <Smartphone size={15} />
-                                    </button>
-                                    <button className="gn-dt-btn" onClick={handleFullPreview} title="Open in new window">
-                                        <ExternalLink size={15} />
                                     </button>
                                 </div>
                             )}

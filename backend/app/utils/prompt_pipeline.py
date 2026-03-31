@@ -794,8 +794,9 @@ MANDATORY STRUCTURE:
    - CUSTOM EFFECTS from the reference template (clip-paths, hover pseudo-elements, noise textures, faded background numbers)
 
 2. HTML body with semantic CSS classes:
-   - EVERY <section> MUST have data-section-type="TYPE" (hero, features, services, testimonials, team, gallery, contact, cta, faq, stats, pricing, footer)
+   - EVERY <section> MUST have data-section-type="TYPE" AND id="TYPE" (hero, features, services, testimonials, team, gallery, contact, cta, faq, stats, pricing, footer). The id enables navbar anchor scrolling.
    - Use <nav> for navbar, <footer> for footer, <section> for content
+   - NAVBAR LINKS: Every navbar link MUST use anchor hrefs (href="#services", href="#about", href="#contact") pointing to matching section IDs. No dead links.
    - Use semantic CSS classes defined in <style> block
    - ⚠️ Use {{{{IMG:role query}}}} placeholders for ALL images — NEVER write real pexels.com/unsplash.com URLs (they will 404)
    - Use Font Awesome icons: <i class="fa-solid fa-icon-name"></i>

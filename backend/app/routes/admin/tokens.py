@@ -421,11 +421,17 @@ async def review_token_request(
     if req.action == "approve":
         grant_amount = req.grant_amount if req.grant_amount and req.grant_amount > 0 else token_req.amount
 
-        # Grant tokens to user
+        # Calculate websites from tokens (150K per website)
+        websites_to_add = max(1, grant_amount // 150_000)
+
+        # Grant tokens AND increase max_generations
         await db.execute(
             update(User)
             .where(User.id == token_req.user_id)
-            .values(token_balance=User.token_balance + grant_amount)
+            .values(
+                token_balance=User.token_balance + grant_amount,
+                max_generations=User.max_generations + websites_to_add,
+            )
         )
 
         # Get new balance for transaction record
@@ -464,7 +470,8 @@ async def review_token_request(
         },
     )
 
-    msg = f"Token request {req.action}d for {email}"
+    msg = f"Request {req.action}d for {email}"
     if req.action == "approve":
-        msg += f" — granted {granted:,} tokens"
+        websites_added = max(1, granted // 150_000)
+        msg += f" — granted {websites_added} website(s) ({granted:,} tokens)"
     return {"message": msg}

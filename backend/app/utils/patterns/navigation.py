@@ -19,7 +19,13 @@ PATTERNS = {
       <a href="#" class="nav-cta btn-primary">Get Started</a>
     </div>
   </nav>
-  NAVBAR RULES: Use navbar-light class for light themes, navbar-dark class for dark themes.""",
+  NAVBAR RULES (CRITICAL — MUST FOLLOW ALL):
+  - Use navbar-light class for light themes, navbar-dark class for dark themes.
+  - SINGLE PAGE ANCHOR LINKS (MANDATORY): Every navbar link MUST be an anchor link (href="#section-id") that scrolls to the corresponding section on the page. Use the section's data-section-type as the ID. Example: <a href="#services">Services</a> scrolls to <section data-section-type="services" id="services">. NEVER use href="/" or href="#" for navbar content links — they MUST point to actual sections.
+  - EVERY <section data-section-type="X"> MUST also have id="X" so navbar anchor links work. Example: <section data-section-type="about" id="about">.
+  - The first nav link should be href="#hero" pointing to the hero section.
+  - CTA button in navbar should link to the contact or booking section: href="#contact".
+  - MAX 5-6 nav links. Pick the most important sections.""",
     "footer_columns": """footer_columns pattern:
   CRITICAL: Footer MUST have ALL 4 columns. Do NOT skip any column. Do NOT output a minimal footer.
   <!-- Newsletter strip above footer columns -->

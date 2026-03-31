@@ -140,7 +140,12 @@ function AppLayout() {
   return (
     <div className="app">
       {!hideNavbar && <Navbar />}
-      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <Suspense fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa' }}>
+          <div style={{ width: 36, height: 36, border: '3px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </div>
+      }>
         <PageWrapper>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />

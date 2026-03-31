@@ -34,7 +34,7 @@ def score_generation(html: str, css: str, theme: str = "light") -> dict:
         hero_html = _extract_section(html, "hero")
         if hero_html:
             # Check for background image
-            has_bg_image = bool(re.search(r'background.*url\(|background-image.*url\(|<img[^>]*hero', hero_html + css, re.IGNORECASE))
+            has_bg_image = bool(re.search(r'background.*url\(|background-image.*url\(|<img[^>]*hero|\{\{IMG:', hero_html + css, re.IGNORECASE))
             if not has_bg_image:
                 score -= 10
                 issues.append("Hero has no background image — looks flat")

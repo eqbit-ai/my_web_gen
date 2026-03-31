@@ -1486,6 +1486,7 @@ async def stage_2_html_from_template(
 
     # Ensure data-section-type attributes exist (post-process if the model missed some)
     html = _ensure_section_types(html)
+    html = _ensure_section_ids(html)
 
     html_duration = int((time.time() - t0) * 1000)
     n_sections = html.count("data-section-type")
@@ -1543,6 +1544,22 @@ def _ensure_section_types(html: str) -> str:
         return tag.rstrip(">") + f' data-section-type="{section_type}">'
 
     return re.sub(r"<section[^>]*>", _add_section_type, html)
+
+
+def _ensure_section_ids(html: str) -> str:
+    """Post-process: add id=TYPE to sections with data-section-type but no id, so navbar anchors work."""
+    import re
+
+    def _add_id(match):
+        tag = match.group(0)
+        section_type = match.group(1)
+        # Already has an id attribute — don't override
+        if re.search(r'\bid\s*=', tag):
+            return tag
+        # Insert id before the closing >
+        return tag[:-1] + f' id="{section_type}">'
+
+    return re.sub(r'<section[^>]*data-section-type="(\w+)"[^>]*>', _add_id, html)
 
 
 def extract_style_block(html: str) -> tuple[str, str]:
@@ -1719,6 +1736,7 @@ JS RULES:
 
     if use_template and template_html:
         html = _ensure_section_types(html)
+    html = _ensure_section_ids(html)
 
     # Resolve images (can run while we return)
     img_count = html.count("{{IMG:")
@@ -3272,6 +3290,13 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     is_new = req.sessionId is None or not await redis_session_exists(req.sessionId)
     session_id = req.sessionId if not is_new else str(uuid.uuid4())
 
+    # ── Check generation usage limit (only for new websites) ────
+    if is_new:
+        from app.utils.usage_limits import check_usage_limit
+        limit_check = await check_usage_limit(user["user_id"], "generation")
+        if not limit_check["ok"]:
+            raise HTTPException(status_code=402, detail=limit_check["message"])
+
     # ── Audit log (fire-and-forget) ─────────────────────────────────
     log_event_bg(
         user_id=str(user["user_id"]),
@@ -3317,10 +3342,26 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
         quality_scores = {}
         is_multipage = False
         pages_dict = None
+        current_stage = "init"  # Track which stage we're in for error reporting
 
         try:
             if is_new:
+                # ── Block e-commerce requests ─────────────────────────
+                _prompt_lower = req.prompt.lower()
+                _ecommerce_keywords = [
+                    "e-commerce", "ecommerce", "e commerce", "online store", "online shop",
+                    "shopping cart", "add to cart", "checkout", "product listing",
+                    "buy now", "shop now", "storefront", "webshop", "web shop",
+                    "sell online", "selling online", "payment gateway",
+                    "shopify", "woocommerce", "magento",
+                ]
+                if any(kw in _prompt_lower for kw in _ecommerce_keywords):
+                    await emit("error", {"message": "E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce."})
+                    await _complete_job(job_id, "failed", "E-commerce not supported")
+                    return
+
                 # ── Stage 0: Prompt Enhancement ───────────────────────
+                current_stage = "enhance"
                 await emit(
                     "stage",
                     {"stage": -1, "name": "enhance", "status": "running", "message": "Understanding your vision..."},
@@ -3373,6 +3414,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 multipage_requested = is_multipage_request(req.prompt)
 
                 # ── Stage 1: Plan ──────────────────────────────────────
+                current_stage = "plan"
                 await emit(
                     "stage",
                     {
@@ -3425,6 +3467,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 await _update_job_progress(job_id, 30, "Plan ready, generating HTML...")
 
                 # ── Stage 2: HTML + Image Resolution ──────────────────
+                current_stage = "html"
                 pages_dict = None  # Will hold {slug: {html, css}} for multipage
 
                 if is_multipage:
@@ -3536,6 +3579,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     )
 
                 # ── Quality scoring + auto-fix ──
+                current_stage = "quality"
                 try:
                     from app.utils.quality_scorer import score_generation
                     _quality_html = html if not is_multipage else (pages_dict or {}).get("index", {}).get("html", html)
@@ -3810,6 +3854,8 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         if session.get("multipage"):
                             complete_payload["isMultipage"] = True
                             complete_payload["pages"] = session.get("pages", {})
+                        from app.utils.usage_limits import increment_usage
+                        asyncio.ensure_future(increment_usage(user["user_id"], "edit"))
                         await emit("complete", complete_payload)
                         return
                     else:
@@ -4188,6 +4234,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     performance_score=quality_scores.get("performance_score"),
                     seo_score=quality_scores.get("seo_score"),
                 )
+            else:
+                # Increment edit count for modifications
+                from app.utils.usage_limits import increment_usage
+                asyncio.ensure_future(increment_usage(user["user_id"], "edit"))
 
             await emit("complete", complete_payload)
 
@@ -4200,6 +4250,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 status="failed",
                 session_id=session_id,
                 duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
+                stage_failed=current_stage,
                 error_message="AI service temporarily unavailable (circuit open)",
             )
             await emit("error", {"message": "AI service is temporarily unavailable. Please try again in a few minutes."})
@@ -4209,15 +4260,17 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             raise  # Must re-raise CancelledError per asyncio contract
         except Exception as e:
             metrics_increment("generation_errors")
-            logger.error(f"[BG GEN ERROR] {e}", exc_info=True)
-            await _complete_job(job_id, "failed", str(e)[:200])
+            err_msg = str(e).strip() or type(e).__name__
+            logger.error(f"[BG GEN ERROR] stage={current_stage} error={err_msg}", exc_info=True)
+            await _complete_job(job_id, "failed", err_msg[:200])
             _log_generation_bg(
                 user_id=user["user_id"],
                 prompt=req.prompt,
                 status="failed",
                 session_id=session_id,
                 duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
-                error_message=str(e)[:500],
+                stage_failed=current_stage,
+                error_message=err_msg[:500],
             )
             try:
                 await emit("error", {"message": str(e)})
@@ -4284,6 +4337,13 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
     is_new = req.sessionId is None or not await redis_session_exists(req.sessionId)
     session_id = req.sessionId if not is_new else str(uuid.uuid4())
+
+    # ── Check generation usage limit (only for new websites) ────
+    if is_new:
+        from app.utils.usage_limits import check_usage_limit
+        limit_check = await check_usage_limit(user["user_id"], "generation")
+        if not limit_check["ok"]:
+            raise HTTPException(status_code=402, detail=limit_check["message"])
 
     # ── Audit log (fire-and-forget) ─────────────────────────────────
     log_event_bg(
@@ -4872,6 +4932,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         raise HTTPException(status_code=402, detail="[RESTRICTED] Token budget exhausted. Contact admin for more tokens.")
     _current_user_id.set(user["user_id"])
 
+
     log_event_bg(
         user_id=str(user["user_id"]),
         action="edit_website",
@@ -4899,6 +4960,8 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 # Verify we didn't wipe everything
                 if len(result_html.strip()) > 200:
                     logger.info("🖱️ [ELEMENT EDIT] ✅ Direct removal (no LLM) — removed %d chars", len(element_snippet))
+                    from app.utils.usage_limits import increment_usage
+                    await increment_usage(user["user_id"], "edit")
                     return {
                         "success": True,
                         "website": {"html": result_html, "css": css},
@@ -5079,6 +5142,8 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             await redis_save_session(req.sessionId, s)
 
         logger.info(f"🖱️ [ELEMENT EDIT] ✅ Done → html={len(result_html):,}, css={len(result_css):,}")
+        from app.utils.usage_limits import increment_usage
+        await increment_usage(user["user_id"], "edit")
         return {"success": True, "website": {"html": result_html, "css": result_css}, "manualReplace": False}
 
     except HTTPException:

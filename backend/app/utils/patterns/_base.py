@@ -21,7 +21,7 @@ RULES:
 - Use semantic CSS class names (e.g. .container, .card, .btn-primary, .hero-heading)
 - Use CSS variables for colors, fonts, radii (defined in :root)
 - Use semantic HTML5: <nav>, <header>, <main>, <section>, <footer>
-- EVERY content section MUST use: <section data-section-type="{{type}}"> — never <div>
+- EVERY content section MUST use: <section data-section-type="{{type}}" id="{{type}}"> — never <div>. The id MUST match the data-section-type so navbar anchor links (#services, #about, etc.) scroll to the correct section.
 - Use the EXACT content from the plan — headlines, descriptions, button text, etc.
 - Use Font Awesome icons exactly as specified: <i class="fa-solid fa-icon-name"></i>
 - Add data-aos animations on grid items (cards, faq items, etc.) — NOT on section wrappers
@@ -565,4 +565,15 @@ FOOTER VISIBILITY — CRITICAL CSS RULES:
 - NEVER use overflow:hidden on body or html. Use overflow-x:hidden if needed (to prevent horizontal scroll).
 - NEVER wrap the entire page content in a div with height:100vh or overflow:hidden — this clips the footer off-screen.
 - The footer MUST always be visible at the bottom of the page after scrolling through all content.
-- The body CSS is already set above with overflow-x:hidden and min-height:100vh — do NOT override these."""
+- The body CSS is already set above with overflow-x:hidden and min-height:100vh — do NOT override these.
+
+═══════════════════════════════════════════════════════════════
+FINAL CHECKLIST — verify BEFORE outputting your HTML:
+═══════════════════════════════════════════════════════════════
+1. NAVBAR ANCHORS: Every navbar <a> links to a section using href="#section-type" (e.g. href="#services", href="#about", href="#contact"). NO dead links (href="#" or href="/").
+2. SECTION IDs: Every <section data-section-type="X"> also has id="X" so anchor links work.
+3. HERO IS PRESENT: The first section after <nav> is a hero with H1 heading, subtitle, CTA button, and an image (background or split).
+4. HERO HAS IMAGE: Hero uses either background-image with {{IMG:...}} or an <img> tag. Never a plain solid color background.
+5. HERO TEXT VISIBLE: White text on image heroes, dark text on light split heroes. Text-shadow on image heroes.
+6. ALL PLAN CONTENT USED: Every section from the plan is included with its actual content — headlines, descriptions, items.
+7. NO DEAD CTA LINKS: CTA buttons link to relevant sections (href="#contact", href="#services"), not href="#"."""

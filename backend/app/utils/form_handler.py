@@ -166,11 +166,24 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         if input_type in ("submit", "button", "hidden"):
             return tag
 
+        # Common placeholder → canonical name mapping
+        _placeholder_to_name = {
+            "your name": "name", "full name": "name", "name": "name",
+            "first name": "first_name", "last name": "last_name",
+            "your email": "email", "email address": "email", "email": "email",
+            "your phone": "phone", "phone number": "phone", "phone": "phone",
+            "your message": "message", "message": "message", "write your message": "message",
+            "subject": "subject", "company": "company", "company name": "company",
+        }
+
         # Try placeholder
         ph_match = re.search(r'placeholder\s*=\s*["\']([^"\']+)["\']', tag, re.I)
         if ph_match:
-            name = re.sub(r"[^a-zA-Z0-9]", "_", ph_match.group(1).lower().strip())
-            name = re.sub(r"_+", "_", name).strip("_")[:30]
+            ph_text = ph_match.group(1).lower().strip().rstrip(".*")
+            name = _placeholder_to_name.get(ph_text)
+            if not name:
+                name = re.sub(r"[^a-zA-Z0-9]", "_", ph_text)
+                name = re.sub(r"_+", "_", name).strip("_")[:30]
 
         # Try id
         if not name:
@@ -199,11 +212,15 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         if re.search(r"\bname\s*=", tag, re.I):
             return tag
 
-        # Try placeholder or id
+        # Try placeholder or id — normalize to "message" for common variants
         ph_match = re.search(r'placeholder\s*=\s*["\']([^"\']+)["\']', tag, re.I)
         if ph_match:
-            name = re.sub(r"[^a-zA-Z0-9]", "_", ph_match.group(1).lower().strip())
-            name = re.sub(r"_+", "_", name).strip("_")[:30]
+            ph_text = ph_match.group(1).lower().strip().rstrip(".*")
+            if any(kw in ph_text for kw in ("message", "inquiry", "comment", "write", "tell us")):
+                name = "message"
+            else:
+                name = re.sub(r"[^a-zA-Z0-9]", "_", ph_text)
+                name = re.sub(r"_+", "_", name).strip("_")[:30] or "message"
         else:
             name = "message"
 

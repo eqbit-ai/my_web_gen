@@ -16,12 +16,13 @@ const buildSrcDoc = (css, html, withScripts = false) =>
 const Dashboard = () => {
     const { user, logout, refreshUser } = useAuth();
 
-    // Refresh user data on mount and when window regains focus (updates token balance after generation)
+    // Refresh user data on mount, focus, and periodically (picks up admin approvals)
     useEffect(() => {
         refreshUser();
         const handleFocus = () => refreshUser();
         window.addEventListener('focus', handleFocus);
-        return () => window.removeEventListener('focus', handleFocus);
+        const interval = setInterval(() => refreshUser(), 30000);
+        return () => { window.removeEventListener('focus', handleFocus); clearInterval(interval); };
     }, []);
     const navigate = useNavigate();
     const [prompt, setPrompt] = useState('');
@@ -76,7 +77,7 @@ const Dashboard = () => {
 
     // Token request state
     const [tokenRequestModal, setTokenRequestModal] = useState(false);
-    const [tokenRequestAmount, setTokenRequestAmount] = useState('500000');
+    const [tokenRequestAmount, setTokenRequestAmount] = useState('1');
     const [tokenRequestReason, setTokenRequestReason] = useState('');
     const [tokenRequestSubmitting, setTokenRequestSubmitting] = useState(false);
     const [tokenRequests, setTokenRequests] = useState([]);
@@ -248,16 +249,20 @@ const Dashboard = () => {
     };
 
     const handleTokenRequest = async () => {
-        const amount = parseInt(tokenRequestAmount);
-        if (!amount || amount <= 0) return;
+        const websiteCount = parseInt(tokenRequestAmount);
+        if (!websiteCount || websiteCount <= 0) return;
+        const tokensPerWebsite = 150000;
+        const totalTokens = websiteCount * tokensPerWebsite;
+        const reason = `${websiteCount} additional website${websiteCount > 1 ? 's' : ''}${tokenRequestReason ? ' — ' + tokenRequestReason : ''}`;
         setTokenRequestSubmitting(true);
         try {
-            await requestTokens(amount, tokenRequestReason);
+            await requestTokens(totalTokens, reason);
             setTokenRequestModal(false);
-            setTokenRequestAmount('500000');
+            setTokenRequestAmount('1');
             setTokenRequestReason('');
             loadTokenRequests();
-            showToast('Token request submitted! Admin will review it shortly.', 'success');
+            refreshUser();
+            showToast('Request submitted! Admin will review it shortly.', 'success');
         } catch (err) {
             showToast(err.message, 'error');
         }
@@ -448,6 +453,7 @@ const Dashboard = () => {
     const [myDomains, setMyDomains] = useState([]);
     const [myDomainsLoading, setMyDomainsLoading] = useState(false);
     const [purchasing, setPurchasing] = useState(false);
+    const [purchaseConfirm, setPurchaseConfirm] = useState(null); // { sld, tld, siteId, price }
 
     const handleSearchDomain = async () => {
         if (!domainInput.trim()) return;
@@ -518,6 +524,7 @@ const Dashboard = () => {
         setPurchasing(true);
         try {
             await purchaseDomain(sld, tld, siteId, 1);
+            setPurchaseConfirm(null);
             setConnectModal(null);
             setConnectError(null);
             setDomainSearchResults(null);
@@ -956,28 +963,48 @@ const Dashboard = () => {
                             <p className="dash-greeting-sub">
                                 Create websites by chatting with Meydan AI
                             </p>
-                            {user?.token_balance != null && (
-                                <div className="dash-token-bar">
-                                    <div className="dash-token-info">
-                                        <span>Token Balance</span>
-                                        <span>{(user.token_balance || 0).toLocaleString()} / 1,000,000</span>
+                            {(() => {
+                                const used = user?.generation_count || 0;
+                                const max = user?.max_generations || 2;
+                                const remaining = Math.max(0, max - used);
+                                const isExhausted = remaining === 0;
+                                const hasPending = tokenRequests.some(r => r.status === 'pending');
+                                return (
+                                    <div style={{
+                                        marginTop: 20, maxWidth: 380, marginLeft: 'auto', marginRight: 'auto',
+                                        display: 'flex', alignItems: 'center', gap: 14,
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        borderRadius: 12, padding: '12px 18px',
+                                    }}>
+                                        <span style={{
+                                            fontSize: 20, fontWeight: 700, minWidth: 28, textAlign: 'center',
+                                            color: isExhausted ? '#6b7280' : '#34d399',
+                                        }}>
+                                            {remaining}
+                                        </span>
+                                        <span style={{ fontSize: 13, color: '#9ca3af', flex: 1 }}>
+                                            {isExhausted
+                                                ? 'No websites remaining'
+                                                : <>website{remaining !== 1 ? 's' : ''} remaining</>}
+                                        </span>
+                                        {isExhausted ? (
+                                            <button
+                                                onClick={() => { setTokenRequestModal(true); if (!tokenRequestsLoaded) loadTokenRequests(); }}
+                                                style={{
+                                                    background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)',
+                                                    color: '#34d399', padding: '5px 12px', borderRadius: 6,
+                                                    fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                Request More
+                                            </button>
+                                        ) : hasPending ? (
+                                            <span style={{ fontSize: 11, color: '#fbbf24', whiteSpace: 'nowrap' }}>Pending</span>
+                                        ) : null}
                                     </div>
-                                    <div className="dash-token-track">
-                                        <div className="dash-token-fill" style={{ width: `${Math.min(100, ((user.token_balance || 0) / 1000000) * 100)}%` }} />
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                                        <button
-                                            onClick={() => { setTokenRequestModal(true); if (!tokenRequestsLoaded) loadTokenRequests(); }}
-                                            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
-                                        >
-                                            Request More Tokens
-                                        </button>
-                                        {tokenRequests.some(r => r.status === 'pending') && (
-                                            <span style={{ fontSize: 11, color: '#fbbf24' }}>Pending request</span>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
 
                         <div className="dash-input-area">
@@ -1683,8 +1710,8 @@ const Dashboard = () => {
                                                         <>
                                                             {r.price && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>${r.price.amount}/yr</span>}
                                                             <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 500 }}>Available</span>
-                                                            <button onClick={() => handleQuickPurchase(r.sld, r.tld, connectModal)} disabled={purchasing} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', fontSize: 12, fontWeight: 600, cursor: purchasing ? 'wait' : 'pointer', opacity: purchasing ? 0.6 : 1 }}>
-                                                                {purchasing ? '...' : 'Buy & Connect'}
+                                                            <button onClick={() => setPurchaseConfirm({ sld: r.sld, tld: r.tld, siteId: connectModal, price: r.price })} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                                Buy & Connect
                                                             </button>
                                                         </>
                                                     ) : (
@@ -1825,6 +1852,31 @@ const Dashboard = () => {
                             <div className="dash-domain-modal-actions">
                                 <button className="dash-domain-modal-cancel" onClick={() => setDeleteSiteConfirm(null)}>Cancel</button>
                                 <button className="dash-domain-modal-confirm" style={{ background: '#ef4444' }} onClick={() => handleDeleteSite(deleteSiteConfirm)}>Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Domain Purchase Confirmation Modal */}
+                {purchaseConfirm && (
+                    <div className="dash-domain-modal-overlay" onClick={() => setPurchaseConfirm(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPurchaseConfirm(null); }} role="button" tabIndex={0}>
+                        <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
+                            <h3>Confirm Domain Purchase</h3>
+                            <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 8px' }}>
+                                You are about to purchase:
+                            </p>
+                            <div style={{ background: '#1a2332', borderRadius: 8, padding: '14px 16px', margin: '8px 0 16px', border: '1px solid #374151' }}>
+                                <span style={{ fontWeight: 700, fontSize: 16, color: '#f3f4f6' }}>{purchaseConfirm.sld}.{purchaseConfirm.tld}</span>
+                                {purchaseConfirm.price && <span style={{ marginLeft: 12, fontSize: 14, color: '#34d399', fontWeight: 600 }}>${purchaseConfirm.price.amount}/yr</span>}
+                            </div>
+                            <p style={{ fontSize: 12, color: '#f59e0b', margin: '0 0 16px', lineHeight: 1.5 }}>
+                                This action is non-refundable. The domain will be registered and connected to your site immediately.
+                            </p>
+                            <div className="dash-domain-modal-actions">
+                                <button className="dash-domain-modal-cancel" onClick={() => setPurchaseConfirm(null)}>Cancel</button>
+                                <button className="dash-domain-modal-confirm" style={{ background: '#22c55e' }} disabled={purchasing} onClick={() => handleQuickPurchase(purchaseConfirm.sld, purchaseConfirm.tld, purchaseConfirm.siteId)}>
+                                    {purchasing ? 'Processing...' : 'Confirm Purchase'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2009,33 +2061,38 @@ const Dashboard = () => {
                     <div className="dash-domain-modal-overlay" onClick={() => setTokenRequestModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setTokenRequestModal(false); }} role="button" tabIndex={0}>
                         <div className="dash-domain-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation" style={{ maxWidth: 440 }}>
                             <div className="dash-domain-modal-icon" style={{ background: '#ede9fe' }}>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                                <span style={{ fontSize: 24 }}>🌐</span>
                             </div>
-                            <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Request More Tokens</h3>
+                            <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>Request More Websites</h3>
                             <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
-                                Submit a request to the admin for additional tokens. You'll be notified when it's reviewed.
+                                Need to create more websites? Submit a request and the admin will review it.
                             </p>
                             <div style={{ marginBottom: 12 }}>
-                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Amount</label>
-                                <select
-                                    value={tokenRequestAmount}
-                                    onChange={e => setTokenRequestAmount(e.target.value)}
-                                    style={{ width: '100%', padding: '8px 12px', background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 8, fontSize: 14 }}
-                                >
-                                    <option value="100000">100,000 tokens</option>
-                                    <option value="250000">250,000 tokens</option>
-                                    <option value="500000">500,000 tokens</option>
-                                    <option value="1000000">1,000,000 tokens</option>
-                                    <option value="2000000">2,000,000 tokens</option>
-                                </select>
+                                <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>How many websites do you need?</label>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    {[1, 2, 3, 5].map(n => (
+                                        <button
+                                            key={n}
+                                            onClick={() => setTokenRequestAmount(String(n))}
+                                            style={{
+                                                flex: 1, padding: '10px 0', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                                                background: tokenRequestAmount === String(n) ? 'rgba(99,102,241,0.2)' : '#1f2937',
+                                                border: tokenRequestAmount === String(n) ? '2px solid #6366f1' : '1px solid #374151',
+                                                color: tokenRequestAmount === String(n) ? '#818cf8' : '#d1d5db',
+                                            }}
+                                        >
+                                            {n}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                             <div style={{ marginBottom: 16 }}>
                                 <label style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginBottom: 4 }}>Reason (optional)</label>
                                 <textarea
                                     value={tokenRequestReason}
                                     onChange={e => setTokenRequestReason(e.target.value)}
-                                    placeholder="e.g. Need more tokens for a large project..."
-                                    style={{ width: '100%', minHeight: 70, padding: '8px 12px', background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 8, fontSize: 13, resize: 'vertical' }}
+                                    placeholder="e.g. Starting a new business project..."
+                                    style={{ width: '100%', minHeight: 60, padding: '8px 12px', background: '#1f2937', color: '#f3f4f6', border: '1px solid #374151', borderRadius: 8, fontSize: 13, resize: 'vertical' }}
                                 />
                             </div>
 
@@ -2045,7 +2102,7 @@ const Dashboard = () => {
                                     <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Your Requests</label>
                                     {tokenRequests.map(r => (
                                         <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <span style={{ color: '#d1d5db' }}>{parseInt(r.amount).toLocaleString()} tokens</span>
+                                            <span style={{ color: '#d1d5db' }}>{r.reason || `${Math.round(parseInt(r.amount) / 150000)} website(s)`}</span>
                                             <span style={{ color: r.status === 'approved' ? '#34d399' : r.status === 'rejected' ? '#f87171' : '#fbbf24', fontWeight: 600 }}>
                                                 {r.status}
                                             </span>
@@ -2056,8 +2113,8 @@ const Dashboard = () => {
 
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <button className="dash-domain-modal-cancel" onClick={() => setTokenRequestModal(false)}>Cancel</button>
-                                <button className="dash-domain-modal-confirm" style={{ background: '#7c3aed' }} onClick={handleTokenRequest} disabled={tokenRequestSubmitting}>
-                                    {tokenRequestSubmitting ? 'Submitting...' : 'Submit Request'}
+                                <button className="dash-domain-modal-confirm" style={{ background: '#6366f1' }} onClick={handleTokenRequest} disabled={tokenRequestSubmitting}>
+                                    {tokenRequestSubmitting ? 'Submitting...' : `Request ${tokenRequestAmount} Website${tokenRequestAmount !== '1' ? 's' : ''}`}
                                 </button>
                             </div>
                         </div>
@@ -2316,9 +2373,10 @@ const Dashboard = () => {
                             <div style={{ display: 'grid', gap: 8 }}>
                                 {submissions.map(sub => {
                                     const isExpanded = expandedSubmission?.id === sub.id;
-                                    const senderName = sub.fields?.name || sub.fields?.full_name || sub.fields?.first_name || 'Anonymous';
-                                    const senderEmail = sub.fields?.email || '';
-                                    const message = sub.fields?.message || sub.fields?.inquiry || sub.fields?.comments || '';
+                                    const _f = sub.fields || {};
+                                    const senderName = _f.name || _f.full_name || _f.first_name || _f.your_name || _f.full_name_ || _f.your_full_name || _f.contact_name || _f.client_name || _f.Name || Object.entries(_f).find(([k]) => /^(name|full.?name|first.?name|your.?name)/i.test(k))?.[1] || 'Anonymous';
+                                    const senderEmail = _f.email || _f.your_email || _f.email_address || _f.contact_email || Object.entries(_f).find(([k]) => /email/i.test(k))?.[1] || '';
+                                    const message = _f.message || _f.your_message || _f.inquiry || _f.comments || _f.description || _f.details || Object.entries(_f).find(([k]) => /message|comment|inquiry|detail/i.test(k))?.[1] || '';
                                     const timeAgo = sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : '';
 
                                     return (

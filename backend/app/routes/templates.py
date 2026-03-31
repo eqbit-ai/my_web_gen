@@ -54,14 +54,6 @@ TEMPLATE_CATALOG = [
         "colors": ["#1B2A4A", "#0891b2", "#ffffff", "#f8fafc"],
     },
     {
-        "id": "ecommerce",
-        "name": "Fashion Boutique",
-        "category": "E-Commerce",
-        "description": "Stylish fashion store with product grid, collection showcase, newsletter, and reviews.",
-        "niche": "ecommerce",
-        "colors": ["#111111", "#e11d48", "#fafafa", "#ffffff"],
-    },
-    {
         "id": "coffee_shop",
         "name": "Artisan Coffee House",
         "category": "Food & Beverage",

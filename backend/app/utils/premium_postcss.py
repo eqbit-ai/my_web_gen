@@ -82,9 +82,9 @@ def harden_hero(html: str, css: str) -> tuple[str, str]:
     hero_close = hero_match.group(3)
     fixes = []
 
-    # Check for background image in CSS
+    # Check for background image in CSS (including unresolved {{IMG:...}} placeholders)
     has_bg_image = bool(re.search(
-        r'hero.*background.*url\(|data-section-type="hero".*style="[^"]*background.*url\(|hero.*background-image',
+        r'hero.*background.*url\(|data-section-type="hero".*style="[^"]*background.*url\(|hero.*background-image|\{\{IMG:',
         html + css, re.IGNORECASE | re.DOTALL
     ))
 
@@ -512,7 +512,8 @@ section:first-of-type, .hero-section, [data-section-type="hero"] {
   .nav-menu.active, .nav-menu.open,
   .navbar-links.active, .navbar-links.open,
   .navbar-menu.active, .navbar-menu.open,
-  .menu-items.active, .menu-items.open {
+  .menu-items.active, .menu-items.open,
+  nav ul.active:not(.footer-links), nav ul.open:not(.footer-links) {
     display: flex !important;
   }
   .nav-toggle, .hamburger, .mobile-toggle, .menu-toggle {

@@ -630,7 +630,7 @@ const Preloader = ({ onComplete }) => {
             onComplete: () => {
                 gsap.to(preloaderRef.current, {
                     yPercent: -100,
-                    duration: 0.8,
+                    duration: 0.5,
                     ease: 'power4.inOut',
                     onComplete,
                 });
@@ -639,17 +639,17 @@ const Preloader = ({ onComplete }) => {
 
         tl.fromTo('.preloader-logo',
             { scale: 0.8, opacity: 0 },
-            { scale: 1, opacity: 1, duration: 1, ease: 'power2.out' }
+            { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' }
         )
         .fromTo('.preloader-text',
             { opacity: 0, y: 15 },
-            { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0.6
+            { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 0.3
         )
         .fromTo('.preloader-line',
             { scaleX: 0 },
-            { scaleX: 1, duration: 1, ease: 'power3.inOut' }, 1.0
+            { scaleX: 1, duration: 0.5, ease: 'power3.inOut' }, 0.5
         )
-        .to('.preloader-text', { opacity: 0, y: -10, duration: 0.3 }, 1.8);
+        .to('.preloader-text', { opacity: 0, y: -10, duration: 0.2 }, 0.9);
     }, [onComplete]);
 
     return (

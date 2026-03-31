@@ -37,5 +37,10 @@ class User(Base):
     approved_at = Column(DateTime(timezone=True), nullable=True)
     approved_by = Column(Integer, nullable=True)
 
+    # Usage limits — generations and edits
+    edit_count = Column(Integer, default=0, server_default="0", nullable=False)
+    max_generations = Column(Integer, default=2, server_default="2", nullable=False)
+    max_edits = Column(Integer, default=30, server_default="30", nullable=False)
+
     # Force password reset (set by admin)
     force_password_reset = Column(Boolean, default=False, server_default="false", nullable=False)

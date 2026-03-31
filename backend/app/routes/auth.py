@@ -78,6 +78,10 @@ class UserResponse(BaseModel):
     tokens_used: int = 0
     is_admin: bool = False
     is_approved: bool = False
+    generation_count: int = 0
+    max_generations: int = 2
+    edit_count: int = 0
+    max_edits: int = 30
 
 
 class AuthResponse(BaseModel):
@@ -185,6 +189,10 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
             is_approved=getattr(user, 'is_approved', False),
+            generation_count=getattr(user, 'generation_count', 0),
+            max_generations=getattr(user, 'max_generations', 2),
+            edit_count=getattr(user, 'edit_count', 0),
+            max_edits=getattr(user, 'max_edits', 30),
         ),
     )
 
@@ -258,6 +266,10 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
             is_approved=getattr(user, 'is_approved', False),
+            generation_count=getattr(user, 'generation_count', 0),
+            max_generations=getattr(user, 'max_generations', 2),
+            edit_count=getattr(user, 'edit_count', 0),
+            max_edits=getattr(user, 'max_edits', 30),
         ),
         force_password_reset=force_reset,
     )
@@ -295,6 +307,10 @@ async def get_me(
         tokens_used=getattr(user, 'tokens_used', 0),
         is_admin=getattr(user, 'is_admin', False),
         is_approved=getattr(user, 'is_approved', False),
+        generation_count=getattr(user, 'generation_count', 0),
+        max_generations=getattr(user, 'max_generations', 2),
+        edit_count=getattr(user, 'edit_count', 0),
+        max_edits=getattr(user, 'max_edits', 30),
     )
 
 

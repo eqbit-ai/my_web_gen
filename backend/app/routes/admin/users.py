@@ -471,7 +471,7 @@ async def bulk_user_action(
                 is_approved=True,
                 approved_at=datetime.now(UTC),
                 approved_by=admin.get("user_id"),
-                token_balance=1_000_000,
+                token_balance=300_000,
                 is_active=True,
             )
         )
@@ -485,10 +485,43 @@ async def bulk_user_action(
         )
         return {"message": f"Approved {len(req.user_ids)} users with 1,000,000 tokens each"}
 
+    elif req.action == "set_limits":
+        max_gen = req.params.get("max_generations")
+        max_ed = req.params.get("max_edits")
+        updates = {}
+        if isinstance(max_gen, int) and max_gen >= 0:
+            updates["max_generations"] = max_gen
+        if isinstance(max_ed, int) and max_ed >= 0:
+            updates["max_edits"] = max_ed
+        if not updates:
+            raise HTTPException(status_code=400, detail="params must include max_generations and/or max_edits")
+        await db.execute(update(User).where(User.id.in_(req.user_ids)).values(**updates))
+        await db.commit()
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_set_limits",
+            resource_type="user",
+            details={"user_ids": req.user_ids, **updates},
+        )
+        return {"message": f"Updated limits for {len(req.user_ids)} users: {updates}"}
+
+    elif req.action == "reset_usage":
+        await db.execute(
+            update(User).where(User.id.in_(req.user_ids)).values(generation_count=0, edit_count=0)
+        )
+        await db.commit()
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="bulk_reset_usage",
+            resource_type="user",
+            details={"user_ids": req.user_ids},
+        )
+        return {"message": f"Reset usage counters for {len(req.user_ids)} users"}
+
     else:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown action '{req.action}'. Supported: grant_tokens, disable, enable, approve",
+            detail=f"Unknown action '{req.action}'. Supported: grant_tokens, disable, enable, approve, set_limits, reset_usage",
         )
 
 
@@ -553,7 +586,7 @@ async def approve_user(
                 is_approved=True,
                 approved_at=datetime.now(UTC),
                 approved_by=admin.get("user_id"),
-                token_balance=1_000_000,
+                token_balance=300_000,
                 is_active=True,
             )
         )
@@ -567,7 +600,7 @@ async def approve_user(
         action="approve_user",
         resource_type="user",
         resource_id=str(user_id),
-        details={"email": user.email, "tokens_granted": 1_000_000},
+        details={"email": user.email, "tokens_granted": 300_000},
     )
 
     # Send approval notification email (fire-and-forget)
@@ -577,7 +610,34 @@ async def approve_user(
     except Exception as e:
         logger.warning(f"[ADMIN] Failed to send approval email: {e}")
 
-    return {"message": f"User {user.email} has been approved with 1,000,000 tokens"}
+    return {"message": f"User {user.email} has been approved with 300,000 tokens"}
+
+
+@router.post("/users/{user_id}/reset-usage", response_model=MessageResponse)
+async def reset_user_usage(
+    user_id: int,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset a user's generation and edit counts to 0."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.execute(
+        update(User).where(User.id == user_id).values(generation_count=0, edit_count=0)
+    )
+    await db.commit()
+
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="reset_user_usage",
+        resource_type="user",
+        resource_id=str(user_id),
+        details={"email": user.email},
+    )
+    return {"message": f"Usage reset for {user.email}"}
 
 
 @router.post("/users/{user_id}/toggle-admin", response_model=MessageResponse)

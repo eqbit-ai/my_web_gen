@@ -759,14 +759,15 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       var s = document.createElement('style');
       s.textContent = '[data-aos]{opacity:1!important;transform:none!important;transition:none!important}' +
         '.stagger-child{opacity:1!important;transform:none!important}' +
-        '.fade-in,.slide-up,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}';
+        '.fade-in,.slide-up,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}' +
+        'section[data-section-type="hero"]>*{opacity:1!important;transform:none!important;animation:none!important}';
       document.head.appendChild(s);
     }, 2000);
 
     // Mobile hamburger menu — event delegation (works regardless of DOM timing)
     (function() {
       var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,[data-toggle="menu"],button[aria-label="Menu"],button[aria-label="menu"],.mobile-menu-btn,.burger';
-      var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav';
+      var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav,nav>ul:not(.footer-links)';
 
       function findToggle() {
         return document.querySelector(tSel);
@@ -908,10 +909,16 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       });
     })();
 
-    // Fallback: force all hidden elements visible after 2s in case AOS/scroll observer don't fire in iframe
+    // Fallback: force all hidden elements visible after 1.5s in case AOS/scroll observer don't fire in iframe
     setTimeout(function() {
       document.querySelectorAll('section[data-section-type]').forEach(function(s) {
         s.classList.add('visible');
+      });
+      // Force hero children visible (premium animations set opacity:0)
+      document.querySelectorAll('section[data-section-type="hero"] > *').forEach(function(el) {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+        el.style.animation = 'none';
       });
       // Force AOS elements visible too — AOS may load but not trigger in iframes
       document.querySelectorAll('[data-aos]').forEach(function(el) {
@@ -920,7 +927,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         el.style.transition = 'none';
         el.classList.add('aos-animate');
       });
-    }, 2000);
+    }, 1500);
 
     // Intercept inter-page navigation links
     document.addEventListener('click', function(e) {

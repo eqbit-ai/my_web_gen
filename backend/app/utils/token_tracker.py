@@ -9,7 +9,7 @@ from app.database import async_session
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TOKEN_BUDGET = 1_000_000
+DEFAULT_TOKEN_BUDGET = 300_000
 
 
 async def check_budget(user_id: int) -> dict:
