@@ -21,7 +21,7 @@ import SectionEditor from './SectionEditor';
 import SeoEditor from './SeoEditor';
 import GalleryPicker from './GalleryPicker';
 import {
-    generateWebsiteStream, clearSession, editElement, uploadFile,
+    generateWebsiteStream, clearSession, editElement, uploadFile, uploadFiles,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
     submitJob, getJobStatus, restoreSession, getSession,
 } from '../services/api';
@@ -751,6 +751,14 @@ const WebsiteGenerator = () => {
     const [elementAttachment, setElementAttachment] = useState(null); // {file, preview, uploading, url}
     const elementFileInputRef = useRef(null);
 
+    // File upload for generation
+    const [uploadedFiles, setUploadedFiles] = useState({ text: '', images: [] }); // { text, images: [{url, filename, original_name}] }
+    const [uploadingFiles, setUploadingFiles] = useState(false);
+    const [imageAssignModal, setImageAssignModal] = useState(false); // show assignment UI
+    const [imageAssignments, setImageAssignments] = useState({}); // {imageUrl: sectionType}
+    const [pendingGenPrompt, setPendingGenPrompt] = useState(null); // prompt waiting for image assignment
+    const fileInputRef = useRef(null);
+
     // Sections, Components
     const [sections, setSections] = useState([]);
     const [showSiteSettings, setShowSiteSettings] = useState(false);
@@ -1329,6 +1337,7 @@ const WebsiteGenerator = () => {
                     setLoadingMessage('');
                     isGeneratingRef.current = false;
                     refreshUser(); // Update generation/edit counts
+                    setUploadedFiles({ text: '', images: [] }); // Clear uploaded files
                 } else if (job.status === 'failed') {
                     clearInterval(pollRef.current);
                     pollRef.current = null;
@@ -1497,7 +1506,75 @@ const WebsiteGenerator = () => {
         return null;
     };
 
-    const handleGenerate = async (text, niche, templateId = null) => {
+    // ── File upload handler ──────────────────────────────────────────
+    const handleFileUpload = async (files) => {
+        if (!files || files.length === 0) return;
+        setUploadingFiles(true);
+        try {
+            const result = await uploadFiles(Array.from(files));
+            const newImages = result.images || [];
+            const newText = result.extracted_text || '';
+
+            setUploadedFiles(prev => ({
+                text: prev.text ? prev.text + '\n\n' + newText : newText,
+                images: [...prev.images, ...newImages],
+            }));
+
+            const parts = [];
+            if (newText) parts.push(`Text extracted (${newText.length} chars)`);
+            if (newImages.length) parts.push(`${newImages.length} image${newImages.length > 1 ? 's' : ''} uploaded`);
+            if (result.errors?.length) parts.push(`${result.errors.length} error(s)`);
+            addToast(parts.join(' · '), (newText || newImages.length) ? 'success' : 'info');
+
+            // Show wizard so user can still pick colors, site type, etc.
+            if (versions.length === 0 && onboardingStep < 0) {
+                localStorage.removeItem(ONBOARDING_KEY);
+                onboardingShown.current = false;
+                setTimeout(() => setOnboardingStep(0), 500);
+            }
+        } catch (err) {
+            addToast(err.message || 'Upload failed', 'error');
+        }
+        setUploadingFiles(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleImageAssign = (imageUrl, sectionType) => {
+        setImageAssignments(prev => {
+            const updated = { ...prev };
+            // Remove previous assignment of this image
+            Object.keys(updated).forEach(k => { if (updated[k] === sectionType && k !== imageUrl) delete updated[k]; });
+            if (updated[imageUrl] === sectionType) {
+                delete updated[imageUrl]; // Toggle off
+            } else {
+                updated[imageUrl] = sectionType;
+            }
+            return updated;
+        });
+    };
+
+    const handleConfirmImageAssignment = () => {
+        setImageAssignModal(false);
+        const userImages = uploadedFiles.images.map(img => ({
+            url: img.url,
+            filename: img.filename,
+            section: imageAssignments[img.url] || '',
+        }));
+        if (pendingGenPrompt) {
+            handleGenerate(pendingGenPrompt, null, null, userImages);
+            setPendingGenPrompt(null);
+        }
+    };
+
+    const handleSkipImageAssignment = () => {
+        setImageAssignModal(false);
+        if (pendingGenPrompt) {
+            handleGenerate(pendingGenPrompt, null, null, []);
+            setPendingGenPrompt(null);
+        }
+    };
+
+    const handleGenerate = async (text, niche, templateId = null, assignedImages = undefined) => {
         const promptText = text || prompt.trim();
         if (!promptText || isGeneratingRef.current) return;
 
@@ -1516,6 +1593,13 @@ const WebsiteGenerator = () => {
                 onboardingShown.current = false;
                 setTimeout(() => setOnboardingStep(0), 1000);
             }
+            return;
+        }
+
+        // If user uploaded images and this is a new generation, show assignment modal
+        if (assignedImages === undefined && uploadedFiles.images.length > 0 && versions.length === 0) {
+            setPendingGenPrompt(promptText);
+            setImageAssignModal(true);
             return;
         }
 
@@ -1686,6 +1770,7 @@ const WebsiteGenerator = () => {
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
                     isGeneratingRef.current = false;
                     refreshUser(); // Update generation/edit counts
+                    setUploadedFiles({ text: '', images: [] }); // Clear uploaded files
                     addToast(result.recovered ? 'Connection recovered — website ready!' : result.addedPage ? `${result.addedPage.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} page added!` : (isNew && mp) ? `${Object.keys(result.pages || {}).length}-page website generated!` : isNew ? 'Website generated successfully!' : 'Changes applied!', 'success');
                 },
                 // onError
@@ -1715,13 +1800,18 @@ const WebsiteGenerator = () => {
                 },
                 templateId,
                 currentPage,
+                assignedImages || null,
             );
         }
     };
 
     // ── Wizard: trigger generation after handleGenerate is defined ─────
     const handleWizardGenerate = () => {
-        const composedPrompt = composeWizardPrompt(wizardData);
+        let composedPrompt = composeWizardPrompt(wizardData);
+        // Append uploaded text content if any
+        if (uploadedFiles.text) {
+            composedPrompt += `\n\nAdditional business information from uploaded files:\n${uploadedFiles.text}`;
+        }
         setProjectName(wizardData.companyName);
         setWizardStep(-1);
         handleGenerate(composedPrompt, null, null);
@@ -2512,7 +2602,40 @@ const WebsiteGenerator = () => {
                             />
                         </div>
                     )}
+                    {/* Uploaded images preview */}
+                    {uploadedFiles.images.length > 0 && !html && (
+                        <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap' }}>
+                            {uploadedFiles.images.map((img, i) => (
+                                <div key={i} style={{ position: 'relative', width: 40, height: 40, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <img src={img.url} alt={img.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button onClick={() => setUploadedFiles(prev => ({ ...prev, images: prev.images.filter((_, j) => j !== i) }))} style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={8} /></button>
+                                </div>
+                            ))}
+                            <span style={{ fontSize: 11, color: '#6b7280', alignSelf: 'center' }}>{uploadedFiles.images.length} image{uploadedFiles.images.length > 1 ? 's' : ''}</span>
+                        </div>
+                    )}
                     <div className="gn-chat-input-wrap">
+                        {!html && (
+                            <>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleFileUpload(e.target.files)}
+                                />
+                                <button
+                                    className="gn-send-btn"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading || uploadingFiles}
+                                    title="Upload files (PDF, text, images)"
+                                    style={{ opacity: 0.6 }}
+                                >
+                                    {uploadingFiles ? <span className="gn-spinner" /> : <Paperclip size={16} />}
+                                </button>
+                            </>
+                        )}
                         <textarea
                             ref={textareaRef}
                             className="gn-chat-input"
@@ -2534,6 +2657,82 @@ const WebsiteGenerator = () => {
                 </div>
                 )}
             </aside>
+
+            {/* ─── Image Assignment Modal ─── */}
+            {imageAssignModal && uploadedFiles.images.length > 0 && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }} onClick={() => { setImageAssignModal(false); setPendingGenPrompt(null); }}>
+                    <div style={{ background: '#1a1a2e', borderRadius: 16, padding: '24px 28px', maxWidth: 520, width: '95%', maxHeight: '85vh', overflow: 'auto', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <h3 style={{ color: '#f3f4f6', margin: 0, fontSize: 16 }}>Assign Images to Sections</h3>
+                            <button onClick={() => { setImageAssignModal(false); setPendingGenPrompt(null); }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><X size={18} /></button>
+                        </div>
+                        <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                            Click an image, then select which section it should appear in. Unassigned images will be used as extras or in gallery.
+                        </p>
+
+                        {/* Image thumbnails */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 10, marginBottom: 20 }}>
+                            {uploadedFiles.images.map((img, i) => {
+                                const assigned = imageAssignments[img.url];
+                                return (
+                                    <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: assigned ? '2px solid #34d399' : '2px solid rgba(255,255,255,0.08)', cursor: 'pointer', aspectRatio: '1' }} title={img.filename}>
+                                        <img src={img.url} alt={img.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        {assigned && (
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.75)', padding: '3px 6px', fontSize: 10, color: '#34d399', fontWeight: 600, textTransform: 'capitalize' }}>
+                                                {assigned}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Section buttons */}
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 8 }}>Assign selected images to:</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {['hero', 'about', 'services', 'team', 'gallery', 'contact', 'features', 'portfolio'].map(section => {
+                                    const count = Object.values(imageAssignments).filter(v => v === section).length;
+                                    return (
+                                        <button
+                                            key={section}
+                                            onClick={() => {
+                                                // Find first unassigned image and assign it to this section
+                                                const unassigned = uploadedFiles.images.find(img => !imageAssignments[img.url]);
+                                                if (unassigned) handleImageAssign(unassigned.url, section);
+                                            }}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                                                textTransform: 'capitalize',
+                                                background: count > 0 ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.04)',
+                                                border: count > 0 ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                                                color: count > 0 ? '#34d399' : '#9ca3af',
+                                            }}
+                                        >
+                                            {section} {count > 0 && `(${count})`}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Clear + action buttons */}
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            {Object.keys(imageAssignments).length > 0 && (
+                                <button onClick={() => setImageAssignments({})} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>
+                                    Clear All
+                                </button>
+                            )}
+                            <button onClick={handleSkipImageAssignment} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>
+                                Skip — Use Stock Photos
+                            </button>
+                            <button onClick={handleConfirmImageAssignment} style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                Generate with My Images
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── Resize Handle ─── */}
             {!isMobile && <div className="gn-resize-handle" onMouseDown={startResize} />}

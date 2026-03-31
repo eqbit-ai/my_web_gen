@@ -541,9 +541,82 @@ def _strip_comment_markers(html: str) -> str:
     return html
 
 
-async def _resolve_images_safe(html: str, niche_key: str = None) -> str:
+def _apply_user_images(html: str, user_images: list[dict] | None) -> str:
+    """Replace {{IMG:...}} placeholders with user-assigned images based on section mapping.
+
+    user_images: list of {url, section, filename} dicts.
+    section values: "hero", "about", "services", "gallery", "team", etc.
+    """
+    if not user_images:
+        return html
+
+    # Build section → URL mapping
+    section_map = {}
+    gallery_images = []
+    unassigned = []
+    for img in user_images:
+        section = (img.get("section") or "").lower().strip()
+        url = img.get("url", "")
+        if not url:
+            continue
+        if section == "gallery":
+            gallery_images.append(url)
+        elif section:
+            section_map[section] = url
+        else:
+            unassigned.append(url)
+
+    if not section_map and not gallery_images and not unassigned:
+        return html
+
+    used_unassigned = 0
+
+    def _replace_placeholder(match):
+        nonlocal used_unassigned
+        query = match.group(1).lower()
+
+        # Try matching section keywords in the placeholder query
+        for section_key, url in section_map.items():
+            if section_key in query:
+                return url
+
+        # Use unassigned images for remaining placeholders
+        if used_unassigned < len(unassigned):
+            url = unassigned[used_unassigned]
+            used_unassigned += 1
+            return url
+
+        # No user image available — keep placeholder for stock photo resolution
+        return match.group(0)
+
+    html = re.sub(r'\{\{IMG:([^}]+)\}\}', _replace_placeholder, html)
+
+    # Inject gallery images into gallery section if any
+    if gallery_images:
+        gallery_match = re.search(
+            r'(<section[^>]*data-section-type="gallery"[^>]*>)(.*?)(</section>)',
+            html, re.DOTALL
+        )
+        if gallery_match:
+            gallery_html = gallery_match.group(2)
+            # Find existing img tags in gallery and append user images
+            for gimg_url in gallery_images:
+                img_tag = f'<img src="{gimg_url}" alt="Gallery" class="img-cover gallery-image" loading="lazy" decoding="async">'
+                # Insert before closing grid div or at end of gallery content
+                grid_match = re.search(r'(</div>\s*</div>\s*$)', gallery_html)
+                if grid_match:
+                    gallery_html = gallery_html[:grid_match.start()] + f'\n<div class="gallery-item" data-aos="zoom-in">{img_tag}</div>\n' + gallery_html[grid_match.start():]
+            html = html[:gallery_match.start(2)] + gallery_html + html[gallery_match.end(2):]
+
+    return html
+
+
+async def _resolve_images_safe(html: str, niche_key: str = None, user_images: list[dict] | None = None) -> str:
     """Resolve image placeholders with safety cleanup for any unresolved ones."""
-    # First: convert any hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders
+    # First: apply user-assigned images
+    html = _apply_user_images(html, user_images)
+
+    # Then: convert any hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders
     html = _convert_hallucinated_urls_to_placeholders(html)
 
     # Then resolve placeholders to real image URLs
@@ -3132,6 +3205,7 @@ class GenerateRequest(BaseModel):
     designSystem: dict | None = None
     templateId: str | None = None
     currentPage: str = "index"
+    userImages: list[dict] | None = None  # [{url, filename, section}] — user-assigned images
 
 
 class EditElementRequest(BaseModel):
@@ -3164,6 +3238,77 @@ class RestoreSessionRequest(BaseModel):
     isMultipage: bool = False
     pages: dict | None = None
     currentPage: str = "index"
+
+
+@router.post("/upload-files")
+async def upload_files(
+    request: Request,
+    user: dict = Depends(require_auth),
+):
+    """Upload documents and images for website generation.
+
+    Accepts multipart form data with files. Returns extracted text and uploaded image URLs.
+    Images are stored in S3 for use during generation.
+    """
+    from app.utils.file_parser import extract_text, extract_zip, is_image, is_zip, upload_image_to_s3
+
+    form = await request.form()
+    files = form.getlist("files")
+
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+    if len(files) > 20:
+        raise HTTPException(status_code=400, detail="Maximum 20 files allowed")
+
+    extracted_texts = []
+    uploaded_images = []
+    errors = []
+
+    async def _process_file(filename: str, content: bytes):
+        """Process a single file — extract text or upload image."""
+        if len(content) > 10 * 1024 * 1024:
+            errors.append(f"{filename}: File too large (max 10MB)")
+            return
+
+        if is_image(filename):
+            try:
+                img_data = await upload_image_to_s3(filename, content, user["user_id"])
+                uploaded_images.append(img_data)
+            except Exception as e:
+                errors.append(f"{filename}: Upload failed — {e}")
+        else:
+            text = extract_text(filename, content)
+            if text and text.strip():
+                extracted_texts.append({"filename": filename, "text": text.strip()})
+            else:
+                errors.append(f"{filename}: Could not extract text")
+
+    for f in files:
+        if not hasattr(f, "filename") or not f.filename:
+            continue
+
+        content = await f.read()
+
+        # Handle ZIP files — extract and process contents
+        if is_zip(f.filename):
+            if len(content) > 50 * 1024 * 1024:  # 50MB for ZIP
+                errors.append(f"{f.filename}: ZIP too large (max 50MB)")
+                continue
+            zip_files = extract_zip(content)
+            logger.info(f"[UPLOAD] ZIP {f.filename} → {len(zip_files)} files extracted")
+            for zf_name, zf_content in zip_files:
+                await _process_file(zf_name, zf_content)
+        else:
+            await _process_file(f.filename, content)
+
+    combined_text = "\n\n".join(t["text"] for t in extracted_texts) if extracted_texts else ""
+
+    return {
+        "extracted_text": combined_text,
+        "text_files": [{"filename": t["filename"], "chars": len(t["text"])} for t in extracted_texts],
+        "images": uploaded_images,
+        "errors": errors,
+    }
 
 
 @router.post("/restore-session")
@@ -3577,6 +3722,14 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         "stage",
                         {"stage": 2, "name": "css", "status": "done", "message": f"CSS extracted ({len(css):,} chars)"},
                     )
+
+                # ── Apply user-assigned images (if any) ────────────────
+                if req.userImages:
+                    html = _apply_user_images(html, req.userImages)
+                    if is_multipage and pages_dict:
+                        for _slug, _pd in pages_dict.items():
+                            _pd["html"] = _apply_user_images(_pd["html"], req.userImages)
+                    logger.info(f"[USER IMAGES] Applied {len(req.userImages)} user-assigned images")
 
                 # ── Quality scoring + auto-fix ──
                 current_stage = "quality"

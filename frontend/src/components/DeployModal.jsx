@@ -22,6 +22,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     const [showTldPicker, setShowTldPicker] = useState(false);
     const [ownedDomains, setOwnedDomains] = useState([]);
     const [connectingDomain, setConnectingDomain] = useState(null);
+    const [purchaseConfirm, setPurchaseConfirm] = useState(null); // { sld, tld, price }
     const searchInputRef = useRef(null);
 
     const allTlds = ['com', 'ae', 'net', 'io', 'org', 'co', 'dev', 'app', 'me', 'info', 'biz', 'xyz'];
@@ -151,6 +152,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     };
 
     const handleDomainPurchase = async (sld, tld) => {
+        setPurchaseConfirm(null);
         setPurchasingDomain(`${sld}.${tld}`);
         setDomainError(null);
         try {
@@ -503,7 +505,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                                                 )}
                                                 <button
                                                     className="dm-btn dm-btn-register"
-                                                    onClick={() => handleDomainPurchase(cheapest.sld, cheapest.tld)}
+                                                    onClick={() => setPurchaseConfirm({ sld: cheapest.sld, tld: cheapest.tld, price: cheapest.price })}
                                                     disabled={!!purchasingDomain}
                                                 >
                                                     {purchasingDomain === cheapest.domain ? (
@@ -542,7 +544,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                                                     )}
                                                     <button
                                                         className="dm-btn dm-btn-sm dm-btn-register"
-                                                        onClick={() => handleDomainPurchase(r.sld, r.tld)}
+                                                        onClick={() => setPurchaseConfirm({ sld: r.sld, tld: r.tld, price: r.price })}
                                                         disabled={!!purchasingDomain}
                                                     >
                                                         {purchasingDomain === r.domain ? (
@@ -587,6 +589,59 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                     </div>
                 )}
             </div>
+
+            {/* Domain Purchase Confirmation */}
+            {purchaseConfirm && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000,
+                }} onClick={() => setPurchaseConfirm(null)}>
+                    <div style={{
+                        background: '#1a1a2e', borderRadius: 16, padding: '28px 32px', maxWidth: 400, width: '90%',
+                        border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+                    }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ color: '#f3f4f6', margin: '0 0 8px', fontSize: 18 }}>Confirm Domain Purchase</h3>
+                        <p style={{ color: '#9ca3af', fontSize: 13, margin: '0 0 16px' }}>
+                            You are about to register this domain. This action is non-refundable.
+                        </p>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '14px 16px',
+                            marginBottom: 16, border: '1px solid rgba(255,255,255,0.08)',
+                        }}>
+                            <span style={{ fontSize: 18, fontWeight: 700, color: '#f3f4f6' }}>
+                                {purchaseConfirm.sld}.{purchaseConfirm.tld}
+                            </span>
+                            {purchaseConfirm.price && (
+                                <span style={{ marginLeft: 12, fontSize: 14, color: '#34d399', fontWeight: 600 }}>
+                                    ${Number(purchaseConfirm.price.amount).toFixed(2)}/yr
+                                </span>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button
+                                onClick={() => setPurchaseConfirm(null)}
+                                style={{
+                                    flex: 1, padding: '10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+                                    background: 'transparent', color: '#9ca3af', fontSize: 14, cursor: 'pointer',
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleDomainPurchase(purchaseConfirm.sld, purchaseConfirm.tld)}
+                                disabled={!!purchasingDomain}
+                                style={{
+                                    flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+                                    background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff',
+                                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                                }}
+                            >
+                                {purchasingDomain ? 'Processing...' : 'Confirm Purchase'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -10,6 +10,24 @@ const getAuthHeaders = () => {
     };
 };
 
+// ── File Upload ─────────────────────────────────────────────────────────
+
+export const uploadFiles = async (files) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    const res = await fetch(`${API_BASE_URL}/generate/upload-files`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Upload failed');
+    }
+    return res.json();
+};
+
 // ── Generator ───────────────────────────────────────────────────────────
 
 export const generateWebsite = async (prompt, sessionId = null, niche = null) => {
@@ -28,12 +46,13 @@ export const generateWebsite = async (prompt, sessionId = null, niche = null) =>
     }
 };
 
-export const generateWebsiteStream = (prompt, sessionId = null, niche = null, onStage, onComplete, onError, templateId = null, currentPage = 'index') => {
+export const generateWebsiteStream = (prompt, sessionId = null, niche = null, onStage, onComplete, onError, templateId = null, currentPage = 'index', userImages = null) => {
     const controller = new AbortController();
     const headers = getAuthHeaders();
 
     const body = { prompt, sessionId, niche, currentPage };
     if (templateId) body.templateId = templateId;
+    if (userImages && userImages.length > 0) body.userImages = userImages;
 
     // ── Keep-alive: Web Lock (keeps event loop active in background tabs) ──
     let lockRelease = null;
