@@ -2,6 +2,8 @@
 Section manipulation routes — reorder, delete, duplicate, regenerate sections.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
