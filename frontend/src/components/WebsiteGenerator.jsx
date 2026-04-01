@@ -2353,6 +2353,14 @@ const WebsiteGenerator = () => {
         setCss(target?.css || curCss);
         setCurrentPage(slug);
 
+        // 3b. Scroll iframe to top when switching pages
+        try {
+            const iframe = document.querySelector('.preview-iframe');
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.scrollTo(0, 0);
+            }
+        } catch (e) { /* cross-origin safety */ }
+
         // 4. Sync the NEW page's HTML to the backend session so section edits target the right page
         if (curSessionId && target?.html) {
             syncSession(curSessionId, target.html, target.css || curCss, jsRef.current || '', slug)

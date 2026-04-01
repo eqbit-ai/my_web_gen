@@ -639,7 +639,7 @@ def _ensure_hero_has_image(html: str, niche_key: str = None) -> str:
     hero_full = hero_tag + hero_content
 
     # Check if hero already has an image (placeholder or real URL)
-    has_image = bool(re.search(r'\{\{IMG:|background[^;]*url\(|<img[^>]*(?:hero|cover|banner)', hero_full, re.IGNORECASE))
+    has_image = bool(re.search(r'\{\{IMG:|background[^;]*url\(|<img\s[^>]*src\s*=', hero_full, re.IGNORECASE))
     if has_image:
         return html
 

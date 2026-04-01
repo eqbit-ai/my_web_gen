@@ -204,6 +204,17 @@ def normalize_cards(css: str, theme: str = "light") -> str:
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }"""
 
+    # Pricing cards must allow overflow for "Most Popular" / "Recommended" badges
+    card_css += """
+/* Pricing card overflow fix — badges must be visible above card */
+[data-section-type="pricing"] [class*="card"],
+[data-section-type="pricing"] [class*="Card"],
+[data-section-type="pricing"] [class*="pricing"],
+[data-section-type="pricing"] [class*="plan"] {
+  overflow: visible !important;
+  position: relative;
+}"""
+
     return css.rstrip() + "\n" + card_css + "\n"
 
 
