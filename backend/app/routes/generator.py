@@ -707,6 +707,11 @@ def validate_html(html: str) -> str:
     html = re.sub(r"^```\w*\s*\n?", "", html.strip())
     html = re.sub(r"\n?```\s*$", "", html.strip())
 
+    # Fix mismatched quotes in url() — LLM sometimes mixes single/double quotes
+    # e.g. url("https://...jpeg') → url('https://...jpeg')
+    html = re.sub(r'url\("([^"\']+)\'\)', r"url('\1')", html)
+    html = re.sub(r"url\('([^\"']+)\"\)", r"url('\1')", html)
+
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
     if len(html) > 150000:
