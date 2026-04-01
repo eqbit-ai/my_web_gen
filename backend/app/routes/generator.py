@@ -715,15 +715,12 @@ def validate_html(html: str) -> str:
     html = re.sub(r"^```\w*\s*\n?", "", html.strip())
     html = re.sub(r"\n?```\s*$", "", html.strip())
 
-    # Fix url() quotes inside style attributes — CRITICAL for hero background images.
-    # LLM generates: style="background:...url("https://image.jpg')..." which breaks HTML
-    # because the " inside url(" prematurely closes the style="" attribute.
-    # Strategy: find all url(...) patterns and normalize quotes to single quotes.
-    def _fix_url_quotes(m):
-        url_content = m.group(1).strip().strip("\"'")
-        return f"url('{url_content}')"
-    html = re.sub(r'url\((["\']?https?://[^)]+)\)', _fix_url_quotes, html)
-    html = re.sub(r"url\(([\"']?\{\{IMG:[^)]+)\)", _fix_url_quotes, html)
+    # Fix url() quotes — CRITICAL for hero background images.
+    # LLM generates url("...") inside style="" attributes, which breaks HTML because
+    # the double quote inside url(" prematurely closes the style attribute.
+    # Simple global fix: replace url(" with url(' and ") after URLs with ')
+    html = html.replace('url("', "url('")
+    html = re.sub(r"(url\('[^']*?)\"(\))", r"\1'\2", html)  # fix trailing " → '
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
