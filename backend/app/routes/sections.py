@@ -1231,12 +1231,13 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
 async def update_contact(req: UpdateContactRequest, user: dict = Depends(require_auth)):
     """Update contact form configuration and regenerate the contact section."""
     import traceback as _tb
+    _log = logging.getLogger(__name__)
     try:
         return await _update_contact_impl(req, user)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"[CONTACT] update-contact crashed: {e}\n{_tb.format_exc()}")
+        _log.error(f"[CONTACT] update-contact crashed: {e}\n{_tb.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1251,13 +1252,14 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
     }
 
     # Store recipient email in Redis session (deploy code reads it from here)
+    _log = logging.getLogger(__name__)
     if req.recipientEmail:
         session["recipient_email"] = req.recipientEmail
         try:
             await redis_save_session(req.sessionId, session)
-            logger.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
+            _log.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
         except Exception as e:
-            logger.warning(f"[CONTACT] Failed to save session (non-critical): {e}")
+            _log.warning(f"[CONTACT] Failed to save session (non-critical): {e}")
 
         # Also save to Site record directly (for already-deployed sites)
         try:
@@ -1277,9 +1279,9 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
                             _update(Site).where(Site.id == project_id).values(recipient_email=req.recipientEmail)
                         )
                 await db.commit()
-                logger.info(f"[CONTACT] recipient_email saved to Site record ({result.rowcount} rows updated)")
+                _log.info(f"[CONTACT] recipient_email saved to Site record ({result.rowcount} rows updated)")
         except Exception as e:
-            logger.warning(f"[CONTACT] Failed to save recipient_email to Site: {e}")
+            _log.warning(f"[CONTACT] Failed to save recipient_email to Site: {e}")
 
     page_html = _get_page_html(session, req.pageSlug)
     section_id, existing_html = _find_section_by_type(page_html, "contact")
