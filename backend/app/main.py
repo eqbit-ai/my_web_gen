@@ -228,10 +228,13 @@ class PublicCORSMiddleware:
             await send({"type": "http.response.body", "body": b""})
             return
 
-        # For actual requests, inject CORS header into response
+        # For actual requests, inject CORS header into response (replacing any existing one to prevent duplicates)
         async def send_with_cors(message):
             if message["type"] == "http.response.start":
-                headers = list(message.get("headers", []))
+                headers = [
+                    (k, v) for k, v in message.get("headers", [])
+                    if k.lower() != b"access-control-allow-origin"
+                ]
                 headers.append((b"access-control-allow-origin", origin.encode()))
                 message["headers"] = headers
             await send(message)
