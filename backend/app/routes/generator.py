@@ -645,12 +645,21 @@ def _ensure_hero_has_image(html: str, niche_key: str = None) -> str:
 
     # No image found — inject background-image with {{IMG:}} placeholder
     niche_desc = (niche_key or "professional business").replace("_", " ")
-    bg_placeholder = f"background:linear-gradient(135deg,rgba(10,10,20,0.75),rgba(20,20,40,0.8)),url('{{{{IMG:{niche_desc} hero background professional}}}}');background-size:cover;background-position:center;"
+    bg_with_image = f"background:linear-gradient(135deg,rgba(10,10,20,0.75),rgba(20,20,40,0.8)),url('{{{{IMG:{niche_desc} hero background professional}}}}');background-size:cover;background-position:center;"
 
     if 'style="' in hero_tag:
-        new_tag = hero_tag.replace('style="', f'style="{bg_placeholder}')
+        # Replace any existing background/background-color property to avoid conflicts
+        existing_style = re.search(r'style="([^"]*)"', hero_tag)
+        if existing_style:
+            old_style = existing_style.group(1)
+            # Remove existing background properties that would conflict
+            cleaned = re.sub(r'background(?:-color|-image|-size|-position)?:\s*[^;]+;?\s*', '', old_style)
+            new_style = bg_with_image + cleaned
+            new_tag = hero_tag[:existing_style.start()] + f'style="{new_style}"' + hero_tag[existing_style.end():]
+        else:
+            new_tag = hero_tag.replace('style="', f'style="{bg_with_image}')
     else:
-        new_tag = hero_tag[:-1] + f' style="{bg_placeholder}">'
+        new_tag = hero_tag[:-1] + f' style="{bg_with_image}">'
 
     html = html[:hero_match.start(1)] + new_tag + html[hero_match.end(1):]
     logger.info(f"[HERO IMAGE] Injected {{{{IMG:}}}} placeholder for missing hero background (niche={niche_key})")
@@ -2890,12 +2899,32 @@ def _rebuild_page_nav(html: str, page_links: list[dict], current_slug: str) -> s
     """
     is_index = current_slug == "index"
 
-    # --- Format A: <ul class="nav-links"> ---
-    ul_pattern = re.compile(
-        r'(<ul\s+class="nav-links"[^>]*>)(.*?)(</ul>)',
-        re.IGNORECASE | re.DOTALL,
-    )
-    ul_match = ul_pattern.search(html)
+    # --- Format A: <ul> with nav-related class ---
+    # Try progressively broader patterns
+    ul_match = None
+    for ul_cls_pattern in [
+        r'<ul\s+class="nav-links"[^>]*>',           # exact "nav-links"
+        r'<ul\s+class="[^"]*(?:nav|menu|links)[^"]*"[^>]*>',  # any nav-related class
+    ]:
+        m = re.search(f'({ul_cls_pattern})(.*?)(</ul>)', html, re.IGNORECASE | re.DOTALL)
+        if m and '<li' in m.group(2) and '<a ' in m.group(2):
+            ul_match = m
+            break
+
+    # Last resort: any <ul> inside <nav> that contains <li><a> items
+    if not ul_match:
+        nav_match = re.search(r'<nav\b[^>]*>(.*?)</nav>', html, re.IGNORECASE | re.DOTALL)
+        if nav_match:
+            # Find the <ul> inside this nav
+            nav_start = nav_match.start(1)
+            for inner_m in re.finditer(r'(<ul[^>]*>)(.*?)(</ul>)', nav_match.group(1), re.IGNORECASE | re.DOTALL):
+                if '<li' in inner_m.group(2) and '<a ' in inner_m.group(2):
+                    # Re-search in full html at the right offset
+                    ul_match = re.search(
+                        r'(<ul[^>]*>)(' + re.escape(inner_m.group(2)) + r')(</ul>)',
+                        html, re.DOTALL,
+                    )
+                    break
     if ul_match:
         old_content = ul_match.group(2)
         old_items = _extract_nav_items(old_content, "li")
@@ -2930,12 +2959,16 @@ def _rebuild_page_nav(html: str, page_links: list[dict], current_slug: str) -> s
         html = html[:ul_match.start(2)] + new_content + html[ul_match.end(2):]
         return html
 
-    # --- Format B: <div class="nav-links"> ---
-    div_pattern = re.compile(
-        r'(<div\s+class="nav-links"[^>]*>)(.*?)(</div>)',
-        re.IGNORECASE | re.DOTALL,
-    )
-    div_match = div_pattern.search(html)
+    # --- Format B: <div> with nav-related class containing <a> links ---
+    div_match = None
+    for _div_cls in [
+        r'<div\s+class="nav-links"[^>]*>',
+        r'<div\s+class="[^"]*(?:nav-menu|menu-links|nav-items|links)[^"]*"[^>]*>',
+    ]:
+        _dm = re.search(f'({_div_cls})(.*?)(</div>)', html, re.IGNORECASE | re.DOTALL)
+        if _dm and '<a ' in _dm.group(2) and 'href=' in _dm.group(2):
+            div_match = _dm
+            break
     if div_match:
         old_content = div_match.group(2)
         old_items = _extract_nav_items(old_content, "a")
