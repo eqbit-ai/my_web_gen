@@ -119,6 +119,13 @@ async def submit_form(site_id: str, request: Request):
     Accepts both application/json and application/x-www-form-urlencoded.
     Returns an HTML "thank you" page (for traditional form POST).
     """
+    # Validate site_id is a valid UUID
+    import uuid
+    try:
+        uuid.UUID(site_id)
+    except (ValueError, AttributeError):
+        return HTMLResponse(THANK_YOU_HTML, status_code=200)
+
     # Parse form data
     content_type = request.headers.get("content-type", "")
     try:
@@ -195,17 +202,16 @@ async def submit_form(site_id: str, request: Request):
 
     logger.info("Form submission received")
 
-    # CORS headers for cross-origin form submissions from deployed S3 sites
-    origin = request.headers.get("origin", "*")
-    cors_headers = {"Access-Control-Allow-Origin": origin}
+    # CORS is handled by PublicCORSMiddleware — do NOT add manual CORS headers here
+    # (duplicate Access-Control-Allow-Origin headers cause browsers to reject the response)
 
     # Return JSON if client prefers it (AJAX), otherwise HTML
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
         from fastapi.responses import JSONResponse
-        return JSONResponse({"success": True, "message": "Submission received"}, headers=cors_headers)
+        return JSONResponse({"success": True, "message": "Submission received"})
 
-    return HTMLResponse(THANK_YOU_HTML, status_code=200, headers=cors_headers)
+    return HTMLResponse(THANK_YOU_HTML, status_code=200)
 
 
 # ── Authenticated Inbox Endpoints ───────────────────────────────────────
