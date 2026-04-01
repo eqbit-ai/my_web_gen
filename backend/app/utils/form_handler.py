@@ -13,9 +13,11 @@ import re
 
 FORM_HANDLER_JS = """
 // ── Universal Form Handler ──────────────────────────────────────────
-(function() {
+// Runs after a delay to ensure ALL other scripts (including LLM-generated ones) have attached their handlers.
+// Then cloneNode removes those handlers, and only our AJAX handler remains.
+setTimeout(function() {
     document.querySelectorAll('form[data-form-handler]').forEach(function(form) {
-        // Remove any existing submit handlers from LLM-generated JS to prevent conflicts
+        // Remove ALL existing submit handlers (LLM-generated JS, inline scripts, etc.)
         var clone = form.cloneNode(true);
         form.parentNode.replaceChild(clone, form);
         form = clone;
@@ -104,7 +106,7 @@ FORM_HANDLER_JS = """
             });
         });
     });
-})();
+}, 500);
 """
 
 
