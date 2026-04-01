@@ -701,6 +701,11 @@ async def _resolve_images_safe(html: str, niche_key: str = None, user_images: li
     # Strip comment markers that leak into rendered output
     html = _strip_comment_markers(html)
 
+    # Fix url() quotes — must run AFTER image resolution since LLM and resolver
+    # may produce url("https://...") which breaks inside style="" attributes
+    html = re.sub(r'url\("(https?://)', r"url('\1", html)
+    html = re.sub(r"(url\('https?://[^'\"]*?)\"(\s*\))", r"\1'\2", html)
+
     return html
 
 
