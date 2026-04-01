@@ -707,10 +707,15 @@ def validate_html(html: str) -> str:
     html = re.sub(r"^```\w*\s*\n?", "", html.strip())
     html = re.sub(r"\n?```\s*$", "", html.strip())
 
-    # Fix mismatched quotes in url() — LLM sometimes mixes single/double quotes
-    # e.g. url("https://...jpeg') → url('https://...jpeg')
-    html = re.sub(r'url\("([^"\']+)\'\)', r"url('\1')", html)
-    html = re.sub(r"url\('([^\"']+)\"\)", r"url('\1')", html)
+    # Fix url() quotes inside style attributes — CRITICAL for hero background images.
+    # LLM generates: style="background:...url("https://image.jpg')..." which breaks HTML
+    # because the " inside url(" prematurely closes the style="" attribute.
+    # Strategy: find all url(...) patterns and normalize quotes to single quotes.
+    def _fix_url_quotes(m):
+        url_content = m.group(1).strip().strip("\"'")
+        return f"url('{url_content}')"
+    html = re.sub(r'url\((["\']?https?://[^)]+)\)', _fix_url_quotes, html)
+    html = re.sub(r"url\(([\"']?\{\{IMG:[^)]+)\)", _fix_url_quotes, html)
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
@@ -2937,16 +2942,8 @@ def _rebuild_page_nav(html: str, page_links: list[dict], current_slug: str) -> s
 
         new_items = []
         if is_index:
-            # Keep existing anchor links (they still work on index page)
-            for item in old_items:
-                if item["is_cta"]:
-                    continue
-                if item["href"].startswith("#"):
-                    new_items.append(item["full"])
-            # Add page links for subpages (not Home, since we're already on index)
+            # Add all page links including Home for consistent nav across all pages
             for link in page_links:
-                if link["slug"] == "index":
-                    continue
                 new_items.append(f'<li><a href="{link["href"]}">{link["title"]}</a></li>')
         else:
             # Subpage: full inter-page nav, convert leftover anchors to homepage
@@ -2981,14 +2978,8 @@ def _rebuild_page_nav(html: str, page_links: list[dict], current_slug: str) -> s
 
         new_items = []
         if is_index:
-            for item in old_items:
-                if item["is_cta"]:
-                    continue
-                if item["href"].startswith("#"):
-                    new_items.append(item["full"])
+            # Add all page links including Home for consistent nav
             for link in page_links:
-                if link["slug"] == "index":
-                    continue
                 new_items.append(f'<a href="{link["href"]}">{link["title"]}</a>')
         else:
             for link in page_links:
