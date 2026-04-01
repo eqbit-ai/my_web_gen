@@ -1307,7 +1307,7 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
             page_html = _re.sub(r'(<footer[\s>])', basic_contact + r'\1', page_html, count=1)
         else:
             page_html += basic_contact
-        _set_page_html(session, req.pageSlug, page_html)
+        _set_page_html(session, page_html, req.pageSlug)
         await redis_save_session(req.sessionId, session)
         # Now find it again
         section_id, existing_html = _find_section_by_type(page_html, "contact")
