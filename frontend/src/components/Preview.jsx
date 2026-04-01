@@ -713,7 +713,36 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       var link = e.target.closest('a[href]');
       if (!link) return;
       var href = link.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel') || href.startsWith('javascript')) return;
+      if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel') || href.startsWith('javascript')) return;
+      // Handle anchor links (#contact, #booking) — in multipage, these may target a different page
+      if (href.startsWith('#')) {
+        var anchor = href.substring(1).toLowerCase();
+        // Check if this anchor matches a page slug by asking parent
+        // Common CTA anchors that should navigate to pages
+        var ctaMap = {
+          'book': 'booking', 'book-now': 'booking', 'booknow': 'booking',
+          'reserve': 'booking', 'reservation': 'booking', 'reservations': 'booking',
+          'appointment': 'booking', 'schedule': 'booking',
+          'contact': 'contact', 'contact-us': 'contact', 'contactus': 'contact',
+          'get-in-touch': 'contact', 'reach-us': 'contact',
+          'get-started': 'contact', 'getstarted': 'contact',
+          'pricing': 'pricing', 'plans': 'pricing',
+          'services': 'services', 'our-services': 'services',
+          'about': 'about', 'about-us': 'about',
+          'portfolio': 'portfolio', 'gallery': 'gallery', 'work': 'portfolio',
+          'menu': 'menu', 'rooms': 'rooms', 'properties': 'properties',
+          'courses': 'courses', 'programs': 'courses'
+        };
+        var targetSlug = ctaMap[anchor] || anchor;
+        // If anchor target doesn't exist on this page, try navigating to the page
+        var targetEl = document.getElementById(anchor) || document.querySelector('[data-section-type="' + anchor + '"]');
+        if (!targetEl) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.parent.postMessage({ type: 'page-navigate', slug: targetSlug }, '*');
+        }
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       // Map href to page slug
@@ -934,7 +963,18 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         var link = e.target.closest('a[href]');
         if (!link) return;
         var href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel')) return;
+        if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('tel')) return;
+        // Anchor links that don't resolve on this page → try page navigation
+        if (href.startsWith('#')) {
+            var frag = href.substring(1);
+            var el = document.getElementById(frag) || document.querySelector('[data-section-type="' + frag + '"]');
+            if (!el) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.parent.postMessage({ type: 'page-navigate', slug: frag.toLowerCase() }, '*');
+            }
+            return;
+        }
         // Match "/" or "/index.html" as index
         if (href === '/' || href === '/index.html' || href === 'index.html' || href === '/index' || href === '/home' || href === '/home.html' || href === 'home.html') {
             e.preventDefault();

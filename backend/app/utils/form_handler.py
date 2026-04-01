@@ -15,8 +15,14 @@ FORM_HANDLER_JS = """
 // ── Universal Form Handler ──────────────────────────────────────────
 (function() {
     document.querySelectorAll('form[data-form-handler]').forEach(function(form) {
+        // Remove any existing submit handlers from LLM-generated JS to prevent conflicts
+        var clone = form.cloneNode(true);
+        form.parentNode.replaceChild(clone, form);
+        form = clone;
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            e.stopImmediatePropagation();
             var btn = form.querySelector('button[type="submit"], input[type="submit"], button:not([type])');
             if (!btn) return;
 
@@ -33,8 +39,9 @@ FORM_HANDLER_JS = """
             formData.forEach(function(value, key) { data[key] = value; });
 
             var endpoint = form.getAttribute('data-form-handler') || form.action;
-            if (!endpoint || endpoint === window.location.href) {
-                // No endpoint configured — show success anyway (demo mode)
+            // Treat empty, hash-only, relative, or same-page URLs as "no real endpoint" → demo mode
+            if (!endpoint || endpoint === '#' || endpoint === window.location.href || endpoint.startsWith('#') || (endpoint.startsWith('/') && !endpoint.startsWith('/api/'))) {
+                // No real endpoint configured — show success (demo mode)
                 form.reset();
                 if (btn.tagName === 'INPUT') {
                     btn.value = 'Sent!';

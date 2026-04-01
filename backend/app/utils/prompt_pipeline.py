@@ -569,9 +569,24 @@ RULES FOR MULTI-PAGE:
 - Each page has: slug, title, sections[]
 - Navbar and footer are SHARED across all pages — define them ONCE in "shared_sections"
 - Navbar links should use real page hrefs: "/" for home, "/about.html" for about, "/services.html" for services, etc. Always use .html extension.
-- Home page should have 5-7 content sections (hero, features/services, stats, testimonials, CTA)
-- Subpages should have 3-5 content sections each
+- Home page should have 7-9 content sections (hero, features/services, stats, testimonials, CTA, about preview, gallery preview)
+- Subpages should have 5-7 content sections each — NOT just a hero and footer. Each page needs RICH content.
 - Every page MUST have unique content — don't repeat sections across pages
+- NEWSLETTER STRIP: Include ONLY on the HOME page footer — do NOT add newsletter/subscribe sections on subpages
+
+PAGE-SPECIFIC DESIGN VARIETY (CRITICAL — each page must feel DISTINCT while sharing the same brand):
+- Each page MUST use a DIFFERENT hero pattern. If homepage uses hero_split, About uses hero_full_image, Services uses hero_center, Contact uses hero_asymmetric. NEVER repeat the same hero pattern on two pages.
+- Each page MUST use DIFFERENT section patterns for similar content. If homepage uses card_grid for features, Services page must use feature_split or feature_cards or feature_steps — NOT card_grid again.
+- Vary section BACKGROUNDS across pages: alternate between white sections, tinted sections (light primary/accent tint), dark accent sections, gradient sections. Each page should have its own visual rhythm.
+- Each page should have a UNIQUE layout signature:
+  * Home: showcase/overview feel — hero_split + stats + card_grid + testimonials + CTA
+  * About: editorial/storytelling feel — hero_full_image + feature_split (alternating) + timeline + team_grid + stats
+  * Services: detailed/professional feel — hero_center + feature_cards (with images) + feature_steps + pricing_table + testimonial_split + CTA
+  * Contact: warm/approachable feel — hero_asymmetric (shorter, 50vh) + contact_split + map section + FAQ accordion + trust badges
+  * Gallery: visual/immersive feel — hero_full_image + gallery_grid (masonry) + testimonials + CTA
+  * Menu: appetizing/organized feel — hero_full_image + categorized grid + feature_cards + CTA
+- AVOID using card_grid more than ONCE across all pages. Prefer: feature_split, feature_cards, feature_steps, feature_stacked, icon_grid, comparison_table — rotate these across pages.
+- Use DIFFERENT section densities per page: mix full-width sections, two-column splits, three-column grids, and single-column editorial blocks.
 
 JSON STRUCTURE for multi-page:
 {{
@@ -590,7 +605,7 @@ JSON STRUCTURE for multi-page:
       "meta_description": "...",
       "sections": [
         {{ "type": "hero", "pattern": "hero_split", "content": {{ ... }} }},
-        ... more sections ...
+        ... more sections (each with DIFFERENT patterns from other pages) ...
       ]
     }},
     {{
@@ -598,8 +613,8 @@ JSON STRUCTURE for multi-page:
       "title": "About Us",
       "meta_description": "...",
       "sections": [
-        {{ "type": "hero", "pattern": "hero_center", "content": {{ "headline": "...", "subheadline": "...", "image_query": "..." }} }},
-        ... more sections ...
+        {{ "type": "hero", "pattern": "hero_full_image", "content": {{ "headline": "...", "subheadline": "...", "image_query": "..." }} }},
+        ... more sections (use feature_split, timeline, team — NOT card_grid if homepage already uses it) ...
       ]
     }}
   ]
@@ -616,9 +631,15 @@ COMMON PAGE COMBINATIONS (pick what fits the business — use as many pages as t
 
 Use 4-5 pages depending on the scope of the user's request. Keep it focused — 5 pages max.
 
-Each subpage MUST start with a VISUALLY STRIKING hero section. Use hero_full_image or hero_center with a background image. The hero must have:
-- A full-width background image (via image_query) or animated gradient — NEVER just text on a plain dark/empty background
-- Minimum visual height equivalent to 60vh
+Each subpage MUST start with a VISUALLY STRIKING hero section. Each page MUST use a DIFFERENT hero pattern:
+- Home: hero_split or hero_asymmetric (text + image side by side)
+- About: hero_full_image (full-screen background photo with overlay — storytelling mood)
+- Services: hero_center (centered text, wide, confident)
+- Contact: hero_full_image or hero_center (shorter, 50vh — warmer tone)
+- Gallery: hero_full_image (stunning visual, immersive)
+The hero MUST have:
+- A full-width background image (via image_query) or side image — NEVER just text on a plain dark/empty background
+- Minimum visual height equivalent to 60vh (Contact can be 50vh)
 - Clear headline, subtitle, and CTA button
 - An overlay for readability if using a background image
 
@@ -1064,10 +1085,76 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
             for k, v in fonts.items():
                 color_info += f"  - {k}: {v}\n"
 
+    # Determine page-specific design guidance based on slug
+    page_slug = page.get("slug", "")
+    page_title = page.get("title", "")
+
+    # Per-page layout personality — each page gets unique design direction
+    page_design_hints = {
+        "about": """
+PAGE PERSONALITY — ABOUT (editorial storytelling):
+- Hero: Use hero_full_image with a cinematic team/workspace photo and dark overlay. Make it feel like a magazine cover.
+- Sections: Prefer feature_split (alternating left/right image+text) for company story. Use timeline for milestones. Use team_grid or team_cards for team members.
+- Layout rhythm: full-width hero → split section → full-width stats banner (dark bg with accent color) → split section (reversed) → team grid → CTA
+- Use varied section backgrounds: white, light tinted (primary at 5% opacity), dark accent band for stats.
+- This page should feel EDITORIAL and WARM — not corporate and cold.""",
+        "services": """
+PAGE PERSONALITY — SERVICES (detailed, professional):
+- Hero: Use hero_center with confident headline and subtle background pattern or photo.
+- Sections: Use feature_cards (with images, not just icons) for service overview. Use feature_steps or feature_stacked for process/methodology. Use comparison_table if applicable.
+- Layout rhythm: hero → feature_cards (3-col with photos) → full-width accent band (process steps) → feature_split (detailed service deep-dive) → testimonial_split → pricing or CTA
+- Use varied section backgrounds: white → tinted → white → dark accent → white.
+- This page should feel AUTHORITATIVE and DETAILED — show expertise, not just list services.""",
+        "contact": """
+PAGE PERSONALITY — CONTACT (warm, approachable):
+- Hero: Use a SHORTER hero (50vh, not 70vh) — visitors came here to act, not to admire. Use hero_full_image or hero_center.
+- Sections: Use contact_split (form + info side by side). Include a map/location visual. Add FAQ accordion. Add trust badges.
+- Layout rhythm: short hero → contact_split (form left, info right) → map/location section → FAQ accordion → trust badges → CTA
+- This page should feel INVITING and EASY — reduce friction, show trust signals.""",
+        "gallery": """
+PAGE PERSONALITY — GALLERY (visual, immersive):
+- Hero: Use hero_full_image with a stunning showcase photo. Minimal text, let the visual speak.
+- Sections: Use gallery_grid with varied image sizes (masonry feel). Add case study splits. Include testimonials.
+- Layout rhythm: immersive hero → gallery grid (masonry) → feature_split (case study) → testimonials → CTA
+- This page should feel IMMERSIVE and VISUAL — let the work speak for itself.""",
+        "menu": """
+PAGE PERSONALITY — MENU (appetizing, organized):
+- Hero: Use hero_full_image with a beautiful food/dish photo. Warm overlay tones.
+- Sections: Use categorized sections (starters, mains, desserts) with feature_cards or card_grid with food photography. Add a special/featured dish spotlight with feature_split.
+- Layout rhythm: hero → featured dish spotlight (split) → category grid → category grid → CTA/reservation
+- This page should feel APPETIZING and ORGANIZED — clear categories, beautiful food photography.""",
+        "pricing": """
+PAGE PERSONALITY — PRICING (clear, persuasive):
+- Hero: SHORTER hero (50vh) — visitors want to see prices, not more marketing.
+- Sections: Use pricing_table prominently. Add comparison_table. Include FAQ. Add testimonials for social proof.
+- Layout rhythm: short hero → pricing_table → comparison features → FAQ → testimonials → CTA
+- This page should feel TRANSPARENT and PERSUASIVE — clear pricing, address objections.""",
+    }
+
+    # Get page-specific hint or generate a generic one
+    slug_key = page_slug.lower().replace("-", "").replace("_", "")
+    page_hint = ""
+    for key, hint in page_design_hints.items():
+        if key in slug_key or slug_key in key:
+            page_hint = hint
+            break
+
+    if not page_hint:
+        page_hint = f"""
+PAGE PERSONALITY — {page_title.upper()} (unique, purposeful):
+- Use a DIFFERENT hero pattern from the homepage. If homepage uses hero_split, use hero_full_image or hero_center here.
+- Use DIFFERENT section patterns from other pages — avoid repeating the same card_grid/feature_split layouts.
+- Create visual rhythm by alternating section backgrounds (white, tinted, dark accent band).
+- This page should feel like it has its OWN personality while still belonging to the same brand."""
+
     # Enforce strong hero sections and design consistency on every page
     hero_rules = f"""
 SUBPAGE DESIGN RULES (CRITICAL — READ CAREFULLY):
+SECTION COUNT: Each subpage MUST have 5-7 content sections (excluding navbar/footer). A page with only 2-3 sections looks empty and unprofessional. Fill each page with relevant, meaningful content.
+NEWSLETTER: Do NOT include a "Stay Updated" / newsletter / subscribe section on subpages — only on the homepage.
 {color_info}
+{page_hint}
+
 HERO SECTION (THIS IS THE MOST IMPORTANT ELEMENT):
 - EVERY page MUST start with a visually striking hero section immediately after the navbar.
 - The hero MUST have a full-width background image (use {{IMG:descriptive keywords}} placeholder) with a dark color overlay.
@@ -1076,7 +1163,7 @@ HERO SECTION (THIS IS THE MOST IMPORTANT ELEMENT):
   background: linear-gradient(135deg, rgba(primary_r,primary_g,primary_b,0.85), rgba(dark_r,dark_g,dark_b,0.9)), url('unsplash-image');
   background-size: cover; background-position: center;
 - The hero must have: large bold heading (text-4xl/text-5xl), descriptive subtitle, and at least one styled CTA button.
-- Minimum hero height: 70vh on desktop, 50vh on mobile.
+- Minimum hero height: 70vh on desktop, 50vh on mobile (Contact/Pricing pages can be 50vh).
 - Hero text must be WHITE or very light colored with text-shadow for readability over the image.
 - The hero should feel premium, editorial, and high-end — NOT generic or plain.
 - HERO BACKGROUND IMAGE IS MANDATORY: Use inline style on the section tag:
@@ -1086,6 +1173,14 @@ HERO SECTION (THIS IS THE MOST IMPORTANT ELEMENT):
   - Services page: "professional workspace tools and equipment"
   - Contact page: "friendly receptionist at modern office front desk"
   - Gallery page: "stunning photography portfolio display"
+
+SECTION VARIETY (MANDATORY — this is what makes the site feel premium):
+- Do NOT use the same section layout pattern twice on this page.
+- Alternate section backgrounds to create visual rhythm: white → light tint → white → dark accent band → white
+- Mix section densities: full-width, two-column split, three-column grid, single-column editorial
+- Include at least ONE full-width accent band section (dark or gradient background with light text)
+- Include at least ONE split section (image + text side by side)
+- Each section should feel like a distinct "scene" — not a copy of the previous one
 
 FOOTER (MANDATORY):
 - The page MUST end with a complete footer section with data-section-type="footer".
@@ -1097,20 +1192,18 @@ FOOTER (MANDATORY):
 WHATSAPP BUTTON:
 - ALWAYS include a fixed WhatsApp float button at bottom-right of the page.
 
-DESIGN CONSISTENCY (CRITICAL):
-- ALL pages must use the EXACT SAME color values from the plan above — do NOT approximate or guess.
-- Use the SAME navbar HTML structure and styling on every page (same background, logo, link style, CTA button).
-- Use the SAME footer HTML structure and styling on every page.
-- Button styles MUST be identical: same background color, same padding, same border-radius, same hover effect.
-- Card borders, shadows, border-radius, heading sizes, and section padding must be consistent.
-- If the homepage uses a particular accent color, ALL subpages MUST use that EXACT SAME accent color value.
-- Typography must be identical: same font-family imports, same size scale, same weights.
+BRAND CONSISTENCY (keep the same brand, allow page-level creativity):
+- Use the EXACT SAME :root color variables and font-family as the homepage.
+- Use the SAME navbar structure and footer structure on every page.
+- Button base styles (colors, border-radius) must be consistent across pages.
+- BUT: section layouts, background patterns, hero style, content arrangement should VARY per page.
+- Think of it like a premium magazine: every page spread uses the same brand fonts and colors, but each spread has its OWN unique layout and visual composition.
 
 CSS:
 - ALL CSS for this page must be in the SINGLE <style> block.
 - Start your <style> block with :root {{ }} containing ALL design token variables (colors, fonts, spacing).
 - Include navbar styles, hero styles, section styles, footer styles — everything needed to render this page standalone.
-- If a DESIGN REFERENCE CSS is provided below, COPY its :root variables and key class definitions VERBATIM.
+- If a DESIGN REFERENCE CSS is provided below, COPY its :root variables and navbar/footer class definitions. But write FRESH section-specific CSS for this page's unique layouts.
 """
 
     return base_prompt + nav_context + hero_rules
@@ -1424,10 +1517,10 @@ RULES:
 ITERATION_SYSTEM_PROMPT = """You are an expert web developer modifying an existing website that uses pure CSS classes (NO Tailwind, NO utility frameworks).
 
 CURRENT CODE:
---- HTML (includes <style> block + body content with semantic CSS classes) ---
+--- HTML (body content with semantic CSS classes) ---
 {html}
 
---- CSS (extracted <style> block — CSS variables, animations, states) ---
+--- CSS (the full <style> block — CSS variables, fonts, animations, all component styles) ---
 {css}
 
 --- JS ---
@@ -1443,7 +1536,9 @@ Apply the requested changes. Return TWO fenced code blocks: ```html and ```js
 RULES:
 - Return COMPLETE updated code (not partial diffs)
 - HTML first, then JS
-- HTML = <style> block FIRST (CSS variables, fonts, layout, components) + body content with semantic CSS classes
+- CRITICAL: The ```html block MUST start with a COMPLETE <style> block containing ALL CSS (variables, fonts, layout, component styles, responsive queries, animations). Then the body content HTML follows AFTER the </style> closing tag.
+- NEVER omit the <style> block. NEVER return HTML without CSS. The page will break if CSS is missing.
+- Include ALL :root variables, ALL component classes, ALL responsive media queries in the <style> block.
 - Use pure CSS classes for layout, spacing, typography, colors, responsive
 - Use CSS variables: var(--primary), var(--bg), var(--accent), etc.
 - NO Tailwind utility classes. Write proper CSS in the <style> block.

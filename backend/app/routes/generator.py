@@ -614,10 +614,23 @@ def _apply_user_images(html: str, user_images: list[dict] | None) -> str:
 def _ensure_hero_has_image(html: str, niche_key: str = None) -> str:
     """Pre-resolution check: if hero section has no {{IMG:}} placeholder or background-image url(),
     inject one so the image resolver can find a proper niche-appropriate image."""
+    # Try data-section-type="hero" first, then fall back to class-based or id-based hero detection
     hero_match = re.search(
         r'(<section[^>]*data-section-type="hero"[^>]*>)(.*?)(</section>)',
         html, re.DOTALL
     )
+    if not hero_match:
+        # Fallback: detect hero by class name or id (LLM may omit data-section-type on subpages)
+        hero_match = re.search(
+            r'(<section[^>]*(?:class="[^"]*hero[^"]*"|id="hero")[^>]*>)(.*?)(</section>)',
+            html, re.DOTALL | re.IGNORECASE
+        )
+    if not hero_match:
+        # Last resort: first <section> after navbar (common pattern — hero is always first content section)
+        hero_match = re.search(
+            r'(?:</nav>|</header>)\s*(<section[^>]*>)(.*?)(</section>)',
+            html, re.DOTALL | re.IGNORECASE
+        )
     if not hero_match:
         return html
 
@@ -1218,7 +1231,7 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
 - Testimonials: {forced['testimonials']}
 - CTA: {forced['cta']}"""
 
-    plan_max_tokens = 8000 if multipage else 4000
+    plan_max_tokens = 12000 if multipage else 4000
 
     @circuit_protected(provider="openai")
     async def _call_openai_plan():
@@ -1878,6 +1891,83 @@ JS RULES:
 _WHATSAPP_FLOAT_HTML = """<a href="https://wa.me/971XXXXXXXXX" target="_blank" rel="noopener" class="whatsapp-float" style="position:fixed;bottom:1.5rem;right:1.5rem;width:3.5rem;height:3.5rem;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:50;transition:transform 0.3s;text-decoration:none" aria-label="Chat on WhatsApp"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.638l4.716-1.244A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.143 0-4.144-.663-5.795-1.796l-.404-.282-3.14.828.843-3.076-.309-.444A9.96 9.96 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg></a>"""
 
 
+def _convert_anchor_links_to_page_hrefs(pages_html: dict) -> dict:
+    """Convert anchor links (#contact, #booking, etc.) to actual page hrefs in multipage sites.
+
+    CTA buttons like 'Book Now' or 'Contact Us' often use href="#contact" or href="#booking".
+    In multipage sites these anchors don't work because the target section is on a different page.
+    This converts them to proper page links (e.g. /contact.html, /booking.html) when a matching page exists.
+    """
+    page_slugs = set(pages_html.keys())
+    # Build mapping: anchor fragment → page href (e.g. "contact" → "/contact.html")
+    # Also map common CTA anchor variants to their likely page
+    slug_map = {}
+    for slug in page_slugs:
+        if slug == "index":
+            continue
+        slug_map[slug] = f"/{slug}.html"
+        # Map common variants: "book-now" → "booking", "get-started" → "services", etc.
+        slug_map[slug.replace("-", "")] = f"/{slug}.html"
+
+    # Common CTA anchor → page mappings
+    cta_to_page = {
+        "book": "booking", "book-now": "booking", "booknow": "booking",
+        "reserve": "booking", "reservation": "booking", "reservations": "booking",
+        "appointment": "booking", "schedule": "booking",
+        "contact": "contact", "contact-us": "contact", "contactus": "contact",
+        "get-in-touch": "contact", "reach-us": "contact",
+        "get-started": "contact", "getstarted": "contact",
+        "pricing": "pricing", "plans": "pricing",
+        "services": "services", "our-services": "services",
+        "about": "about", "about-us": "about",
+        "portfolio": "portfolio", "gallery": "gallery", "work": "portfolio",
+        "menu": "menu", "our-menu": "menu",
+        "rooms": "rooms", "our-rooms": "rooms", "accommodations": "rooms",
+        "properties": "properties", "listings": "properties",
+        "courses": "courses", "programs": "courses", "classes": "courses",
+    }
+
+    def _replace_anchor(match):
+        full = match.group(0)
+        anchor = match.group(1).lower().strip()
+        # Direct slug match
+        if anchor in slug_map:
+            return full.replace(f'href="#{match.group(1)}"', f'href="{slug_map[anchor]}"')
+        # CTA mapping match
+        if anchor in cta_to_page:
+            target = cta_to_page[anchor]
+            if target in page_slugs:
+                return full.replace(f'href="#{match.group(1)}"', f'href="/{target}.html"')
+        # Partial match: anchor "booking-form" should match "booking" page
+        for slug in page_slugs:
+            if slug != "index" and (slug in anchor or anchor in slug):
+                return full.replace(f'href="#{match.group(1)}"', f'href="/{slug}.html"')
+        return full
+
+    # Pattern: match <a ... href="#something" ...> but NOT navbar anchors on index page
+    anchor_pattern = re.compile(r'<a\s[^>]*href="#([^"]+)"[^>]*>', re.IGNORECASE)
+
+    for slug, html in pages_html.items():
+        if slug == "index":
+            # On index page, only convert anchors that match a subpage (not section anchors)
+            # Only convert anchors inside CTA buttons/hero sections, not navbar
+            # Find navbar end to avoid touching navbar anchors
+            nav_end = 0
+            nav_close = re.search(r'</nav>|</header>', html, re.IGNORECASE)
+            if nav_close:
+                nav_end = nav_close.end()
+            # Process only the body after navbar
+            before_nav = html[:nav_end]
+            after_nav = html[nav_end:]
+            after_nav = anchor_pattern.sub(_replace_anchor, after_nav)
+            pages_html[slug] = before_nav + after_nav
+        else:
+            # On subpages, convert ALL anchor links that match a page
+            pages_html[slug] = anchor_pattern.sub(_replace_anchor, html)
+
+    return pages_html
+
+
 def _sync_multipage_shared_elements(pages_html: dict) -> dict:
     """Ensure footer and WhatsApp button exist on every page.
 
@@ -2075,42 +2165,49 @@ async def generate_multipage_html(
 
             prompt += f"""
 
-DESIGN REFERENCE CSS (CRITICAL — COPY THIS EXACT DESIGN SYSTEM):
-You MUST replicate the exact same visual design from this CSS into your page.
-Copy the same CSS custom properties, colors, fonts, spacing, shadows, border-radius, button styles, and layout patterns EXACTLY.
-The subpage MUST look like it belongs to the same website as the homepage — identical visual language.
+DESIGN REFERENCE CSS (BRAND FOUNDATION — use as starting point, NOT a straitjacket):
+This CSS is from the homepage. Copy the :root variables, fonts, and navbar/footer styles to maintain brand consistency.
+BUT: write FRESH, UNIQUE section CSS for this page's content — do NOT clone the homepage's section layouts.
 
 ```css
 {css_ref}
 ```
 
-CRITICAL RULES:
-1. Your <style> block MUST start with the SAME :root {{ }} variables from the reference above — copy them VERBATIM.
-2. Use the EXACT SAME class names for navbar, buttons, and footer as the reference.
-3. Match the EXACT SAME color values — do NOT approximate or pick similar colors.
-4. If the reference uses Tailwind utilities in HTML, use the SAME utility classes.
-5. Do NOT invent new colors, fonts, or spacing values. Everything must come from the reference.
+WHAT TO COPY FROM THE REFERENCE:
+1. :root {{ }} variables — copy them VERBATIM (colors, fonts, spacing tokens)
+2. Navbar class names and styles — keep navbar identical
+3. Footer class names and styles — keep footer identical
+4. Button base styles (.btn, .cta) — keep buttons consistent
+5. Font imports (@import) — use the same fonts
+
+WHAT TO CREATE FRESH (do NOT copy from reference):
+1. Hero section layout and style — use a DIFFERENT hero pattern than the homepage
+2. Content section layouts — design new grid/split/card arrangements unique to this page
+3. Section backgrounds — create new visual rhythm (alternate white/tinted/dark-accent-band)
+4. Section-specific CSS — write new class names for this page's unique content sections
+5. Decorative elements — use different accents, borders, shapes than the homepage
+
+Think of it like designing a new page in a premium magazine: same brand identity (fonts, colors, logo), but each page has its OWN creative layout.
 """
 
-            # Add homepage hero as visual reference for subpage hero quality
+            # Add homepage hero as visual QUALITY reference (not a clone template)
             if homepage_hero_html and slug != "index":
                 prompt += f"""
 
-HOMEPAGE HERO REFERENCE (MATCH THIS VISUAL QUALITY):
-Below is the homepage hero section HTML. Your hero section must match this SAME level of visual quality,
-using the SAME color scheme, overlay style, and typography. Adapt the content for this page but keep the design language identical.
+HOMEPAGE HERO (quality reference only — do NOT clone this layout):
+Below is the homepage hero. Study its QUALITY LEVEL (polish, depth, detail), then create a DIFFERENT hero for this page.
 
 ```html
 {homepage_hero_html}
 ```
 
-Your hero section MUST:
-- Use the SAME overlay/gradient colors as the homepage hero
-- Use the SAME font sizes and weights for headings
-- Use the SAME button styles (colors, padding, border-radius)
-- Have a full-width background image (use an Unsplash URL relevant to this page's topic)
-- Be at least 60vh tall on desktop
-- Look equally polished and professional as the homepage hero
+Your hero MUST:
+- Match this quality level — equally polished and professional
+- Use the SAME brand colors (from :root variables) and font families
+- BUT use a DIFFERENT layout/pattern than the homepage hero
+- Have a full-width background image with {{{{IMG:page-specific description}}}} placeholder
+- Use page-appropriate content and imagery (NOT the same as homepage)
+- Feel distinct from the homepage hero while belonging to the same brand
 """
 
         client = get_anthropic_client()
@@ -2119,7 +2216,7 @@ Your hero section MUST:
             "claude-sonnet-4-20250514",
             28000,
             prompt,
-            f"Generate the {title} page HTML. Follow ALL pattern templates exactly. Match the design reference CSS precisely.",
+            f"Generate the {title} page HTML. Use the same brand (colors, fonts, navbar, footer) but create a UNIQUE page layout distinct from the homepage.",
             use_prompt_cache=True,
         )
 
@@ -2191,6 +2288,10 @@ Your hero section MUST:
 
     # ── Post-processing: ensure footer + WhatsApp on every page ──
     pages_html = _sync_multipage_shared_elements(pages_html)
+
+    # ── Convert anchor links (#contact, #booking) to page hrefs ──
+    pages_html = _convert_anchor_links_to_page_hrefs(pages_html)
+    logger.info("[MULTIPAGE] Anchor links converted to page hrefs")
 
     logger.info(f"[MULTIPAGE] Complete → {len(pages_html)}/{len(pages)} pages generated successfully")
     return pages_html
@@ -3179,6 +3280,17 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
         blocks["html"] = html_clean
         if css_extracted:
             blocks["css"] = css_extracted
+
+    # CRITICAL: If LLM didn't return CSS (omitted <style> block), preserve the original CSS.
+    # This prevents multipage pages from losing all styles during redesign.
+    if not blocks.get("css") or len(blocks["css"].strip()) < 50:
+        logger.warning("[ITERATE] LLM returned no CSS — preserving original session CSS")
+        blocks["css"] = session["css"]
+
+    # If LLM didn't return JS, preserve the original
+    if not blocks.get("js"):
+        blocks["js"] = session.get("js", "")
+
     logger.info(
         f"✅ Full Rewrite Complete → HTML={len(blocks.get('html', '')):,}, CSS={len(blocks.get('css', '')):,}, JS={len(blocks.get('js', '')):,} chars"
     )
@@ -3696,6 +3808,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                         # Auto-polish CSS
                         page_css = polish_css(page_css, theme)
                         pages_dict[slug] = {"html": page_html_clean, "css": page_css}
+
+                    # Rebuild navbars to ensure consistent inter-page navigation
+                    pages_dict = _rebuild_multipage_navbars(pages_dict)
+                    logger.info("[MULTIPAGE] Navbars rebuilt for consistent navigation")
 
                     # Use index page as the main html/css for backward compatibility
                     index_data = pages_dict.get(

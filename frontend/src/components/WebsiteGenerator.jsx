@@ -728,7 +728,7 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
 const WebsiteGenerator = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { refreshUser } = useAuth();
+    const { user: authUser, refreshUser } = useAuth();
     const [html, setHtml] = useState('');
     const [css, setCss] = useState('');
     const [js, setJs] = useState('');
@@ -1617,6 +1617,23 @@ const WebsiteGenerator = () => {
             return;
         }
 
+        // Block if no websites remaining (new generation only, skip for admins)
+        if (versions.length === 0 && authUser && !authUser.is_admin) {
+            const genCount = authUser.generation_count || 0;
+            const maxGen = authUser.max_generations || 2;
+            if (genCount >= maxGen) {
+                setPrompt('');
+                setMessages(prev => [...prev,
+                    { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                    { role: 'assistant', text: `You've used all ${maxGen} website generations. Request more from the dashboard.`, timestamp: new Date().toLocaleTimeString(), isError: true },
+                ]);
+                localStorage.removeItem(ONBOARDING_KEY);
+                onboardingShown.current = false;
+                setTimeout(() => setOnboardingStep(0), 1000);
+                return;
+            }
+        }
+
         // If user uploaded images and this is a new generation, show assignment modal
         if (assignedImages === undefined && uploadedFiles.images.length > 0 && versions.length === 0) {
             setPendingGenPrompt(promptText);
@@ -2295,12 +2312,35 @@ const WebsiteGenerator = () => {
         const curPage = currentPageRef.current;
         const curSessionId = sessionIdRef.current;
 
-        if (!curPages[slug]) {
+        // Try exact match first, then fuzzy match (e.g. "contact-us" → "contact", "book-now" → "booking")
+        let targetSlug = slug;
+        if (!curPages[targetSlug]) {
+            // Try partial match: find a page whose slug contains the target or vice versa
+            const pageKeys = Object.keys(curPages);
+            const match = pageKeys.find(k =>
+                k !== 'index' && (k.includes(targetSlug) || targetSlug.includes(k))
+            );
+            if (match) {
+                targetSlug = match;
+            } else {
+                // Try common CTA mappings
+                const ctaMap = { 'book': 'booking', 'book-now': 'booking', 'booknow': 'booking',
+                    'reserve': 'booking', 'reservation': 'booking', 'appointment': 'booking', 'schedule': 'booking',
+                    'contact-us': 'contact', 'contactus': 'contact', 'get-in-touch': 'contact', 'reach-us': 'contact',
+                    'get-started': 'contact', 'getstarted': 'contact', 'our-services': 'services',
+                    'about-us': 'about', 'our-menu': 'menu', 'our-rooms': 'rooms' };
+                const mapped = ctaMap[targetSlug];
+                if (mapped && curPages[mapped]) {
+                    targetSlug = mapped;
+                } else {
+                    return;
+                }
+            }
+        }
+        if (targetSlug === curPage) {
             return;
         }
-        if (slug === curPage) {
-            return;
-        }
+        slug = targetSlug;
 
         // 1. Save current page's live html/css
         const updated = { ...curPages, [curPage]: { html: curHtml, css: curCss } };
