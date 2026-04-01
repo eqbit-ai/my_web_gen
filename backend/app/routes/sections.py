@@ -1242,7 +1242,6 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
     # Store recipient email in Redis session (deploy code reads it from here)
     if req.recipientEmail:
         session["recipient_email"] = req.recipientEmail
-        from app.utils.redis_session import redis_save_session
         await redis_save_session(req.sessionId, session)
         logger.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
 
