@@ -47,7 +47,14 @@ RULES:
 - HERO ALIGNMENT CONSISTENCY: ALL elements inside the hero (heading, subtitle, CTAs, trust line) MUST have the SAME alignment. If the hero uses .hero-center-content, everything is centered. If it uses .hero-full-overlay (left-aligned), EVERYTHING must be left-aligned — do NOT center the subtitle or CTAs while left-aligning the heading. Never mix text-align values within a hero.
 - NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
 - HERO NAVBAR CLEARANCE (CRITICAL — THIS IS A RECURRING BUG): The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. The .hero-section class has padding-top: 10rem. Do NOT override this padding with smaller values in your custom CSS. Do NOT set padding-top: 0 on .hero-section (only .hero-section-flush can have padding-top: 0 because it uses margin-top: -80px with .hero-bg-cover that has its own padding-top: 80px). For non-flush heroes, NEVER add padding-top less than 8rem. NEVER let hero content start at the very top of the viewport — the heading must be FULLY visible below the navbar.
-- HERO IMAGES: EVERY page's hero section MUST include a high-quality image — either as a background image (using .hero-bg-cover with background-image) or as a side image in a split layout (using .hero-split-grid). No hero section should be text-only without any imagery. Use relevant Unsplash/Pexels images.
+- HERO IMAGES (THIS IS THE #1 QUALITY ISSUE — READ CAREFULLY):
+  EVERY hero section MUST have a VISIBLE, HIGH-QUALITY background image. TWO acceptable approaches:
+  A) FULL-WIDTH BACKGROUND: Use inline style on the hero section tag:
+     <section data-section-type="hero" id="hero" class="hero-section hero-section-flush" style="background:linear-gradient(135deg,rgba(0,0,0,0.6),rgba(0,0,0,0.7)),url('{{{{IMG:descriptive hero image query}}}}');background-size:cover;background-position:center;">
+  B) SPLIT LAYOUT: Use .hero-split-grid with an <img src="{{{{IMG:descriptive query}}}}" /> on one side.
+  NEVER output a hero with just a gradient/solid color and no image. NEVER. This is the most common quality failure.
+  The {{{{IMG:query}}}} placeholder MUST be present — it gets resolved to a real photo automatically.
+  Write SPECIFIC image queries: "luxury hotel lobby with golden chandeliers" NOT "hero image".
 - HERO IS MANDATORY: The FIRST section after navbar MUST be the hero section. It MUST contain: a compelling headline (H1), a subtitle, at least one CTA button, and an image. The hero must be visually impactful and take up at least 80vh. NEVER skip the hero or make it empty. If the plan includes a hero, render ALL its content (headline, subtitle, CTAs, trust line, image). Do NOT output a page that starts with a content section instead of the hero.
 - PATTERN COMPLIANCE:
   1. Each section's HTML should follow the provided pattern template's GENERAL STRUCTURE — same layout approach (grid, flex, etc.) and nesting concept.
@@ -576,4 +583,6 @@ FINAL CHECKLIST — verify BEFORE outputting your HTML:
 4. HERO HAS IMAGE: Hero uses either background-image with {{IMG:...}} or an <img> tag. Never a plain solid color background.
 5. HERO TEXT VISIBLE: White text on image heroes, dark text on light split heroes. Text-shadow on image heroes.
 6. ALL PLAN CONTENT USED: Every section from the plan is included with its actual content — headlines, descriptions, items.
-7. NO DEAD CTA LINKS: CTA buttons link to relevant sections (href="#contact", href="#services"), not href="#"."""
+7. NO DEAD CTA LINKS: CTA buttons link to relevant sections (href="#contact", href="#services"), not href="#".
+8. CTA → CONTACT FORM: Buttons like "Book Now", "Enquire Now", "Get Started", "Reserve", "Contact Us", "Get a Quote", "Request Demo" MUST link to href="#contact". The contact section MUST contain a working <form> with name, email, phone, and message fields. EVERY website must have a contact form.
+9. CONTACT FORM MANDATORY: Every website MUST include a contact section (data-section-type="contact") with a form. If the plan doesn't include a contact section, ADD one before the footer."""

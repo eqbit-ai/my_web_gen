@@ -269,7 +269,7 @@ const GenerationProgress = ({ currentStage, message }) => {
                     );
                 })}
             </div>
-            <div className="gen-progress-time">Meydan AI is designing your website -- this takes about few minutes</div>
+            <div className="gen-progress-time">Web AI is designing your website -- this takes about few minutes</div>
         </div>
     );
 };
@@ -500,6 +500,12 @@ const WIZARD_PURPOSES = [
     { value: 'portfolio', label: 'Showcase my work' },
     { value: 'informational', label: 'Share information' },
     { value: 'booking', label: 'Take bookings / appointments' },
+    { value: 'corporate', label: 'Corporate / company presence' },
+    { value: 'restaurant', label: 'Restaurant / food menu & reservations' },
+    { value: 'landing_page', label: 'Product / service landing page' },
+    { value: 'nonprofit', label: 'Nonprofit / charity / cause' },
+    { value: 'event', label: 'Event / conference promotion' },
+    { value: 'education', label: 'Courses / training / education' },
 ];
 
 const WIZARD_PAGES = ['Home', 'About', 'Services', 'Contact', 'Blog', 'Gallery', 'FAQ', 'Team', 'Pricing', 'Portfolio'];
@@ -527,7 +533,7 @@ const composeWizardPrompt = (data) => {
 };
 
 // Wizard question renderer (inline in chat)
-const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates }) => {
+const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates, onFileUpload, uploadedFileCount }) => {
     // Pre-fill text input from wizard data (e.g. dashboard chatbox prefill)
     const prefillMap = { 0: data.companyName, 1: data.businessDescription, 2: data.tagline };
     const [textVal, setTextVal] = React.useState(prefillMap[step] || '');
@@ -556,6 +562,17 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
                             autoFocus
                         />
                         <button type="submit" disabled={!textVal.trim()}>Next</button>
+                        {step === 0 && onFileUpload && (
+                            <>
+                                <input id="wizard-file-input" type="file" multiple accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip" style={{ display: 'none' }} onChange={e => { onFileUpload(e.target.files); e.target.value = ''; }} />
+                                <button type="button" className="wizard-skip-btn" onClick={() => document.getElementById('wizard-file-input')?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <Paperclip size={13} /> Upload Files
+                                </button>
+                            </>
+                        )}
+                        {step === 0 && uploadedFileCount > 0 && (
+                            <span style={{ fontSize: 11, color: '#34d399', marginLeft: 4 }}>{uploadedFileCount} file{uploadedFileCount > 1 ? 's' : ''} ready</span>
+                        )}
                         {step === 2 && <button type="button" className="wizard-skip-btn" onClick={() => onSkip()}>Skip</button>}
                     </form>
                 );
@@ -1044,6 +1061,10 @@ const WebsiteGenerator = () => {
                 const prefill = state.wizardPrefill;
                 setWizardData(prev => ({ ...prev, businessDescription: prefill }));
                 setWizardStep(0); // still start at company name, but step 1 will be pre-filled
+            }
+            // Auto-open file picker if coming from dashboard with openFileUpload flag
+            if (state.openFileUpload) {
+                setTimeout(() => fileInputRef.current?.click(), 800);
             }
         }
 
@@ -2473,7 +2494,7 @@ const WebsiteGenerator = () => {
                     <button className="gn-icon-btn" onClick={() => navigate('/dashboard')} title="Dashboard">
                         <ArrowLeft size={18} />
                     </button>
-                    <img src="/mfz-logo.webp" alt="MFZ" className="gn-chat-logo" />
+                    <img src="/mfz-logo.webp" alt="Web AI" className="gn-chat-logo" />
                     <span className="gn-chat-title">AI Powered</span>
                     <ConnectionIndicator status={connectionStatus} />
                     <div style={{ flex: 1 }} />
@@ -2489,7 +2510,7 @@ const WebsiteGenerator = () => {
                     {messages.length === 0 && !isLoading && !wizardActive && (
                         <div className="gn-chat-welcome">
                             <Sparkles size={24} />
-                            <h3>Welcome to Meydan AI</h3>
+                            <h3>Welcome to Web AI</h3>
                             <p>Describe the website you want, or pick a template from the right panel.</p>
                         </div>
                     )}
@@ -2581,6 +2602,8 @@ const WebsiteGenerator = () => {
                             onBack={handleWizardBack}
                             onGenerate={handleWizardGenerate}
                             onBrowseTemplates={handleBrowseTemplates}
+                            onFileUpload={handleFileUpload}
+                            uploadedFileCount={uploadedFiles.images.length + (uploadedFiles.text ? 1 : 0)}
                         />
                     )}
 

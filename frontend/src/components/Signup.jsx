@@ -65,7 +65,7 @@ const Signup = () => {
                 <div className="auth-card signup">
                     <div className="auth-header">
                         <Link to="/" className="auth-logo">
-                            <img src="/mfz-logo.webp" alt="Meydan Free Zone" style={{ height: 40, background: 'rgba(40, 75, 130, 0.85)', borderRadius: 10, padding: '6px 12px', display: 'block' }} />
+                            <img src="/mfz-logo.webp" alt="Web AI" style={{ height: 56, maxWidth: 180, objectFit: 'contain', display: 'block' }} />
                         </Link>
                         <h1>Create Your Account</h1>
                         <p>Start building AI-powered websites today</p>

@@ -25,7 +25,7 @@ const PendingApproval = () => {
                 <div className="auth-card" style={{ textAlign: 'center', padding: '48px 40px' }}>
                     <div className="auth-header">
                         <Link to="/" className="auth-logo">
-                            <img src="/mfz-logo.webp" alt="Meydan Free Zone" style={{ height: 40, background: 'rgba(40, 75, 130, 0.85)', borderRadius: 10, padding: '6px 12px', display: 'block', margin: '0 auto' }} />
+                            <img src="/mfz-logo.webp" alt="Web AI" style={{ height: 56, maxWidth: 180, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
                         </Link>
                     </div>
 

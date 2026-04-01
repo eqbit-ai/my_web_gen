@@ -82,19 +82,28 @@ def harden_hero(html: str, css: str) -> tuple[str, str]:
     hero_close = hero_match.group(3)
     fixes = []
 
-    # Check for background image in CSS (including unresolved {{IMG:...}} placeholders)
-    has_bg_image = bool(re.search(
-        r'hero.*background.*url\(|data-section-type="hero".*style="[^"]*background.*url\(|hero.*background-image|\{\{IMG:',
-        html + css, re.IGNORECASE | re.DOTALL
-    ))
+    # Check for background image — look specifically in hero section HTML and hero-related CSS
+    hero_html = hero_tag + hero_content + hero_close
+    hero_css_sections = re.findall(r'(?:hero|data-section-type="hero")[^{]*\{[^}]*\}', css, re.IGNORECASE | re.DOTALL)
+    hero_css_text = ' '.join(hero_css_sections)
+    check_text = hero_html + ' ' + hero_css_text
 
-    if not has_bg_image:
-        fixes.append("/* Hero: enforce background image overlay */")
+    has_bg_image = bool(re.search(
+        r'background[^;]*url\(|background-image[^;]*url\(|\{\{IMG:',
+        check_text, re.IGNORECASE
+    ))
+    # Also check for <img> inside hero with hero-related classes
+    has_hero_img = bool(re.search(r'<img[^>]*(?:hero|cover|banner)[^>]*>', hero_html, re.IGNORECASE))
+
+    if not has_bg_image and not has_hero_img:
+        # The pre-resolution _ensure_hero_has_image should have handled this.
+        # As a final safety net, inject a generic background via CSS.
+        fixes.append("/* Hero: fallback background */")
         fixes.append("""section[data-section-type="hero"] {
-  background: linear-gradient(135deg, rgba(10,10,20,0.85), rgba(20,20,40,0.9)),
-              url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920');
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg, rgba(10,10,20,0.8), rgba(20,20,40,0.85)),
+              url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920') !important;
+  background-size: cover !important;
+  background-position: center !important;
 }""")
 
     # Enforce minimum height

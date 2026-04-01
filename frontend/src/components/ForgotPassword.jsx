@@ -31,7 +31,7 @@ const ForgotPassword = () => {
                 <div className="auth-card">
                     <div className="auth-header">
                         <Link to="/" className="auth-logo">
-                            <img src="/mfz-logo.webp" alt="Meydan Free Zone" style={{ height: 40, background: 'rgba(40, 75, 130, 0.85)', borderRadius: 10, padding: '6px 12px', display: 'block' }} />
+                            <img src="/mfz-logo.webp" alt="Web AI" style={{ height: 56, maxWidth: 180, objectFit: 'contain', display: 'block' }} />
                         </Link>
                         <h1>Reset Password</h1>
                         <p>Enter your email and we'll send you a reset link</p>

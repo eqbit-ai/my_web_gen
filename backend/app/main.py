@@ -127,6 +127,8 @@ async def lifespan(app: FastAPI):
             await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS max_edits INTEGER NOT NULL DEFAULT 30"))
             # One-time fix: reset generation_count for users where count exceeds max (test data)
             await db.execute(text("UPDATE users SET generation_count = 0 WHERE generation_count > max_generations"))
+            # Site recipient email column
+            await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS recipient_email VARCHAR"))
             await db.commit()
             logger.info("db_migration: schema updated")
     except Exception as e:

@@ -27,7 +27,7 @@ const Navbar = () => {
         <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isAuth ? 'navbar-auth' : ''}`}>
             <div className="navbar-inner">
                 <Link to="/" className="nav-logo">
-                    <img src="/mfz-logo.webp" alt="Meydan Free Zone" className="nav-logo-img" />
+                    <img src="/mfz-logo.webp" alt="Web AI" className="nav-logo-img" />
                 </Link>
 
                 <div className={`nav-links ${mobileOpen ? 'open' : ''}`}>

@@ -96,7 +96,7 @@ body {
   overflow: hidden;
 }
 
-.gn-chat-logo { height: 24px; width: auto; flex-shrink: 0; }
+.gn-chat-logo { height: 32px; width: auto; max-width: 140px; flex-shrink: 0; object-fit: contain; }
 .gn-chat-title { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
 
 /* Hide text labels when sidebar is narrow */

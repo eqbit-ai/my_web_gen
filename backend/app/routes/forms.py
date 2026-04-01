@@ -178,15 +178,18 @@ async def submit_form(site_id: str, request: Request):
         db.add(submission)
         await db.commit()
 
-        # Send email notification to site owner (fire-and-forget)
+        # Send email notification — use site's recipient_email if set, otherwise owner's signup email
         try:
             from app.models.user import User
             from app.utils.email import send_form_notification
 
-            owner_result = await db.execute(select(User).where(User.id == site.user_id))
-            owner = owner_result.scalar_one_or_none()
-            if owner and owner.email:
-                send_form_notification(owner.email, site.name or "Your Website", fields, source_page)
+            notify_email = getattr(site, "recipient_email", None)
+            if not notify_email:
+                owner_result = await db.execute(select(User).where(User.id == site.user_id))
+                owner = owner_result.scalar_one_or_none()
+                notify_email = owner.email if owner else None
+            if notify_email:
+                send_form_notification(notify_email, site.name or "Your Website", fields, source_page)
         except Exception as e:
             logger.warning(f"[FORMS] Failed to send notification email: {e}")
 

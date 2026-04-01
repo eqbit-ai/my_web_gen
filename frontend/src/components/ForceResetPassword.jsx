@@ -45,7 +45,7 @@ const ForceResetPassword = () => {
                 <div className="auth-card">
                     <div className="auth-header">
                         <div className="auth-logo">
-                            <img src="/mfz-logo.webp" alt="Meydan Free Zone" style={{ height: 40, background: 'rgba(40, 75, 130, 0.85)', borderRadius: 10, padding: '6px 12px', display: 'block' }} />
+                            <img src="/mfz-logo.webp" alt="Web AI" style={{ height: 56, maxWidth: 180, objectFit: 'contain', display: 'block' }} />
                         </div>
                         <h1>Password Reset Required</h1>
                         <p>Your administrator has requested that you change your password before continuing.</p>

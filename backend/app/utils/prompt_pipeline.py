@@ -813,6 +813,7 @@ ADD THESE ELEMENTS:
 - <!-- FAVICON --> with SVG favicon <!-- END_FAVICON -->
 - WhatsApp float button (fixed bottom-right, green background #25D366)
 - Back-to-top button (fixed, hidden by default, shows on scroll)
+- CONTACT FORM: MUST include a contact section with a working <form> (name, email, phone, message fields). All CTA buttons ("Book Now", "Enquire Now", "Get Started", "Reserve") MUST link to href="#contact".
 
 Return ONLY the HTML. No explanation."""
 
@@ -872,10 +873,12 @@ ABSOLUTE QUALITY REQUIREMENTS — ENVATO ELEMENTS / THEMEFOREST PREMIUM LEVEL:
 Your output MUST look like a $59+ premium ThemeForest template. Study these design principles:
 
 HERO SECTION (the #1 most important element — visitors decide in 3 seconds):
-1. MUST have a full-width background image with a sophisticated overlay OR a split layout with a high-quality hero image
-2. NEVER use a plain solid-color hero background. NEVER. Always include imagery or dramatic depth.
-3. Hero heading: LARGE (3rem-3.5rem via clamp), bold (700-800 weight), high contrast against background
-4. Add text-shadow on hero text over images: text-shadow: 0 2px 20px rgba(0,0,0,0.3)
+1. MUST have a full-width background image. USE THIS EXACT PATTERN for the hero section tag:
+   style="background:linear-gradient(135deg,rgba(0,0,0,0.55),rgba(0,0,0,0.7)),url('{{IMG:SPECIFIC descriptive image for this business}}');background-size:cover;background-position:center;"
+   Write a SPECIFIC image query matching the business: "modern welding workshop sparks flying", "luxury hotel lobby chandelier", "dental clinic modern interior"
+2. NEVER use a plain solid-color or gradient-only hero background. NEVER. The {{IMG:}} placeholder is MANDATORY.
+3. Hero heading: LARGE (3rem-3.5rem via clamp), bold (700-800 weight), WHITE text, high contrast
+4. Add text-shadow on ALL hero text: text-shadow: 0 2px 20px rgba(0,0,0,0.4)
 5. Hero MUST include social proof: floating stat cards, trust indicators, mini counters, or partner logos
 6. Minimum hero height: 80vh on desktop, 60vh on mobile
 7. Hero must have DEPTH: layered elements, gradient overlays, floating cards, decorative accents
@@ -1026,17 +1029,19 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
 
     # Add multi-page navigation context
     all_pages = plan.get("pages", [])
-    nav_context = "\n\nMULTI-PAGE NAVIGATION RULES:\n"
-    nav_context += "This is a MULTI-PAGE website. Navbar links MUST use real page hrefs, NOT anchor links.\n"
-    nav_context += "Page links:\n"
+    nav_context = "\n\n═══ MULTI-PAGE NAVIGATION — CRITICAL ═══\n"
+    nav_context += "This is a MULTI-PAGE website. The navbar MUST be IDENTICAL on EVERY page.\n"
+    nav_context += "NAVBAR LINKS MUST USE PAGE HREFS — NOT section anchors (#features, #stats, etc.).\n"
+    nav_context += "DO NOT use href=\"#features\" or href=\"#stats\" in the navbar — those are WRONG for multipage.\n\n"
+    nav_context += "EXACT navbar links to use (copy these EXACTLY):\n"
     for p in all_pages:
         slug = p.get("slug", "index")
+        title = p.get("title", slug.capitalize())
         href = "/" if slug == "index" else f"/{slug}.html"
-        nav_context += f'- "{p.get("title", slug)}" -> href="{href}"\n'
-    nav_context += "- Navbar CTA button should link to the contact page or relevant conversion page.\n"
-    nav_context += (
-        "- Within a page, section anchor links (#services, #about) should still work for same-page navigation.\n"
-    )
+        nav_context += f'  <li><a href="{href}">{title}</a></li>\n'
+    nav_context += "\n- Navbar CTA button: href=\"/contact.html\" (or the relevant conversion page)\n"
+    nav_context += "- EVERY page MUST have the SAME navbar with the SAME links listed above.\n"
+    nav_context += "- The homepage navbar is NOT special — it gets the same page links as all other pages.\n"
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
 
     # Extract design tokens from the plan for explicit color/font instructions
@@ -1074,6 +1079,13 @@ HERO SECTION (THIS IS THE MOST IMPORTANT ELEMENT):
 - Minimum hero height: 70vh on desktop, 50vh on mobile.
 - Hero text must be WHITE or very light colored with text-shadow for readability over the image.
 - The hero should feel premium, editorial, and high-end — NOT generic or plain.
+- HERO BACKGROUND IMAGE IS MANDATORY: Use inline style on the section tag:
+  style="background:linear-gradient(135deg,rgba(0,0,0,0.55),rgba(0,0,0,0.7)),url('{{IMG:SPECIFIC image for THIS page}}');background-size:cover;background-position:center;"
+  Each page's hero MUST have a DIFFERENT, page-specific image query. Examples:
+  - About page: "corporate team meeting in modern boardroom"
+  - Services page: "professional workspace tools and equipment"
+  - Contact page: "friendly receptionist at modern office front desk"
+  - Gallery page: "stunning photography portfolio display"
 
 FOOTER (MANDATORY):
 - The page MUST end with a complete footer section with data-section-type="footer".

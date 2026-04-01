@@ -143,9 +143,9 @@ const ComparisonSection = () => {
         <section className="comparison-section" ref={ref}>
             <div className="comparison-inner">
                 <div className="comparison-heading">
-                    <span className="section-tag">Why Meydan</span>
+                    <span className="section-tag">Why Web AI</span>
                     <h2>The <span className="text-accent">Smarter</span> Way to Build</h2>
-                    <p className="comparison-subtitle">See how Meydan eliminates the complexity of traditional web development</p>
+                    <p className="comparison-subtitle">See how Web AI eliminates the complexity of traditional web development</p>
                 </div>
 
                 {/* Toggle pills for mobile focus */}
@@ -156,7 +156,7 @@ const ComparisonSection = () => {
                             className={`comparison-toggle-btn ${activeCard === v ? 'active' : ''}`}
                             onClick={() => setActiveCard(v)}
                         >
-                            {v === 'both' ? 'Compare' : v === 'old' ? 'Old Way' : 'Meydan Way'}
+                            {v === 'both' ? 'Compare' : v === 'old' ? 'Old Way' : 'Web AI Way'}
                         </button>
                     ))}
                 </div>
@@ -194,7 +194,7 @@ const ComparisonSection = () => {
                     <div className={`comparison-card comparison-new glow-card${activeCard === 'old' ? ' comparison-card-dimmed' : ''}${activeCard === 'new' ? ' comparison-card-focused' : ''}`}>
                         <div className="comparison-card-header">
                             <span className="comparison-icon comparison-icon-new">✓</span>
-                            <h3>The Meydan Way</h3>
+                            <h3>The Web AI Way</h3>
                             <span className="comparison-badge comparison-badge-new">Recommended</span>
                         </div>
                         <ul className="comparison-list">
@@ -655,8 +655,8 @@ const Preloader = ({ onComplete }) => {
     return (
         <div className="preloader" ref={preloaderRef}>
             <div className="preloader-content">
-                <img className="preloader-logo" src="/mfz-logo.webp" alt="Meydan Free Zone" />
-                <div className="preloader-text">Meydan Free Zone</div>
+                <img className="preloader-logo" src="/mfz-logo.webp" alt="Web AI" />
+                <div className="preloader-text">Web AI</div>
                 <div className="preloader-line" />
             </div>
         </div>
@@ -682,7 +682,7 @@ const ScrollProgress = () => {
 // MARQUEE STRIP
 // ============================================
 const MarqueeStrip = () => {
-    const items = ['AI Powered', 'Built for Dubai', 'Under 60 Seconds', 'Meydan Free Zone', 'One Click Deploy', 'Custom Domains', 'AI Powered', 'Built for Dubai', 'Under 60 Seconds', 'Meydan Free Zone', 'One Click Deploy', 'Custom Domains'];
+    const items = ['AI Powered', 'Built for Dubai', 'Under 60 Seconds', 'Web AI', 'One Click Deploy', 'Custom Domains', 'AI Powered', 'Built for Dubai', 'Under 60 Seconds', 'Web AI', 'One Click Deploy', 'Custom Domains'];
     return (
         <div className="marquee-strip">
             <div className="marquee-track">
@@ -1409,7 +1409,7 @@ const LandingPage = () => {
                     />
                     <img
                         src="/hero-bg.webp"
-                        alt="Meydan Dubai Skyline"
+                        alt="Web AI Dubai Skyline"
                         className={`hero-fallback-img${videoEnded ? ' hero-fallback-visible' : ''}`}
                     />
                 </div>
@@ -1423,7 +1423,7 @@ const LandingPage = () => {
                 <div className={`hero-content hero-content-centered${videoEnded ? ' hero-content-image' : ''}`}>
                     {videoEnded && (
                         <>
-                            <div className="hero-tag"><span className="tag-dot" />Meydan Free Zone</div>
+                            <div className="hero-tag"><span className="tag-dot" />Web AI</div>
                             <h1 className="hero-title">
                                 <span className="hero-title-line"><SplitWords>AI-Powered Websites</SplitWords></span>
                                 <span className="hero-title-line hero-title-accent"><SplitWords>For Your Business.</SplitWords></span>
@@ -1689,7 +1689,7 @@ const LandingPage = () => {
                 <FloatingElements section="cta" />
                 <div className="cta-inner">
                     <h2><SplitWords>Ready to Build?</SplitWords></h2>
-                    <p>Join businesses across Meydan Free Zone already using AI to create professional websites.</p>
+                    <p>Join businesses across Web AI already using AI to create professional websites.</p>
                     <MagneticButton>
                         <Link to="/signup" className="btn-primary large">
                             Create Your Website
@@ -1707,17 +1707,17 @@ const LandingPage = () => {
                 <div className="footer-inner">
                     <div className="footer-brand">
                         <Link to="/" className="footer-logo">
-                            <img src="/mfz-logo.webp" alt="Meydan Free Zone" className="footer-logo-img" />
+                            <img src="/mfz-logo.webp" alt="Web AI" className="footer-logo-img" />
                         </Link>
                         <p>AI-powered website generation platform. Build, customize, and deploy beautiful websites in minutes.</p>
                     </div>
                     <div className="footer-links">
                         <div className="footer-col"><h4>Platform</h4><a href="#showcase">Generator</a><a href="#how-it-works">How It Works</a></div>
-                        <div className="footer-col"><h4>Company</h4><a href="https://meydanfz.ae" target="_blank" rel="noopener noreferrer">Meydan Free Zone</a><a href="mailto:contact@meydanfz.ae">Contact</a></div>
+                        <div className="footer-col"><h4>Company</h4><a href="https://meydanfz.ae" target="_blank" rel="noopener noreferrer">Web AI</a><a href="mailto:contact@meydanfz.ae">Contact</a></div>
                         <div className="footer-col"><h4>Legal</h4><a href="https://www.meydanfz.ae/terms-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a><a href="https://www.meydanfz.ae/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a></div>
                     </div>
                 </div>
-                <div className="footer-bottom"><p>&copy; {new Date().getFullYear()} Meydan Free Zone. All rights reserved.</p></div>
+                <div className="footer-bottom"><p>&copy; {new Date().getFullYear()} Web AI. All rights reserved.</p></div>
             </footer>
         </div>
         </>

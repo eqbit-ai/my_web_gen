@@ -16,7 +16,7 @@ export const uploadFiles = async (files) => {
     const token = localStorage.getItem('token');
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
-    const res = await fetch(`${API_BASE_URL}/generate/upload-files`, {
+    const res = await fetch(`${API_BASE_URL}/generator/upload-files`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,

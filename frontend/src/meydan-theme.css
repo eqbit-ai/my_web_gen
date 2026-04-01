@@ -109,8 +109,9 @@ html {
 }
 
 .nav-logo-img {
-    height: 36px;
+    height: 44px;
     width: auto;
+    max-width: 160px;
     object-fit: contain;
 }
 

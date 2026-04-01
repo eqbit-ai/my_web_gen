@@ -1239,10 +1239,50 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
         "successMessage": req.successMessage or "Thank you! Your message has been sent.",
     }
 
+    # Also save recipient email to the Site record (for deployed form notifications)
+    if req.recipientEmail:
+        try:
+            from app.database import async_session as _async_session
+            from app.models.site import Site
+            from sqlalchemy import update as _update
+            project_id = session.get("project_id")
+            if project_id:
+                async with _async_session() as db:
+                    await db.execute(
+                        _update(Site).where(Site.session_id == req.sessionId).values(recipient_email=req.recipientEmail)
+                    )
+                    await db.commit()
+        except Exception:
+            pass  # Non-critical — fallback to owner email
+
     page_html = _get_page_html(session, req.pageSlug)
     section_id, existing_html = _find_section_by_type(page_html, "contact")
     if not section_id or not existing_html:
-        raise HTTPException(status_code=404, detail="Contact section not found")
+        # No contact section exists — inject a basic one before the footer
+        import json as _json
+        basic_contact = (
+            '<section data-section-type="contact" id="contact" style="padding:5rem 0;">'
+            '<div class="container" style="max-width:600px;margin:0 auto;text-align:center;">'
+            '<h2 style="margin-bottom:1rem;">Get In Touch</h2>'
+            '<p style="color:var(--text-muted,#6b7280);margin-bottom:2rem;">We\'d love to hear from you.</p>'
+            '<form><input type="text" name="name" placeholder="Your Name" style="width:100%;padding:0.75rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:var(--bg-surface,#1f2937);color:var(--text,#fff);">'
+            '<input type="email" name="email" placeholder="Your Email" style="width:100%;padding:0.75rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:var(--bg-surface,#1f2937);color:var(--text,#fff);">'
+            '<textarea name="message" placeholder="Your Message" rows="4" style="width:100%;padding:0.75rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:var(--bg-surface,#1f2937);color:var(--text,#fff);resize:vertical;"></textarea>'
+            '<button type="submit" class="btn-primary" style="width:100%;padding:0.85rem;">Send Message</button>'
+            '</form></div></section>'
+        )
+        # Insert before footer or at end
+        if '</footer>' in page_html:
+            import re as _re
+            page_html = _re.sub(r'(<footer[\s>])', basic_contact + r'\1', page_html, count=1)
+        else:
+            page_html += basic_contact
+        _set_page_html(session, req.pageSlug, page_html)
+        await redis_save_session(req.sessionId, session)
+        # Now find it again
+        section_id, existing_html = _find_section_by_type(page_html, "contact")
+        if not section_id or not existing_html:
+            raise HTTPException(status_code=404, detail="Failed to create contact section")
 
     ds_context = ""
     if session.get("design_system"):

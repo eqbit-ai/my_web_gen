@@ -18,7 +18,7 @@ import re
 import time
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
@@ -611,9 +611,45 @@ def _apply_user_images(html: str, user_images: list[dict] | None) -> str:
     return html
 
 
+def _ensure_hero_has_image(html: str, niche_key: str = None) -> str:
+    """Pre-resolution check: if hero section has no {{IMG:}} placeholder or background-image url(),
+    inject one so the image resolver can find a proper niche-appropriate image."""
+    hero_match = re.search(
+        r'(<section[^>]*data-section-type="hero"[^>]*>)(.*?)(</section>)',
+        html, re.DOTALL
+    )
+    if not hero_match:
+        return html
+
+    hero_tag = hero_match.group(1)
+    hero_content = hero_match.group(2)
+    hero_full = hero_tag + hero_content
+
+    # Check if hero already has an image (placeholder or real URL)
+    has_image = bool(re.search(r'\{\{IMG:|background[^;]*url\(|<img[^>]*(?:hero|cover|banner)', hero_full, re.IGNORECASE))
+    if has_image:
+        return html
+
+    # No image found — inject background-image with {{IMG:}} placeholder
+    niche_desc = (niche_key or "professional business").replace("_", " ")
+    bg_placeholder = f"background:linear-gradient(135deg,rgba(10,10,20,0.75),rgba(20,20,40,0.8)),url('{{{{IMG:{niche_desc} hero background professional}}}}');background-size:cover;background-position:center;"
+
+    if 'style="' in hero_tag:
+        new_tag = hero_tag.replace('style="', f'style="{bg_placeholder}')
+    else:
+        new_tag = hero_tag[:-1] + f' style="{bg_placeholder}">'
+
+    html = html[:hero_match.start(1)] + new_tag + html[hero_match.end(1):]
+    logger.info(f"[HERO IMAGE] Injected {{{{IMG:}}}} placeholder for missing hero background (niche={niche_key})")
+    return html
+
+
 async def _resolve_images_safe(html: str, niche_key: str = None, user_images: list[dict] | None = None) -> str:
     """Resolve image placeholders with safety cleanup for any unresolved ones."""
-    # First: apply user-assigned images
+    # First: ensure hero has a background image (inject {{IMG:}} if missing)
+    html = _ensure_hero_has_image(html, niche_key)
+
+    # Apply user-assigned images
     html = _apply_user_images(html, user_images)
 
     # Then: convert any hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders
@@ -1022,7 +1058,7 @@ def format_conversation_history(session: dict, max_entries: int = 5) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def _llm_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.3, use_prompt_cache: bool = False) -> tuple[str, dict]:
+async def _llm_stream(client, model: str, max_tokens: int, system: str, user_msg: str, retries: int = 2, temperature: float = 0.5, use_prompt_cache: bool = False) -> tuple[str, dict]:
     """Call LLM with streaming. Returns (text, {"input_tokens": N, "output_tokens": N}).
 
     If use_prompt_cache=True, the system prompt is sent with cache_control
@@ -1188,7 +1224,7 @@ MANDATORY PATTERN ASSIGNMENT — use EXACTLY these patterns:
     async def _call_openai_plan():
         response = await client.chat.completions.create(
             model="gpt-4.1",
-            temperature=1,
+            temperature=0.7,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user_msg},
@@ -3181,9 +3217,11 @@ SECTION SIZE CONSTRAINTS:
 - All sections: keep the same size as original. No excessive padding.
 
 IMAGE HANDLING:
-- "Add background image" = CSS background-image ONLY (no extra <img> tag)
+- "Add image" or "add background image" on a hero/section = CSS background-image with overlay. Use: background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{IMG:relevant query}}'); background-size: cover; background-position: center;
+- Do NOT add tiny avatar/thumbnail images when user says "add image" on a hero — they want a FULL background image
 - Background images: background-size: cover; background-position: center; with overlay
 - NEVER add BOTH a background-image AND a foreground <img> for the same purpose
+- For hero sections: "add image" ALWAYS means a full-width background image, never small inline images
 
 JS-DEPENDENT CLASS NAMES (do NOT rename — JS will break):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
