@@ -243,9 +243,16 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         flags=re.I | re.S,
     )
 
-    # ── Append form handler JS ───────────────────────────────────────
+    # ── Inject form handler as SEPARATE <script> in HTML (not appended to JS) ──
+    # This ensures LLM JS syntax errors don't break the form handler.
+    # The form handler runs in its own <script> tag, completely isolated.
     fixed_js = js
-    if "data-form-handler" not in js:
-        fixed_js = js + "\n\n" + FORM_HANDLER_JS
+    if "data-form-handler" not in js and "Universal Form Handler" not in fixed_html:
+        form_script = f"\n<script>\n{FORM_HANDLER_JS}\n</script>\n"
+        # Insert before </body> or at end of HTML
+        if "</body>" in fixed_html:
+            fixed_html = fixed_html.replace("</body>", f"{form_script}</body>")
+        else:
+            fixed_html = fixed_html + form_script
 
     return fixed_html, fixed_js

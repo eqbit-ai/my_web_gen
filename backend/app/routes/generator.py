@@ -1077,24 +1077,9 @@ function safeSelect(sel) { try { return sel && sel !== '#' && sel.length > 1 ? d
                 js,
             )
 
-    # Fix unterminated LLM JS — close any unmatched brackets/parens/braces
-    # LLM often truncates at the end, leaving unclosed forEach, IIFE, etc.
-    open_parens = js.count('(') - js.count(')')
-    open_braces = js.count('{') - js.count('}')
-    open_brackets = js.count('[') - js.count(']')
-    if open_parens > 0 or open_braces > 0 or open_brackets > 0:
-        closer = ''
-        # Close in reverse nesting order: ] then } then )
-        closer += ']' * max(0, open_brackets)
-        closer += '}' * max(0, open_braces)
-        closer += ')' * max(0, open_parens)
-        # Add semicolons and common IIFE closers
-        if open_parens > 0 and open_braces > 0:
-            # Likely an unclosed IIFE or forEach — add ); pattern
-            js = js.rstrip() + ';\n' + closer + ';'
-        else:
-            js = js.rstrip() + '\n' + closer
-        logger.info(f"[validate_js] Fixed unclosed brackets: parens={open_parens}, braces={open_braces}, brackets={open_brackets}")
+    # Note: bracket auto-closing removed — it produced invalid JS (}})); garbage).
+    # Instead, the form handler is now injected as a separate <script> tag in HTML,
+    # so LLM JS syntax errors don't affect it.
 
     return js
 
