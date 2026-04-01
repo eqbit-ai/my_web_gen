@@ -417,10 +417,18 @@ def polish_css(css: str, theme: str = "light") -> str:
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }""")
 
-    # ── Quality Improvement 6: Footer & navbar quality ──
-    if "footer" in css.lower():
-        additions.append("footer a { opacity: 0.7; transition: opacity 0.2s; }")
-        additions.append("footer a:hover { opacity: 1; }")
+    # ── Quality Improvement 6: Footer colors & links ──
+    # Ensure footer text/links are always light (footer always has dark bg)
+    additions.append("""
+footer, footer[data-section-type], [data-section-type="footer"] {
+  color: rgba(255,255,255,0.9) !important;
+}
+footer h3, footer h4, footer .footer-heading { color: white !important; }
+footer p, footer span, footer li { color: rgba(255,255,255,0.7); }
+footer a { color: rgba(255,255,255,0.7) !important; transition: color 0.2s, opacity 0.2s; }
+footer a:hover { color: white !important; opacity: 1; }
+footer .social-links a { color: white !important; }
+footer .nav-brand, footer .nav-brand span { color: white !important; }""")
 
     # ── Responsive safeguards ──
     if "@media" not in css:
@@ -439,12 +447,12 @@ def polish_css(css: str, theme: str = "light") -> str:
             additions.append("::-webkit-scrollbar-track { background: var(--bg, #0a0a0f); }")
             additions.append("::-webkit-scrollbar-thumb { background: var(--primary, #3b82f6); border-radius: 4px; }")
 
-    # ── Section visual rhythm: alternating backgrounds ──
+    # ── Section visual rhythm: alternating backgrounds (exclude footer) ──
     if "nth-child" not in css and "section:nth" not in css:
         if theme == "dark":
-            additions.append("section:nth-child(even) { background: rgba(255,255,255,0.02); }")
+            additions.append("section:nth-child(even):not([data-section-type='footer']):not(footer) { background: rgba(255,255,255,0.02); }")
         else:
-            additions.append("section:nth-child(even) { background: rgba(0,0,0,0.015); }")
+            additions.append("section:nth-child(even):not([data-section-type='footer']):not(footer) { background: rgba(0,0,0,0.015); }")
 
     if additions:
         polish = "\n/* === Auto-polish === */\n" + "\n".join(additions) + "\n"
