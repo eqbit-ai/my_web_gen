@@ -1230,6 +1230,17 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
 @router.post("/update-contact")
 async def update_contact(req: UpdateContactRequest, user: dict = Depends(require_auth)):
     """Update contact form configuration and regenerate the contact section."""
+    import traceback as _tb
+    try:
+        return await _update_contact_impl(req, user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[CONTACT] update-contact crashed: {e}\n{_tb.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def _update_contact_impl(req: UpdateContactRequest, user: dict):
     session = await _verify_session_ownership(req.sessionId, user)
 
     # Store contact config in session
@@ -1242,8 +1253,11 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
     # Store recipient email in Redis session (deploy code reads it from here)
     if req.recipientEmail:
         session["recipient_email"] = req.recipientEmail
-        await redis_save_session(req.sessionId, session)
-        logger.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
+        try:
+            await redis_save_session(req.sessionId, session)
+            logger.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
+        except Exception as e:
+            logger.warning(f"[CONTACT] Failed to save session (non-critical): {e}")
 
         # Also save to Site record directly (for already-deployed sites)
         try:
