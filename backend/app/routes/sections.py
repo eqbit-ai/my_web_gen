@@ -277,22 +277,22 @@ def _extract_section_css(css: str, section_id: str, section_html: str) -> str:
 
 
 def _strip_section_css(css: str, section_id: str) -> str:
-    """Remove CSS rules that specifically target a section ID (e.g. [data-section-id='...'] or #section-...)."""
+    """Remove CSS rules added by a previous section regeneration (marked with comment markers).
+
+    Only removes rules inside /* Section: {section_id} */ ... /* End Section: {section_id} */ markers
+    (added by _merge_section_css). Does NOT strip rules by substring match — that was destroying
+    unrelated CSS like .hero-heading when section_id was "hero".
+    """
     if not css or not section_id:
         return css
-    # Remove rules whose selectors contain the section ID
-    lines = css.split("\n")
-    result = []
-    skip_depth = 0
-    for line in lines:
-        if skip_depth > 0:
-            skip_depth += line.count("{") - line.count("}")
-            continue
-        if section_id in line and "{" in line:
-            skip_depth = 1 + line.count("{") - line.count("}")
-            continue
-        result.append(line)
-    return "\n".join(result)
+    import re as _re
+    # Remove marked section CSS blocks (matches _merge_section_css markers)
+    marker_start = f"/* Section: {section_id} */"
+    marker_end = f"/* End Section: {section_id} */"
+    if marker_start in css:
+        pattern = _re.escape(marker_start) + r".*?" + _re.escape(marker_end)
+        css = _re.sub(pattern, "", css, flags=_re.DOTALL)
+    return css.strip()
 
 
 # ── Multi-page helpers ──────────────────────────────────────────────────
