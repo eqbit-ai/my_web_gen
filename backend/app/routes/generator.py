@@ -716,11 +716,15 @@ def validate_html(html: str) -> str:
     html = re.sub(r"\n?```\s*$", "", html.strip())
 
     # Fix url() quotes — CRITICAL for hero background images.
-    # LLM generates url("...") inside style="" attributes, which breaks HTML because
+    # LLM generates url("https://...") inside style="" attributes, which breaks HTML because
     # the double quote inside url(" prematurely closes the style attribute.
-    # Simple global fix: replace url(" with url(' and ") after URLs with ')
-    html = html.replace('url("', "url('")
-    html = re.sub(r"(url\('[^']*?)\"(\))", r"\1'\2", html)  # fix trailing " → '
+    # Only fix url("http...) and url("{{IMG:...) — NOT url("data:...) which needs double quotes
+    # because SVG data URIs contain single quotes internally.
+    html = re.sub(r'url\("(https?://)', r"url('\1", html)
+    html = re.sub(r'url\("(\{\{IMG:)', r"url('\1", html)
+    # Fix mismatched closing quotes: ...jpeg") → ...jpeg') and ...jpeg') stays
+    html = re.sub(r"(url\('https?://[^'\"]*?)\"(\s*\))", r"\1'\2", html)
+    html = re.sub(r"(url\('\{\{IMG:[^'\"]*?)\"(\s*\))", r"\1'\2", html)
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
