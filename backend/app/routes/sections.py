@@ -1239,21 +1239,34 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
         "successMessage": req.successMessage or "Thank you! Your message has been sent.",
     }
 
-    # Also save recipient email to the Site record (for deployed form notifications)
+    # Store recipient email in Redis session (deploy code reads it from here)
     if req.recipientEmail:
+        session["recipient_email"] = req.recipientEmail
+        from app.utils.redis_session import redis_save_session
+        await redis_save_session(req.sessionId, session)
+        logger.info(f"[CONTACT] recipient_email saved to session: {req.recipientEmail}")
+
+        # Also save to Site record directly (for already-deployed sites)
         try:
             from app.database import async_session as _async_session
             from app.models.site import Site
             from sqlalchemy import update as _update
-            project_id = session.get("project_id")
-            if project_id:
-                async with _async_session() as db:
-                    await db.execute(
-                        _update(Site).where(Site.session_id == req.sessionId).values(recipient_email=req.recipientEmail)
-                    )
-                    await db.commit()
-        except Exception:
-            pass  # Non-critical — fallback to owner email
+            # Try matching by session_id first, then by project_id
+            async with _async_session() as db:
+                result = await db.execute(
+                    _update(Site).where(Site.session_id == req.sessionId).values(recipient_email=req.recipientEmail)
+                )
+                if result.rowcount == 0:
+                    # No match by session_id — try by project_id
+                    project_id = session.get("project_id")
+                    if project_id:
+                        await db.execute(
+                            _update(Site).where(Site.id == project_id).values(recipient_email=req.recipientEmail)
+                        )
+                await db.commit()
+                logger.info(f"[CONTACT] recipient_email saved to Site record ({result.rowcount} rows updated)")
+        except Exception as e:
+            logger.warning(f"[CONTACT] Failed to save recipient_email to Site: {e}")
 
     page_html = _get_page_html(session, req.pageSlug)
     section_id, existing_html = _find_section_by_type(page_html, "contact")
