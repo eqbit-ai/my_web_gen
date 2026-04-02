@@ -540,6 +540,36 @@ def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
     return html
 
 
+def _fix_url_quotes(html: str) -> str:
+    """Normalize all url() with http/https or {{IMG:}} URLs to use single quotes.
+
+    LLMs frequently generate mismatched quotes like url("https://...') or url("https://...")
+    inside style="" attributes.  The double quote prematurely closes the attribute.
+    This function finds all url(...) containing http URLs and rewrites them to url('...').
+
+    Does NOT touch url("data:...") since SVG data URIs may contain single quotes.
+    """
+    def _normalize_url(m: re.Match) -> str:
+        inner = m.group(1)
+        # Strip any leading/trailing quotes (single or double, possibly mismatched)
+        inner = inner.strip("\"'")
+        return f"url('{inner}')"
+
+    # Match url(...) containing http:// or https:// or {{IMG:
+    # The inner part can have any quote combination (or none)
+    html = re.sub(
+        r"""url\(\s*["']?(https?://[^)'"]*?)["']?\s*\)""",
+        _normalize_url,
+        html,
+    )
+    html = re.sub(
+        r"""url\(\s*["']?(\{\{IMG:[^)'"]*?)["']?\s*\)""",
+        _normalize_url,
+        html,
+    )
+    return html
+
+
 def _strip_comment_markers(html: str) -> str:
     """Strip SEO_META and FAVICON comment markers so --> doesn't leak into rendered output."""
     html = re.sub(r'<!--\s*SEO_META\s*-->\s*', '', html)
@@ -702,9 +732,9 @@ async def _resolve_images_safe(html: str, niche_key: str = None, user_images: li
     html = _strip_comment_markers(html)
 
     # Fix url() quotes — must run AFTER image resolution since LLM and resolver
-    # may produce url("https://...") which breaks inside style="" attributes
-    html = re.sub(r'url\("(https?://)', r"url('\1", html)
-    html = re.sub(r"(url\('https?://[^'\"]*?)\"(\s*\))", r"\1'\2", html)
+    # may produce url("https://...") which breaks inside style="" attributes.
+    # Normalize ALL url() with http/https URLs to use single quotes consistently.
+    html = _fix_url_quotes(html)
 
     return html
 
@@ -725,15 +755,7 @@ def validate_html(html: str) -> str:
     html = re.sub(r'(?<![->])\s*-->\s*(?=<|\s*$)', '', html)
 
     # Fix url() quotes — CRITICAL for hero background images.
-    # LLM generates url("https://...") inside style="" attributes, which breaks HTML because
-    # the double quote inside url(" prematurely closes the style attribute.
-    # Only fix url("http...) and url("{{IMG:...) — NOT url("data:...) which needs double quotes
-    # because SVG data URIs contain single quotes internally.
-    html = re.sub(r'url\("(https?://)', r"url('\1", html)
-    html = re.sub(r'url\("(\{\{IMG:)', r"url('\1", html)
-    # Fix mismatched closing quotes: ...jpeg") → ...jpeg') and ...jpeg') stays
-    html = re.sub(r"(url\('https?://[^'\"]*?)\"(\s*\))", r"\1'\2", html)
-    html = re.sub(r"(url\('\{\{IMG:[^'\"]*?)\"(\s*\))", r"\1'\2", html)
+    html = _fix_url_quotes(html)
 
     if not html or len(html) < 200:
         raise ValueError(f"HTML too short ({len(html)} chars) — generation likely failed")
@@ -2417,9 +2439,11 @@ async def route_edit_to_components(prompt: str, session: dict) -> list[str]:
             logger.info(f"✅ Router Complete → targets={result} in {_fmt_duration(duration)}")
             return result
     except Exception as e:
-        logger.warning(f"❌ Router Failed → {e} — falling back to full page edit")
+        logger.warning(f"❌ Router Failed → {e} — falling back to style edit (safer than full rewrite)")
 
-    return ["__full__"]
+    # Safer fallback: try style edit instead of full page rewrite
+    # Full page rewrites often corrupt the navbar and create spurious sections
+    return ["__style__"]
 
 
 def extract_css_vars(css: str) -> str:
@@ -3370,6 +3394,9 @@ Return the COMPLETE updated HTML. Only modify the targeted element.
 RULES:
 - Return ONE fenced code block: ```html
 - HTML = <style> block FIRST + FULL updated body content with semantic CSS classes
+- ONLY modify the targeted element — keep ALL other elements byte-for-byte identical
+- The <nav> / navbar MUST remain completely unchanged and visible — NEVER remove, hide, or modify it
+- When removing an element, simply delete it — do NOT replace it with new content or sections
 - Use CSS classes already defined in the <style> block for styling changes
 - Do NOT use Tailwind utility classes. Add new CSS rules to the <style> block if needed.
 - Do NOT generate large inline SVGs or decorative clip-path shapes
@@ -5044,7 +5071,12 @@ RULES:
 - Keep existing classes, ids, data attributes unless the edit requires changing them
 - Use inline style for one-off changes, or use the CSS classes listed above
 - BUTTON COLOR CHANGES: When changing a button's background color, use style="background: COLOR !important" (with !important) because .btn-primary has a gradient that will override plain inline styles. For text color changes on buttons, use style="color: COLOR !important".
-- ALIGNMENT CHANGES: When centering text, add style="text-align: center" directly on the element. For hero sections, also add .hero-center-content class to the container or add text-align: center as inline style on BOTH the element AND its parent wrapper
+- COLOR CHANGES: Apply with inline style using !important to override CSS class styles. Example: style="color: red !important" or style="background-color: #333 !important". Always use !important for color overrides.
+- ALIGNMENT / POSITIONING: Apply via inline style. text-align: center/left/right for text. For flexbox containers, use justify-content and align-items inline. Do NOT restructure the DOM — just add/modify the style attribute.
+- SPACING (padding/margin): Apply via inline style. e.g. style="padding: 2rem" or style="margin-bottom: 1rem". Do NOT restructure the DOM.
+- BACKGROUND CHANGES: Apply via inline style. e.g. style="background: #1a1a2e" or style="background: linear-gradient(...)". Do NOT restructure the DOM.
+- VISIBILITY (hide/show): To hide, return an empty HTML comment: <!-- removed -->. Do NOT delete surrounding elements.
+- SIZE CHANGES (bigger/smaller/wider/narrower): Apply via inline style. e.g. style="font-size: 2rem" or style="width: 80%". Do NOT restructure the DOM.
 - Use var(--primary), var(--accent), var(--bg), var(--text), var(--radius) for colors/tokens
 - Keep existing image src URLs unless user explicitly asks to change images
 - Do NOT bloat the element — keep it concise
@@ -5053,6 +5085,7 @@ RULES:
 - Do NOT include explanation — just the code block
 - For background images: use inline style background-image with overlay
 - Icons: use <i class="fa-solid fa-xxx"> (Font Awesome is pre-loaded)
+- REMOVAL: If user asks to remove/delete this element, return ONLY: <!-- removed -->
 
 TYPOGRAPHY & STYLING (when changing text appearance):
 - Font size: use inline style font-size (rem units: 0.875rem, 1rem, 1.25rem, 1.5rem, 2rem, 3rem)
@@ -5115,11 +5148,20 @@ RULES:
 - Return the COMPLETE updated section HTML in a single ```html code block
 - Keep the same <section data-section-type data-section-id> wrapper
 - ONLY modify what the user asked for — keep everything else byte-for-byte identical
+- Do NOT remove or modify elements the user didn't mention
+- Do NOT remove or hide the <nav> or navbar — it must always remain visible and functional
+- Do NOT add new sections or generate replacement content when removing an element — just remove that specific element
 - Use CSS classes above, NOT Tailwind. Use var(--primary), var(--accent), etc.
 - Keep existing image src URLs unless asked to change
 - Do NOT add Font Awesome script tags
 - Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include explanation
+
+REMOVAL RULES:
+- When removing an element (form, button, card, etc.), simply DELETE it from the HTML
+- Do NOT replace removed elements with new sections or content
+- Do NOT add padding/spacing to "fill" the gap left by a removed element
+- The section should still render correctly with the element removed
 
 ALIGNMENT CHANGES:
 - To CENTER a hero: remove .hero-full-overlay class (if present), add .text-center class to the content wrapper, and add style="text-align: center" on the content container. Also set .hero-ctas to justify-content: center.
@@ -5150,43 +5192,37 @@ JS-DEPENDENT CLASS NAMES (do NOT rename):
 
 
 def _is_structural_edit(prompt: str) -> bool:
-    """Detect if the edit requires adding/removing/reordering elements (needs full section context)."""
+    """Detect if the edit requires adding/removing/reordering DOM elements (needs full section context).
+
+    ONLY returns True for changes that genuinely alter DOM structure:
+    adding/removing/reordering/duplicating elements, or converting layout type.
+
+    CSS-only changes (alignment, colors, spacing, backgrounds, visibility, sizing)
+    are NOT structural — they go through the precise element edit path which
+    handles them much better without risk of corrupting the section.
+    """
     structural_keywords = [
+        # ── Adding elements ──
         r'\badd\b.*\b(card|item|column|row|button|link|section|image|picture|photo|logo|img|icon|field|input|element)',
-        r'\bremove\b', r'\bdelete\b', r'\breorder\b', r'\brearrange\b', r'\bmove\b.*\b(before|after|above|below|up|down)',
-        r'\bsplit\b', r'\bmerge\b', r'\bduplicate\b', r'\bcopy\b', r'\binsert\b',
-        r'\badd\s+(a|an|another|new|more|this|the|my)\b', r'\bchange\s+layout\b', r'\bswap\b',
-        r'\bgrid\b.*\bcolumn', r'\bconvert\b.*\b(to|into)\b',
+        r'\badd\s+(a|an|another|new|more)\b(?!\s*(space|spacing|gap|padding|margin|room))',
+        r'\binsert\b',
         r'\bput\b.*\b(image|picture|photo|logo|img)\b',
         r'\bplace\b.*\b(image|picture|photo|logo|img)\b',
-        # ── Alignment ──
-        r'\b(center|left|right)\s*(align|alignment)', r'\balign.*(center|left|right)',
-        r'\balign\b', r'\btext.align', r'\bfix.*align',
-        r'\bmake\b.*\bcenter', r'\bcenter\b.*\b(text|heading|title|button|cta|content|everything|all|it)',
-        r'\b(text|heading|title|button|cta|content|everything|all)\b.*\bcenter',
-        r'\bmiddle\b', r'\bcentered\b', r'\bcentrali[sz]e', r'\bjustify.*center',
-        r'\bmove\b.*\bcenter', r'\bput\b.*\bcenter',
-        r'\bposition\b.*\b(center|left|right|middle)\b',
-        r'\bcenter\b.*\b(position|place|this|it)\b',
-        # ── Spacing & padding ──
-        r'\b(more|less|reduce|increase|add)\b.*\b(space|spacing|gap|padding|margin)\b',
-        r'\b(space|spacing|gap|padding|margin)\b.*\b(between|around|inside)\b',
-        r'\btighter\b', r'\blooser\b', r'\bcompact\b',
-        # ── Layout & width ──
-        r'\bfull\s*width\b', r'\bmake\b.*\b(wider|narrower|bigger|smaller)\b',
-        r'\bstack\b.*\b(vertical|horizontal)', r'\bside\s*by\s*side\b',
+        # ── Removing elements ──
+        r'\bremove\b', r'\bdelete\b',
+        # ── Reordering / moving DOM elements ──
+        r'\breorder\b', r'\brearrange\b',
+        r'\bmove\b.*\b(before|after|above|below|up|down)\b',
+        r'\bswap\b',
+        # ── Duplicating / splitting / merging ──
+        r'\bsplit\b', r'\bmerge\b', r'\bduplicate\b', r'\bcopy\b',
+        # ── Layout type conversion (e.g. "convert to grid") ──
+        r'\bchange\s+layout\b',
+        r'\bgrid\b.*\bcolumn',
+        r'\bconvert\b.*\b(to|into)\b',
         r'\b(vertical|horizontal)\s*layout\b', r'\bcolumn\s*layout\b', r'\brow\s*layout\b',
-        # ── Background & overlay ──
-        r'\b(change|add|remove)\b.*\bbackground\b', r'\boverlay\b', r'\bdarken\b.*\bbackground\b',
-        r'\bbg\s*(color|image|colour)\b', r'\bsection\s*background\b',
-        # ── Bulk / "all" changes ──
-        r'\b(change|make|set)\b.*\ball\b.*\b(text|button|card|font|color|colour)\b',
-        r'\ball\b.*\b(text|button|card)\b.*\b(white|black|bigger|smaller|same)\b',
-        r'\bsame\b.*\b(font|size|color|colour|style)\b.*\b(for|across|everywhere)\b',
-        r'\beverything\b.*\b(white|black|bigger|smaller|same)\b',
-        # ── Visibility ──
-        r'\bhide\b', r'\bshow\b.*\b(the|this|a)\b', r'\btoggle\b',
-        r'\bmake\b.*\b(visible|invisible|hidden)\b',
+        r'\bstack\b.*\b(vertical|horizontal)',
+        r'\bside\s*by\s*side\b',
     ]
     prompt_lower = prompt.lower()
     return any(re.search(pat, prompt_lower) for pat in structural_keywords)
@@ -5360,7 +5396,11 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
 
         # ── FAST PATH: Direct removal (no LLM call) ─────────────
         remove_pattern = re.compile(
-            r"^(remove|delete|get rid of|take out|strip|hide|drop)\s*(this|it|the section|section|element|this section|this element)?\.?$",
+            r"^(remove|delete|get rid of|take out|strip|hide|drop)\b"
+            r"(\s+(this|it|the|that|entire))?"
+            r"(\s+(section|element|button|form|card|item|image|text|block|component|div|field|input|link|icon|row|column|paragraph|heading|title|subtitle|nav|footer|header))?"
+            r"(\s*(please|now|pls|from\s+(here|this\s+page|the\s+page)))?"
+            r"\s*[.!]?\s*$",
             re.IGNORECASE,
         )
         if remove_pattern.match(req.prompt.strip()):
@@ -5411,6 +5451,18 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                     break
 
         client = get_anthropic_client()
+
+        # ── Protect navbar/header from structural rewrites ──────
+        # Nav/header sections are fragile — structural edits (which rewrite
+        # the whole section) frequently corrupt or hide them.  Force these
+        # to the precise element-edit path instead.
+        nav_types = {"nav", "navbar", "header", "navigation"}
+        if structural and target_section and target_section["type"].lower() in nav_types:
+            logger.info(
+                f'🖱️ [ELEMENT EDIT] Downgrading structural → precise for nav/header section '
+                f'"{target_section["id"]}" to prevent navbar corruption'
+            )
+            structural = False
 
         if structural and target_section:
             # ── STRUCTURAL EDIT: needs full section context ──────
@@ -5477,7 +5529,12 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed. Response: {text[:500]}")
                 raise HTTPException(status_code=500, detail="Failed to parse edited element")
 
-            logger.info(f"🖱️ [ELEMENT EDIT] Got edited element: {len(edited_element):,} chars (was {len(req.elementHtml):,})")
+            # If LLM returned a removal marker, treat as element removal
+            if edited_element.strip() in ("<!-- removed -->", "<!-- element removed -->", ""):
+                edited_element = ""
+                logger.info("🖱️ [ELEMENT EDIT] LLM indicated removal — deleting element")
+            else:
+                logger.info(f"🖱️ [ELEMENT EDIT] Got edited element: {len(edited_element):,} chars (was {len(req.elementHtml):,})")
 
             # ── Patch the edited element back into the page ──────
             # Try to find and replace the original element in the HTML
@@ -5542,22 +5599,36 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 result_css = css
 
         else:
-            # ── Fallback: full-page edit (structural, no section found) ──
-            logger.info("🖱️ [ELEMENT EDIT] Full-page fallback (structural, no section)")
-            system = ELEMENT_EDIT_PROMPT.format(
-                html=full_html, css=css,
-                element_path=req.elementPath, element_html=req.elementHtml, prompt=req.prompt,
+            # ── Fallback: no section found — try precise edit on full HTML ──
+            # Avoid full-page rewrite which often corrupts navbar and creates
+            # spurious sections.  Instead, try to find and replace the element
+            # directly in the full HTML using the precise element editor.
+            logger.info("🖱️ [ELEMENT EDIT] No section found — trying precise edit on element in full HTML")
+            from app.utils.animations import get_animation_prompt_compact as _anim_fallback
+            system = ELEMENT_EDIT_PROMPT_PRECISE.format(
+                css_vars=css_vars,
+                section_type=req.sectionType or "unknown",
+                element_path=req.elementPath,
+                parent_tag=req.parentTag or "div",
+                parent_class=req.parentClass or "",
+                context_block="",
+                element_html=req.elementHtml,
+                prompt=req.prompt,
+                animation_ref=_anim_fallback(),
             )
-            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 16000, system, req.prompt)
-            code = parse_code_blocks(text)
-            if not code["html"]:
-                raise HTTPException(status_code=500, detail="Failed to parse edited code")
-            result_html = code["html"]
-            result_css = code["css"] if code["css"] else css
-            style_match = re.search(r"<style[^>]*>(.*?)</style>", result_html, re.DOTALL)
-            if style_match:
-                result_css = style_match.group(1).strip()
-                result_html = re.sub(r"<style[^>]*>.*?</style>\s*", "", result_html, flags=re.DOTALL).strip()
+            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 4000, system,
+                                        f"Edit this element: {req.prompt}")
+            edited_element = parse_single_code_block(text, "html")
+            if not edited_element:
+                logger.error("🖱️ [ELEMENT EDIT] FAILED — no HTML parsed in fallback")
+                raise HTTPException(status_code=500, detail="Failed to parse edited element")
+
+            pos = _find_element_in_html(full_html, req.elementHtml)
+            if pos:
+                result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
+            else:
+                result_html = full_html.replace(req.elementHtml, edited_element, 1)
+            result_css = css
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None

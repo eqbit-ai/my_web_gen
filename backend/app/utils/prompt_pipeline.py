@@ -1664,6 +1664,10 @@ RULES:
 - Use CSS variables: var(--accent), var(--bg), var(--radius), etc.
 - Keep the same outer element tag and data-section-type attribute
 - Keep the same data-section-id attribute
+- ONLY modify what the user asked for — keep everything else identical
+- Do NOT remove or modify elements the user didn't mention
+- Do NOT add new sections or generate replacement content when removing an element
+- When removing an element (form, button, etc.), simply delete it — do NOT replace it with new content
 - For images, keep existing src URLs unless user asks to change images
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
