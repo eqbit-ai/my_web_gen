@@ -1053,6 +1053,25 @@ def validate_html(html: str) -> str:
             html += f"\n{whatsapp_btn}\n"
         logger.info("🔧 WhatsApp Fix → Injected WhatsApp float button")
 
+    # Ensure ALL wa.me links have target="_blank" — without it, clicking inside
+    # the iframe navigates the iframe itself instead of opening WhatsApp
+    html = re.sub(
+        r'(<a\s[^>]*href="https?://wa\.me/[^"]*")((?:(?!target=)[^>])*)(/?>)',
+        lambda m: m.group(1) + m.group(2) + ' target="_blank" rel="noopener"' + m.group(3)
+        if 'target=' not in m.group(0) else m.group(0),
+        html,
+        flags=re.IGNORECASE,
+    )
+
+    # Also ensure tel: links have target="_blank" for iframe compatibility
+    html = re.sub(
+        r'(<a\s[^>]*href="tel:[^"]*")((?:(?!target=)[^>])*)(/?>)',
+        lambda m: m.group(1) + m.group(2) + ' target="_blank"' + m.group(3)
+        if 'target=' not in m.group(0) else m.group(0),
+        html,
+        flags=re.IGNORECASE,
+    )
+
     return html
 
 
