@@ -572,28 +572,31 @@ def _fix_url_quotes(html: str) -> str:
 
 
 def _strip_comment_markers(html: str) -> str:
-    """Strip SEO_META and FAVICON comment markers so they don't create HTML comments.
+    """Strip broken HTML comments that the LLM generates without closing -->.
 
-    Handles both formats:
-      - Proper:  <!-- SEO_META --> ... <!-- END_SEO_META -->
-      - Broken:  <!-- SEO_META  (no closing -->)
-    The broken format makes the browser treat the entire page as a comment.
+    The LLM frequently generates unclosed comment labels like:
+      <!-- Navbar<nav class="navbar"...
+      <!-- Hero Section<section...
+      <!-- SEO_META<meta name="description"...
+      <!-- Footer<footer...
+
+    Without the closing -->, the browser treats EVERYTHING after <!-- as a
+    comment, making the entire page invisible.
+
+    This function strips ALL unclosed <!-- markers that run directly into
+    HTML tags, preserving the actual HTML content.
     """
-    # Proper format (with closing -->)
-    html = re.sub(r'<!--\s*SEO_META\s*-->\s*', '', html)
-    html = re.sub(r'<!--\s*END_SEO_META\s*-->\s*', '', html)
-    html = re.sub(r'<!--\s*FAVICON\s*-->\s*', '', html)
-    html = re.sub(r'<!--\s*END_FAVICON\s*-->\s*', '', html)
-    # Broken format (no closing --> — just the opening marker)
-    html = re.sub(r'<!--\s*SEO_META\s*', '', html)
-    html = re.sub(r'<!--\s*END_SEO_META\s*', '', html)
-    html = re.sub(r'<!--\s*FAVICON\s*', '', html)
-    html = re.sub(r'<!--\s*END_FAVICON\s*', '', html)
-    # Also catch plain text markers (no <!-- at all)
-    html = re.sub(r'\bSEO_META\b', '', html)
-    html = re.sub(r'\bEND_SEO_META\b', '', html)
-    html = re.sub(r'\bFAVICON\b', '', html)
-    html = re.sub(r'\bEND_FAVICON\b', '', html)
+    # Pattern: <!-- followed by label text, immediately followed by < (HTML tag)
+    # This catches: <!-- Navbar<nav, <!-- Hero Section<section, <!-- SEO_META<meta, etc.
+    # The label text is any word chars, spaces, ampersands, but NOT < or >
+    html = re.sub(r'<!--\s*[\w\s&/]+(?=<)', '', html)
+
+    # Also strip properly-formatted comment markers (<!-- MARKER -->)
+    html = re.sub(r'<!--\s*(?:SEO_META|END_SEO_META|FAVICON|END_FAVICON)\s*-->\s*', '', html)
+
+    # Strip plain text markers that leaked without <!-- -->
+    html = re.sub(r'\b(?:SEO_META|END_SEO_META|FAVICON|END_FAVICON)\b', '', html)
+
     return html
 
 
