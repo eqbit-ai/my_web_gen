@@ -549,22 +549,24 @@ def _fix_url_quotes(html: str) -> str:
 
     Does NOT touch url("data:...") since SVG data URIs may contain single quotes.
     """
-    def _normalize_url(m: re.Match) -> str:
-        inner = m.group(1)
-        # Strip any leading/trailing quotes (single or double, possibly mismatched)
-        inner = inner.strip("\"'")
-        return f"url('{inner}')"
+    def _normalize_http_url(m: re.Match) -> str:
+        raw = m.group(1)
+        # Strip ALL leading/trailing quotes and whitespace (handles mismatched " ... ')
+        url = raw.strip().strip("\"'").strip()
+        return f"url('{url}')"
 
-    # Match url(...) containing http:// or https:// or {{IMG:
-    # The inner part can have any quote combination (or none)
+    # Strategy: match url( then EVERYTHING up to ) that contains http:// or https://
+    # Use [^)]+ (greedy, stops at closing paren) so mismatched quotes don't break matching.
+    # The key difference from before: [^)]+ allows quotes INSIDE the match instead of
+    # [^)'"]*? which stopped at the first quote character.
     html = re.sub(
-        r"""url\(\s*["']?(https?://[^)'"]*?)["']?\s*\)""",
-        _normalize_url,
+        r"""url\(\s*([^)]*https?://[^)]*?)\s*\)""",
+        _normalize_http_url,
         html,
     )
     html = re.sub(
-        r"""url\(\s*["']?(\{\{IMG:[^)'"]*?)["']?\s*\)""",
-        _normalize_url,
+        r"""url\(\s*([^)]*\{\{IMG:[^)]*?)\s*\)""",
+        _normalize_http_url,
         html,
     )
     return html

@@ -1878,19 +1878,45 @@ const WebsiteGenerator = () => {
             addToast('This version has no content — cannot restore.', 'error');
             return;
         }
-        setHtml(v.html); setCss(v.css); setJs(v.js);
         setCurrentVersion(versionIndex);
+
         // Restore multi-page state from version
-        setIsMultipage(v.isMultipage || false);
-        setPages(v.pages || {});
-        setCurrentPage('index');
+        const vIsMultipage = v.isMultipage || false;
+        const vPages = (v.pages && Object.keys(v.pages).length > 0) ? v.pages : null;
+
+        if (vIsMultipage && vPages) {
+            // Version has full multipage data — restore it
+            setIsMultipage(true);
+            setPages(vPages);
+            setCurrentPage('index');
+            const indexData = vPages['index'];
+            setHtml(indexData?.html || v.html);
+            setCss(indexData?.css || v.css);
+            setJs(v.js);
+        } else if (isMultipage && !vPages) {
+            // Currently multipage but version has no pages data —
+            // update only the current page, don't wipe all pages
+            const curPage = currentPageRef.current;
+            setHtml(v.html); setCss(v.css); setJs(v.js);
+            setPages(prev => ({ ...prev, [curPage]: { html: v.html, css: v.css } }));
+        } else {
+            // Single page — simple restore
+            setHtml(v.html); setCss(v.css); setJs(v.js);
+            setIsMultipage(false);
+            setPages({});
+            setCurrentPage('index');
+        }
+
         setMessages(prev => [...prev, {
             role: 'system',
             text: `Rolled back to version ${versionIndex + 1}`,
             timestamp: new Date().toLocaleTimeString(),
         }]);
-        // Sync backend session
-        if (sessionId) syncSession(sessionId, v.html, v.css, v.js, 'index')
+        // Sync backend session with the correct page
+        const syncPage = (vIsMultipage && vPages) ? 'index' : (currentPageRef.current || 'index');
+        const syncHtml = (vIsMultipage && vPages?.['index']?.html) || v.html;
+        const syncCss = (vIsMultipage && vPages?.['index']?.css) || v.css;
+        if (sessionId) syncSession(sessionId, syncHtml, syncCss, v.js, syncPage)
             .then(d => { if (d.sections) setSections(d.sections); })
             .catch(() => { });
     };
