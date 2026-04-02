@@ -1152,7 +1152,11 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
     if req.faviconUrl is not None:
         site_meta["faviconUrl"] = req.faviconUrl
     if req.whatsappNumber is not None:
-        site_meta["whatsappNumber"] = req.whatsappNumber
+        # Strip invisible Unicode control chars (U+202A, U+202C, etc.) that
+        # get copied from phone apps and break wa.me URLs
+        import re
+        clean_wa = re.sub(r'[^\d+\s\-()]', '', req.whatsappNumber).strip()
+        site_meta["whatsappNumber"] = clean_wa
     session["site_meta"] = site_meta
 
     html = _get_page_html(session, req.pageSlug)
