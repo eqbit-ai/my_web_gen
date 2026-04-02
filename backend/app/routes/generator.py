@@ -5100,6 +5100,11 @@ TYPOGRAPHY & STYLING (when changing text appearance):
 
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
+- If the user asks to "change image" or "add image" WITHOUT a URL, use placeholder format: src="{{{{IMG:descriptive keywords}}}}"
+  Example: "change image to pasta" → src="{{{{IMG:pasta italian food dish}}}}"
+  Example: "add pizza image" → src="{{{{IMG:pizza food restaurant}}}}"
+  The placeholder will be auto-resolved to a real image URL.
+- Do NOT invent or hallucinate pexels.com or unsplash.com URLs — use the {{{{IMG:...}}}} placeholder instead
 - Adapt image size to context with inline style:
   - Navbar logo: max-height: 40-50px, width: auto
   - Card/grid image: width: 100%, height: 200-280px, object-fit: cover
@@ -5179,6 +5184,10 @@ TYPOGRAPHY & STYLING (when changing text appearance):
 
 IMAGE RULES (when adding/changing images):
 - If the user provides a URL, use that exact URL as the src
+- If the user asks to "change image" or "add image" WITHOUT a URL, use placeholder: src="{{{{IMG:descriptive keywords}}}}"
+  Example: "add pizza image" → src="{{{{IMG:pizza food restaurant}}}}"
+  The placeholder will be auto-resolved to a real image URL.
+- Do NOT invent or hallucinate pexels.com or unsplash.com URLs — use {{{{IMG:...}}}} placeholders
 - Adapt image size to context:
   Navbar logo: max-height: 40-50px | Card: width:100%, height:200-280px, object-fit:cover
   Hero: width:100%, max-height:500px | Avatar: 80-120px, border-radius:50% | General: max-width:100%, height:auto
@@ -5629,6 +5638,15 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             else:
                 result_html = full_html.replace(req.elementHtml, edited_element, 1)
             result_css = css
+
+        # ── Resolve image placeholders ───────────────────────────
+        # LLM may return {{IMG:...}} placeholders or hallucinated pexels/unsplash URLs
+        if "{{IMG:" in result_html or re.search(r'src=["\']https?://images\.(pexels|unsplash)\.com/', result_html):
+            s_tmp = await redis_get_session(req.sessionId) if req.sessionId else None
+            plan = s_tmp.get("plan", {}) if s_tmp else {}
+            niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
+            result_html = await _resolve_images_safe(result_html, niche_key=niche_key)
+            logger.info("🖱️ [ELEMENT EDIT] Resolved image placeholders")
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
