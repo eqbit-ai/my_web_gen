@@ -555,17 +555,16 @@ def _fix_url_quotes(html: str) -> str:
         url = raw.strip().strip("\"'").strip()
         return f"url('{url}')"
 
-    # Strategy: match url( then EVERYTHING up to ) that contains http:// or https://
-    # Use [^)]+ (greedy, stops at closing paren) so mismatched quotes don't break matching.
-    # The key difference from before: [^)]+ allows quotes INSIDE the match instead of
-    # [^)'"]*? which stopped at the first quote character.
+    # Strategy: find url( ... ) where the content contains https://
+    # Use GREEDY [^)]+ to capture everything up to the LAST ) — this ensures
+    # mismatched quotes like url("https://...jpeg') are fully captured.
     html = re.sub(
-        r"""url\(\s*([^)]*https?://[^)]*?)\s*\)""",
+        r"""url\(\s*([^)]+https?://[^)]+)\s*\)""",
         _normalize_http_url,
         html,
     )
     html = re.sub(
-        r"""url\(\s*([^)]*\{\{IMG:[^)]*?)\s*\)""",
+        r"""url\(\s*([^)]+\{\{IMG:[^)]+)\s*\)""",
         _normalize_http_url,
         html,
     )
@@ -768,6 +767,10 @@ def validate_html(html: str) -> str:
     # Strip any code fence markers the LLM may have left
     html = re.sub(r"^```\w*\s*\n?", "", html.strip())
     html = re.sub(r"\n?```\s*$", "", html.strip())
+
+    # Strip SEO_META / FAVICON comment markers FIRST — if these survive,
+    # the browser treats the entire page as an HTML comment (blank page)
+    html = _strip_comment_markers(html)
 
     # Strip orphaned comment closers (-->) that leak into visible output
     # These appear when an edit deletes the opening <!-- but leaves the -->
@@ -5122,6 +5125,7 @@ RULES:
 - SIZE CHANGES (bigger/smaller/wider/narrower): Apply via inline style. e.g. style="font-size: 2rem" or style="width: 80%". Do NOT restructure the DOM.
 - Use var(--primary), var(--accent), var(--bg), var(--text), var(--radius) for colors/tokens
 - Keep existing image src URLs unless user explicitly asks to change images
+- Keep existing background-image url() in style attributes EXACTLY as-is unless user explicitly asks to change the background image. NEVER replace, remove, or modify background-image URLs when the user is asking about text, color, font, alignment, or spacing changes.
 - Do NOT bloat the element — keep it concise
 - Do NOT add extra wrapper divs
 - Do NOT generate inline SVGs or decorative clip-path shapes
@@ -5201,6 +5205,7 @@ RULES:
 - Do NOT add new sections or generate replacement content when removing an element — just remove that specific element
 - Use CSS classes above, NOT Tailwind. Use var(--primary), var(--accent), etc.
 - Keep existing image src URLs unless asked to change
+- Keep existing background-image url() in style attributes EXACTLY as-is unless user explicitly asks to change the background image
 - Do NOT add Font Awesome script tags
 - Do NOT generate large inline SVGs or decorative clip-path shapes
 - Do NOT include explanation

@@ -1668,6 +1668,7 @@ RULES:
 - Do NOT add new sections or generate replacement content when removing an element
 - When removing an element (form, button, etc.), simply delete it — do NOT replace it with new content
 - For images, keep existing src URLs unless user asks to change images
+- Keep existing background-image url() in style attributes EXACTLY as-is unless user explicitly asks to change the background image. NEVER modify background URLs for text/color/font/alignment edits.
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
 - Do NOT include any explanation, just the html code block
