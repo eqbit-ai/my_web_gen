@@ -1784,7 +1784,10 @@ const WebsiteGenerator = () => {
                             setPages(result.pages);
                         } else if (isMultipage && currentPage) {
                             // Fallback: update just the current page locally
-                            resultPages = { ...pages, [currentPage]: { html: newHtml, css: newCss } };
+                            // Use pagesRef.current to avoid stale closure — pages captured at
+                            // handleGenerate() call time may be outdated by SSE completion
+                            const latestPgs = pagesRef.current;
+                            resultPages = { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } };
                             setPages(resultPages);
                         }
                         msgText = 'Changes applied! What else would you like to adjust?';
@@ -2080,7 +2083,8 @@ const WebsiteGenerator = () => {
                     setPages(prev => ({ ...prev, [currentPage]: { html: newHtml, css: newCss } }));
                 }
 
-                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: isMultipage ? { ...pages, [currentPage]: { html: newHtml, css: newCss } } : {} };
+                const latestPgs = pagesRef.current;
+                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: isMultipage ? { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } } : {} };
                 setVersions(prev => { const u = [...prev.slice(0, currentVersion + 1), newVersion]; setCurrentVersion(u.length - 1); return u; });
 
                 // Sync to backend Redis session
@@ -2446,11 +2450,16 @@ const WebsiteGenerator = () => {
 
     const handleSectionUpdate = (newHtml, newCss, newJs, actionLabel) => {
         setHtml(newHtml); setCss(newCss); if (newJs !== undefined) setJs(newJs);
+        // Update multi-page state
+        if (isMultipage) {
+            setPages(prev => ({ ...prev, [currentPage]: { html: newHtml, css: newCss } }));
+        }
         // Refresh sections for the current page
         if (sessionId) getSections(sessionId, currentPage).then(d => setSections(d.sections || [])).catch(() => { });
         // Push version
         const label = actionLabel || 'Section edit';
-        const newVersion = { html: newHtml, css: newCss, js: newJs || js, prompt: `[${label}]` };
+        const latestPgs = pagesRef.current;
+        const newVersion = { html: newHtml, css: newCss, js: newJs || js, prompt: `[${label}]`, isMultipage, pages: isMultipage ? { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } } : {} };
         const newVersions = [...versions.slice(0, currentVersion + 1), newVersion];
         setVersions(newVersions);
         setCurrentVersion(newVersions.length - 1);
