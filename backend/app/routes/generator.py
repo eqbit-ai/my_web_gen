@@ -1059,6 +1059,26 @@ def validate_html(html: str) -> str:
             html += f"\n{whatsapp_btn}\n"
         logger.info("🔧 WhatsApp Fix → Injected WhatsApp float button")
 
+    # Fix WhatsApp number: extract the REAL phone number from the page's contact
+    # section and ensure wa.me link uses it correctly. LLM often concatenates
+    # country codes (e.g. 971 + 15053784204 = 97115053784204) or uses placeholder numbers.
+    wa_match = re.search(r'href="https?://wa\.me/([^"]+)"', html)
+    if wa_match:
+        wa_number = wa_match.group(1)
+        # Try to find the real phone number from the contact/footer section
+        # Look for phone numbers near phone icons or "phone" labels
+        phone_matches = re.findall(
+            r'(?:fa-phone|phone|tel:|contact-icon)[^<]*?(?:<[^>]*>)*\s*(?:<span[^>]*>)?\s*([+\d][\d\s\-().]+\d)',
+            html, re.IGNORECASE
+        )
+        if phone_matches:
+            # Use the first real phone number found
+            real_phone = re.sub(r'[^\d+]', '', phone_matches[0])  # Strip spaces/dashes
+            real_phone = real_phone.lstrip('+')  # wa.me needs number without +
+            if real_phone and real_phone != wa_number:
+                html = html.replace(f'wa.me/{wa_number}', f'wa.me/{real_phone}')
+                logger.info(f"🔧 WhatsApp Fix → Corrected number: {wa_number} → {real_phone}")
+
     # Ensure ALL wa.me links have target="_blank" — without it, clicking inside
     # the iframe navigates the iframe itself instead of opening WhatsApp
     html = re.sub(
