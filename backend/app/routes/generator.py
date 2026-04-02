@@ -571,11 +571,28 @@ def _fix_url_quotes(html: str) -> str:
 
 
 def _strip_comment_markers(html: str) -> str:
-    """Strip SEO_META and FAVICON comment markers so --> doesn't leak into rendered output."""
+    """Strip SEO_META and FAVICON comment markers so they don't create HTML comments.
+
+    Handles both formats:
+      - Proper:  <!-- SEO_META --> ... <!-- END_SEO_META -->
+      - Broken:  <!-- SEO_META  (no closing -->)
+    The broken format makes the browser treat the entire page as a comment.
+    """
+    # Proper format (with closing -->)
     html = re.sub(r'<!--\s*SEO_META\s*-->\s*', '', html)
     html = re.sub(r'<!--\s*END_SEO_META\s*-->\s*', '', html)
     html = re.sub(r'<!--\s*FAVICON\s*-->\s*', '', html)
     html = re.sub(r'<!--\s*END_FAVICON\s*-->\s*', '', html)
+    # Broken format (no closing --> — just the opening marker)
+    html = re.sub(r'<!--\s*SEO_META\s*', '', html)
+    html = re.sub(r'<!--\s*END_SEO_META\s*', '', html)
+    html = re.sub(r'<!--\s*FAVICON\s*', '', html)
+    html = re.sub(r'<!--\s*END_FAVICON\s*', '', html)
+    # Also catch plain text markers (no <!-- at all)
+    html = re.sub(r'\bSEO_META\b', '', html)
+    html = re.sub(r'\bEND_SEO_META\b', '', html)
+    html = re.sub(r'\bFAVICON\b', '', html)
+    html = re.sub(r'\bEND_FAVICON\b', '', html)
     return html
 
 

@@ -830,8 +830,7 @@ PRESERVE FROM REFERENCE (recreate in <style> block):
 - Transition timing: cubic-bezier easing, staggered delays
 
 ADD THESE ELEMENTS:
-- <!-- SEO_META --> after </style> with meta description, og:title, og:description <!-- END_SEO_META -->
-- <!-- FAVICON --> with SVG favicon <!-- END_FAVICON -->
+- Do NOT add SEO meta tags or favicon — these are injected automatically by the system
 - WhatsApp float button (fixed bottom-right, green background #25D366)
 - Back-to-top button (fixed, hidden by default, shows on scroll)
 - CONTACT FORM: MUST include a contact section with a working <form> (name, email, phone, message fields). All CTA buttons ("Book Now", "Enquire Now", "Get Started", "Reserve") MUST link to href="#contact".

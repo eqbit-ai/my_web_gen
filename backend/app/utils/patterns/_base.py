@@ -563,9 +563,7 @@ DESIGN QUALITY — what makes a website look "designed" vs "generated":
   - Do NOT add min-height > 400px on images. Let natural aspect ratio + max-height constrain them.
   - EVERY <img> must have loading="lazy" decoding="async" (except hero)
 
-SEO META — after </style>, add: <!-- SEO_META --> with meta description (150 chars), og:title, og:description, og:type, twitter:card, robots, canonical. <!-- END_SEO_META -->
-
-FAVICON — after SEO block: <!-- FAVICON --> with SVG favicon using brand initial + primary color. <!-- END_FAVICON -->
+Do NOT add SEO meta tags, og: tags, or favicon — these are injected automatically by the system after generation.
 
 Do NOT add breadcrumbs to single-page websites.
 
