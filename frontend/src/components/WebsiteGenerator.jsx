@@ -1084,11 +1084,17 @@ const WebsiteGenerator = () => {
     useEffect(() => {
         if (sessionId || html) {
             // Strip heavy html/css/js/pages from version entries to avoid 5MB quota
-            const lightVersions = versions.map(v => ({
-                prompt: v.prompt, version: v.version,
+            // Save last 3 full versions for undo/redo across refresh, rest as light
+            const fullVersions = versions.slice(Math.max(0, versions.length - 3)).map(v => ({
+                html: v.html, css: v.css, js: v.js, prompt: v.prompt,
+                isMultipage: v.isMultipage, pages: v.pages,
             }));
+            const lightVersions = versions.slice(0, Math.max(0, versions.length - 3)).map(v => ({
+                prompt: v.prompt, _light: true,
+            }));
+            const allVersions = [...lightVersions, ...fullVersions];
             sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-                sessionId, html, css, js, messages, versions: lightVersions, currentVersion, projectId,
+                sessionId, html, css, js, messages, versions: allVersions, currentVersion, projectId,
                 isMultipage, pages, currentPage,
             }));
         }
@@ -1891,12 +1897,16 @@ const WebsiteGenerator = () => {
 
     // ── Undo / Redo ─────────────────────────────────────────────────────
 
-    const canUndo = currentVersion > 0;
-    const canRedo = currentVersion < versions.length - 1;
+    // Skip light versions (no html data) — can only undo to versions with full content
+    const canUndo = currentVersion > 0 && versions.slice(0, currentVersion).some(v => v.html);
+    const canRedo = currentVersion < versions.length - 1 && versions.slice(currentVersion + 1).some(v => v.html);
 
     const handleUndo = useCallback(() => {
         if (currentVersion <= 0) return;
-        const prev = currentVersion - 1;
+        // Find nearest previous version with full data
+        let prev = currentVersion - 1;
+        while (prev >= 0 && !versions[prev].html) prev--;
+        if (prev < 0) return;
         const v = versions[prev];
         // For multipage: restore the correct page's content, not just v.html
         // v.html is whatever page was active at that version — use pages dict instead
@@ -1922,7 +1932,10 @@ const WebsiteGenerator = () => {
 
     const handleRedo = useCallback(() => {
         if (currentVersion >= versions.length - 1) return;
-        const next = currentVersion + 1;
+        // Find nearest next version with full data
+        let next = currentVersion + 1;
+        while (next < versions.length && !versions[next].html) next++;
+        if (next >= versions.length) return;
         const v = versions[next];
         const curPage = currentPageRef.current;
         let restoreHtml = v.html;

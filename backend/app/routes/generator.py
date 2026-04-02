@@ -4605,6 +4605,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             await _complete_job(job_id, "completed")
 
             # Log generation to admin dashboard (fire-and-forget)
+            from app.utils.usage_limits import increment_usage
             if is_new:
                 _page_count = len(pages_dict) if is_multipage and pages_dict else 1
                 _log_generation_bg(
@@ -4619,9 +4620,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     performance_score=quality_scores.get("performance_score"),
                     seo_score=quality_scores.get("seo_score"),
                 )
+                # Increment generation count
+                asyncio.ensure_future(increment_usage(user["user_id"], "generation"))
             else:
                 # Increment edit count for modifications
-                from app.utils.usage_limits import increment_usage
                 asyncio.ensure_future(increment_usage(user["user_id"], "edit"))
 
             await emit("complete", complete_payload)
@@ -4999,6 +5001,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 is_multipage=is_multipage_gen,
                 page_count=_page_count,
             )
+            # Increment generation count
+            from app.utils.usage_limits import increment_usage
+            await increment_usage(user["user_id"], "generation")
 
         return result
 
