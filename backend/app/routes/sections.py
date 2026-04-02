@@ -150,6 +150,9 @@ def _validate_regen_html(html: str, section_id: str, section_type: str) -> str:
     if not html or len(html) < 20:
         return html
 
+    # Strip orphaned comment closers (-->) that leak into visible output
+    html = _re.sub(r'(?<![->])\s*-->\s*(?=<|\s*$)', '', html)
+
     # Strip Font Awesome kit/CDN script and link tags
     html = _re.sub(
         r"<script[^>]*(?:kit\.fontawesome\.com|fontawesome)[^>]*>(?:</script>)?\s*",
@@ -237,6 +240,15 @@ def _validate_regen_html(html: str, section_id: str, section_type: str) -> str:
             if container_match:
                 insert_at = container_match.end()
                 html = html[:insert_at] + '\n            <h1 class="hero-heading">Your Heading Here</h1>' + html[insert_at:]
+
+    # ── Fix url() quotes (centralized — covers ALL section code paths) ──
+    # LLM generates url("https://...") inside style="" attributes, which breaks HTML
+    # because the " inside url(" prematurely closes the style attribute.
+    # Only fix url("http...) — NOT url("data:...) which needs double quotes.
+    html = _re.sub(r'url\("(https?://)', r"url('\1", html)
+    html = _re.sub(r'url\("(\{\{IMG:)', r"url('\1", html)
+    html = _re.sub(r"(url\('https?://[^'\"]*?)\"(\s*\))", r"\1'\2", html)
+    html = _re.sub(r"(url\('\{\{IMG:[^'\"]*?)\"(\s*\))", r"\1'\2", html)
 
     return html
 
@@ -656,6 +668,7 @@ SECTION SIZE CONSTRAINTS (CRITICAL — prevents layout breakage):
 
 REQUIRED ELEMENTS BY SECTION TYPE (CRITICAL — never omit these):
 - HERO section MUST contain: an <h1> heading (the main page title) with PLAIN TEXT content (NOT Typed.js, NOT data-typed, NOT empty spans that rely on JavaScript to fill in text — the heading must be readable without JS), a subtitle/description paragraph, and at least one CTA button. NEVER put Typed.js or animated typing inside the H1 tag — if you want typing effects, put them in a separate element below the H1.
+- HERO LAYOUT: For split heroes (.hero-split-grid), content MUST be TEXT on LEFT and IMAGE on RIGHT. Do NOT push all elements to one side leaving the other empty. Do NOT use float, margin-left:auto, text-align:right, or justify-content:flex-end to shift content to the right. Keep the existing grid structure. For centered heroes, use .hero-center-content. For background-image heroes, use .hero-bg-cover with an overlay.
 - FEATURES section MUST contain: a section title (<h2>), and at least 3 feature items.
 - TESTIMONIALS section MUST contain: a section title (<h2>), and at least 2 testimonial quotes.
 - CTA section MUST contain: a heading, description text, and at least one button.

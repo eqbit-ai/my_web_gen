@@ -835,6 +835,7 @@ ADD THESE ELEMENTS:
 - WhatsApp float button (fixed bottom-right, green background #25D366)
 - Back-to-top button (fixed, hidden by default, shows on scroll)
 - CONTACT FORM: MUST include a contact section with a working <form> (name, email, phone, message fields). All CTA buttons ("Book Now", "Enquire Now", "Get Started", "Reserve") MUST link to href="#contact".
+- CTA BUTTON TARGETS: Every CTA button's href MUST match the section it refers to. E.g. "Meet the Team" → href="#team", "View Services" → href="#services", "See Our Work" → href="#portfolio". Generic CTAs ("Get Started", "Learn More") → href="#contact".
 
 Return ONLY the HTML. No explanation."""
 
@@ -1064,6 +1065,15 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
     nav_context += "- EVERY page MUST have the SAME navbar with the SAME links listed above.\n"
     nav_context += "- The homepage navbar is NOT special — it gets the same page links as all other pages.\n"
     nav_context += f"\nYou are generating the '{page.get('title', 'Page')}' page (slug: {page.get('slug', 'index')}).\n"
+    nav_context += "\n═══ MULTIPAGE CTA BUTTON LINKS — CRITICAL ═══\n"
+    nav_context += "This is a MULTI-PAGE site. CTA buttons MUST use PAGE HREFS, not anchor links.\n"
+    nav_context += "- \"Book Now\", \"Contact Us\", \"Get Started\", \"Enquire Now\" → href=\"/contact.html\"\n"
+    nav_context += "- \"View Services\", \"Our Services\" → href=\"/services.html\"\n"
+    nav_context += "- \"About Us\", \"Learn More\" → href=\"/about.html\"\n"
+    nav_context += "- \"View Gallery\", \"See Our Work\" → href=\"/gallery.html\"\n"
+    nav_context += "- \"Meet the Team\" → href=\"/team.html\"\n"
+    nav_context += "- Do NOT use href=\"#contact\" or href=\"#services\" — those sections are on DIFFERENT PAGES.\n"
+    nav_context += "- Only use anchor links (href=\"#section\") for sections that exist ON THIS PAGE.\n"
 
     # Extract design tokens from the plan for explicit color/font instructions
     design = plan.get("design", {})

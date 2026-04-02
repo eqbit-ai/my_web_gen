@@ -428,12 +428,20 @@ def _upload_local_images(html: str, project_name: str, s3, bucket: str) -> str:
 
 
 def _make_links_relative(html: str) -> str:
-    """Convert absolute page links (href="/about.html", href="/") to relative paths.
+    """Convert absolute page links to relative paths for S3 prefix hosting.
 
     S3 static hosting serves sites under a prefix folder (e.g. /project-name/).
     Absolute paths like href="/about.html" resolve to the bucket root, not the
     project folder, causing 404s.  Relative paths (href="about.html") work correctly.
+
+    Handles:
+      - href="/about.html" → href="about.html"
+      - href="/" → href="index.html"
+      - window.location.href = '/about.html' → 'about.html'
+      - window.location = '/' → 'index.html'
+      - location.assign('/services.html') → 'services.html'
     """
+    # ── HTML href attributes ──
     # href="/" → href="index.html"
     html = re.sub(r'href\s*=\s*"/"', 'href="index.html"', html)
     html = re.sub(r"href\s*=\s*'/'", "href='index.html'", html)
@@ -441,6 +449,55 @@ def _make_links_relative(html: str) -> str:
     # href="/about.html" → href="about.html" (strip leading slash from .html links)
     html = re.sub(r'href\s*=\s*"/([a-zA-Z0-9_-]+\.html)"', r'href="\1"', html)
     html = re.sub(r"href\s*=\s*'/([a-zA-Z0-9_-]+\.html)'", r"href='\1'", html)
+
+    # ── HTML action attributes (forms) ──
+    html = re.sub(r'action\s*=\s*"/([a-zA-Z0-9_-]+\.html)"', r'action="\1"', html)
+
+    # ── JavaScript navigation patterns ──
+    # window.location.href = '/about.html' or location.href = '/about.html'
+    html = re.sub(
+        r"""((?:window\.)?location\.href\s*=\s*)(['"])\/([a-zA-Z0-9_-]+\.html)\2""",
+        r"\1\2\3\2",
+        html,
+    )
+    # window.location.href = '/' or location.href = '/'
+    html = re.sub(
+        r"""((?:window\.)?location\.href\s*=\s*)(['"])\/\2""",
+        r"\1\2index.html\2",
+        html,
+    )
+
+    # window.location = '/about.html' or location = '/about.html'
+    # (must not match location.href, location.assign, location.replace)
+    html = re.sub(
+        r"""((?:window\.)?location\s*=\s*)(['"])\/([a-zA-Z0-9_-]+\.html)\2""",
+        r"\1\2\3\2",
+        html,
+    )
+    html = re.sub(
+        r"""((?:window\.)?location\s*=\s*)(['"])\/\2""",
+        r"\1\2index.html\2",
+        html,
+    )
+
+    # location.assign('/about.html') or location.replace('/about.html')
+    html = re.sub(
+        r"""((?:window\.)?location\.(?:assign|replace)\s*\(\s*)(['"])\/([a-zA-Z0-9_-]+\.html)\2""",
+        r"\1\2\3\2",
+        html,
+    )
+    html = re.sub(
+        r"""((?:window\.)?location\.(?:assign|replace)\s*\(\s*)(['"])\/\2""",
+        r"\1\2index.html\2",
+        html,
+    )
+
+    # navigate('/about.html') — generic helper some LLM JS uses
+    html = re.sub(
+        r"""(navigate\s*\(\s*)(['"])\/([a-zA-Z0-9_-]+\.html)\2""",
+        r"\1\2\3\2",
+        html,
+    )
 
     return html
 

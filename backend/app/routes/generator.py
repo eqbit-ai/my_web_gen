@@ -720,6 +720,10 @@ def validate_html(html: str) -> str:
     html = re.sub(r"^```\w*\s*\n?", "", html.strip())
     html = re.sub(r"\n?```\s*$", "", html.strip())
 
+    # Strip orphaned comment closers (-->) that leak into visible output
+    # These appear when an edit deletes the opening <!-- but leaves the -->
+    html = re.sub(r'(?<![->])\s*-->\s*(?=<|\s*$)', '', html)
+
     # Fix url() quotes — CRITICAL for hero background images.
     # LLM generates url("https://...") inside style="" attributes, which breaks HTML because
     # the double quote inside url(" prematurely closes the style attribute.
@@ -5039,6 +5043,7 @@ RULES:
 - Same opening tag (e.g. if it's a <div>, return a <div>; if <h2>, return <h2>)
 - Keep existing classes, ids, data attributes unless the edit requires changing them
 - Use inline style for one-off changes, or use the CSS classes listed above
+- BUTTON COLOR CHANGES: When changing a button's background color, use style="background: COLOR !important" (with !important) because .btn-primary has a gradient that will override plain inline styles. For text color changes on buttons, use style="color: COLOR !important".
 - ALIGNMENT CHANGES: When centering text, add style="text-align: center" directly on the element. For hero sections, also add .hero-center-content class to the container or add text-align: center as inline style on BOTH the element AND its parent wrapper
 - Use var(--primary), var(--accent), var(--bg), var(--text), var(--radius) for colors/tokens
 - Keep existing image src URLs unless user explicitly asks to change images
@@ -5227,8 +5232,8 @@ def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] 
     """Find the exact position of an element's outerHTML in the full page HTML.
 
     Tries exact match first, then normalised whitespace match, then
-    first-80-chars prefix match.  All fallbacks use tag-aware end detection
-    so we never blindly slice by len(element_html).
+    prefix match, then attribute-flexible match (handles browser HTML normalization).
+    All fallbacks use tag-aware end detection so we never blindly slice by len(element_html).
     """
     # Exact match
     idx = full_html.find(element_html)
@@ -5261,6 +5266,58 @@ def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] 
         end = _find_element_end(full_html, idx, tag_name)
         if end is not None:
             return idx, end
+
+    # ── Attribute-flexible match ──────────────────────────────────
+    # Browser DOM normalises HTML: reorders attrs, changes quotes, adds/removes whitespace.
+    # Extract key attributes (class, id) + text content and search for a matching element.
+    if tag_name:
+        # Extract class and id from the element
+        cls_match = re.search(r'class\s*=\s*["\']([^"\']*)["\']', element_html)
+        id_match = re.search(r'id\s*=\s*["\']([^"\']*)["\']', element_html)
+        # Extract visible text (strip tags)
+        text_content = re.sub(r'<[^>]+>', '', element_html).strip()[:60]
+
+        # Build a regex to find this element in the stored HTML
+        # Match: same tag, same class (if any), same id (if any)
+        attr_parts = []
+        if id_match:
+            attr_parts.append(rf'id\s*=\s*["\']?{re.escape(id_match.group(1))}["\']?')
+        if cls_match:
+            # Match class value (may be in different order but usually same)
+            attr_parts.append(rf'class\s*=\s*["\']?{re.escape(cls_match.group(1))}["\']?')
+
+        if attr_parts:
+            # Find opening tag with these attributes
+            attr_pattern = r'<' + tag_name + r'(?=[^>]*' + r')(?=[^>]*'.join([''] + attr_parts) + r')[^>]*>'
+            try:
+                for m in re.finditer(attr_pattern, full_html, re.IGNORECASE):
+                    # Verify text content matches (at least partial)
+                    end = _find_element_end(full_html, m.start(), tag_name)
+                    if end is not None:
+                        candidate = full_html[m.start():end]
+                        candidate_text = re.sub(r'<[^>]+>', '', candidate).strip()[:60]
+                        # If text content is similar enough, we found it
+                        if text_content and candidate_text and (
+                            text_content[:30] in candidate_text or candidate_text[:30] in text_content
+                        ):
+                            return m.start(), end
+                        # If no text to compare (e.g. img, input), accept the attribute match
+                        if not text_content.strip():
+                            return m.start(), end
+            except re.error:
+                pass
+
+        # Last resort: match by text content alone (for elements like <p>, <h2>)
+        if text_content and len(text_content) > 10 and tag_name:
+            # Find all elements of this tag type and match by text
+            tag_pattern = rf'<{tag_name}[\s>]'
+            for m in re.finditer(tag_pattern, full_html, re.IGNORECASE):
+                end = _find_element_end(full_html, m.start(), tag_name)
+                if end is not None:
+                    candidate = full_html[m.start():end]
+                    candidate_text = re.sub(r'<[^>]+>', '', candidate).strip()
+                    if text_content[:40] in candidate_text:
+                        return m.start(), end
 
     return None
 
@@ -5386,6 +5443,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
 
         elif target_section or not structural:
             # ── PRECISE ELEMENT EDIT: return only the element ────
+            result_css = None  # may be set by CSS override fallback
             section_type = req.sectionType or (target_section["type"] if target_section else "unknown")
 
             # Build context block showing surrounding elements
@@ -5430,14 +5488,38 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 if pos:
                     new_section = section_html[:pos[0]] + edited_element + section_html[pos[1]:]
                     result_html = replace_section_html(full_html, target_section["id"], new_section)
+                    logger.info("🖱️ [ELEMENT EDIT] Matched element within section")
                 else:
-                    # Fallback: replace in full HTML
+                    # Fallback: search in full HTML
                     pos = _find_element_in_html(full_html, req.elementHtml)
                     if pos:
                         result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
+                        logger.info("🖱️ [ELEMENT EDIT] Matched element in full HTML")
                     else:
                         logger.warning("🖱️ [ELEMENT EDIT] Could not locate element — using simple replace")
                         result_html = full_html.replace(req.elementHtml, edited_element, 1)
+                        # Check if simple replace actually worked
+                        if result_html == full_html and edited_element != req.elementHtml:
+                            logger.warning("🖱️ [ELEMENT EDIT] Simple replace FAILED — element not found in HTML. Trying CSS-based patch.")
+                            # Last resort: inject the edit as a CSS override using the element path
+                            # Extract inline style from the edited element
+                            style_match = re.search(r'style\s*=\s*["\']([^"\']*)["\']', edited_element)
+                            if style_match and req.elementPath:
+                                css_selector = req.elementPath.replace(' > ', ' > ')
+                                css_override = f"\n/* Element edit override */\n{css_selector} {{ {style_match.group(1)} !important; }}\n"
+                                result_css = css + css_override
+                                logger.info(f"🖱️ [ELEMENT EDIT] Applied CSS override: {css_selector}")
+                            else:
+                                # Force replace by finding any matching tag with same text
+                                element_text = re.sub(r'<[^>]+>', '', req.elementHtml).strip()[:50]
+                                if element_text:
+                                    tag_m = re.match(r'<(\w+)', req.elementHtml)
+                                    if tag_m:
+                                        tag_re = rf'<{tag_m.group(1)}[^>]*>[^<]*{re.escape(element_text[:30])}[^<]*</{tag_m.group(1)}>'
+                                        match = re.search(tag_re, full_html, re.IGNORECASE | re.DOTALL)
+                                        if match:
+                                            result_html = full_html[:match.start()] + edited_element + full_html[match.end():]
+                                            logger.info("🖱️ [ELEMENT EDIT] Matched via text content regex")
             else:
                 # Element outside sections (nav, footer, etc.)
                 pos = _find_element_in_html(full_html, req.elementHtml)
@@ -5445,8 +5527,19 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                     result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
                 else:
                     result_html = full_html.replace(req.elementHtml, edited_element, 1)
+                    if result_html == full_html and edited_element != req.elementHtml:
+                        logger.warning("🖱️ [ELEMENT EDIT] Replace failed for non-section element — trying text match")
+                        element_text = re.sub(r'<[^>]+>', '', req.elementHtml).strip()[:50]
+                        if element_text:
+                            tag_m = re.match(r'<(\w+)', req.elementHtml)
+                            if tag_m:
+                                tag_re = rf'<{tag_m.group(1)}[^>]*>[^<]*{re.escape(element_text[:30])}[^<]*</{tag_m.group(1)}>'
+                                match = re.search(tag_re, full_html, re.IGNORECASE | re.DOTALL)
+                                if match:
+                                    result_html = full_html[:match.start()] + edited_element + full_html[match.end():]
 
-            result_css = css
+            if result_css is None:
+                result_css = css
 
         else:
             # ── Fallback: full-page edit (structural, no section found) ──
@@ -5480,17 +5573,18 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             if len(versions) > MAX_VERSIONS:
                 versions = versions[-MAX_VERSIONS:]
             s["versions"] = versions
-            s["html"] = result_html
-            s["css"] = result_css
             if s.get("multipage") and req.currentPage:
                 if "pages" not in s:
                     s["pages"] = {}
                 s["pages"][req.currentPage] = {"html": result_html, "css": result_css}
-                if req.currentPage != "index":
-                    index_data = s.get("pages", {}).get("index")
-                    if index_data:
-                        s["html"] = index_data["html"]
-                        s["css"] = index_data["css"]
+                # session["html"] always holds the index page — don't overwrite with other pages
+                if req.currentPage == "index":
+                    s["html"] = result_html
+                    s["css"] = result_css
+                # else: leave session["html"] as-is (it's the index page)
+            else:
+                s["html"] = result_html
+                s["css"] = result_css
             s["current_version"] = s.get("current_version", 0) + 1
             s["prompts"] = s.get("prompts", []) + [f"[Element: {req.elementPath}] {req.prompt}"]
             await redis_save_session(req.sessionId, s)

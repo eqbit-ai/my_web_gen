@@ -47,6 +47,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     }, [deployed?.site_id, activeTab]);
 
     const handleConnectOwnedDomain = async (domainName) => {
+        if (connectingDomain) return; // Prevent double-click
         setConnectingDomain(domainName);
         setDomainError(null);
         try {

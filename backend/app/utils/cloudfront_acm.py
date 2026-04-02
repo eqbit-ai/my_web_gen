@@ -386,6 +386,104 @@ async def delete_distribution(distribution_id: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# 6b. Find and remove old distribution holding a domain alias
+# ---------------------------------------------------------------------------
+
+async def cleanup_old_distribution_for_domain(domain: str) -> str | None:
+    """Find any existing CloudFront distribution that holds this domain as an alias.
+
+    If found, disables it, waits for Deployed status, and deletes it.
+    Returns the old distribution ID if one was cleaned up, None otherwise.
+
+    This is needed because AWS won't allow a new distribution to use a domain
+    alias that's already claimed by another distribution (even if disabled).
+    """
+
+    def _find():
+        client = _cf_client()
+        paginator = client.get_paginator("list_distributions")
+        for page in paginator.paginate():
+            dist_list = page.get("DistributionList", {})
+            for dist in dist_list.get("Items", []):
+                aliases = dist.get("Aliases", {}).get("Items", [])
+                if domain in aliases or f"www.{domain}" in aliases:
+                    return dist["Id"], dist["Status"], dist.get("Enabled", True)
+        return None, None, None
+
+    try:
+        dist_id, status, enabled = await asyncio.to_thread(_find)
+    except ClientError as exc:
+        logger.warning("Failed to list distributions while looking for %s: %s", domain, exc)
+        return None
+
+    if not dist_id:
+        return None
+
+    logger.info("Found old distribution %s holding alias for %s (status=%s, enabled=%s)", dist_id, domain, status, enabled)
+
+    try:
+        # Disable if still enabled
+        if enabled:
+            await disable_distribution(dist_id)
+
+        # Wait for Deployed status (up to 10 min for quick reconnect scenarios)
+        for _ in range(20):
+            await asyncio.sleep(30)
+            try:
+                st = await get_distribution_status(dist_id)
+                if st.get("status") == "Deployed":
+                    break
+            except Exception:
+                break
+
+        # Delete it
+        await delete_distribution(dist_id)
+        logger.info("Old distribution %s cleaned up for domain %s", dist_id, domain)
+        return dist_id
+    except Exception as e:
+        logger.error("Failed to cleanup old distribution %s for %s: %s", dist_id, domain, e)
+        # Try to remove the alias from the old distribution instead
+        try:
+            await _remove_alias_from_distribution(dist_id, domain)
+        except Exception:
+            pass
+        return None
+
+
+async def _remove_alias_from_distribution(distribution_id: str, domain: str) -> None:
+    """Remove a specific domain alias from a distribution (fallback if delete fails)."""
+
+    def _remove():
+        client = _cf_client()
+        resp = client.get_distribution_config(Id=distribution_id)
+        config = resp["DistributionConfig"]
+        etag = resp["ETag"]
+
+        aliases = config.get("Aliases", {}).get("Items", [])
+        new_aliases = [a for a in aliases if a != domain and a != f"www.{domain}"]
+
+        if len(new_aliases) == len(aliases):
+            return  # Domain wasn't in aliases
+
+        config["Aliases"] = {"Quantity": len(new_aliases), "Items": new_aliases}
+        # If no aliases left, also need to remove the certificate
+        if not new_aliases:
+            config["ViewerCertificate"] = {
+                "CloudFrontDefaultCertificate": True,
+                "MinimumProtocolVersion": "TLSv1.2_2021",
+            }
+
+        client.update_distribution(Id=distribution_id, DistributionConfig=config, IfMatch=etag)
+        logger.info("Removed alias %s from distribution %s", domain, distribution_id)
+
+    try:
+        await asyncio.to_thread(_remove)
+    except ClientError as exc:
+        logger.error("Failed to remove alias %s from %s: %s", domain, distribution_id, exc)
+        raise
+
+
+# ---------------------------------------------------------------------------
 # 7. Delete ACM certificate
 # ---------------------------------------------------------------------------
 

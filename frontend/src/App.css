@@ -1482,8 +1482,22 @@ body {
   background: var(--bg-tertiary, rgba(255,255,255,0.03));
 }
 .gp-thumb:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.gp-thumb { position: relative; }
 .gp-thumb img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.gp-thumb-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+  gap: 6px; color: white; font-size: 0.75rem; font-weight: 500; opacity: 0; transition: opacity 0.15s;
+  pointer-events: none;
+}
+.gp-thumb:hover .gp-thumb-overlay { opacity: 1; }
 .gp-thumb-info { padding: 6px 8px; }
+.gp-use-btn {
+  background: var(--accent); color: white; border: none; cursor: pointer;
+  padding: 2px 8px; margin-left: auto; border-radius: 4px; font-size: 0.625rem; font-weight: 600;
+  opacity: 0.8; transition: opacity 0.15s;
+}
+.gp-use-btn:hover { opacity: 1; }
 .gp-thumb-name {
   font-size: 0.7rem; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;

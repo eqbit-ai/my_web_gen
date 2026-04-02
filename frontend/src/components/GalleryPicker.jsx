@@ -71,35 +71,45 @@ const GalleryPicker = ({ isOpen, onClose, onSelectImage }) => {
                         <p style={{ fontSize: '0.75rem', marginTop: 4 }}>Upload images from the Dashboard Gallery tab</p>
                     </div>
                 ) : (
-                    filtered.map(img => (
+                    filtered.map(img => {
+                        const fullUrl = img.url.startsWith('http') ? img.url : `${window.location.origin}${img.url}`;
+                        return (
                         <div
                             key={img.id}
                             className="gp-thumb"
-                            onClick={() => onSelectImage(img.url, img.original_name)}
-                            title={`Click to use "${img.original_name}" in your website`}
+                            onClick={() => {
+                                navigator.clipboard.writeText(fullUrl);
+                                setCopied(img.url);
+                                setTimeout(() => setCopied(null), 2000);
+                            }}
+                            title={`Click to copy URL`}
                         >
-                            <img src={img.url.startsWith('http') ? img.url : `${window.location.origin}${img.url}`} alt={img.original_name} loading="lazy" />
+                            <img src={fullUrl} alt={img.original_name} loading="lazy" />
+                            <div className="gp-thumb-overlay">
+                                {copied === img.url ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Click to copy URL</>}
+                            </div>
                             <div className="gp-thumb-info">
                                 <span className="gp-thumb-name">{img.original_name}</span>
                                 <div className="gp-thumb-meta">
                                     {img.width && img.height && <span>{img.width}x{img.height}</span>}
                                     <span>{formatSize(img.size_bytes)}</span>
                                     <button
-                                        className="gp-copy-btn"
-                                        onClick={(e) => handleCopyUrl(e, img.url)}
-                                        title="Copy URL"
+                                        className="gp-use-btn"
+                                        onClick={(e) => { e.stopPropagation(); onSelectImage(img.url, img.original_name); }}
+                                        title="Insert via chat prompt"
                                     >
-                                        {copied === img.url ? <Check size={12} /> : <Copy size={12} />}
+                                        Use
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
             <div className="gp-footer">
-                Click an image to insert it into your website via chat prompt
+                Click image to copy URL — paste it in edit element prompt
             </div>
         </div>
     );

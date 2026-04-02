@@ -1035,7 +1035,12 @@ const WebsiteGenerator = () => {
 
                     // Re-hydrate backend session (may have been lost on server restart)
                     if (d.html) {
-                        restoreSession(d.html, d.css || '', d.js || '', d.projectId || null)
+                        const ssRestoreOpts = (d.isMultipage && d.pages && Object.keys(d.pages).length > 0)
+                            ? { isMultipage: true, pages: d.pages, currentPage: d.currentPage || 'index' }
+                            : {};
+                        const ssRestoreHtml = (d.isMultipage && d.pages?.[d.currentPage || 'index']?.html) || d.html;
+                        const ssRestoreCss = (d.isMultipage && d.pages?.[d.currentPage || 'index']?.css) || d.css || '';
+                        restoreSession(ssRestoreHtml, ssRestoreCss, d.js || '', d.projectId || null, ssRestoreOpts)
                             .then(data => {
                                 setSessionId(data.sessionId);
                                 if (data.sections) setSections(data.sections);
@@ -1890,25 +1895,50 @@ const WebsiteGenerator = () => {
         if (currentVersion <= 0) return;
         const prev = currentVersion - 1;
         const v = versions[prev];
-        setHtml(v.html); setCss(v.css); setJs(v.js);
+        // For multipage: restore the correct page's content, not just v.html
+        // v.html is whatever page was active at that version — use pages dict instead
+        const curPage = currentPageRef.current;
+        let restoreHtml = v.html;
+        let restoreCss = v.css;
+        if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
+            setPages(v.pages);
+            setIsMultipage(true);
+            // Use the current page's content from the version's pages dict
+            const pageData = v.pages[curPage];
+            if (pageData) {
+                restoreHtml = pageData.html || v.html;
+                restoreCss = pageData.css || v.css;
+            }
+        }
+        setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(prev);
-        // Sync backend session so sections list matches
-        if (sessionId) syncSession(sessionId, v.html, v.css, v.js, currentPage)
+        if (sessionId) syncSession(sessionId, restoreHtml, restoreCss, v.js, curPage)
             .then(d => { if (d.sections) setSections(d.sections); })
             .catch(() => { });
-    }, [currentVersion, versions, sessionId, currentPage]);
+    }, [currentVersion, versions, sessionId]);
 
     const handleRedo = useCallback(() => {
         if (currentVersion >= versions.length - 1) return;
         const next = currentVersion + 1;
         const v = versions[next];
-        setHtml(v.html); setCss(v.css); setJs(v.js);
+        const curPage = currentPageRef.current;
+        let restoreHtml = v.html;
+        let restoreCss = v.css;
+        if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
+            setPages(v.pages);
+            setIsMultipage(true);
+            const pageData = v.pages[curPage];
+            if (pageData) {
+                restoreHtml = pageData.html || v.html;
+                restoreCss = pageData.css || v.css;
+            }
+        }
+        setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(next);
-        // Sync backend session so sections list matches
-        if (sessionId) syncSession(sessionId, v.html, v.css, v.js, currentPage)
+        if (sessionId) syncSession(sessionId, restoreHtml, restoreCss, v.js, curPage)
             .then(d => { if (d.sections) setSections(d.sections); })
             .catch(() => { });
-    }, [currentVersion, versions, sessionId, currentPage]);
+    }, [currentVersion, versions, sessionId]);
 
     // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo
     useEffect(() => {
@@ -2384,12 +2414,26 @@ const WebsiteGenerator = () => {
     }, [isMultipage, handlePageSwitch]);
 
     // ── Keep pages[currentPage] in sync with live html/css after any edit ──
+    // Guard: only sync if the html actually belongs to the current page.
+    // Undo/redo can temporarily set html to a different page's content before
+    // pages state catches up — without this guard, it would corrupt the page.
+    const lastSyncedPageRef = useRef(null);
     useEffect(() => {
         if (!isMultipage || !currentPage || !html) return;
         setPages(prev => {
             const cur = prev[currentPage];
             // Only update if html or css actually changed
             if (cur && cur.html === html && cur.css === css) return prev;
+            // Safety: if the page already has content and this html matches a DIFFERENT page,
+            // skip the sync (likely a stale update from undo/redo)
+            if (cur && cur.html && Object.keys(prev).length > 1) {
+                for (const [slug, pg] of Object.entries(prev)) {
+                    if (slug !== currentPage && pg.html === html) {
+                        // This html belongs to another page — don't overwrite current page
+                        return prev;
+                    }
+                }
+            }
             return { ...prev, [currentPage]: { html, css } };
         });
     }, [html, css, isMultipage, currentPage]);

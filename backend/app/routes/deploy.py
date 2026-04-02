@@ -25,6 +25,7 @@ from app.models.site import Site
 from app.utils.auth import decode_access_token
 from app.utils.cloudfront_acm import (
     check_certificate_status,
+    cleanup_old_distribution_for_domain,
     create_distribution,
     delete_certificate,
     delete_distribution,
@@ -527,6 +528,18 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         if not s3_prefix:
             raise HTTPException(status_code=400, detail="Site has no S3 deployment. Deploy first.")
 
+        # If this site already has this domain connected, return current status
+        if site.domain == domain and site.cloudfront_distribution_id:
+            return {
+                "success": True,
+                "domain": domain,
+                "domain_status": site.domain_status or "pending_deployment",
+                "reused_infrastructure": True,
+                "cloudfront_domain": site.cloudfront_domain,
+                "dns_records": site.dns_records or [],
+                "message": "Domain is already connected to this site.",
+            }
+
         # Check if domain is already in use by another site
         existing_domain = await db.execute(
             select(Site).where(Site.domain == domain, Site.id != site_id)
@@ -612,6 +625,15 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
         cf_dist_id = None
         cf_domain = None
         if cert_issued:
+            # Clean up any old CloudFront distribution still holding this domain alias
+            # (happens when disconnect → reconnect before old dist is fully deleted)
+            try:
+                old_dist = await cleanup_old_distribution_for_domain(domain)
+                if old_dist:
+                    logger.info("Cleaned up old distribution %s before creating new one for %s", old_dist, domain)
+            except Exception as e:
+                logger.warning("Old distribution cleanup failed for %s: %s — will retry via domain-status", domain, e)
+
             try:
                 dist_result = await create_distribution(
                     domain=domain,
@@ -746,6 +768,12 @@ async def domain_status(site_id: str, user: dict = Depends(require_auth)):
         if cert_issued and not site.cloudfront_distribution_id:
             s3_prefix = site.cloudflare_project_name
             if s3_prefix:
+                # Clean up any old distribution still holding this domain alias
+                try:
+                    await cleanup_old_distribution_for_domain(site.domain)
+                except Exception:
+                    pass  # Best effort — create_distribution will fail if alias still taken
+
                 try:
                     dist_result = await create_distribution(
                         domain=site.domain,

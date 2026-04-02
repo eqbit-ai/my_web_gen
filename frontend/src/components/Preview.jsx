@@ -588,11 +588,24 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                     return;
                 }
 
-                if (isEditableText(el)) {
+                // Walk up to find nearest editable text element (handles clicks on icons/spans inside buttons/links)
+                var editTarget = el;
+                if (!isEditableText(editTarget)) {
+                    editTarget = el.closest('a, button, h1, h2, h3, h4, h5, h6, p, span, li, label, figcaption, blockquote');
+                }
+
+                if (editTarget && isEditableText(editTarget)) {
                     e.preventDefault();
                     e.stopPropagation();
-                    startTextEdit(el);
+                    startTextEdit(editTarget);
                     return;
+                }
+
+                // Prevent any remaining link navigation in CMS mode
+                var link = el.closest('a[href]');
+                if (link) {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
             }, true);
 
@@ -601,16 +614,35 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                 if (editingEl) finishTextEdit(editingEl);
                 editingEl = el;
                 el._cmsOriginal = el.textContent;
+                el._cmsOriginalHtml = el.innerHTML;
                 el.contentEditable = 'true';
                 el.classList.remove('cms-hover-outline');
                 el.classList.add('cms-editing');
+                // For links/buttons, prevent click navigation while editing
+                if (el.tagName === 'A' || el.tagName === 'BUTTON') {
+                    el._cmsHref = el.getAttribute('href');
+                    el.removeAttribute('href');
+                }
                 el.focus();
-                // Select all text for easy replacement
-                var range = document.createRange();
-                range.selectNodeContents(el);
+                // Select only text nodes for easy replacement (preserve icons)
                 var sel = window.getSelection();
                 sel.removeAllRanges();
-                sel.addRange(range);
+                var textNodes = [];
+                var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+                var node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent.trim()) textNodes.push(node);
+                }
+                if (textNodes.length > 0) {
+                    var range = document.createRange();
+                    range.setStart(textNodes[0], 0);
+                    range.setEnd(textNodes[textNodes.length - 1], textNodes[textNodes.length - 1].textContent.length);
+                    sel.addRange(range);
+                } else {
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    sel.addRange(range);
+                }
             }
 
             function finishTextEdit(el) {
@@ -619,6 +651,11 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                 var oldContent = el._cmsOriginal || '';
                 el.contentEditable = 'false';
                 el.classList.remove('cms-editing');
+                // Restore href on links/buttons
+                if (el._cmsHref !== undefined) {
+                    el.setAttribute('href', el._cmsHref);
+                    delete el._cmsHref;
+                }
                 editingEl = null;
 
                 // Only send if content actually changed
@@ -708,8 +745,14 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
     ${html && html.includes('data-detail-title') ? DETAIL_MODAL_CSS : ''}
   </style>
   <script>
+    // Flags set by edit/CMS mode to suppress navigation
+    window.__editMode = ${editMode ? 'true' : 'false'};
+    window.__cmsMode = ${cmsMode ? 'true' : 'false'};
+
     // Early navigation interceptor — prevents iframe from navigating to app routes
     document.addEventListener('click', function(e) {
+      // Skip navigation interception in edit/CMS mode — let those handlers manage clicks
+      if (window.__editMode || window.__cmsMode) return;
       var link = e.target.closest('a[href]');
       if (!link) return;
       var href = link.getAttribute('href');
@@ -730,6 +773,9 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
           'services': 'services', 'our-services': 'services',
           'about': 'about', 'about-us': 'about',
           'portfolio': 'portfolio', 'gallery': 'gallery', 'work': 'portfolio',
+          'team': 'about', 'our-team': 'about', 'meet-the-team': 'about',
+          'testimonials': 'about', 'reviews': 'about',
+          'faq': 'contact', 'faqs': 'contact',
           'menu': 'menu', 'rooms': 'rooms', 'properties': 'properties',
           'courses': 'courses', 'programs': 'courses'
         };

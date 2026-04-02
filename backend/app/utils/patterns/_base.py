@@ -45,8 +45,10 @@ RULES:
   4. NEVER use dark text (var(--text) or dark colors) on a hero with a background image — it will be invisible if the image is dark.
   5. The H1 heading MUST contain PLAIN, STATIC TEXT — NOT Typed.js spans, NOT data-typed attributes, NOT empty elements that rely on JS to fill text. The heading must be fully readable with JavaScript disabled. If you want typing animation effects, put them in a SEPARATE element BELOW the H1, never inside it.
 - HERO ALIGNMENT CONSISTENCY: ALL elements inside the hero (heading, subtitle, CTAs, trust line) MUST have the SAME alignment. If the hero uses .hero-center-content, everything is centered. If it uses .hero-full-overlay (left-aligned), EVERYTHING must be left-aligned — do NOT center the subtitle or CTAs while left-aligning the heading. Never mix text-align values within a hero.
+- HERO LAYOUT STRUCTURE: For split heroes (hero_split, hero_asymmetric), content MUST be TEXT on LEFT, IMAGE on RIGHT. Do NOT push all content to one side leaving the other side empty. Do NOT use float:right, margin-left:auto, or text-align:right to shift hero content to the right side. The .hero-split-grid class handles the 2-column layout — do NOT override it with custom positioning. For centered heroes, content MUST be horizontally centered using the provided .hero-center-content class.
 - NO DECORATIVE BACKGROUND NUMBERS: Do NOT add large background numbers/text (like "01", "02") behind hero or section content. No .bg-number elements.
 - HERO NAVBAR CLEARANCE (CRITICAL — THIS IS A RECURRING BUG): The navbar is fixed at top (80px height). The hero section MUST have enough top padding so NO text is hidden behind the navbar. The .hero-section class has padding-top: 10rem. Do NOT override this padding with smaller values in your custom CSS. Do NOT set padding-top: 0 on .hero-section (only .hero-section-flush can have padding-top: 0 because it uses margin-top: -80px with .hero-bg-cover that has its own padding-top: 80px). For non-flush heroes, NEVER add padding-top less than 8rem. NEVER let hero content start at the very top of the viewport — the heading must be FULLY visible below the navbar.
+- URL QUOTES: ALWAYS use single quotes inside url(): url('https://...') — NEVER url("https://..."). Double quotes inside style="" attributes break HTML parsing. This applies to ALL url() usage: background-image, background shorthand, etc.
 - HERO IMAGES (THIS IS THE #1 QUALITY ISSUE — READ CAREFULLY):
   EVERY hero section MUST have a VISIBLE, HIGH-QUALITY background image. TWO acceptable approaches:
   A) FULL-WIDTH BACKGROUND: Use inline style on the hero section tag:
@@ -579,10 +581,10 @@ FINAL CHECKLIST — verify BEFORE outputting your HTML:
 ═══════════════════════════════════════════════════════════════
 1. NAVBAR ANCHORS: Every navbar <a> links to a section using href="#section-type" (e.g. href="#services", href="#about", href="#contact"). NO dead links (href="#" or href="/").
 2. SECTION IDs: Every <section data-section-type="X"> also has id="X" so anchor links work.
-3. HERO IS PRESENT: The first section after <nav> is a hero with H1 heading, subtitle, CTA button, and an image (background or split).
+3. HERO IS PRESENT: The first section after <nav> is a hero with H1 heading, subtitle, CTA button, and an image (background or split). Split heroes MUST be text-left + image-right — never all content pushed to one side.
 4. HERO HAS IMAGE: Hero uses either background-image with {{IMG:...}} or an <img> tag. Never a plain solid color background.
 5. HERO TEXT VISIBLE: White text on image heroes, dark text on light split heroes. Text-shadow on image heroes.
 6. ALL PLAN CONTENT USED: Every section from the plan is included with its actual content — headlines, descriptions, items.
-7. NO DEAD CTA LINKS: CTA buttons link to relevant sections (href="#contact", href="#services"), not href="#".
+7. NO DEAD CTA LINKS: CTA buttons link to relevant sections (href="#contact", href="#services"), not href="#". EVERY CTA button text must match its target — e.g. "Meet the Team" → href="#team", "View Our Work" → href="#portfolio", "See Pricing" → href="#pricing", "Explore Services" → href="#services", "Read Testimonials" → href="#testimonials". The href anchor MUST match the id of the section it refers to.
 8. CTA → CONTACT FORM: Buttons like "Book Now", "Enquire Now", "Get Started", "Reserve", "Contact Us", "Get a Quote", "Request Demo" MUST link to href="#contact". The contact section MUST contain a working <form> with name, email, phone, and message fields. EVERY website must have a contact form.
 9. CONTACT FORM MANDATORY: Every website MUST include a contact section (data-section-type="contact") with a form. If the plan doesn't include a contact section, ADD one before the footer."""
