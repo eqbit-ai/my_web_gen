@@ -744,7 +744,15 @@ const WebsiteGenerator = () => {
     const [viewMode, setViewMode] = useState('preview');
     const [error, setError] = useState(null);
     const [showDeployModal, setShowDeployModal] = useState(false);
-    const [deployedSiteId, setDeployedSiteId] = useState(null);
+    const [deployedSiteId, _setDeployedSiteId] = useState(() => {
+        // Restore from sessionStorage so redeploys after page refresh target the same site
+        return sessionStorage.getItem('deployedSiteId') || null;
+    });
+    const setDeployedSiteId = (id) => {
+        _setDeployedSiteId(id);
+        if (id) sessionStorage.setItem('deployedSiteId', id);
+        else sessionStorage.removeItem('deployedSiteId');
+    };
 
     // Session
     const [sessionId, setSessionId] = useState(null);

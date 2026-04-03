@@ -147,6 +147,27 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             )
             existing_site = result_q.scalar_one_or_none()
 
+        # Fourth try: match latest published site for this user (if only 1 exists with this name pattern)
+        if not existing_site and not site_name:
+            # If no site_name provided, try to find the most recently deployed site for this user
+            # that matches the session's plan company name
+            plan = session.get("plan", {})
+            plan_name = ""
+            if isinstance(plan, dict):
+                plan_name = plan.get("brand", {}).get("name", "") or plan.get("company_name", "") or plan.get("business_name", "")
+            if plan_name:
+                sanitized = _sanitize_name(plan_name)
+                result_q = await db.execute(
+                    select(Site).where(
+                        Site.user_id == user["user_id"],
+                        Site.cloudflare_project_name == sanitized,
+                        Site.status == "published",
+                    ).order_by(Site.updated_at.desc()).limit(1)
+                )
+                existing_site = result_q.scalar_one_or_none()
+                if existing_site:
+                    logger.info(f"[DEPLOY] Matched existing site by plan brand name '{plan_name}'")
+
     # Reuse the existing S3 prefix only for the SAME website
     if existing_site and existing_site.cloudflare_project_name:
         site_name = site_name or existing_site.name or existing_site.cloudflare_project_name
