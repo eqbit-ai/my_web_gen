@@ -709,12 +709,16 @@ async def deploy_site(
         content_bytes = content.encode("utf-8") if isinstance(content, str) else content
 
         try:
-            s3.put_object(
-                Bucket=bucket,
-                Key=s3_key,
-                Body=content_bytes,
-                ContentType=_content_type(file_path),
-            )
+            put_kwargs = {
+                "Bucket": bucket,
+                "Key": s3_key,
+                "Body": content_bytes,
+                "ContentType": _content_type(file_path),
+            }
+            # HTML files: set no-cache so browsers always fetch fresh content after redeploy
+            if file_path.endswith(".html"):
+                put_kwargs["CacheControl"] = "no-cache, no-store, must-revalidate"
+            s3.put_object(**put_kwargs)
             uploaded += 1
             logger.debug("Uploaded s3://%s/%s (%d bytes)", bucket, s3_key, len(content_bytes))
         except ClientError as e:
