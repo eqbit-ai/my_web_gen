@@ -2420,13 +2420,23 @@ const WebsiteGenerator = () => {
         // 2. Read target page
         const target = updated[slug];
 
-        // 3. Update all state in one batch (outside any functional updater)
+        // 3. Set switching guard — prevents the useEffect sync from overwriting
+        // pages during the transition when html changes before currentPage updates
+        switchingPageRef.current = true;
+
+        // 4. Update all state
         setPages(updated);
         setHtml(target?.html || '');
         setCss(target?.css || curCss);
         setCurrentPage(slug);
 
-        // 3b. Scroll iframe to top when switching pages
+        // 5. Clear switching guard after React processes the batch
+        // Use requestAnimationFrame to ensure all state updates have been committed
+        requestAnimationFrame(() => {
+            switchingPageRef.current = false;
+        });
+
+        // 5b. Scroll iframe to top when switching pages
         try {
             const iframe = document.querySelector('.preview-iframe');
             if (iframe?.contentWindow) {
@@ -2457,22 +2467,25 @@ const WebsiteGenerator = () => {
     }, [isMultipage, handlePageSwitch]);
 
     // ── Keep pages[currentPage] in sync with live html/css after any edit ──
-    // Guard: only sync if the html actually belongs to the current page.
-    // Undo/redo can temporarily set html to a different page's content before
-    // pages state catches up — without this guard, it would corrupt the page.
+    // CRITICAL: Skip during page switches. When switching pages, setHtml(newPageHtml)
+    // and setCurrentPage(newSlug) are batched by React. This effect can fire when
+    // html has changed but currentPage hasn't yet — writing the NEW page's html into
+    // the OLD page's slot, corrupting it. The switchingPageRef guard prevents this.
+    const switchingPageRef = useRef(false);
     const lastSyncedPageRef = useRef(null);
     useEffect(() => {
         if (!isMultipage || !currentPage || !html) return;
+        // Skip if we're in the middle of a page switch
+        if (switchingPageRef.current) return;
         setPages(prev => {
             const cur = prev[currentPage];
             // Only update if html or css actually changed
             if (cur && cur.html === html && cur.css === css) return prev;
             // Safety: if the page already has content and this html matches a DIFFERENT page,
-            // skip the sync (likely a stale update from undo/redo)
+            // skip the sync (likely a stale update from undo/redo or page switch)
             if (cur && cur.html && Object.keys(prev).length > 1) {
                 for (const [slug, pg] of Object.entries(prev)) {
                     if (slug !== currentPage && pg.html === html) {
-                        // This html belongs to another page — don't overwrite current page
                         return prev;
                     }
                 }
