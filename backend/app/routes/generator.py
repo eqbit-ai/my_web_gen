@@ -5558,6 +5558,32 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
 
         client = get_anthropic_client()
 
+        # ── Detect if user is asking about images/backgrounds ──────
+        _image_keywords = re.compile(
+            r'\b(image|picture|photo|background.?image|bg.?image|background.*url|'
+            r'add.*image|change.*image|replace.*image|new.*image|'
+            r'add.*photo|change.*photo|swap.*image|'
+            r'change.*background|new.*background|replace.*background)\b',
+            re.IGNORECASE,
+        )
+        _is_image_edit = bool(_image_keywords.search(req.prompt))
+
+        # Extract ALL background-image URLs from the FULL page HTML before LLM edit.
+        # After the edit, if the user didn't ask about images, we restore any URLs
+        # that the LLM replaced with {{IMG:}} or hallucinated URLs.
+        _original_bg_urls = {}
+        if not _is_image_edit:
+            for _bg_m in re.finditer(
+                r'(data-section-id="([^"]+)"[^>]*style="[^"]*)'
+                r'(url\([\'"]?(https?://[^)\'"]+)[\'"]?\))',
+                full_html, re.IGNORECASE,
+            ):
+                _original_bg_urls[_bg_m.group(2)] = _bg_m.group(4)
+            # Also extract from the specific element being edited
+            _element_bg = re.findall(r'url\([\'"]?(https?://[^)\'"]+)[\'"]?\)', req.elementHtml)
+            if _element_bg:
+                _original_bg_urls['__element__'] = _element_bg
+
         # ── Protect navbar/header from structural rewrites ──────
         # Nav/header sections are fragile — structural edits (which rewrite
         # the whole section) frequently corrupt or hide them.  Force these
@@ -5744,6 +5770,24 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
             result_html = await _resolve_images_safe(result_html, niche_key=niche_key)
             logger.info("🖱️ [ELEMENT EDIT] Resolved image placeholders")
+
+        # ── Restore background URLs if user didn't ask about images ──
+        # The LLM often replaces existing background-image URLs with {{IMG:}} or
+        # hallucinated URLs even when the user only asked about text/color/font.
+        # This code-level fix restores the ORIGINAL URLs after the LLM edit.
+        if not _is_image_edit and _original_bg_urls:
+            for _sid, _orig_url in _original_bg_urls.items():
+                if _sid == '__element__':
+                    # Restore element-level background URLs
+                    for _eu in _orig_url:
+                        # Find any new/different url() in result_html near the same section
+                        # and replace with original
+                        new_urls = re.findall(r"url\('(https?://[^']+)'\)", result_html)
+                        for _nu in new_urls:
+                            if _nu != _eu and _nu not in [v for k, v in _original_bg_urls.items() if k != '__element__']:
+                                result_html = result_html.replace(_nu, _eu, 1)
+                                logger.info(f"🖱️ [ELEMENT EDIT] Restored background URL: {_nu[:50]}... → {_eu[:50]}...")
+                                break
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
