@@ -5166,6 +5166,17 @@ TYPOGRAPHY & STYLING (when changing text appearance):
   Popular: Inter, Poppins, Playfair Display, Space Grotesk, DM Sans, Outfit, Sora, Crimson Text, Lora
 - Letter spacing: e.g. letter-spacing: 0.05em, 0.1em | Text transform: uppercase, lowercase, capitalize
 
+MOBILE RESPONSIVENESS (CRITICAL — every edit must look good on mobile):
+- Use rem/em units for font sizes, NOT px — they scale properly on mobile
+- Use max-width: 100% on images and containers — never fixed pixel widths that overflow on mobile
+- Use percentage-based widths (width: 80%) instead of fixed px widths for layout elements
+- Flex/grid containers: the page CSS already has mobile breakpoints for .grid-2, .grid-3, .grid-4 — DO NOT override their responsive behavior with fixed inline widths
+- Font sizes: keep proportional. Hero heading max 3rem, body text 1rem, small text 0.875rem
+- Padding/margin: use rem units (1rem, 1.5rem, 2rem) — avoid large fixed values like padding: 100px
+- Do NOT set fixed height on containers — use min-height if needed
+- Images: always use max-width: 100%; height: auto for responsive scaling
+- Buttons: min-width with percentage or auto, never fixed pixel widths
+
 {animation_ref}
 
 IMAGE RULES (when adding/changing images):
@@ -5250,6 +5261,15 @@ TYPOGRAPHY & STYLING (when changing text appearance):
 - Font weight: 400-800 | Text color: var(--primary), var(--accent), var(--text), or any CSS color
 - Font family: var(--font-heading), var(--font-body), or Google Fonts family inline (e.g. 'Playfair Display', serif)
 - Letter spacing, text-transform: via inline style
+
+MOBILE RESPONSIVENESS (CRITICAL):
+- Use rem/em units, NOT px for font sizes and spacing
+- Use max-width: 100% on images — never fixed pixel widths
+- Use percentage widths for layout, not fixed px
+- Do NOT override .grid-2/.grid-3/.grid-4 responsive behavior with fixed widths
+- Padding/margin in rem (1rem, 1.5rem, 2rem) — avoid large px values
+- Do NOT set fixed height on containers
+- Images: max-width: 100%; height: auto
 
 {animation_ref}
 

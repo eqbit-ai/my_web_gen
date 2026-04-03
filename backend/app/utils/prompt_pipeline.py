@@ -1681,6 +1681,17 @@ SECTION SIZE CONSTRAINTS (CRITICAL):
 - All other sections: keep the same visual size as the original.
 - Do NOT add excessive padding/margins that make the section abnormally tall.
 
+MOBILE RESPONSIVENESS (CRITICAL — edits must not break mobile layout):
+- Use rem/em units for font sizes and spacing, NOT fixed px
+- Use max-width: 100% on images and containers — never fixed pixel widths that overflow on small screens
+- Use percentage widths for layout elements, not fixed px
+- Do NOT override the responsive behavior of .grid-2, .grid-3, .grid-4 with fixed inline widths — these classes already have mobile breakpoints
+- Padding/margin: use rem (1rem, 1.5rem, 2rem) — avoid large fixed px values like padding: 100px
+- Do NOT set fixed height on containers — use min-height if absolutely needed
+- Images: always max-width: 100%; height: auto
+- Buttons: use auto or percentage width, never fixed pixel widths
+- Text: keep proportional sizes. Hero heading max 3rem, section titles 2rem, body 1rem
+
 {animation_ref}
 
 IMAGE HANDLING FOR EDITS:
