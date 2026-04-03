@@ -221,11 +221,34 @@ async def grant_tokens(
 
 @router.get("/tokens/pool")
 async def token_pool_stats(
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Platform-wide token statistics."""
+    """Platform-wide token statistics. Optionally filtered by date range."""
     try:
+        # Parse date filters
+        from_dt = None
+        to_dt = None
+        if date_from:
+            try:
+                from_dt = datetime.fromisoformat(date_from)
+                if from_dt.tzinfo is None:
+                    from_dt = from_dt.replace(tzinfo=UTC)
+            except ValueError:
+                pass
+        if date_to:
+            try:
+                to_dt = datetime.fromisoformat(date_to)
+                if to_dt.tzinfo is None:
+                    to_dt = to_dt.replace(hour=23, minute=59, second=59, tzinfo=UTC)
+            except ValueError:
+                pass
+
+        has_date_filter = from_dt is not None or to_dt is not None
+
+        # All-time stats from users table
         result = await db.execute(text("""
             SELECT
                 COUNT(*) as total_users,
@@ -236,12 +259,23 @@ async def token_pool_stats(
         """))
         row = result.first()
 
-        # Total granted from transactions
-        grant_result = await db.execute(
-            select(func.coalesce(func.sum(TokenTransaction.amount), 0))
-            .where(TokenTransaction.type == "grant")
-        )
+        # Total granted from transactions (optionally filtered)
+        grant_query = select(func.coalesce(func.sum(TokenTransaction.amount), 0)).where(TokenTransaction.type == "grant")
+        if from_dt:
+            grant_query = grant_query.where(TokenTransaction.created_at >= from_dt)
+        if to_dt:
+            grant_query = grant_query.where(TokenTransaction.created_at <= to_dt)
+        grant_result = await db.execute(grant_query)
         total_granted = grant_result.scalar() or 0
+
+        # Total consumed in date range (from transactions, not users table)
+        consumed_query = select(func.coalesce(func.sum(func.abs(TokenTransaction.amount)), 0)).where(TokenTransaction.type == "deduction")
+        if from_dt:
+            consumed_query = consumed_query.where(TokenTransaction.created_at >= from_dt)
+        if to_dt:
+            consumed_query = consumed_query.where(TokenTransaction.created_at <= to_dt)
+        consumed_result = await db.execute(consumed_query)
+        filtered_consumed = consumed_result.scalar() or 0
 
         # Users with zero balance
         zero_result = await db.execute(
@@ -249,18 +283,43 @@ async def token_pool_stats(
         )
         zero_balance = zero_result.scalar() or 0
 
-        # Top consumers
-        top_result = await db.execute(text("""
-            SELECT id, email, full_name, company_name, tokens_used, token_balance
-            FROM users ORDER BY tokens_used DESC LIMIT 10
-        """))
-        top_users = [
-            {
-                "id": r[0], "email": r[1], "full_name": r[2],
-                "company_name": r[3], "tokens_used": r[4], "token_balance": r[5],
-            }
-            for r in top_result.fetchall()
-        ]
+        # Top consumers (by tokens used in date range)
+        if has_date_filter:
+            top_q = (
+                select(
+                    TokenTransaction.user_id,
+                    func.sum(func.abs(TokenTransaction.amount)).label("used"),
+                )
+                .where(TokenTransaction.type == "deduction")
+            )
+            if from_dt:
+                top_q = top_q.where(TokenTransaction.created_at >= from_dt)
+            if to_dt:
+                top_q = top_q.where(TokenTransaction.created_at <= to_dt)
+            top_q = top_q.group_by(TokenTransaction.user_id).order_by(func.sum(func.abs(TokenTransaction.amount)).desc()).limit(10)
+            top_result = await db.execute(top_q)
+            top_rows = top_result.fetchall()
+            # Fetch user details
+            user_ids = [r[0] for r in top_rows]
+            user_map = {}
+            if user_ids:
+                from app.models.user import User
+                u_result = await db.execute(select(User.id, User.email, User.full_name, User.company_name, User.tokens_used, User.token_balance).where(User.id.in_(user_ids)))
+                user_map = {r[0]: r for r in u_result.fetchall()}
+            top_users = []
+            for r in top_rows:
+                u = user_map.get(r[0])
+                if u:
+                    top_users.append({"id": u[0], "email": u[1], "full_name": u[2], "company_name": u[3], "tokens_used": int(r[1]), "token_balance": u[5]})
+        else:
+            top_result = await db.execute(text("""
+                SELECT id, email, full_name, company_name, tokens_used, token_balance
+                FROM users ORDER BY tokens_used DESC LIMIT 10
+            """))
+            top_users = [
+                {"id": r[0], "email": r[1], "full_name": r[2], "company_name": r[3], "tokens_used": r[4], "token_balance": r[5]}
+                for r in top_result.fetchall()
+            ]
 
         # Burn rate (last 7 days)
         seven_days_ago = datetime.now(UTC) - timedelta(days=7)
@@ -276,13 +335,14 @@ async def token_pool_stats(
         return {
             "total_users": row[0] or 0,
             "total_granted": total_granted,
-            "total_consumed": row[1] or 0,
+            "total_consumed": filtered_consumed if has_date_filter else (row[1] or 0),
             "total_remaining": row[2] or 0,
             "avg_per_user": round(row[3] or 0),
             "users_zero_balance": zero_balance,
             "weekly_burn_rate": weekly_burn,
             "daily_burn_rate": round(weekly_burn / 7) if weekly_burn else 0,
             "top_consumers": top_users,
+            "date_filtered": has_date_filter,
         }
     except Exception as e:
         logger.warning("Failed to get token pool stats: %s", e)

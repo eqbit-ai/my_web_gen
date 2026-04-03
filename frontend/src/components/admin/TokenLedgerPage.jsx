@@ -49,7 +49,7 @@ export default function TokenLedgerPage() {
         try {
             const [tx, p] = await Promise.all([
                 adminGetTransactions(page, 20, null, null, dateRange),
-                adminGetTokenPool().catch(() => null),
+                adminGetTokenPool(dateFrom || null, dateTo || null).catch(() => null),
             ]);
             setData(tx);
             setPool(p);

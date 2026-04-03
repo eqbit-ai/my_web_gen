@@ -242,8 +242,15 @@ export const adminGrantTokensWithExpiry = async (userId, amount, expiresAt, reas
     return apiPost('/admin/tokens/grant', { user_id: userId, amount, expires_at: expiresAt, reason });
 };
 
-export const adminGetTokenPool = async () => {
-    return apiGet('/admin/tokens/pool');
+export const adminGetTokenPool = async (dateFrom = null, dateTo = null) => {
+    let qs = '';
+    if (dateFrom || dateTo) {
+        const params = [];
+        if (dateFrom) params.push(`date_from=${dateFrom}`);
+        if (dateTo) params.push(`date_to=${dateTo}`);
+        qs = '?' + params.join('&');
+    }
+    return apiGet(`/admin/tokens/pool${qs}`);
 };
 
 export const adminGetExpiringTokens = async () => {
