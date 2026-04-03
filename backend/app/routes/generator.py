@@ -4656,9 +4656,16 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             if quality_scores:
                 complete_payload["quality"] = quality_scores
 
+            # Final safety net: fix url() quotes on ALL output HTML
+            # This catches any mismatched quotes that survived earlier processing
+            code["html"] = _fix_url_quotes(code["html"])
+            complete_payload["website"]["html"] = code["html"]
+
             # Include multipage data in response
             if is_new and is_multipage and pages_dict:
                 complete_payload["isMultipage"] = True
+                for _pg_slug, _pg_data in pages_dict.items():
+                    _pg_data["html"] = _fix_url_quotes(_pg_data["html"])
                 complete_payload["pages"] = {
                     slug: {"html": pd["html"], "css": pd["css"]} for slug, pd in pages_dict.items()
                 }
@@ -5044,6 +5051,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
         generation_ms = round((time.time() - generation_start) * 1000, 2)
         metrics_observe("generation_duration_ms", generation_ms)
+
+        # Final safety net: fix url() quotes
+        code["html"] = _fix_url_quotes(code["html"])
 
         result = {
             "success": True,
