@@ -151,50 +151,57 @@ export default function TokenLedgerPage() {
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            {pool && (
-                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16 }}>
-                    <div className="admin-stat-card admin-stat-accent-blue">
-                        <div className="admin-stat-icon"><Coins size={22} /></div>
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">{fmt(pool.total_granted ?? pool.total_issued)}</div>
-                            <div className="admin-stat-label">Total Issued</div>
+            {/* Summary Cards — all values come from pool endpoint which respects date filter */}
+            {pool && (() => {
+                const issued = Number(pool.total_granted ?? pool.total_issued ?? 0);
+                const used = Number(pool.total_consumed ?? pool.total_used ?? 0);
+                const outstanding = pool.date_filtered ? (issued - used) : Number(pool.total_remaining ?? pool.outstanding ?? 0);
+                const costVal = (used / 1_000_000) * COST_RATES.default;
+                const isFiltered = pool.date_filtered;
+                return (<>
+                    <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16 }}>
+                        <div className="admin-stat-card admin-stat-accent-blue">
+                            <div className="admin-stat-icon"><Coins size={22} /></div>
+                            <div className="admin-stat-body">
+                                <div className="admin-stat-value">{fmt(issued)}</div>
+                                <div className="admin-stat-label">{isFiltered ? 'Issued (period)' : 'Total Issued'}</div>
+                            </div>
+                        </div>
+                        <div className="admin-stat-card admin-stat-accent-orange">
+                            <div className="admin-stat-icon"><Coins size={22} /></div>
+                            <div className="admin-stat-body">
+                                <div className="admin-stat-value">{fmt(used)}</div>
+                                <div className="admin-stat-label">{isFiltered ? 'Used (period)' : 'Total Used'}</div>
+                            </div>
+                        </div>
+                        <div className="admin-stat-card admin-stat-accent-green">
+                            <div className="admin-stat-icon"><Coins size={22} /></div>
+                            <div className="admin-stat-body">
+                                <div className="admin-stat-value">{fmt(outstanding)}</div>
+                                <div className="admin-stat-label">{isFiltered ? 'Net (period)' : 'Outstanding'}</div>
+                            </div>
                         </div>
                     </div>
-                    <div className="admin-stat-card admin-stat-accent-orange">
-                        <div className="admin-stat-icon"><Coins size={22} /></div>
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">{fmt(pool.total_consumed ?? pool.total_used)}</div>
-                            <div className="admin-stat-label">Total Used</div>
+                    <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 24 }}>
+                        <div className="admin-stat-card admin-stat-accent-purple">
+                            <div className="admin-stat-icon"><Coins size={22} /></div>
+                            <div className="admin-stat-body">
+                                <div className="admin-stat-value" style={{ color: T.warning }}>{fmt(pool.weekly_burn_rate)}</div>
+                                <div className="admin-stat-label">Weekly Burn Rate</div>
+                            </div>
+                        </div>
+                        <div className="admin-stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+                            <div className="admin-stat-icon" style={{ color: '#f59e0b', fontSize: 22, fontWeight: 700 }}>$</div>
+                            <div className="admin-stat-body">
+                                <div className="admin-stat-value" style={{ color: '#f59e0b' }}>
+                                    ${costVal.toFixed(2)}
+                                </div>
+                                <div className="admin-stat-label">{isFiltered ? 'Est. Cost (period)' : 'Est. Total Cost'}</div>
+                            </div>
                         </div>
                     </div>
-                    <div className="admin-stat-card admin-stat-accent-green">
-                        <div className="admin-stat-icon"><Coins size={22} /></div>
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value">{fmt(pool.total_remaining ?? pool.outstanding)}</div>
-                            <div className="admin-stat-label">Outstanding</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 24 }}>
-                <div className="admin-stat-card admin-stat-accent-purple">
-                    <div className="admin-stat-icon"><Coins size={22} /></div>
-                    <div className="admin-stat-body">
-                        <div className="admin-stat-value" style={{ color: T.warning }}>{pool ? fmt(pool.weekly_burn_rate) : '—'}</div>
-                        <div className="admin-stat-label">Weekly Burn Rate</div>
-                    </div>
-                </div>
-                <div className="admin-stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
-                    <div className="admin-stat-icon" style={{ color: '#f59e0b', fontSize: 22, fontWeight: 700 }}>$</div>
-                    <div className="admin-stat-body">
-                        <div className="admin-stat-value" style={{ color: '#f59e0b' }}>
-                            ${totalCost > 0 ? totalCost.toFixed(2) : pool ? ((Number(pool.total_consumed ?? pool.total_used ?? 0) / 1_000_000) * COST_RATES.default).toFixed(2) : '0.00'}
-                        </div>
-                        <div className="admin-stat-label">{dateFrom || dateTo ? 'Est. Cost (filtered)' : 'Est. Total Cost'}</div>
-                    </div>
-                </div>
-            </div>
+                </>);
+            })()}
 
             {/* Grant Form */}
             {showGrant && (
