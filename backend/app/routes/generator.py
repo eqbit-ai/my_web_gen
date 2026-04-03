@@ -5571,18 +5571,16 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # Extract ALL background-image URLs from the FULL page HTML before LLM edit.
         # After the edit, if the user didn't ask about images, we restore any URLs
         # that the LLM replaced with {{IMG:}} or hallucinated URLs.
-        _original_bg_urls = {}
+        # We extract from the ENTIRE page so we catch URLs on parent sections,
+        # not just the element being edited (background is usually on <section>, not <h1>).
+        _original_bg_urls = []
         if not _is_image_edit:
-            for _bg_m in re.finditer(
-                r'(data-section-id="([^"]+)"[^>]*style="[^"]*)'
-                r'(url\([\'"]?(https?://[^)\'"]+)[\'"]?\))',
-                full_html, re.IGNORECASE,
-            ):
-                _original_bg_urls[_bg_m.group(2)] = _bg_m.group(4)
-            # Also extract from the specific element being edited
-            _element_bg = re.findall(r'url\([\'"]?(https?://[^)\'"]+)[\'"]?\)', req.elementHtml)
-            if _element_bg:
-                _original_bg_urls['__element__'] = _element_bg
+            _original_bg_urls = re.findall(
+                r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
+                full_html,
+            )
+            if _original_bg_urls:
+                logger.info(f"🖱️ [ELEMENT EDIT] Preserving {len(_original_bg_urls)} background URLs (non-image edit)")
 
         # ── Protect navbar/header from structural rewrites ──────
         # Nav/header sections are fragile — structural edits (which rewrite
@@ -5774,20 +5772,28 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # ── Restore background URLs if user didn't ask about images ──
         # The LLM often replaces existing background-image URLs with {{IMG:}} or
         # hallucinated URLs even when the user only asked about text/color/font.
-        # This code-level fix restores the ORIGINAL URLs after the LLM edit.
+        # Compare before/after: any URL from the original that's missing in the
+        # result gets restored by replacing whatever new URL took its place.
         if not _is_image_edit and _original_bg_urls:
-            for _sid, _orig_url in _original_bg_urls.items():
-                if _sid == '__element__':
-                    # Restore element-level background URLs
-                    for _eu in _orig_url:
-                        # Find any new/different url() in result_html near the same section
-                        # and replace with original
-                        new_urls = re.findall(r"url\('(https?://[^']+)'\)", result_html)
-                        for _nu in new_urls:
-                            if _nu != _eu and _nu not in [v for k, v in _original_bg_urls.items() if k != '__element__']:
-                                result_html = result_html.replace(_nu, _eu, 1)
-                                logger.info(f"🖱️ [ELEMENT EDIT] Restored background URL: {_nu[:50]}... → {_eu[:50]}...")
-                                break
+            result_urls = re.findall(
+                r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
+                result_html,
+            )
+            # Find URLs that were in the original but are now missing
+            orig_set = set(_original_bg_urls)
+            result_set = set(result_urls)
+            missing = orig_set - result_set  # URLs that were removed/replaced
+            added = result_set - orig_set    # New URLs that appeared
+
+            if missing and added:
+                # The LLM replaced original URLs with new ones — swap them back
+                missing_list = list(missing)
+                added_list = list(added)
+                for i, new_url in enumerate(added_list):
+                    if i < len(missing_list):
+                        old_url = missing_list[i]
+                        result_html = result_html.replace(new_url, old_url)
+                        logger.info(f"🖱️ [ELEMENT EDIT] Restored BG URL: ...{new_url[-40:]} → ...{old_url[-40:]}")
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
