@@ -10,8 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.generation_log import GenerationLog
+from app.models.token_transaction import TokenTransaction
 from app.models.user import User
 from app.utils.redis_client import get_redis
+
+# Cost rates per 1M tokens
+COST_RATES = {"anthropic": 3.00, "openai": 2.00, "default": 2.50}
 
 from .deps import _serialize_datetime, require_admin
 
@@ -56,6 +60,46 @@ async def list_generations(
             )
             user_map = {r[0]: r[1] for r in user_result.fetchall()}
 
+        # Calculate cost per generation by summing token transactions in the time window
+        from datetime import timedelta
+        generation_costs = {}
+        for log in logs:
+            if not log.created_at or log.status != "completed":
+                continue
+            start = log.created_at
+            # Use duration_ms if available, otherwise assume 3-minute window
+            duration = timedelta(milliseconds=log.duration_ms) if log.duration_ms else timedelta(minutes=3)
+            end = start + duration + timedelta(seconds=5)  # 5s buffer
+
+            tx_result = await db.execute(
+                select(
+                    func.sum(func.abs(TokenTransaction.amount)),
+                    func.string_agg(TokenTransaction.reason, '|||'),
+                ).where(
+                    TokenTransaction.user_id == log.user_id,
+                    TokenTransaction.type == "deduction",
+                    TokenTransaction.created_at >= start,
+                    TokenTransaction.created_at <= end,
+                )
+            )
+            row = tx_result.first()
+            total_tokens = int(row[0] or 0) if row else 0
+            reasons = (row[1] or "") if row else ""
+
+            # Determine cost rate from reasons
+            if "anthropic" in reasons:
+                rate = COST_RATES["anthropic"]
+            elif "openai" in reasons:
+                rate = COST_RATES["openai"]
+            else:
+                rate = COST_RATES["default"]
+            # Mixed usage: use blended rate
+            if "anthropic" in reasons and "openai" in reasons:
+                rate = COST_RATES["default"]
+
+            cost = (total_tokens / 1_000_000) * rate
+            generation_costs[str(log.id)] = {"tokens": total_tokens, "cost": round(cost, 4)}
+
         return {
             "generations": [
                 {
@@ -69,7 +113,8 @@ async def list_generations(
                     "stage_failed": log.stage_failed,
                     "error_message": log.error_message,
                     "html_size": log.html_size,
-                    "tokens_consumed": log.tokens_consumed,
+                    "tokens_consumed": generation_costs.get(str(log.id), {}).get("tokens", log.tokens_consumed or 0),
+                    "estimated_cost": generation_costs.get(str(log.id), {}).get("cost", 0),
                     "duration_ms": log.duration_ms,
                     "is_multipage": log.is_multipage,
                     "page_count": log.page_count,

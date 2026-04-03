@@ -367,32 +367,30 @@ function SitesPage() {
                         <table style={tableStyle}>
                             <thead>
                                 <tr>
-                                    <th style={thStyle}>ID</th>
                                     <th style={thStyle}>User</th>
+                                    <th style={thStyle}>Prompt</th>
                                     <th style={thStyle}>Status</th>
+                                    <th style={thStyle}>Pages</th>
                                     <th style={thStyle}>Duration</th>
+                                    <th style={thStyle}>Tokens</th>
+                                    <th style={thStyle}>Cost</th>
                                     <th style={thStyle}>Created</th>
-                                    <th style={thStyle}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {gens.map(g => (
                                     <tr key={g.id} onMouseOver={e => e.currentTarget.style.background = T.surfaceHover} onFocus={e => e.currentTarget.style.background = T.surfaceHover} onMouseOut={e => e.currentTarget.style.background = ''} onBlur={e => e.currentTarget.style.background = ''}>
-                                        <td style={tdStyle}>{g.id}</td>
-                                        <td style={tdStyle}>{g.user_id || g.user_email || '—'}</td>
+                                        <td style={tdStyle}><span style={{ fontSize: 12 }}>{g.user_email || `#${g.user_id}`}</span></td>
+                                        <td style={{ ...tdStyle, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.prompt}>{g.prompt || '—'}</td>
                                         <td style={tdStyle}><StatusBadge status={g.status} size="sm" /></td>
+                                        <td style={tdStyle}>{g.is_multipage ? `${g.page_count}p` : '1p'}</td>
                                         <td style={tdStyle}>{g.duration_ms ? `${(g.duration_ms / 1000).toFixed(1)}s` : '—'}</td>
+                                        <td style={tdStyle}><span style={{ fontWeight: 600, fontSize: 12 }}>{g.tokens_consumed ? Number(g.tokens_consumed).toLocaleString() : '—'}</span></td>
+                                        <td style={tdStyle}><span style={{ fontWeight: 600, color: '#f59e0b', fontSize: 12 }}>{g.estimated_cost ? `$${g.estimated_cost.toFixed(4)}` : '—'}</span></td>
                                         <td style={tdStyle}>{formatDate(g.created_at)}</td>
-                                        <td style={tdStyle}>
-                                            {(g.status === 'failed') && (
-                                                <button style={{ ...btnGhost, padding: '4px 10px', fontSize: 11 }} onClick={() => handleRetry(g.id)} disabled={retrying === g.id}>
-                                                    {retrying === g.id ? '...' : 'Retry'}
-                                                </button>
-                                            )}
-                                        </td>
                                     </tr>
                                 ))}
-                                {gens.length === 0 && <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: T.muted }}>No generations found</td></tr>}
+                                {gens.length === 0 && <tr><td colSpan={8} style={{ ...tdStyle, textAlign: 'center', color: T.muted }}>No generations found</td></tr>}
                             </tbody>
                         </table>
                         <Pagination page={genPage} total={gensTotal} limit={20} onPageChange={setGenPage} />
