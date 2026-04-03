@@ -81,10 +81,11 @@ export const adminRestoreSiteVersion = async (siteId, deploymentTime) => {
 
 // ── Generations ──────────────────────────────────────────────────────────
 
-export const adminGetGenerations = async (page = 1, limit = 20, status = null) => {
+export const adminGetGenerations = async (page = 1, limit = 20, status = null, userId = null) => {
     const offset = (page - 1) * limit;
     let qs = `?limit=${limit}&offset=${offset}`;
     if (status) qs += `&status=${status}`;
+    if (userId) qs += `&user_id=${userId}`;
     return apiGet(`/admin/generations${qs}`);
 };
 
