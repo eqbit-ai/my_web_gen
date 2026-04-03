@@ -1,817 +1,686 @@
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:wght@300;400;500;600;700&display=swap');
 
-/* ===== RESET & BASE ===== */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+/* ═══ Design Tokens ═══ */
 :root {
-  --bg-dark: #0d0f1a;
-  --bg-dark-end: #151822;
-  --accent: #3d6eff;
-  --accent-light: #6b8fff;
-  --accent-glow: rgba(61, 110, 255, 0.35);
-  --accent-teal: #00d4aa;
-  --text-primary: #ffffff;
-  --text-secondary: #c8d4e8;
-  --text-dark: #0d0f1a;
-  --text-dark-secondary: #6b7a96;
-  --surface-white: #ffffff;
-  --surface-light: #f4f6fa;
-  --surface-glass: rgba(255, 255, 255, 0.06);
-  --border-glass: rgba(255, 255, 255, 0.10);
-  --border-light: #dfe3ed;
-  --radius: 14px;
-  --radius-sm: 8px;
-  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
-  --shadow-accent: 0 8px 32px rgba(61, 110, 255, 0.25);
-  --max-width: 1200px;
+  --primary: #0d9488;
+  --secondary: #0891b2;
+  --accent: #f97316;
+  --bg: #f8f9fa;
+  --bg-surface: #ffffff;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --font-heading: 'Newsreader', serif;
+  --font-body: 'Inter', sans-serif;
+  --radius: 8px;
+  --radius-btn: 4px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-hover: 0 20px 60px rgba(0,0,0,0.15);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ts-template { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: var(--text-dark); overflow-x: hidden; }
-.ts-template h1, .ts-template h2, .ts-template h3, .ts-template h4, .ts-template h5, .ts-template h6,
-.ts-template .ts-hero h1, .ts-template .ts-section-title, .ts-template .ts-nav-brand,
-.ts-template .ts-footer-brand, .ts-template .ts-pricing-price { font-family: 'Space Grotesk', 'Inter', sans-serif; }
-.ts-template img { max-width: 100%; display: block; }
-.ts-template a { text-decoration: none; color: inherit; }
+/* ═══ Base Reset & Typography ═══ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; min-height: 100vh; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 700; line-height: 1.2; color: var(--text); }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; }
+ul { list-style: none; padding: 0; margin: 0; }
 
-/* ===== UTILITIES ===== */
-.ts-container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
-.ts-section { padding: 100px 0; }
-.ts-section-label { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
-.ts-section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
-.ts-section-subtitle { font-size: 17px; color: var(--text-dark-secondary); max-width: 560px; margin: 0 auto 48px; }
-.ts-text-center { text-align: center; }
+/* ═══ Layout System ═══ */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+.container-wide { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+.container-narrow { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+.container-xs { max-width: 600px; margin: 0 auto; padding: 0 1.5rem; }
 
-/* ===== BUTTONS ===== */
-.ts-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 32px; border-radius: 50px; font-family: inherit;
-  font-size: 15px; font-weight: 600; border: none; cursor: pointer;
-  transition: var(--transition); position: relative; overflow: hidden;
+/* ═══ Grid System ═══ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+@media (max-width: 1024px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
-.ts-btn-primary {
-  background: linear-gradient(135deg, var(--accent), #2a52cc);
-  color: #fff; box-shadow: var(--shadow-accent);
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
-.ts-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(61,110,255,0.4); }
-.ts-btn-secondary {
-  background: transparent; color: var(--text-primary);
-  border: 1.5px solid rgba(255,255,255,0.25);
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
 }
-.ts-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-.ts-btn-dark {
-  background: linear-gradient(135deg, var(--accent), #2a52cc);
-  color: #fff; box-shadow: var(--shadow-accent);
+.text-center { text-align: center; }
+.md-order-1 { order: 0; }
+.md-order-2 { order: 0; }
+@media (min-width: 769px) {
+  .md-order-1 { order: 1; }
+  .md-order-2 { order: 2; }
 }
-.ts-btn-dark:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(61,110,255,0.4); }
 
-/* ===== NAVBAR ===== */
-.ts-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-  padding: 18px 0; transition: var(--transition);
+/* ═══ Section Styles ═══ */
+section[data-section-type] { padding: 4rem 0; position: relative; opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; animation: sectionFallback 0.8s ease forwards; animation-delay: 1s; }
+section[data-section-type].visible { opacity: 1; transform: translateY(0); animation: none; }
+@keyframes sectionFallback { to { opacity: 1; transform: translateY(0); } }
+[data-aos] { animation: sectionFallback 0.6s ease forwards; animation-delay: 1.5s; }
+[data-aos].aos-animate { animation: none; }
+footer, footer[data-section-type], footer section[data-section-type] { opacity: 1; transform: none; animation: none; }
+@media (min-width: 769px) {
+  section[data-section-type] { padding: 5rem 0; }
 }
-.ts-nav.scrolled { background: rgba(13,15,26,0.94); backdrop-filter: blur(20px); padding: 12px 0; border-bottom: 1px solid var(--border-glass); }
-.ts-nav .ts-container { display: flex; align-items: center; justify-content: space-between; }
-.ts-nav-brand { font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
-.ts-nav-brand svg { width: 32px; height: 32px; }
-.ts-nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
-.ts-nav-links a { color: var(--text-secondary); font-size: 14px; font-weight: 500; transition: var(--transition); }
-.ts-nav-links a:hover { color: #fff; }
-.ts-nav-cta .ts-btn { padding: 10px 24px; font-size: 14px; }
-.ts-nav-toggle { display: none; background: none; border: none; cursor: pointer; }
-.ts-nav-toggle span { display: block; width: 24px; height: 2px; background: #fff; margin: 5px 0; transition: var(--transition); }
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-title { font-size: clamp(1.75rem, 3vw, 2.5rem); margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+.section-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 36rem; margin: 0 auto; line-height: 1.7; }
 
-/* ===== HERO ===== */
-.ts-hero {
-  background: linear-gradient(160deg, var(--bg-dark) 0%, var(--bg-dark-end) 100%);
-  padding: 160px 0 120px; position: relative; overflow: hidden;
-}
-.ts-hero::before {
-  content: ''; position: absolute; top: -300px; right: -200px;
-  width: 700px; height: 700px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(61,110,255,0.12) 0%, transparent 70%);
-  pointer-events: none;
-}
-.ts-hero::after {
-  content: ''; position: absolute; bottom: -200px; left: -100px;
-  width: 500px; height: 500px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%);
-  pointer-events: none;
-}
-.ts-hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; position: relative; z-index: 1; }
-.ts-hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--surface-glass); border: 1px solid var(--border-glass);
-  border-radius: 50px; padding: 6px 16px 6px 8px; margin-bottom: 24px;
-  font-size: 13px; color: var(--accent-light); font-weight: 500;
-}
-.ts-hero-badge span { background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; }
-.ts-hero h1 { font-size: clamp(36px, 5vw, 58px); font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 20px; }
-.ts-hero h1 .ts-gradient-text {
-  background: linear-gradient(135deg, var(--accent), #00d4aa);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.ts-hero p { font-size: 18px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 36px; max-width: 480px; }
-.ts-hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
-.ts-hero-visual {
-  position: relative; display: flex; align-items: center; justify-content: center;
-}
-.ts-hero-mockup {
-  width: 100%; max-width: 520px;
-  background: var(--surface-glass); border: 1px solid var(--border-glass);
-  border-radius: 16px; padding: 20px; backdrop-filter: blur(10px);
-}
-.ts-hero-mockup-bar { display: flex; gap: 6px; margin-bottom: 16px; }
-.ts-hero-mockup-bar span { width: 10px; height: 10px; border-radius: 50%; }
-.ts-hero-mockup-bar span:nth-child(1) { background: #ff5f57; }
-.ts-hero-mockup-bar span:nth-child(2) { background: #ffbd2e; }
-.ts-hero-mockup-bar span:nth-child(3) { background: #28ca42; }
-.ts-hero-mockup-content { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 20px; font-family: 'SF Mono', monospace; }
-.ts-hero-mockup-content .line { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; }
-.ts-hero-mockup-content .line-num { color: #555; min-width: 20px; }
-.ts-hero-mockup-content .kw { color: #c792ea; }
-.ts-hero-mockup-content .fn { color: #82aaff; }
-.ts-hero-mockup-content .str { color: #c3e88d; }
-.ts-hero-mockup-content .cm { color: #546e7a; }
-.ts-hero-stat {
-  position: absolute; background: rgba(255,255,255,0.1); backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass); border-radius: 12px;
-  padding: 14px 20px; color: #fff;
-}
-.ts-hero-stat-1 { bottom: 30px; left: -30px; }
-.ts-hero-stat-2 { top: 30px; right: -20px; }
-.ts-hero-stat strong { font-size: 22px; display: block; font-weight: 800; }
-.ts-hero-stat small { font-size: 12px; color: var(--text-secondary); }
+/* Section background rhythm */
+section[data-section-type="features"],
+section[data-section-type="stats"] { background: var(--bg-surface); }
+section[data-section-type="testimonials"],
+section[data-section-type="pricing"] { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
 
-/* ===== TRUSTED BY ===== */
-.ts-trusted {
-  background: var(--surface-light); padding: 60px 0; border-bottom: 1px solid var(--border-light);
-}
-.ts-trusted p { text-align: center; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dark-secondary); margin-bottom: 32px; }
-.ts-logo-bar { display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap; opacity: 0.45; }
-.ts-logo-bar svg { height: 28px; width: auto; }
+/* ═══ Buttons ═══ */
+.btn-primary { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.8rem 2rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 0.95rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; letter-spacing: 0.01em; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 30%, transparent); }
+.btn-secondary { display: inline-block; border: 2px solid var(--primary); color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; background: transparent; cursor: pointer; transition: var(--transition); text-align: center; }
+.btn-secondary:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+.btn-primary-light { display: inline-block; background: white; color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }
+.btn-primary-light:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.btn-secondary-light { display: inline-block; border: 2px solid white; color: white; padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; background: transparent; cursor: pointer; transition: var(--transition); }
+.btn-secondary-light:hover { background: white; color: var(--primary); }
+.btn-group { display: flex; flex-wrap: wrap; gap: 1rem; }
+.btn-group.center { justify-content: center; }
 
-/* ===== FEATURES ===== */
-.ts-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-.ts-feature-card {
-  background: var(--surface-white); border: 1px solid var(--border-light);
-  border-radius: var(--radius); padding: 36px 28px;
-  transition: var(--transition); position: relative; overflow: hidden;
-}
-.ts-feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: var(--accent); }
-.ts-feature-icon {
-  width: 52px; height: 52px; border-radius: 12px;
-  background: linear-gradient(135deg, rgba(61,110,255,0.1), rgba(61,110,255,0.05));
-  display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
-}
-.ts-feature-icon svg { width: 24px; height: 24px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ts-feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--text-dark); }
-.ts-feature-card p { font-size: 14px; color: var(--text-dark-secondary); line-height: 1.7; }
+/* ═══ Cards ═══ */
+.card { background: var(--bg-surface); border-radius: var(--radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
+.card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0; transition: opacity 0.3s; }
+.card:hover::after { opacity: 1; }
+.card:hover h3 { color: var(--accent); transition: color 0.3s ease; }
+.card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+.card-text { color: var(--text-muted); line-height: 1.7; font-size: 0.95rem; }
+.card-body { padding: 1.25rem; }
+.card-image { width: 100%; height: 14rem; max-height: 260px; object-fit: cover; display: block; }
+.icon-box { width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; margin-bottom: 1.25rem; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+.card-link { color: var(--primary); font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: gap 0.3s; }
+.card-link:hover { gap: 0.75rem; }
 
-/* ===== HOW IT WORKS ===== */
-.ts-how { background: linear-gradient(160deg, var(--bg-dark) 0%, var(--bg-dark-end) 100%); color: #fff; }
-.ts-how .ts-section-title { color: #fff; }
-.ts-how .ts-section-subtitle { color: var(--text-secondary); }
-.ts-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; position: relative; }
-.ts-steps::before {
-  content: ''; position: absolute; top: 40px; left: 16%; right: 16%;
-  height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
-}
-.ts-step { text-align: center; position: relative; z-index: 1; }
-.ts-step-num {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #2a52cc);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 800; color: #fff; margin: 0 auto 24px;
-  box-shadow: 0 0 40px var(--accent-glow);
-}
-.ts-step h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
-.ts-step p { font-size: 14px; color: var(--text-secondary); max-width: 260px; margin: 0 auto; line-height: 1.7; }
+/* ═══ Images ═══ */
+.img-cover { width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.4s ease; }
+.img-cover:hover { transform: scale(1.02); }
+.img-wrapper { overflow: hidden; border-radius: var(--radius); }
+.team-photo { width: 100%; height: 14rem; max-height: 240px; object-fit: cover; display: block; }
 
-/* ===== PRICING ===== */
-.ts-pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-.ts-pricing-card {
-  background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-  border: 1px solid var(--border-light); border-radius: var(--radius);
-  padding: 40px 32px; text-align: center; transition: var(--transition);
-  position: relative;
+/* ═══ Navbar ═══ */
+.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(12px); transition: var(--transition); padding: 1rem 0; }
+body { padding-top: 80px; }
+.navbar-light { background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.navbar-dark { background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.08); }
+nav.nav-scrolled { background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }
+.navbar-inner { display: flex; justify-content: space-between; align-items: center; }
+.nav-brand { display: flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 1.15rem; color: var(--text); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { font-weight: 500; color: var(--text); transition: color 0.3s; position: relative; }
+.nav-links a::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }
+.nav-links a:hover { color: var(--primary); }
+.nav-links a:hover::after { width: 100%; }
+.nav-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.nav-cta { display: inline-block; }
+.mobile-cta { display: none; }
+@media (max-width: 768px) {
+  .nav-links { display: none !important; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; padding: 1.5rem 2rem; gap: 1.25rem; z-index: 999; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .nav-links.active { display: flex !important; background: var(--bg); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .nav-toggle { display: flex !important; }
+  .nav-cta { display: none !important; }
+  .mobile-cta { display: block !important; }
 }
-.ts-pricing-card.popular {
-  background: linear-gradient(160deg, var(--bg-dark), var(--bg-dark-end));
-  border-color: var(--accent); color: #fff;
-  transform: scale(1.04); box-shadow: 0 20px 60px rgba(61,110,255,0.2);
-}
-.ts-pricing-card.popular .ts-pricing-price { color: #fff; }
-.ts-pricing-card.popular .ts-pricing-features li { color: var(--text-secondary); }
-.ts-pricing-card.popular .ts-pricing-features svg { stroke: var(--accent-light); }
-.ts-pricing-badge {
-  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--accent), #2a52cc);
-  color: #fff; padding: 4px 20px; border-radius: 50px;
-  font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-}
-.ts-pricing-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-.ts-pricing-price { font-size: 48px; font-weight: 900; color: var(--text-dark); margin-bottom: 4px; }
-.ts-pricing-price span { font-size: 16px; font-weight: 500; color: var(--text-dark-secondary); }
-.ts-pricing-card.popular .ts-pricing-price span { color: var(--text-secondary); }
-.ts-pricing-desc { font-size: 14px; color: var(--text-dark-secondary); margin-bottom: 28px; }
-.ts-pricing-card.popular .ts-pricing-desc { color: var(--text-secondary); }
-.ts-pricing-features { list-style: none; margin-bottom: 32px; text-align: left; }
-.ts-pricing-features li {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0; font-size: 14px; color: var(--text-dark-secondary);
-}
-.ts-pricing-features svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 2.5; flex-shrink: 0; }
-.ts-pricing-card .ts-btn { width: 100%; justify-content: center; }
 
-/* ===== TESTIMONIALS ===== */
-.ts-testimonials { background: var(--surface-light); }
-.ts-testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-.ts-testimonial-card {
-  background: var(--surface-white); border: 1px solid var(--border-light);
-  border-radius: var(--radius); padding: 32px; transition: var(--transition);
-}
-.ts-testimonial-card:hover { box-shadow: var(--shadow-card); }
-.ts-testimonial-stars { margin-bottom: 16px; }
-.ts-testimonial-stars svg { width: 18px; height: 18px; fill: #fbbf24; stroke: none; }
-.ts-testimonial-card blockquote { font-size: 15px; color: var(--text-dark-secondary); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
-.ts-testimonial-author { display: flex; align-items: center; gap: 12px; }
-.ts-testimonial-avatar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #00d4aa);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; color: #fff; font-size: 16px;
-}
-.ts-testimonial-info strong { display: block; font-size: 14px; font-weight: 700; color: var(--text-dark); }
-.ts-testimonial-info span { font-size: 12px; color: var(--text-dark-secondary); }
+/* ═══ Hero ═══ */
+.hero-section { padding: 10rem 0 4rem !important; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }
+@media (min-width: 769px) { .hero-section { padding: 10rem 0 5rem !important; } }
+.hero-section.hero-section-flush { margin-top: -80px; padding-top: 0 !important; min-height: 100vh; }
+.hero-heading { font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.02em; }
+.hero-subtitle { font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; margin-left: auto; margin-right: auto; }
+.hero-center-content .hero-subtitle { margin-left: auto; margin-right: auto; }
+.trust-line { font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; }
+.hero-center-content .hero-ctas { justify-content: center; }
+.hero-full-overlay { text-align: left; }
+.hero-full-overlay .hero-subtitle { margin-left: 0; margin-right: 0; }
+.hero-full-overlay .hero-ctas { justify-content: flex-start; }
+.hero-full-overlay .trust-line { text-align: left; }
+.hero-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; min-height: 70vh; }
+.hero-split-asymmetric { grid-template-columns: 55% 45%; }
+@media (max-width: 768px) { .hero-split-grid { grid-template-columns: 1fr; min-height: auto; } }
+.hero-center-content { text-align: center; max-width: 48rem; margin: 0 auto; width: 100%; }
+.hero-bg-cover { position: relative; width: 100%; min-height: min(90vh, 800px); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }
+.hero-bg-cover > .container, .hero-bg-cover > .container-wide, .hero-bg-cover > .container-narrow { width: 100%; }
+.hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
+.hero-overlay-left { background: linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.35), rgba(0,0,0,0.1)); }
+.hero-overlay-center { background: linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.35), rgba(0,0,0,0.5)); }
+.hero-overlay-modern { background: linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25)); }
+.hero-bg-cover > *:not(.hero-overlay) { position: relative; z-index: 2; }
+.text-light { color: #fff !important; }
+.hero-animated-bg { min-height: 100vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }
+.text-light { color: white; }
+.text-light .hero-heading { color: white; }
+.text-light .hero-subtitle { color: rgba(255,255,255,0.85); }
+.text-light .trust-line { color: rgba(255,255,255,0.7); }
+.text-light .section-label { color: rgba(255,255,255,0.8); }
+.text-light .label-line { background: rgba(255,255,255,0.6); }
+.bg-number { display: none !important; }
+.hero-section > .container, .hero-section > .container-wide, .hero-section > .container-narrow { position: relative; z-index: 1; }
+.section-label { display: inline-flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.25em; font-weight: 600; color: var(--accent); margin-bottom: 1.5rem; }
+.label-line { width: 2.5rem; height: 2px; background: var(--accent); display: inline-block; }
+.floating-card { position: absolute; bottom: -1.25rem; left: -1.25rem; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-hover); display: flex; align-items: center; gap: 0.75rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+@media (max-width: 768px) { .floating-card { display: none; } }
+.browser-frame { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-hover); border: 1px solid rgba(0,0,0,0.1); }
+.browser-dots { display: flex; gap: 0.375rem; padding: 0.75rem 1rem; background: rgba(0,0,0,0.04); }
+.browser-dots span { width: 0.625rem; height: 0.625rem; border-radius: 50%; }
+.browser-dots span:nth-child(1) { background: #ff5f57; }
+.browser-dots span:nth-child(2) { background: #ffbd2e; }
+.browser-dots span:nth-child(3) { background: #28c940; }
 
-/* ===== FAQ ===== */
-.ts-faq-list { max-width: 720px; margin: 0 auto; }
-.ts-faq-item { border-bottom: 1px solid var(--border-light); }
-.ts-faq-question {
-  width: 100%; padding: 22px 0; display: flex; align-items: center;
-  justify-content: space-between; background: none; border: none;
-  font-family: inherit; font-size: 16px; font-weight: 600;
-  color: var(--text-dark); cursor: pointer; text-align: left; transition: var(--transition);
-}
-.ts-faq-question:hover { color: var(--accent); }
-.ts-faq-question svg { width: 20px; height: 20px; stroke: var(--text-dark-secondary); fill: none; stroke-width: 2; transition: var(--transition); flex-shrink: 0; margin-left: 16px; }
-.ts-faq-item.active .ts-faq-question svg { transform: rotate(180deg); stroke: var(--accent); }
-.ts-faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
-.ts-faq-answer p { padding: 0 0 22px; font-size: 15px; color: var(--text-dark-secondary); line-height: 1.7; }
+/* ═══ Gradient & Decorative ═══ */
+.gradient-text { background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.card-grid > *:nth-child(3n+1) { transition-delay: 0ms; }
+.card-grid > *:nth-child(3n+2) { transition-delay: 120ms; }
+.card-grid > *:nth-child(3n+3) { transition-delay: 240ms; }
 
-/* ===== CTA BANNER ===== */
-.ts-cta-banner {
-  background: linear-gradient(160deg, var(--bg-dark), var(--bg-dark-end));
-  text-align: center; position: relative; overflow: hidden;
-}
-.ts-cta-banner::before {
-  content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
-  pointer-events: none;
-}
-.ts-cta-banner .ts-container { position: relative; z-index: 1; }
-.ts-cta-banner h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 900; color: #fff; margin-bottom: 16px; }
-.ts-cta-banner p { font-size: 18px; color: var(--text-secondary); margin-bottom: 36px; max-width: 520px; margin-left: auto; margin-right: auto; }
+/* ═══ Pricing ═══ */
+.pricing-card.featured { transform: scale(1.05); border: 2px solid var(--primary) !important; z-index: 1; }
+.plan-price { font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; color: var(--accent); margin: 1rem 0; }
+.plan-period { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
+.plan-features { text-align: left; margin: 1.5rem 0; }
+.plan-feature { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; }
+.popular-badge { position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 1rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-/* ===== FOOTER ===== */
-.ts-footer { background: #090b14; color: var(--text-secondary); padding: 80px 0 32px; }
-.ts-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
-.ts-footer-brand { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.ts-footer-brand svg { width: 28px; height: 28px; }
-.ts-footer-desc { font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
-.ts-footer-social { display: flex; gap: 12px; }
-.ts-footer-social a {
-  width: 36px; height: 36px; border-radius: 8px;
-  background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center;
-  transition: var(--transition);
-}
-.ts-footer-social a:hover { background: var(--accent); }
-.ts-footer-social svg { width: 16px; height: 16px; fill: #fff; }
-.ts-footer h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-.ts-footer ul { list-style: none; }
-.ts-footer ul li { margin-bottom: 10px; }
-.ts-footer ul a { font-size: 14px; transition: var(--transition); }
-.ts-footer ul a:hover { color: var(--accent); }
-.ts-footer-bottom { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+/* ═══ Stats ═══ */
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
+.stat-icon { width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--accent); }
+.stat-number { font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; line-height: 1; white-space: nowrap; }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600; color: var(--text-muted); max-width: 180px; }
 
-/* ===== ANIMATIONS ===== */
-.ts-animate { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
-.ts-animate.visible { opacity: 1; transform: translateY(0); }
-.ts-animate-delay-1 { transition-delay: 0.1s; }
-.ts-animate-delay-2 { transition-delay: 0.2s; }
-.ts-animate-delay-3 { transition-delay: 0.3s; }
-.ts-animate-delay-4 { transition-delay: 0.4s; }
-.ts-animate-delay-5 { transition-delay: 0.5s; }
+/* ═══ FAQ ═══ */
+.faq-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.faq-question { width: 100%; background: transparent; border: none; padding: 1.25rem 0; display: flex; justify-content: space-between; align-items: center; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: left; color: var(--text); font-family: inherit; }
+.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.faq-item.active .faq-answer { max-height: 500px; padding-bottom: 1.25rem; }
+.faq-item.active .faq-question i { transform: rotate(180deg); transition: transform 0.3s; }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 968px) {
-  .ts-hero-inner { grid-template-columns: 1fr; text-align: center; }
-  .ts-hero p { margin-left: auto; margin-right: auto; }
-  .ts-hero-actions { justify-content: center; }
-  .ts-hero-visual { order: -1; }
-  .ts-hero-stat-1 { left: 10px; }
-  .ts-hero-stat-2 { right: 10px; }
-  .ts-features-grid, .ts-pricing-grid, .ts-testimonial-grid { grid-template-columns: 1fr 1fr; }
-  .ts-steps { grid-template-columns: 1fr; gap: 48px; }
-  .ts-steps::before { display: none; }
-  .ts-footer-grid { grid-template-columns: 1fr 1fr; }
-  .ts-pricing-card.popular { transform: scale(1); }
+/* ═══ Testimonials ═══ */
+.stars { color: #f59e0b; margin-bottom: 0.75rem; }
+.testimonial-quote { color: var(--text-muted); line-height: 1.7; font-style: italic; margin-bottom: 1.25rem; }
+.testimonial-quote-lg { font-size: 1.2rem; font-style: italic; line-height: 1.8; margin: 1.5rem 0; }
+.testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
+.testimonial-slide { display: none; }
+.testimonial-slide.active { display: block; }
+.slider-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; }
+.slider-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }
+.slider-dot.active { background: var(--primary); }
+
+/* ═══ Footer ═══ */
+footer { margin-top: 4rem; position: relative; z-index: 1; }
+.footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+@media (max-width: 1024px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; } }
+.footer-description { font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 280px; }
+.footer-heading { font-weight: 700; color: white; margin-bottom: 1rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 0.5rem; }
+.footer-links a { color: rgba(255,255,255,0.7); transition: color 0.3s; font-size: 0.9rem; }
+.footer-links a:hover { color: white; }
+.social-links { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.social-link { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: white; border: 1px solid rgba(255,255,255,0.1); transition: var(--transition); }
+.social-link:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-2px); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 2.5rem; padding-top: 1.5rem; text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.5); }
+.contact-item { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+.contact-icon { color: var(--accent); width: 1.25rem; margin-top: 0.25rem; flex-shrink: 0; }
+
+/* ═══ Forms ═══ */
+.contact-form { display: flex; flex-direction: column; gap: 1rem; }
+.contact-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .contact-form .form-row { grid-template-columns: 1fr; } }
+.form-input { width: 100%; padding: 1rem; border-radius: var(--radius, 0.5rem); border: 1px solid rgba(255,255,255,0.12); background: var(--bg-surface, rgba(255,255,255,0.05)); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; box-sizing: border-box; }
+.form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent); }
+.form-input::placeholder { color: var(--text-muted, rgba(255,255,255,0.4)); }
+.form-textarea { resize: vertical; min-height: 120px; }
+.newsletter-form { display: flex; gap: 0.75rem; max-width: 28rem; margin: 0 auto; }
+@media (max-width: 640px) { .newsletter-form { flex-direction: column; } }
+.form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; opacity: 0.7; }
+
+/* ═══ Gallery & Carousel ═══ */
+.gallery-item { overflow: hidden; border-radius: var(--radius); cursor: pointer; }
+.gallery-image { width: 100%; height: 14rem; max-height: 280px; object-fit: cover; transition: transform 0.5s ease; }
+.gallery-item:hover .gallery-image { transform: scale(1.1); }
+.gallery-lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; padding: 1rem; }
+.gallery-lightbox.active { display: flex; }
+.lightbox-close { position: absolute; top: 1.5rem; right: 1.5rem; color: white; font-size: 2rem; background: transparent; border: none; cursor: pointer; z-index: 10; }
+.lightbox-prev, .lightbox-next { position: absolute; top: 50%; transform: translateY(-50%); color: white; font-size: 1.5rem; background: rgba(0,0,0,0.3); border: none; cursor: pointer; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+.lightbox-prev { left: 1rem; }
+.lightbox-next { right: 1rem; }
+.lightbox-prev:hover, .lightbox-next:hover { background: rgba(0,0,0,0.45); }
+.lightbox-img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 0.5rem; }
+.carousel-container { position: relative; overflow: hidden; border-radius: var(--radius); }
+.carousel-track { display: flex; transition: transform 0.5s ease-in-out; }
+.carousel-slide { min-width: 100%; position: relative; }
+.carousel-image { width: 100%; height: 20rem; max-height: 380px; object-fit: cover; }
+@media (min-width: 769px) { .carousel-image { height: 24rem; max-height: 400px; } }
+.carousel-caption { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.55), transparent); padding: 2rem; color: white; }
+.carousel-prev, .carousel-next { position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; z-index: 10; }
+.carousel-prev { left: 1rem; }
+.carousel-next { right: 1rem; }
+.carousel-prev:hover, .carousel-next:hover { background: rgba(255,255,255,0.4); }
+.carousel-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+.carousel-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }
+.carousel-dot.active { background: var(--primary); }
+
+/* ═══ Masonry ═══ */
+.masonry-grid { column-count: 3; column-gap: 1.5rem; }
+@media (max-width: 1024px) { .masonry-grid { column-count: 2; } }
+@media (max-width: 768px) { .masonry-grid { column-count: 1; } }
+.masonry-item { break-inside: avoid; margin-bottom: 1.5rem; position: relative; border-radius: var(--radius); overflow: hidden; }
+.masonry-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.65)); color: white; padding: 1.5rem; transform: translateY(100%); transition: transform 0.3s ease; }
+.masonry-item:hover .masonry-overlay { transform: translateY(0); }
+
+/* ═══ Timeline ═══ */
+.timeline-item { display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }
+.timeline-date { min-width: 5rem; text-align: right; font-size: 0.875rem; font-weight: 700; color: var(--accent); }
+.timeline-dot { width: 1rem; height: 1rem; min-width: 1rem; border-radius: 50%; background: var(--primary); margin-top: 0.25rem; z-index: 10; box-shadow: 0 0 0 4px var(--bg); }
+.timeline-card { flex: 1; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+
+/* ═══ Logo Cloud ═══ */
+.logo-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.5rem; }
+.logo-item { padding: 0.75rem 1rem; }
+.logo-text { font-size: 1rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.4; transition: opacity 0.3s; white-space: nowrap; color: var(--text); }
+.logo-text:hover { opacity: 0.8; }
+
+/* ═══ Trust Badges ═══ */
+.trust-badges { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; }
+@media (min-width: 769px) { .trust-badges { gap: 3rem; } }
+.trust-badge { display: flex; align-items: center; gap: 0.75rem; opacity: 0.6; transition: opacity 0.3s; }
+.trust-badge:hover { opacity: 1; }
+.badge-icon { font-size: 1.5rem; color: var(--accent); }
+
+/* ═══ Feature Patterns ═══ */
+.feature-split-list { display: flex; flex-direction: column; gap: 3rem; }
+.feature-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+.feature-text { color: var(--text-muted); line-height: 1.7; }
+.stacked-list { border-top: 1px solid rgba(255,255,255,0.1); }
+.stacked-item { display: flex; gap: 1.25rem; align-items: flex-start; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+@media (max-width: 768px) { .stacked-item { flex-direction: column; } }
+.step-item { display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }
+.step-number { width: 3.5rem; height: 3.5rem; min-width: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: white; z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+
+/* ═══ Service Modal ═══ */
+.modal-trigger { cursor: pointer; }
+.modal-trigger:hover .icon-box { transform: scale(1.1); transition: transform 0.3s; }
+.detail-modal { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; padding: 1rem; }
+.detail-modal.active { display: flex; }
+.modal-content { background: var(--bg); border-radius: var(--radius); max-width: 32rem; width: 100%; padding: 2rem; position: relative; box-shadow: var(--shadow-hover); max-height: 90vh; overflow-y: auto; }
+.modal-close { position: absolute; top: 1rem; right: 1rem; color: var(--text-muted); font-size: 1.25rem; background: transparent; border: none; cursor: pointer; }
+.modal-close:hover { color: var(--text); }
+
+/* ═══ Comparison Table ═══ */
+.comparison-table { width: 100%; border-collapse: collapse; text-align: left; }
+.comparison-table th { padding: 1rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1); }
+.comparison-table td { padding: 0.875rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.comparison-table tr:hover { background: rgba(255,255,255,0.02); }
+.check-icon { color: #10b981; }
+.xmark-icon { color: #ef4444; opacity: 0.5; }
+
+/* ═══ Animations ═══ */
+@keyframes floatOrb { 0% { transform: translateY(0); } 50% { transform: translateY(-30px); } 100% { transform: translateY(0); } }
+@keyframes logoGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* ═══ Utilities ═══ */
+.relative { position: relative; }
+.z-10 { z-index: 10; }
+.logo-mark { width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-size: 200% 200%; animation: logoGradient 6s ease infinite; }
+
+.typed-cursor { color: var(--primary); font-weight: 100; }
+.search-dropdown.active { display: block; }
+.whatsapp-float { position: fixed !important; bottom: 1.5rem !important; left: 1.5rem !important; right: auto !important; z-index: 50; animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }
+#back-to-top { position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; left: auto !important; z-index: 50; }
+#back-to-top.visible { opacity: 1; pointer-events: auto; }
+[data-splitting] .char { display: inline-block; opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }
+[data-splitting].visible .char { opacity: 1; transform: translateY(0); }
+@media (max-width: 768px) { .steps-container::before { left: 24px; } .timeline-container::before { left: 98px; } }
+
+/* ═══ Premium Effects ═══ */
+.stagger-reveal { opacity: 1; }
+.stagger-child { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.stagger-child.visible { opacity: 1; transform: translateY(0); }
+
+.fade-up { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+.scale-in { opacity: 0; transform: scale(0.8); transition: opacity 0.6s ease, transform 0.6s ease; }
+.scale-in.visible { opacity: 1; transform: scale(1); }
+
+.counter { font-weight: 700; }
+
+.hero-stagger h1 { opacity: 1; }
+.hero-stagger .word { display: inline-block; opacity: 0; transform: translateY(30px); animation: wordReveal 0.6s ease forwards; }
+.hero-stagger .word:nth-child(1) { animation-delay: 0.1s; }
+.hero-stagger .word:nth-child(2) { animation-delay: 0.2s; }
+.hero-stagger .word:nth-child(3) { animation-delay: 0.3s; }
+.hero-stagger .word:nth-child(4) { animation-delay: 0.4s; }
+.hero-stagger .word:nth-child(5) { animation-delay: 0.5s; }
+.hero-stagger .word:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes wordReveal {
+  to { opacity: 1; transform: translateY(0); }
 }
-@media (max-width: 640px) {
-  .ts-section { padding: 72px 0; }
-  .ts-features-grid, .ts-pricing-grid, .ts-testimonial-grid { grid-template-columns: 1fr; }
-  .ts-footer-grid { grid-template-columns: 1fr; }
-  .ts-nav-links { display: none; }
-  .ts-nav-toggle { display: block; }
-  .ts-nav-links.open {
-    display: flex; flex-direction: column; position: absolute;
-    top: 100%; left: 0; right: 0; background: rgba(13,15,26,0.98);
-    padding: 24px; gap: 16px; backdrop-filter: blur(20px);
-  }
-  .ts-hero { padding: 120px 0 80px; }
-  .ts-hero-mockup-content .line { font-size: 11px; }
-  .ts-footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+
+.logo-reveal { opacity: 0; transform: scale(0.8); animation: logoReveal 0.8s ease forwards; animation-delay: 0.2s; }
+@keyframes logoReveal {
+  to { opacity: 1; transform: scale(1); }
 }
+
+.navbar-slidedown { transform: translateY(-100%); animation: slideDown 0.8s ease forwards; animation-delay: 0.5s; }
+@keyframes slideDown {
+  to { transform: translateY(0); }
+}
+
+.magnetic-btn { transition: transform 0.3s ease; }
+.magnetic-btn:hover { transform: translateY(-2px) scale(1.02); }
+
+.card-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.card-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+
+.nav-link-slide { position: relative; }
+.nav-link-slide::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }
+.nav-link-slide:hover::after { width: 100%; }
+
+.btn-gradient-shift { background: linear-gradient(135deg, var(--primary), var(--secondary)); background-size: 200% 200%; transition: background-position 0.3s ease, transform 0.3s ease; }
+.btn-gradient-shift:hover { background-position: 100% 0; transform: translateY(-2px); }
+
+.image-reveal { position: relative; overflow: hidden; }
+.image-reveal img { transition: transform 0.6s ease; }
+.image-reveal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--primary); transform: scaleX(0); transform-origin: left; transition: transform 0.6s ease; z-index: 1; }
+.image-reveal.visible::before { transform: scaleX(1); }
+.image-reveal.visible img { transform: scale(1.1); }
+
+.image-fade-zoom { overflow: hidden; }
+.image-fade-zoom img { opacity: 0; transform: scale(1.1); transition: opacity 0.8s ease, transform 0.8s ease; }
+.image-fade-zoom.visible img { opacity: 1; transform: scale(1); }
+
+.image-slide-up { overflow: hidden; }
+.image-slide-up img { transform: translateY(30px); opacity: 0; transition: transform 0.8s ease, opacity 0.8s ease; }
+.image-slide-up.visible img { transform: translateY(0); opacity: 1; }
+
+.image-blur-in img { filter: blur(10px); opacity: 0; transition: filter 0.8s ease, opacity 0.8s ease; }
+.image-blur-in.visible img { filter: blur(0); opacity: 1; }
+
+.back-to-top { 
+  position: fixed; 
+  bottom: 1.5rem; 
+  right: 1.5rem; 
+  width: 3rem; 
+  height: 3rem; 
+  background: var(--primary); 
+  color: white; 
+  border: none; 
+  border-radius: 50%; 
+  cursor: pointer; 
+  opacity: 0; 
+  transform: translateY(20px); 
+  transition: all 0.3s ease; 
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); }
+.back-to-top:hover { transform: translateY(-2px); }
+
+.progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.progress-ring circle { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 2; stroke-dasharray: 157; stroke-dashoffset: 157; transition: stroke-dashoffset 0.1s linear; }
+
+#scroll-progress { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 0%; 
+  height: 3px; 
+  background: linear-gradient(90deg, var(--primary), var(--accent)); 
+  z-index: 100; 
+  transition: width 0.1s linear; 
+}
+
+/* Light theme adjustments */
+.form-input { border: 1px solid rgba(0,0,0,0.08); background: var(--bg-surface); }
+.card { border: 1px solid rgba(0,0,0,0.06); }
+section[data-section-type="testimonials"] { border-top: 1px solid rgba(0,0,0,0.06); border-bottom: 1px solid rgba(0,0,0,0.06); }
+
+/* Hero navbar clearance fix */
+section[data-section-type="hero"]:not(.hero-section-flush) { padding-top: 10rem !important; }
+section[data-section-type="hero"].hero-section-flush .hero-bg-cover { padding-top: 100px !important; }
+section[data-section-type="hero"].hero-section-flush .hero-animated-bg { padding-top: 100px !important; }
+/* Hero split-grid: if image column is empty, let text take full width */
+.hero-split-grid > div:only-child { grid-column: 1 / -1; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero-split-grid > .hero-image-wrapper:empty { display: none; }
+.hero-split-grid > .hero-image-wrapper:not(:has(img)) { display: none; }
 </style>
 
-<div class="ts-template">
-  <!-- NAVBAR -->
-  <nav class="ts-nav" id="tsNav">
-    <div class="ts-container">
-      <a href="#" class="ts-nav-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3d6eff"/><path d="M9 16l5 5 9-10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        NexusAI
-      </a>
-      <ul class="ts-nav-links" id="tsNavLinks">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#testimonials">Testimonials</a></li>
-        <li><a href="#faq">FAQ</a></li>
-      </ul>
-      <div class="ts-nav-cta">
-        <a href="#pricing" class="ts-btn ts-btn-primary">Get Started</a>
-      </div>
-      <button class="ts-nav-toggle" id="tsNavToggle" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </nav>
+<nav data-section-id="section-0" class="navbar navbar-light">
+  <div class="container navbar-inner">
+    <a href="#hero" class="nav-brand logo-reveal">
+      <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">N</span>
+      <span>NexaFlow</span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+    <ul class="nav-links navbar-slidedown">
+      <li><a href="#hero" class="nav-link-slide">Home</a></li>
+      <li><a href="#features" class="nav-link-slide">Features</a></li>
+      <li><a href="#how-it-works" class="nav-link-slide">How It Works</a></li>
+      <li><a href="#testimonials" class="nav-link-slide">Testimonials</a></li>
+      <li><a href="#contact" class="nav-link-slide">Contact</a></li>
+      <li class="mobile-cta"><a href="#contact" class="btn-primary magnetic-btn">Start Free Trial</a></li>
+    </ul>
+    <a href="#contact" class="nav-cta btn-primary magnetic-btn">Start Free Trial</a>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <section class="ts-hero">
-    <div class="ts-container">
-      <div class="ts-hero-inner">
-        <div>
-          <div class="ts-hero-badge"><span>NEW</span> Introducing NexusAI v3.0 with GPT-5 support</div>
-          <h1>Build Smarter with <span class="ts-gradient-text">AI-Powered</span> Automation</h1>
-          <p>Ship products 10x faster with intelligent workflows, automated code review, and real-time collaboration. Trusted by 5,000+ engineering teams worldwide.</p>
-          <div class="ts-hero-actions">
-            <a href="#pricing" class="ts-btn ts-btn-primary">
-              Start Free Trial
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
-            <a href="#how-it-works" class="ts-btn ts-btn-secondary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Watch Demo
-            </a>
-          </div>
-        </div>
-        <div class="ts-hero-visual">
-          <div class="ts-hero-mockup">
-            <div class="ts-hero-mockup-bar"><span></span><span></span><span></span></div>
-            <div class="ts-hero-mockup-content">
-              <div class="line"><span class="line-num">1</span><span class="cm">// AI-powered deployment</span></div>
-              <div class="line"><span class="line-num">2</span><span class="kw">import</span> { <span class="fn">NexusAI</span> } <span class="kw">from</span> <span class="str">'@nexus/core'</span></div>
-              <div class="line"><span class="line-num">3</span></div>
-              <div class="line"><span class="line-num">4</span><span class="kw">const</span> <span class="fn">app</span> = <span class="fn">NexusAI</span>.<span class="fn">init</span>({</div>
-              <div class="line"><span class="line-num">5</span>&nbsp;&nbsp;model: <span class="str">'gpt-5-turbo'</span>,</div>
-              <div class="line"><span class="line-num">6</span>&nbsp;&nbsp;autoScale: <span class="kw">true</span>,</div>
-              <div class="line"><span class="line-num">7</span>})</div>
-              <div class="line"><span class="line-num">8</span></div>
-              <div class="line"><span class="line-num">9</span><span class="kw">await</span> <span class="fn">app</span>.<span class="fn">deploy</span>() <span class="cm">// Done!</span></div>
-            </div>
-          </div>
-          <div class="ts-hero-stat ts-hero-stat-1">
-            <strong>99.9%</strong><small>Uptime SLA</small>
-          </div>
-          <div class="ts-hero-stat ts-hero-stat-2">
-            <strong>10x</strong><small>Faster Deploys</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+<div id="scroll-progress"></div>
 
-  <!-- TRUSTED BY -->
-  <section class="ts-trusted">
-    <div class="ts-container">
-      <p>Trusted by teams at leading companies</p>
-      <div class="ts-logo-bar">
-        <svg viewBox="0 0 120 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Stripe</text></svg>
-        <svg viewBox="0 0 120 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Vercel</text></svg>
-        <svg viewBox="0 0 130 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Linear</text></svg>
-        <svg viewBox="0 0 130 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Notion</text></svg>
-        <svg viewBox="0 0 140 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Figma</text></svg>
-        <svg viewBox="0 0 130 28"><text x="0" y="22" font-family="Inter,sans-serif" font-weight="800" font-size="22" fill="#0d0f1a">Slack</text></svg>
+<section data-section-id="hero" data-section-type="hero_full_image" id="hero" class="hero-section hero-section-flush" style="background:linear-gradient(rgba(13,148,136,0.85),rgba(13,148,136,0.65)),url('https://images.pexels.com/photos/17235421/pexels-photo-17235421.jpeg');background-size:cover;background-position:center;">
+  <div class="hero-overlay hero-overlay-center"></div>
+  <div class="container-wide text-light">
+    <div class="hero-center-content">
+      <span class="section-label">
+        <span class="label-line"></span>
+        WORKFLOW AUTOMATION
+      </span>
+      <h1 class="hero-heading hero-stagger" style="text-shadow: 0 2px 20px rgba(0,0,0,0.4);">
+        AI-Powered Workflow Automation for Modern Business
+      </h1>
+      <p class="hero-subtitle" style="text-shadow: 0 2px 15px rgba(0,0,0,0.3);">
+        NexaFlow accelerates your team's efficiency with smart task routing, real-time analytics, and seamless collaboration. Discover the future of work—start your free trial today.
+      </p>
+      <div class="hero-ctas">
+        <a href="#contact" class="btn-primary-light magnetic-btn">Start Free Trial</a>
+        <a href="#contact" class="btn-secondary-light">Request a Demo</a>
+      </div>
+      <p class="trust-line" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+        ✓ No credit card required • ✓ 14-day free trial • ✓ Setup in 5 minutes
+      </p>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="stats" data-section-type="stats_row" id="stats" class="stagger-reveal" style="padding: 2.5rem 0;">
+  <div class="container">
+    <div class="grid-4">
+      <div class="stat-item stagger-child">
+        <div class="stat-number counter" data-target="2023">2023</div>
+        <div class="stat-label">Founded</div>
+      </div>
+      <div class="stat-item stagger-child">
+        <div class="stat-number">Top VCs</div>
+        <div class="stat-label">Backed by</div>
+      </div>
+      <div class="stat-item stagger-child">
+        <div class="stat-number">DIFC, Dubai</div>
+        <div class="stat-label">HQ</div>
+      </div>
+      <div class="stat-item stagger-child">
+        <div class="stat-number">Free Trial</div>
+        <div class="stat-label">Available</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FEATURES -->
-  <section class="ts-section" id="features">
-    <div class="ts-container">
-      <div class="ts-text-center">
-        <p class="ts-section-label ts-animate">Features</p>
-        <h2 class="ts-section-title ts-animate">Everything you need to ship fast</h2>
-        <p class="ts-section-subtitle ts-animate">Powerful tools that integrate seamlessly into your existing workflow. No migration needed.</p>
+<section data-section-id="features" data-section-type="feature_cards" id="features" class="stagger-reveal">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title fade-up">Unlock Next-Level Productivity</h2>
+      <p class="section-subtitle fade-up">NexaFlow's AI-driven platform empowers your business with intelligent automation and insights.</p>
+    </div>
+    <div class="grid-4">
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="icon-box">
+          <i class="fa-solid fa-smart_toy"></i>
+        </div>
+        <h3 class="card-title">Smart Task Routing</h3>
+        <p class="card-text">Assigns tasks automatically to the right team members, optimizing workloads and deadlines.</p>
       </div>
-      <div class="ts-features-grid">
-        <div class="ts-feature-card ts-animate ts-animate-delay-1">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <h3>Lightning Fast</h3>
-          <p>Sub-millisecond response times with edge computing. Your apps load instantly, every single time.</p>
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="icon-box">
+          <i class="fa-solid fa-bar_chart"></i>
         </div>
-        <div class="ts-feature-card ts-animate ts-animate-delay-2">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-          </div>
-          <h3>Smart Dashboard</h3>
-          <p>Real-time analytics and insights powered by AI. Understand your metrics at a glance with intelligent summaries.</p>
+        <h3 class="card-title">Real-Time Analytics</h3>
+        <p class="card-text">Visualize workflows and team performance instantly with powerful dashboards.</p>
+      </div>
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="icon-box">
+          <i class="fa-solid fa-groups"></i>
         </div>
-        <div class="ts-feature-card ts-animate ts-animate-delay-3">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3>Enterprise Security</h3>
-          <p>SOC 2 Type II certified. End-to-end encryption, SSO, and role-based access control out of the box.</p>
+        <h3 class="card-title">Team Collaboration</h3>
+        <p class="card-text">Secure, frictionless communication and file sharing to keep everyone in sync.</p>
+      </div>
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="icon-box">
+          <i class="fa-solid fa-api"></i>
         </div>
-        <div class="ts-feature-card ts-animate ts-animate-delay-1">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <h3>Team Collaboration</h3>
-          <p>Real-time multiplayer editing, comments, and code review. Built for teams of all sizes.</p>
-        </div>
-        <div class="ts-feature-card ts-animate ts-animate-delay-2">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </div>
-          <h3>Custom Workflows</h3>
-          <p>Automate repetitive tasks with drag-and-drop workflow builder. Connect 200+ integrations natively.</p>
-        </div>
-        <div class="ts-feature-card ts-animate ts-animate-delay-3">
-          <div class="ts-feature-icon">
-            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <h3>99.99% Uptime</h3>
-          <p>Multi-region redundancy with automatic failover. We guarantee uptime with financial SLA backing.</p>
-        </div>
+        <h3 class="card-title">API Integrations</h3>
+        <p class="card-text">Connect NexaFlow to your favorite tools and automate across your tech stack.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- HOW IT WORKS -->
-  <section class="ts-section ts-how" id="how-it-works">
-    <div class="ts-container">
-      <div class="ts-text-center">
-        <p class="ts-section-label ts-animate">How It Works</p>
-        <h2 class="ts-section-title ts-animate">Up and running in 3 minutes</h2>
-        <p class="ts-section-subtitle ts-animate">No complex setup. No vendor lock-in. Just connect and go.</p>
+<section data-section-id="how-it-works" data-section-type="card_grid" id="how-it-works" class="stagger-reveal">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title fade-up">How NexaFlow Works</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="image-fade-zoom">
+          <img src="https://images.pexels.com/photos/8068008/pexels-photo-8068008.jpeg" alt="Automate Everyday Work" class="card-image" loading="lazy" decoding="async">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">Automate Everyday Work</h3>
+          <p class="card-text">Let NexaFlow handle repetitive tasks so your team can focus on what matters most.</p>
+        </div>
       </div>
-      <div class="ts-steps">
-        <div class="ts-step ts-animate ts-animate-delay-1">
-          <div class="ts-step-num">1</div>
-          <h3>Connect Your Stack</h3>
-          <p>Link your GitHub, GitLab, or Bitbucket repo. We auto-detect your framework and configure everything.</p>
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="image-slide-up">
+          <img src="https://images.pexels.com/photos/14796253/pexels-photo-14796253.jpeg" alt="Optimize in Real-Time" class="card-image" loading="lazy" decoding="async">
         </div>
-        <div class="ts-step ts-animate ts-animate-delay-2">
-          <div class="ts-step-num">2</div>
-          <h3>Configure AI Rules</h3>
-          <p>Set your coding standards, review preferences, and deployment rules. Our AI learns your team's patterns.</p>
+        <div class="card-body">
+          <h3 class="card-title">Optimize in Real-Time</h3>
+          <p class="card-text">Track bottlenecks and adapt instantly with actionable analytics.</p>
         </div>
-        <div class="ts-step ts-animate ts-animate-delay-3">
-          <div class="ts-step-num">3</div>
-          <h3>Ship With Confidence</h3>
-          <p>Push code and let NexusAI handle reviews, testing, and deployment. Focus on building, not debugging.</p>
+      </div>
+      <div class="card card-lift stagger-child" data-tilt data-tilt-max="8" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15">
+        <div class="image-blur-in">
+          <img src="https://images.pexels.com/photos/5439487/pexels-photo-5439487.jpeg" alt="Scale with Confidence" class="card-image" loading="lazy" decoding="async">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">Scale with Confidence</h3>
+          <p class="card-text">Designed for startups and enterprises alike—NexaFlow grows as your business does.</p>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- PRICING -->
-  <section class="ts-section" id="pricing">
-    <div class="ts-container">
-      <div class="ts-text-center">
-        <p class="ts-section-label ts-animate">Pricing</p>
-        <h2 class="ts-section-title ts-animate">Simple, transparent pricing</h2>
-        <p class="ts-section-subtitle ts-animate">Start free, scale as you grow. No hidden fees, no surprises.</p>
-      </div>
-      <div class="ts-pricing-grid">
-        <div class="ts-pricing-card ts-animate ts-animate-delay-1">
-          <p class="ts-pricing-name">Starter</p>
-          <p class="ts-pricing-price">$0<span>/mo</span></p>
-          <p class="ts-pricing-desc">Perfect for side projects and solo devs</p>
-          <ul class="ts-pricing-features">
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Up to 3 projects</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>1,000 AI reviews/mo</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Community support</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Basic analytics</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>GitHub integration</li>
-          </ul>
-          <a href="#" class="ts-btn ts-btn-secondary" style="border-color: var(--border-light); color: var(--text-dark);">Get Started Free</a>
-        </div>
-        <div class="ts-pricing-card popular ts-animate ts-animate-delay-2">
-          <div class="ts-pricing-badge">Most Popular</div>
-          <p class="ts-pricing-name">Pro</p>
-          <p class="ts-pricing-price">$49<span>/mo</span></p>
-          <p class="ts-pricing-desc">For growing teams that need more power</p>
-          <ul class="ts-pricing-features">
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Unlimited projects</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Unlimited AI reviews</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Priority support</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Advanced analytics</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>All integrations</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Custom workflows</li>
-          </ul>
-          <a href="#" class="ts-btn ts-btn-dark">Start Free Trial</a>
-        </div>
-        <div class="ts-pricing-card ts-animate ts-animate-delay-3">
-          <p class="ts-pricing-name">Enterprise</p>
-          <p class="ts-pricing-price">$199<span>/mo</span></p>
-          <p class="ts-pricing-desc">For organizations with advanced needs</p>
-          <ul class="ts-pricing-features">
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Everything in Pro</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>SSO & SAML</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Dedicated support</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Custom SLA</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>On-premise option</li>
-            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Audit logs</li>
-          </ul>
-          <a href="#" class="ts-btn ts-btn-secondary" style="border-color: var(--border-light); color: var(--text-dark);">Contact Sales</a>
-        </div>
-      </div>
+<section data-section-id="testimonials" data-section-type="testimonial_cards" id="testimonials" class="stagger-reveal">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title fade-up">What Our Customers Say</h2>
     </div>
-  </section>
-
-  <!-- TESTIMONIALS -->
-  <section class="ts-section ts-testimonials" id="testimonials">
-    <div class="ts-container">
-      <div class="ts-text-center">
-        <p class="ts-section-label ts-animate">Testimonials</p>
-        <h2 class="ts-section-title ts-animate">Loved by developers worldwide</h2>
-        <p class="ts-section-subtitle ts-animate">See what engineering teams are saying about NexusAI.</p>
+    <div class="grid-2">
+      <div class="card card-lift stagger-child">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+        </div>
+        <p class="testimonial-quote">"NexaFlow's automation slashed our admin work by 40%. We can finally focus on growth."</p>
+        <div class="testimonial-author">
+          <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;">LM</div>
+          <div>
+            <div style="font-weight: 600; color: var(--text);">Lina M.</div>
+            <div style="font-size: 0.875rem; color: var(--text-muted);">COO, FinTech Startup</div>
+          </div>
+        </div>
       </div>
-      <div class="ts-testimonial-grid">
-        <div class="ts-testimonial-card ts-animate ts-animate-delay-1">
-          <div class="ts-testimonial-stars">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <blockquote>"NexusAI cut our deployment time from hours to minutes. The AI code review catches bugs our team would have missed. Absolute game changer."</blockquote>
-          <div class="ts-testimonial-author">
-            <div class="ts-testimonial-avatar">SK</div>
-            <div class="ts-testimonial-info">
-              <strong>Sarah Kim</strong>
-              <span>CTO, Flowbase</span>
-            </div>
-          </div>
+      <div class="card card-lift stagger-child">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
         </div>
-        <div class="ts-testimonial-card ts-animate ts-animate-delay-2">
-          <div class="ts-testimonial-stars">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <blockquote>"We migrated our entire CI/CD pipeline to NexusAI in a weekend. The custom workflows alone saved us 20+ hours per week."</blockquote>
-          <div class="ts-testimonial-author">
-            <div class="ts-testimonial-avatar">MR</div>
-            <div class="ts-testimonial-info">
-              <strong>Marcus Rodriguez</strong>
-              <span>Lead Engineer, ScaleUp</span>
-            </div>
-          </div>
-        </div>
-        <div class="ts-testimonial-card ts-animate ts-animate-delay-3">
-          <div class="ts-testimonial-stars">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <blockquote>"The enterprise security features gave our compliance team peace of mind. NexusAI handles SOC 2 requirements without us lifting a finger."</blockquote>
-          <div class="ts-testimonial-author">
-            <div class="ts-testimonial-avatar">AL</div>
-            <div class="ts-testimonial-info">
-              <strong>Amanda Liu</strong>
-              <span>VP Engineering, TrustLayer</span>
-            </div>
+        <p class="testimonial-quote">"The real-time analytics let us spot issues before they escalate. Our team loves it!"</p>
+        <div class="testimonial-author">
+          <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem;">RS</div>
+          <div>
+            <div style="font-weight: 600; color: var(--text);">Raj S.</div>
+            <div style="font-size: 0.875rem; color: var(--text-muted);">Operations Manager</div>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FAQ -->
-  <section class="ts-section" id="faq">
-    <div class="ts-container">
-      <div class="ts-text-center">
-        <p class="ts-section-label ts-animate">FAQ</p>
-        <h2 class="ts-section-title ts-animate">Frequently asked questions</h2>
-        <p class="ts-section-subtitle ts-animate">Can't find what you're looking for? Reach out to our support team.</p>
-      </div>
-      <div class="ts-faq-list">
-        <div class="ts-faq-item ts-animate">
-          <button class="ts-faq-question">
-            How does the free trial work?
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ts-faq-answer"><p>Start with a 14-day free trial on any paid plan. No credit card required. You get full access to all features, and you can downgrade to our free Starter plan at any time.</p></div>
-        </div>
-        <div class="ts-faq-item ts-animate">
-          <button class="ts-faq-question">
-            Can I switch plans later?
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ts-faq-answer"><p>Absolutely. You can upgrade, downgrade, or cancel at any time. If you upgrade, you'll be prorated for the remainder of your billing cycle. Downgrades take effect at the next billing date.</p></div>
-        </div>
-        <div class="ts-faq-item ts-animate">
-          <button class="ts-faq-question">
-            What integrations do you support?
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ts-faq-answer"><p>We integrate with GitHub, GitLab, Bitbucket, Jira, Linear, Slack, Discord, PagerDuty, Datadog, and 200+ more tools via our REST API and webhooks. Custom integrations are available on Enterprise plans.</p></div>
-        </div>
-        <div class="ts-faq-item ts-animate">
-          <button class="ts-faq-question">
-            Is my code stored on your servers?
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ts-faq-answer"><p>We never store your source code. Our AI processes code in-memory during reviews and deployments, then discards it immediately. Enterprise customers can opt for on-premise deployment for complete data sovereignty.</p></div>
-        </div>
-        <div class="ts-faq-item ts-animate">
-          <button class="ts-faq-question">
-            Do you offer discounts for startups?
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ts-faq-answer"><p>Yes! We offer 50% off for the first year for early-stage startups with fewer than 20 employees. Contact our sales team with proof of incorporation to apply for the startup program.</p></div>
-        </div>
+<section data-section-id="cta" data-section-type="cta_banner" id="cta" class="stagger-reveal" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -50%; right: -20%; width: 400px; height: 400px; border-radius: 50%; background: rgba(255,255,255,0.05); pointer-events: none;"></div>
+  <div style="position: absolute; bottom: -30%; left: -10%; width: 300px; height: 300px; border-radius: 50%; background: rgba(255,255,255,0.03); pointer-events: none;"></div>
+  <div class="container" style="position: relative; z-index: 2;">
+    <div class="text-center">
+      <h2 class="section-title fade-up" style="color: white; margin-bottom: 1rem;">Ready to Accelerate Your Workflow?</h2>
+      <p class="section-subtitle fade-up" style="color: rgba(255,255,255,0.9); margin-bottom: 2rem;">Experience the power of AI automation. Start your free trial or request a demo.</p>
+      <div class="btn-group center fade-up">
+        <a href="#contact" class="btn-primary-light magnetic-btn">Start Free Trial</a>
+        <a href="mailto:hello@nexaflow.io" class="btn-secondary-light">Contact Sales</a>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- CTA BANNER -->
-  <section class="ts-section ts-cta-banner">
-    <div class="ts-container">
-      <h2 class="ts-animate">Ready to ship faster?</h2>
-      <p class="ts-animate">Join 5,000+ teams already using NexusAI to build and deploy with confidence.</p>
-      <div class="ts-animate">
-        <a href="#pricing" class="ts-btn ts-btn-primary" style="font-size: 17px; padding: 18px 40px;">
-          Start Your Free Trial
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-      </div>
+<section data-section-type="contact" id="contact" class="stagger-reveal">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title fade-up">Get Started Today</h2>
+      <p class="section-subtitle fade-up">Ready to transform your workflow? Contact us for a personalized demo.</p>
     </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer class="ts-footer">
-    <div class="ts-container">
-      <div class="ts-footer-grid">
-        <div>
-          <div class="ts-footer-brand">
-            <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3d6eff"/><path d="M9 16l5 5 9-10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            NexusAI
-          </div>
-          <p class="ts-footer-desc">AI-powered development platform for modern engineering teams. Ship faster, break less, sleep better.</p>
-          <div class="ts-footer-social">
-            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-            <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
-            <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
-          </div>
+    <div class="grid-2" style="align-items: flex-start;">
+      <div class="stagger-child">
+        <h3 style="margin-bottom: 1.5rem; color: var(--text);">Contact Information</h3>
+        <div class="contact-item">
+          <i class="fa-solid fa-envelope contact-icon"></i>
+          <span>hello@nexaflow.io</span>
         </div>
-        <div>
-          <h4>Product</h4>
-          <ul>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#">Changelog</a></li>
-            <li><a href="#">Documentation</a></li>
-            <li><a href="#">API Reference</a></li>
-          </ul>
+        <div class="contact-item">
+          <i class="fa-solid fa-location-dot contact-icon"></i>
+          <span>DIFC, Dubai, UAE</span>
         </div>
-        <div>
-          <h4>Company</h4>
-          <ul>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Blog</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="#">Press Kit</a></li>
-            <li><a href="#">Contact</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Legal</h4>
-          <ul>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Cookie Policy</a></li>
-            <li><a href="#">Security</a></li>
-            <li><a href="#">GDPR</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="ts-footer-bottom">
-        <span>&copy; 2026 NexusAI. All rights reserved.</span>
-        <span>Made with precision in San Francisco</span>
-      </div>
-    </div>
-  </footer>
-</div>
-
-<!-- VANILLA JS -->
-<script>
-(function() {
-  'use strict';
-
-  // Navbar scroll effect
-  const nav = document.getElementById('tsNav');
-  if (nav) {
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 40);
-    }, { passive: true });
-  }
-
-  // Mobile nav toggle
-  const toggle = document.getElementById('tsNavToggle');
-  const links = document.getElementById('tsNavLinks');
-  if (toggle && links) {
-    toggle.addEventListener('click', function() {
-      links.classList.toggle('open');
-    });
-    links.querySelectorAll('a').forEach(function(a) {
-      a.addEventListener('click', function() { links.classList.remove('open'); });
-    });
-  }
-
-  // Smooth scroll for anchor links
-  document.querySelectorAll('.ts-template a[href^="#"]').forEach(function(anchor) {
-    anchor.addEventListener('click', function(e) {
-      var target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  });
-
-  // IntersectionObserver for scroll animations
-  var animateEls = document.querySelectorAll('.ts-animate');
-  if (animateEls.length && 'IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-    animateEls.forEach(function(el) { observer.observe(el); });
-  } else {
-    // Fallback: show everything
-    animateEls.forEach(function(el) { el.classList.add('visible'); });
-  }
-
-  // FAQ Accordion
-  document.querySelectorAll('.ts-faq-question').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var item = this.parentElement;
-      var answer = item.querySelector('.ts-faq-answer');
-      var isActive = item.classList.contains('active');
-
-      // Close all
-      document.querySelectorAll('.ts-faq-item').forEach(function(faq) {
-        faq.classList.remove('active');
-        faq.querySelector('.ts-faq-answer').style.maxHeight = null;
-      });
-
-      // Open clicked (if it was closed)
-      if (!isActive) {
-        item.classList.add('active');
-        answer.style.maxHeight = answer.scrollHeight + 'px';
-      }
-    });
-  });
-})();
-</script>

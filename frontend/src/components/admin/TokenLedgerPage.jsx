@@ -9,9 +9,25 @@ const T = { text: '#e4e4e7', muted: '#71717a', success: '#34d399', danger: '#f87
 function fmt(v) { return v != null && v !== '—' ? Number(v).toLocaleString() : '—'; }
 
 
+// Token cost rates (per 1M tokens) — based on Anthropic/OpenAI pricing
+const COST_RATES = {
+    'anthropic': 3.00,   // ~$3 per 1M input tokens (Sonnet)
+    'openai': 2.00,      // ~$2 per 1M tokens (GPT-4.1)
+    'default': 2.50,     // blended average
+};
+
+function estimateCost(amount, reason) {
+    const tokens = Math.abs(Number(amount) || 0);
+    if (tokens === 0) return 0;
+    const provider = (reason || '').includes('anthropic') ? 'anthropic' : (reason || '').includes('openai') ? 'openai' : 'default';
+    return (tokens / 1_000_000) * COST_RATES[provider];
+}
+
 export default function TokenLedgerPage() {
     const [page, setPage] = useState(1);
     const [txType, setTxType] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [data, setData] = useState(null);
     const [pool, setPool] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -25,19 +41,21 @@ export default function TokenLedgerPage() {
     const [userSearching, setUserSearching] = useState(false);
     const userSearchTimer = React.useRef(null);
 
+    const dateRange = (dateFrom && dateTo) ? { from: dateFrom, to: dateTo } : (dateFrom ? { from: dateFrom, to: new Date().toISOString().split('T')[0] } : null);
+
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const [tx, p] = await Promise.all([
-                adminGetTransactions(page, 20, null, txType || null),
+                adminGetTransactions(page, 20, null, txType || null, dateRange),
                 adminGetTokenPool().catch(() => null),
             ]);
             setData(tx);
             setPool(p);
         } catch (e) { setError(e.message); }
         finally { setLoading(false); }
-    }, [page, txType]);
+    }, [page, txType, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { load(); }, [load]);
 
@@ -81,13 +99,20 @@ export default function TokenLedgerPage() {
     const transactions = Array.isArray(data) ? data : data?.transactions || data?.items || [];
     const total = data?.total || transactions.length;
 
+    // Calculate total cost from visible transactions
+    const totalCost = transactions.reduce((sum, tx) => {
+        const amt = Number(tx.amount || 0);
+        if (amt < 0) return sum + estimateCost(amt, tx.reason);
+        return sum;
+    }, 0);
+
     const columns = [
         { key: 'id', label: 'ID', width: 60 },
         { key: 'user_id', label: 'User', render: (v, row) => (
             <span>{row.user_email || row.email || `#${v}`}</span>
         )},
         { key: 'type', label: 'Type', render: (v, row) => <StatusBadge status={v || row.transaction_type} size="sm" /> },
-        { key: 'amount', label: 'Amount', render: (v) => {
+        { key: 'amount', label: 'Tokens', render: (v) => {
             const num = Number(v);
             const positive = num > 0;
             return (
@@ -96,7 +121,17 @@ export default function TokenLedgerPage() {
                 </span>
             );
         }},
-        { key: 'reason', label: 'Reason', render: v => v || '—' },
+        { key: 'amount', label: 'Est. Cost', render: (v, row) => {
+            const num = Number(v);
+            if (num >= 0) return <span style={{ color: T.muted }}>—</span>;
+            const cost = estimateCost(v, row.reason);
+            return (
+                <span style={{ fontWeight: 600, color: T.warning, fontSize: 12 }}>
+                    ${cost.toFixed(4)}
+                </span>
+            );
+        }},
+        { key: 'reason', label: 'Reason', render: v => <span style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={v}>{v || '—'}</span> },
         { key: 'created_at', label: 'Date', render: v => <span className="admin-date-cell">{formatDate(v)}</span> },
     ];
 
@@ -118,7 +153,7 @@ export default function TokenLedgerPage() {
 
             {/* Summary Cards */}
             {pool && (
-                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 24 }}>
                     <div className="admin-stat-card admin-stat-accent-blue">
                         <div className="admin-stat-icon"><Coins size={22} /></div>
                         <div className="admin-stat-body">
@@ -145,6 +180,15 @@ export default function TokenLedgerPage() {
                         <div className="admin-stat-body">
                             <div className="admin-stat-value" style={{ color: T.warning }}>{fmt(pool.weekly_burn_rate)}</div>
                             <div className="admin-stat-label">Weekly Burn Rate</div>
+                        </div>
+                    </div>
+                    <div className="admin-stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+                        <div className="admin-stat-icon" style={{ color: '#f59e0b' }}>$</div>
+                        <div className="admin-stat-body">
+                            <div className="admin-stat-value" style={{ color: '#f59e0b' }}>
+                                ${((Number(pool.total_consumed ?? pool.total_used ?? 0) / 1_000_000) * COST_RATES.default).toFixed(2)}
+                            </div>
+                            <div className="admin-stat-label">Est. Total Cost</div>
                         </div>
                     </div>
                 </div>
@@ -225,7 +269,7 @@ export default function TokenLedgerPage() {
             )}
 
             {/* Filter */}
-            <div className="admin-toolbar">
+            <div className="admin-toolbar" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <select className="admin-search" style={{ width: 'auto' }} value={txType} onChange={e => { setTxType(e.target.value); setPage(1); }}>
                     <option value="">All Types</option>
                     <option value="grant">Grant</option>
@@ -233,7 +277,18 @@ export default function TokenLedgerPage() {
                     <option value="refund">Refund</option>
                     <option value="expiry">Expiry</option>
                 </select>
-                <span className="admin-count">{total} transactions</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label style={{ fontSize: 11, color: T.muted }}>From:</label>
+                    <input type="date" className="admin-input" style={{ width: 140, padding: '4px 8px', fontSize: 12 }} value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label style={{ fontSize: 11, color: T.muted }}>To:</label>
+                    <input type="date" className="admin-input" style={{ width: 140, padding: '4px 8px', fontSize: 12 }} value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+                </div>
+                {(dateFrom || dateTo) && (
+                    <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear dates</button>
+                )}
+                <span className="admin-count" style={{ marginLeft: 'auto' }}>{total} transactions{totalCost > 0 ? ` • Est. $${totalCost.toFixed(2)} on this page` : ''}</span>
             </div>
 
             <AdminTable

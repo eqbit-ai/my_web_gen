@@ -1,1271 +1,749 @@
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400;500;600;700&family=Spectral:wght@400;500;600;700;800&display=swap');
 
+/* ═══ Design Tokens ═══ */
 :root {
-  --primary: #1a1a2e;
-  --gold: #c9a96e;
-  --gold-light: #d4bb8a;
-  --bg: #faf8f5;
-  --text: #2c2c2c;
-  --text-light: #6b6b6b;
-  --white: #ffffff;
-  --dark-overlay: rgba(26, 26, 46, 0.7);
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.restaurant-page {
-  font-family: 'Lato', sans-serif;
-  color: var(--text);
-  background: var(--bg);
-  line-height: 1.7;
-  overflow-x: hidden;
-}
-
-.restaurant-page h1,
-.restaurant-page h2,
-.restaurant-page h3,
-.restaurant-page h4 {
-  font-family: 'Playfair Display', serif;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.restaurant-page a {
-  text-decoration: none;
-  color: inherit;
-  transition: color 0.3s ease;
-}
-
-.restaurant-page img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Navigation */
-.rest-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding: 1.2rem 5%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background 0.4s ease, padding 0.4s ease;
-  background: transparent;
-}
-
-.rest-nav.scrolled {
-  background: var(--primary);
-  padding: 0.8rem 5%;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
-}
-
-.rest-nav-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.8rem;
-  color: var(--white);
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-.rest-nav-logo span {
-  color: var(--gold);
-}
-
-.rest-nav-links {
-  display: flex;
-  list-style: none;
-  gap: 2.5rem;
-}
-
-.rest-nav-links a {
-  color: var(--white);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  position: relative;
-  padding-bottom: 4px;
-}
-
-.rest-nav-links a::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--gold);
-  transition: width 0.3s ease;
-}
-
-.rest-nav-links a:hover::after {
-  width: 100%;
-}
-
-.rest-hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  z-index: 1001;
-}
-
-.rest-hamburger span {
-  width: 28px;
-  height: 2px;
-  background: var(--white);
-  transition: all 0.3s ease;
-}
-
-/* Hero */
-.rest-hero {
-  position: relative;
-  height: 100vh;
-  min-height: 700px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--white);
-  background: url('https://images.pexels.com/photos/18404554/pexels-photo-18404554.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
-}
-
-.rest-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(26,26,46,0.5) 0%, rgba(26,26,46,0.75) 100%);
-}
-
-.rest-hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 800px;
-  padding: 0 2rem;
-}
-
-.rest-hero-tagline {
-  font-family: 'Lato', sans-serif;
-  font-size: 0.9rem;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1.5rem;
-  font-weight: 700;
-}
-
-.rest-hero h1 {
-  font-size: 4.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  letter-spacing: 2px;
-}
-
-.rest-hero h1 em {
-  font-style: italic;
-  color: var(--gold);
-}
-
-.rest-hero-desc {
-  font-size: 1.15rem;
-  font-weight: 300;
-  max-width: 550px;
-  margin: 0 auto 2.5rem;
-  opacity: 0.9;
-  line-height: 1.8;
-}
-
-.rest-btn {
-  display: inline-block;
-  padding: 1rem 3rem;
-  border: 2px solid var(--gold);
-  color: var(--gold);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  transition: all 0.4s ease;
-  background: transparent;
-  cursor: pointer;
-  font-family: 'Lato', sans-serif;
-}
-
-.rest-btn:hover {
-  background: var(--gold);
-  color: var(--primary);
-}
-
-.rest-btn-filled {
-  background: var(--gold);
-  color: var(--primary);
-}
-
-.rest-btn-filled:hover {
-  background: transparent;
-  color: var(--gold);
-}
-
-/* Section Styling */
-.rest-section {
-  padding: 7rem 5%;
-}
-
-.rest-section-header {
-  text-align: center;
-  margin-bottom: 4rem;
-}
-
-.rest-section-header .rest-overline {
-  font-size: 0.8rem;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 700;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.rest-section-header h2 {
-  font-size: 3rem;
-  color: var(--primary);
-  margin-bottom: 1.2rem;
-}
-
-.rest-section-header p {
-  max-width: 600px;
-  margin: 0 auto;
-  color: var(--text-light);
-  font-size: 1.05rem;
-}
-
-.rest-divider {
-  width: 60px;
-  height: 2px;
-  background: var(--gold);
-  margin: 1.5rem auto;
-}
-
-/* About / Story */
-.rest-about {
-  background: var(--white);
-}
-
-.rest-about-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.rest-about-image {
-  position: relative;
-}
-
-.rest-about-image img {
-  width: 100%;
-  height: 500px;
-  object-fit: cover;
-}
-
-.rest-about-image::after {
-  content: '';
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: -20px;
-  bottom: -20px;
-  border: 2px solid var(--gold);
-  z-index: -1;
-}
-
-.rest-about-text h3 {
-  font-size: 2.2rem;
-  color: var(--primary);
-  margin-bottom: 1.5rem;
-}
-
-.rest-about-text p {
-  color: var(--text-light);
-  margin-bottom: 1.2rem;
-  font-size: 1.05rem;
-}
-
-.rest-about-signature {
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
-  font-size: 1.4rem;
-  color: var(--gold);
-  margin-top: 1.5rem;
-}
-
-/* Menu */
-.rest-menu {
-  background: var(--bg);
-}
-
-.rest-menu-categories {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 3rem;
-  flex-wrap: wrap;
-}
-
-.rest-menu-cat-btn {
-  padding: 0.6rem 2rem;
-  border: 1px solid var(--gold);
-  background: transparent;
-  color: var(--primary);
-  font-family: 'Lato', sans-serif;
-  font-size: 0.8rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 700;
-}
-
-.rest-menu-cat-btn.active,
-.rest-menu-cat-btn:hover {
-  background: var(--gold);
-  color: var(--white);
-}
-
-.rest-menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.rest-menu-card {
-  background: var(--white);
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.rest-menu-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-}
-
-.rest-menu-card-img {
-  height: 240px;
-  overflow: hidden;
-}
-
-.rest-menu-card-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.rest-menu-card:hover .rest-menu-card-img img {
-  transform: scale(1.08);
-}
-
-.rest-menu-card-body {
-  padding: 1.8rem;
-}
-
-.rest-menu-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.8rem;
-}
-
-.rest-menu-card-top h4 {
-  font-size: 1.3rem;
-  color: var(--primary);
-}
-
-.rest-menu-price {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  color: var(--gold);
-  font-weight: 600;
-  white-space: nowrap;
-  margin-left: 1rem;
-}
-
-.rest-menu-card-body p {
-  color: var(--text-light);
-  font-size: 0.95rem;
-}
-
-/* Chef's Special */
-.rest-special {
-  background: var(--primary);
-  color: var(--white);
-  position: relative;
-  overflow: hidden;
-}
-
-.rest-special-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.rest-special-text .rest-overline {
-  color: var(--gold);
-  font-size: 0.8rem;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.rest-special-text h2 {
-  font-size: 2.8rem;
-  color: var(--white);
-  margin-bottom: 1.5rem;
-}
-
-.rest-special-text h2 em {
-  color: var(--gold);
-  font-style: italic;
-}
-
-.rest-special-text p {
-  color: rgba(255,255,255,0.7);
-  margin-bottom: 1rem;
-  font-size: 1.05rem;
-}
-
-.rest-special-price {
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  color: var(--gold);
-  margin: 1.5rem 0 2rem;
-}
-
-.rest-special-img img {
-  width: 100%;
-  height: 500px;
-  object-fit: cover;
-}
-
-/* Testimonials */
-.rest-testimonials {
-  background: var(--white);
-}
-
-.rest-testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.rest-testimonial-card {
-  padding: 2.5rem;
-  background: var(--bg);
-  position: relative;
-  border-bottom: 3px solid var(--gold);
-}
-
-.rest-testimonial-quote {
-  font-family: 'Playfair Display', serif;
-  font-size: 3rem;
-  color: var(--gold);
-  opacity: 0.3;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.rest-testimonial-card p {
-  font-size: 1.05rem;
-  color: var(--text-light);
-  font-style: italic;
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
-}
-
-.rest-testimonial-author {
-  font-weight: 700;
-  color: var(--primary);
-  font-size: 0.95rem;
-}
-
-.rest-testimonial-role {
-  color: var(--gold);
-  font-size: 0.8rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.rest-stars {
-  color: var(--gold);
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  letter-spacing: 3px;
-}
-
-/* Reservation CTA */
-.rest-reservation {
-  background: url('https://images.pexels.com/photos/15671273/pexels-photo-15671273.jpeg?auto=compress&cs=tinysrgb&h=650&w=940') center/cover no-repeat;
-  position: relative;
-  text-align: center;
-  color: var(--white);
-}
-
-.rest-reservation::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--dark-overlay);
-}
-
-.rest-reservation-content {
-  position: relative;
-  z-index: 1;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.rest-reservation-content .rest-overline {
-  color: var(--gold);
-  font-size: 0.8rem;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.rest-reservation-content h2 {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-}
-
-.rest-reservation-content p {
-  font-size: 1.1rem;
-  opacity: 0.85;
-  margin-bottom: 2.5rem;
-  font-weight: 300;
-}
-
-.rest-reservation-phone {
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  color: var(--gold);
-  display: block;
-  margin-top: 2rem;
-  letter-spacing: 2px;
-}
-
-/* Gallery */
-.rest-gallery {
-  background: var(--bg);
-}
-
-.rest-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 280px);
-  gap: 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.rest-gallery-item {
-  overflow: hidden;
-  position: relative;
-}
-
-.rest-gallery-item:nth-child(1) {
-  grid-column: span 2;
-  grid-row: span 2;
-}
-
-.rest-gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.rest-gallery-item:hover img {
-  transform: scale(1.06);
-}
-
-.rest-gallery-item::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(26,26,46,0);
-  transition: background 0.4s ease;
-}
-
-.rest-gallery-item:hover::after {
-  background: rgba(26,26,46,0.2);
-}
-
-/* Contact */
-.rest-contact {
-  background: var(--white);
-}
-
-.rest-contact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 3rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.rest-contact-card {
-  text-align: center;
-  padding: 2.5rem;
-}
-
-.rest-contact-icon {
-  width: 60px;
-  height: 60px;
-  border: 2px solid var(--gold);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.5rem;
-  color: var(--gold);
-  font-size: 1.3rem;
-}
-
-.rest-contact-card h4 {
-  font-size: 1.3rem;
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-
-.rest-contact-card p {
-  color: var(--text-light);
-  font-size: 0.95rem;
-  line-height: 1.8;
-}
-
-.rest-hours-table {
-  width: 100%;
-  margin-top: 1rem;
-}
-
-.rest-hours-table tr td {
-  padding: 0.4rem 0;
-  color: var(--text-light);
-  font-size: 0.95rem;
-}
-
-.rest-hours-table tr td:first-child {
-  font-weight: 700;
-  color: var(--primary);
-  text-align: left;
-}
-
-.rest-hours-table tr td:last-child {
-  text-align: right;
-}
-
-/* Footer */
-.rest-footer {
-  background: var(--primary);
-  color: rgba(255,255,255,0.6);
-  padding: 3rem 5%;
-  text-align: center;
-}
-
-.rest-footer-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
-  color: var(--white);
-  margin-bottom: 1rem;
-  letter-spacing: 2px;
-}
-
-.rest-footer-logo span {
-  color: var(--gold);
-}
-
-.rest-footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  list-style: none;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.rest-footer-links a {
-  color: rgba(255,255,255,0.6);
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.rest-footer-links a:hover {
-  color: var(--gold);
-}
-
-.rest-footer-copy {
-  font-size: 0.85rem;
-  margin-top: 1rem;
-}
-
-/* Animations */
-.rest-fade-in {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.rest-fade-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.rest-fade-in-left {
-  opacity: 0;
-  transform: translateX(-40px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.rest-fade-in-left.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.rest-fade-in-right {
-  opacity: 0;
-  transform: translateX(40px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.rest-fade-in-right.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Responsive */
+  --primary: #b45309;
+  --secondary: #b45309;
+  --accent: #16a34a;
+  --bg: #fefce8;
+  --bg-surface: #ffffff;
+  --text: #1c1917;
+  --text-muted: #78716c;
+  --font-heading: 'Spectral', serif;
+  --font-body: 'Karla', sans-serif;
+  --radius: 16px;
+  --radius-btn: 12px;
+  --shadow: 0 4px 16px 0 rgba(180,83,9,0.07);
+  --shadow-hover: 0 20px 60px rgba(0,0,0,0.15);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══ Base Reset & Typography ═══ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; min-height: 100vh; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 700; line-height: 1.2; color: var(--text); }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; }
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* ═══ Layout System ═══ */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+.container-wide { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+.container-narrow { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+.container-xs { max-width: 600px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ═══ Grid System ═══ */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
 @media (max-width: 1024px) {
-  .rest-hero h1 {
-    font-size: 3.2rem;
-  }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
+}
+.text-center { text-align: center; }
+.md-order-1 { order: 0; }
+.md-order-2 { order: 0; }
+@media (min-width: 769px) {
+  .md-order-1 { order: 1; }
+  .md-order-2 { order: 2; }
+}
 
-  .rest-gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 240px);
-  }
+/* ═══ Section Styles ═══ */
+section[data-section-type] { padding: 4rem 0; position: relative; opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; animation: sectionFallback 0.8s ease forwards; animation-delay: 1s; }
+section[data-section-type].visible { opacity: 1; transform: translateY(0); animation: none; }
+@keyframes sectionFallback { to { opacity: 1; transform: translateY(0); } }
+[data-aos] { animation: sectionFallback 0.6s ease forwards; animation-delay: 1.5s; }
+[data-aos].aos-animate { animation: none; }
+footer, footer[data-section-type], footer section[data-section-type] { opacity: 1; transform: none; animation: none; }
+@media (min-width: 769px) {
+  section[data-section-type] { padding: 5rem 0; }
+}
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-title { font-size: clamp(1.75rem, 3vw, 2.5rem); margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+.section-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 36rem; margin: 0 auto; line-height: 1.7; }
 
-  .rest-gallery-item:nth-child(1) {
-    grid-column: span 2;
-    grid-row: span 1;
-  }
+/* Section background rhythm */
+section[data-section-type="features"],
+section[data-section-type="stats"] { background: var(--bg-surface); }
+section[data-section-type="testimonials"],
+section[data-section-type="pricing"] { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
+
+/* ═══ Buttons ═══ */
+.btn-primary { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.8rem 2rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 0.95rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; letter-spacing: 0.01em; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 30%, transparent); }
+.btn-secondary { display: inline-block; border: 2px solid var(--primary); color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 1rem; background: transparent; cursor: pointer; transition: var(--transition); text-align: center; }
+.btn-secondary:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+.btn-primary-light { display: inline-block; background: white; color: var(--primary); padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }
+.btn-primary-light:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.btn-secondary-light { display: inline-block; border: 2px solid white; color: white; padding: 0.75rem 1.75rem; border-radius: var(--radius-btn); font-weight: 600; background: transparent; cursor: pointer; transition: var(--transition); }
+.btn-secondary-light:hover { background: white; color: var(--primary); }
+.btn-group { display: flex; flex-wrap: wrap; gap: 1rem; }
+.btn-group.center { justify-content: center; }
+
+/* ═══ Cards ═══ */
+.card { background: var(--bg-surface); border-radius: var(--radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
+.card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0; transition: opacity 0.3s; }
+.card:hover::after { opacity: 1; }
+.card:hover h3 { color: var(--accent); transition: color 0.3s ease; }
+.card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+.card-text { color: var(--text-muted); line-height: 1.7; font-size: 0.95rem; }
+.card-body { padding: 1.25rem; }
+.card-image { width: 100%; height: 14rem; max-height: 260px; object-fit: cover; display: block; }
+.icon-box { width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; margin-bottom: 1.25rem; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+.card-link { color: var(--primary); font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: gap 0.3s; }
+.card-link:hover { gap: 0.75rem; }
+
+/* ═══ Images ═══ */
+.img-cover { width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.4s ease; }
+.img-cover:hover { transform: scale(1.02); }
+.img-wrapper { overflow: hidden; border-radius: var(--radius); }
+.team-photo { width: 100%; height: 14rem; max-height: 240px; object-fit: cover; display: block; }
+
+/* ═══ Navbar ═══ */
+.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(12px); transition: var(--transition); padding: 1rem 0; }
+body { padding-top: 80px; }
+.navbar-light { background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.navbar-dark { background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.08); }
+nav.nav-scrolled { background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(16px); }
+.navbar-inner { display: flex; justify-content: space-between; align-items: center; }
+.nav-brand { display: flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 1.15rem; color: var(--text); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { font-weight: 500; color: var(--text); transition: color 0.3s; position: relative; }
+.nav-links a::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }
+.nav-links a:hover { color: var(--primary); }
+.nav-links a:hover::after { width: 100%; }
+.nav-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.nav-cta { display: inline-block; }
+.mobile-cta { display: none; }
+@media (max-width: 768px) {
+  .nav-links { display: none !important; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; padding: 1.5rem 2rem; gap: 1.25rem; z-index: 999; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .nav-links.active { display: flex !important; background: var(--bg); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .nav-toggle { display: flex !important; }
+  .nav-cta { display: none !important; }
+  .mobile-cta { display: block !important; }
+}
+
+/* ═══ Hero ═══ */
+.hero-section { padding: 10rem 0 4rem !important; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }
+@media (min-width: 769px) { .hero-section { padding: 10rem 0 5rem !important; } }
+.hero-section.hero-section-flush { margin-top: -80px; padding-top: 0 !important; min-height: 100vh; }
+.hero-heading { font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.02em; }
+.hero-subtitle { font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; margin-left: auto; margin-right: auto; }
+.hero-center-content .hero-subtitle { margin-left: auto; margin-right: auto; }
+.trust-line { font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; }
+.hero-center-content .hero-ctas { justify-content: center; }
+.hero-full-overlay { text-align: left; }
+.hero-full-overlay .hero-subtitle { margin-left: 0; margin-right: 0; }
+.hero-full-overlay .hero-ctas { justify-content: flex-start; }
+.hero-full-overlay .trust-line { text-align: left; }
+.hero-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; min-height: 70vh; }
+.hero-split-asymmetric { grid-template-columns: 55% 45%; }
+@media (max-width: 768px) { .hero-split-grid { grid-template-columns: 1fr; min-height: auto; } }
+.hero-center-content { text-align: center; max-width: 48rem; margin: 0 auto; width: 100%; }
+.hero-bg-cover { position: relative; width: 100%; min-height: min(90vh, 800px); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }
+.hero-bg-cover > .container, .hero-bg-cover > .container-wide, .hero-bg-cover > .container-narrow { width: 100%; }
+.hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
+.hero-overlay-left { background: linear-gradient(to right, rgba(0,0,0,0.55), rgba(0,0,0,0.35), rgba(0,0,0,0.1)); }
+.hero-overlay-center { background: linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.35), rgba(0,0,0,0.5)); }
+.hero-overlay-modern { background: linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25)); }
+.hero-bg-cover > *:not(.hero-overlay) { position: relative; z-index: 2; }
+.text-light { color: #fff !important; }
+.hero-animated-bg { min-height: 100vh; display: flex; align-items: center; position: relative; padding-top: 80px; background-size: 400% 400%; animation: gradientShift 8s ease infinite; }
+.text-light { color: white; }
+.text-light .hero-heading { color: white; }
+.text-light .hero-subtitle { color: rgba(255,255,255,0.85); }
+.text-light .trust-line { color: rgba(255,255,255,0.7); }
+.text-light .section-label { color: rgba(255,255,255,0.8); }
+.text-light .label-line { background: rgba(255,255,255,0.6); }
+.bg-number { display: none !important; }
+.hero-section > .container, .hero-section > .container-wide, .hero-section > .container-narrow { position: relative; z-index: 1; }
+.section-label { display: inline-flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.25em; font-weight: 600; color: var(--accent); margin-bottom: 1.5rem; }
+.label-line { width: 2.5rem; height: 2px; background: var(--accent); display: inline-block; }
+.floating-card { position: absolute; bottom: -1.25rem; left: -1.25rem; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-hover); display: flex; align-items: center; gap: 0.75rem; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+@media (max-width: 768px) { .floating-card { display: none; } }
+.browser-frame { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-hover); border: 1px solid rgba(0,0,0,0.1); }
+.browser-dots { display: flex; gap: 0.375rem; padding: 0.75rem 1rem; background: rgba(0,0,0,0.04); }
+.browser-dots span { width: 0.625rem; height: 0.625rem; border-radius: 50%; }
+.browser-dots span:nth-child(1) { background: #ff5f57; }
+.browser-dots span:nth-child(2) { background: #ffbd2e; }
+.browser-dots span:nth-child(3) { background: #28c940; }
+
+/* ═══ Gradient & Decorative ═══ */
+.gradient-text { background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.card-grid > *:nth-child(3n+1) { transition-delay: 0ms; }
+.card-grid > *:nth-child(3n+2) { transition-delay: 120ms; }
+.card-grid > *:nth-child(3n+3) { transition-delay: 240ms; }
+
+/* ═══ Pricing ═══ */
+.pricing-card.featured { transform: scale(1.05); border: 2px solid var(--primary) !important; z-index: 1; }
+.plan-price { font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; color: var(--accent); margin: 1rem 0; }
+.plan-period { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
+.plan-features { text-align: left; margin: 1.5rem 0; }
+.plan-feature { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; }
+.popular-badge { position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 1rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ═══ Stats ═══ */
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
+.stat-icon { width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--accent); }
+.stat-number { font-size: clamp(2.5rem, 4vw, 3rem); font-weight: 700; line-height: 1; white-space: nowrap; }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600; color: var(--text-muted); max-width: 180px; }
+
+/* ═══ FAQ ═══ */
+.faq-item { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.faq-question { width: 100%; background: transparent; border: none; padding: 1.25rem 0; display: flex; justify-content: space-between; align-items: center; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: left; color: var(--text); font-family: inherit; }
+.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.faq-item.active .faq-answer { max-height: 500px; padding-bottom: 1.25rem; }
+.faq-item.active .faq-question i { transform: rotate(180deg); transition: transform 0.3s; }
+
+/* ═══ Testimonials ═══ */
+.stars { color: #f59e0b; margin-bottom: 0.75rem; }
+.testimonial-quote { color: var(--text-muted); line-height: 1.7; font-style: italic; margin-bottom: 1.25rem; }
+.testimonial-quote-lg { font-size: 1.2rem; font-style: italic; line-height: 1.8; margin: 1.5rem 0; }
+.testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
+.testimonial-slide { display: none; }
+.testimonial-slide.active { display: block; }
+.slider-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; }
+.slider-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }
+.slider-dot.active { background: var(--primary); }
+
+/* ═══ Footer ═══ */
+footer { margin-top: 4rem; position: relative; z-index: 1; }
+.footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+@media (max-width: 1024px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; } }
+.footer-description { font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 280px; }
+.footer-heading { font-weight: 700; color: white; margin-bottom: 1rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 0.5rem; }
+.footer-links a { color: rgba(255,255,255,0.7); transition: color 0.3s; font-size: 0.9rem; }
+.footer-links a:hover { color: white; }
+.social-links { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.social-link { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: white; border: 1px solid rgba(255,255,255,0.1); transition: var(--transition); }
+.social-link:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-2px); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 2.5rem; padding-top: 1.5rem; text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.5); }
+.contact-item { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+.contact-icon { color: var(--accent); width: 1.25rem; margin-top: 0.25rem; flex-shrink: 0; }
+
+/* ═══ Forms ═══ */
+.contact-form { display: flex; flex-direction: column; gap: 1rem; }
+.contact-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .contact-form .form-row { grid-template-columns: 1fr; } }
+.form-input { width: 100%; padding: 1rem; border-radius: var(--radius, 0.5rem); border: 1px solid rgba(255,255,255,0.12); background: var(--bg-surface, rgba(255,255,255,0.05)); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; box-sizing: border-box; }
+.form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent); }
+.form-input::placeholder { color: var(--text-muted, rgba(255,255,255,0.4)); }
+.form-textarea { resize: vertical; min-height: 120px; }
+.newsletter-form { display: flex; gap: 0.75rem; max-width: 28rem; margin: 0 auto; }
+@media (max-width: 640px) { .newsletter-form { flex-direction: column; } }
+.form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; opacity: 0.7; }
+
+/* ═══ Gallery & Carousel ═══ */
+.gallery-item { overflow: hidden; border-radius: var(--radius); cursor: pointer; }
+.gallery-image { width: 100%; height: 14rem; max-height: 280px; object-fit: cover; transition: transform 0.5s ease; }
+.gallery-item:hover .gallery-image { transform: scale(1.1); }
+.gallery-lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; padding: 1rem; }
+.gallery-lightbox.active { display: flex; }
+.lightbox-close { position: absolute; top: 1.5rem; right: 1.5rem; color: white; font-size: 2rem; background: transparent; border: none; cursor: pointer; z-index: 10; }
+.lightbox-prev, .lightbox-next { position: absolute; top: 50%; transform: translateY(-50%); color: white; font-size: 1.5rem; background: rgba(0,0,0,0.3); border: none; cursor: pointer; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+.lightbox-prev { left: 1rem; }
+.lightbox-next { right: 1rem; }
+.lightbox-prev:hover, .lightbox-next:hover { background: rgba(0,0,0,0.45); }
+.lightbox-img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 0.5rem; }
+.carousel-container { position: relative; overflow: hidden; border-radius: var(--radius); }
+.carousel-track { display: flex; transition: transform 0.5s ease-in-out; }
+.carousel-slide { min-width: 100%; position: relative; }
+.carousel-image { width: 100%; height: 20rem; max-height: 380px; object-fit: cover; }
+@media (min-width: 769px) { .carousel-image { height: 24rem; max-height: 400px; } }
+.carousel-caption { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.55), transparent); padding: 2rem; color: white; }
+.carousel-prev, .carousel-next { position: absolute; top: 50%; transform: translateY(-50%); width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; z-index: 10; }
+.carousel-prev { left: 1rem; }
+.carousel-next { right: 1rem; }
+.carousel-prev:hover, .carousel-next:hover { background: rgba(255,255,255,0.4); }
+.carousel-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+.carousel-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--primary); background: transparent; cursor: pointer; padding: 0; transition: background 0.3s; }
+.carousel-dot.active { background: var(--primary); }
+
+/* ═══ Masonry ═══ */
+.masonry-grid { column-count: 3; column-gap: 1.5rem; }
+@media (max-width: 1024px) { .masonry-grid { column-count: 2; } }
+@media (max-width: 768px) { .masonry-grid { column-count: 1; } }
+.masonry-item { break-inside: avoid; margin-bottom: 1.5rem; position: relative; border-radius: var(--radius); overflow: hidden; }
+.masonry-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.65)); color: white; padding: 1.5rem; transform: translateY(100%); transition: transform 0.3s ease; }
+.masonry-item:hover .masonry-overlay { transform: translateY(0); }
+
+/* ═══ Timeline ═══ */
+.timeline-item { display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }
+.timeline-date { min-width: 5rem; text-align: right; font-size: 0.875rem; font-weight: 700; color: var(--accent); }
+.timeline-dot { width: 1rem; height: 1rem; min-width: 1rem; border-radius: 50%; background: var(--primary); margin-top: 0.25rem; z-index: 10; box-shadow: 0 0 0 4px var(--bg); }
+.timeline-card { flex: 1; background: var(--bg-surface); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+
+/* ═══ Logo Cloud ═══ */
+.logo-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.5rem; }
+.logo-item { padding: 0.75rem 1rem; }
+.logo-text { font-size: 1rem; font-weight: 700; letter-spacing: 0.02em; opacity: 0.4; transition: opacity 0.3s; white-space: nowrap; color: var(--text); }
+.logo-text:hover { opacity: 0.8; }
+
+/* ═══ Trust Badges ═══ */
+.trust-badges { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; }
+@media (min-width: 769px) { .trust-badges { gap: 3rem; } }
+.trust-badge { display: flex; align-items: center; gap: 0.75rem; opacity: 0.6; transition: opacity 0.3s; }
+.trust-badge:hover { opacity: 1; }
+.badge-icon { font-size: 1.5rem; color: var(--accent); }
+
+/* ═══ Feature Patterns ═══ */
+.feature-split-list { display: flex; flex-direction: column; gap: 3rem; }
+.feature-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+.feature-text { color: var(--text-muted); line-height: 1.7; }
+.stacked-list { border-top: 1px solid rgba(255,255,255,0.1); }
+.stacked-item { display: flex; gap: 1.25rem; align-items: flex-start; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+@media (max-width: 768px) { .stacked-item { flex-direction: column; } }
+.step-item { display: flex; gap: 1.5rem; align-items: flex-start; padding: 2rem 0; position: relative; }
+.step-number { width: 3.5rem; height: 3.5rem; min-width: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: white; z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+
+/* ═══ Service Modal ═══ */
+.modal-trigger { cursor: pointer; }
+.modal-trigger:hover .icon-box { transform: scale(1.1); transition: transform 0.3s; }
+.detail-modal { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; padding: 1rem; }
+.detail-modal.active { display: flex; }
+.modal-content { background: var(--bg); border-radius: var(--radius); max-width: 32rem; width: 100%; padding: 2rem; position: relative; box-shadow: var(--shadow-hover); max-height: 90vh; overflow-y: auto; }
+.modal-close { position: absolute; top: 1rem; right: 1rem; color: var(--text-muted); font-size: 1.25rem; background: transparent; border: none; cursor: pointer; }
+.modal-close:hover { color: var(--text); }
+
+/* ═══ Comparison Table ═══ */
+.comparison-table { width: 100%; border-collapse: collapse; text-align: left; }
+.comparison-table th { padding: 1rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1); }
+.comparison-table td { padding: 0.875rem 1rem; font-size: 0.875rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.comparison-table tr:hover { background: rgba(255,255,255,0.02); }
+.check-icon { color: #10b981; }
+.xmark-icon { color: #ef4444; opacity: 0.5; }
+
+/* ═══ Animations ═══ */
+@keyframes floatOrb { 0% { transform: translateY(0); } 50% { transform: translateY(-30px); } 100% { transform: translateY(0); } }
+@keyframes logoGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* ═══ Utilities ═══ */
+.relative { position: relative; }
+.z-10 { z-index: 10; }
+.logo-mark { width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-size: 200% 200%; animation: logoGradient 6s ease infinite; }
+
+.typed-cursor { color: var(--primary); font-weight: 100; }
+.search-dropdown.active { display: block; }
+.whatsapp-float { position: fixed !important; bottom: 1.5rem !important; left: 1.5rem !important; right: auto !important; z-index: 50; animation: floatOrb 3s ease-in-out infinite; animation-duration: 3s; }
+#back-to-top { position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; left: auto !important; z-index: 50; }
+#back-to-top.visible { opacity: 1; pointer-events: auto; }
+[data-splitting] .char { display: inline-block; opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }
+[data-splitting].visible .char { opacity: 1; transform: translateY(0); }
+@media (max-width: 768px) { .steps-container::before { left: 24px; } .timeline-container::before { left: 98px; } }
+
+/* ═══ Custom Animations & Effects ═══ */
+.floating-element { animation: floatOrb 6s ease-in-out infinite; }
+
+.hero-accent-border {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 100px;
+  height: 100px;
+  border: 2px solid rgba(180, 83, 9, 0.3);
+  border-radius: var(--radius);
+  z-index: 1;
+}
+
+.feature-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-check-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.feature-check-list .check-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.testimonial-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonial-card::before {
+  content: '"';
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  font-size: 3rem;
+  color: var(--primary);
+  opacity: 0.2;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.cta-decorative-circle {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  top: -60px;
+  right: -60px;
+  z-index: 1;
+}
+
+.contact-info-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+  box-shadow: var(--shadow);
 }
 
 @media (max-width: 768px) {
-  .rest-nav-links {
+  .hero-accent-border {
     display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--primary);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-  }
-
-  .rest-nav-links.open {
-    display: flex;
-  }
-
-  .rest-nav-links a {
-    font-size: 1.1rem;
-  }
-
-  .rest-hamburger {
-    display: flex;
-  }
-
-  .rest-hero h1 {
-    font-size: 2.5rem;
-  }
-
-  .rest-hero-desc {
-    font-size: 1rem;
-  }
-
-  .rest-section {
-    padding: 4rem 5%;
-  }
-
-  .rest-section-header h2 {
-    font-size: 2.2rem;
-  }
-
-  .rest-about-grid,
-  .rest-special-grid {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-
-  .rest-about-image::after {
-    display: none;
-  }
-
-  .rest-about-image img,
-  .rest-special-img img {
-    height: 350px;
-  }
-
-  .rest-menu-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rest-contact-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rest-gallery-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(3, 200px);
-  }
-
-  .rest-gallery-item:nth-child(1) {
-    grid-column: span 2;
-  }
-
-  .rest-reservation-content h2 {
-    font-size: 2.2rem;
-  }
-
-  .rest-testimonials-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rest-special-text h2 {
-    font-size: 2rem;
   }
 }
 
-@media (max-width: 480px) {
-  .rest-hero {
-    min-height: 600px;
-  }
-
-  .rest-hero h1 {
-    font-size: 2rem;
-  }
-
-  .rest-gallery-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-  }
-
-  .rest-gallery-item:nth-child(1) {
-    grid-column: span 1;
-  }
-
-  .rest-gallery-item {
-    height: 220px;
-  }
-
-  .rest-menu-categories {
-    gap: 0.5rem;
-  }
-
-  .rest-menu-cat-btn {
-    padding: 0.5rem 1.2rem;
-    font-size: 0.7rem;
-  }
+/* Light theme adjustments */
+.form-input {
+  border-color: rgba(0,0,0,0.08);
+  background: var(--bg-surface);
 }
+
+.card {
+  border-color: rgba(0,0,0,0.06);
+}
+
+.contact-info-card {
+  border-color: rgba(0,0,0,0.06);
+}
+
+/* Hero navbar clearance fix */
+section[data-section-type="hero"]:not(.hero-section-flush) { padding-top: 10rem !important; }
+section[data-section-type="hero"].hero-section-flush .hero-bg-cover { padding-top: 100px !important; }
+section[data-section-type="hero"].hero-section-flush .hero-animated-bg { padding-top: 100px !important; }
+/* Hero split-grid: if image column is empty, let text take full width */
+.hero-split-grid > div:only-child { grid-column: 1 / -1; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero-split-grid > .hero-image-wrapper:empty { display: none; }
+.hero-split-grid > .hero-image-wrapper:not(:has(img)) { display: none; }
 </style>
 
-<div class="restaurant-page">
-  <!-- Navigation -->
-  <nav class="rest-nav" id="restNav">
-    <div class="rest-nav-logo">Aurum <span>Dining</span></div>
-    <ul class="rest-nav-links" id="restNavLinks">
-      <li><a href="#rest-about" onclick="closeMenu()">Our Story</a></li>
-      <li><a href="#rest-menu" onclick="closeMenu()">Menu</a></li>
-      <li><a href="#rest-special" onclick="closeMenu()">Chef's Pick</a></li>
-      <li><a href="#rest-gallery" onclick="closeMenu()">Gallery</a></li>
-      <li><a href="#rest-contact" onclick="closeMenu()">Contact</a></li>
-      <li><a href="#rest-reservation" onclick="closeMenu()" class="rest-btn" style="padding:0.5rem 1.5rem;font-size:0.75rem;">Reserve</a></li>
+<nav data-section-id="section-0" class="navbar navbar-light">
+  <div class="container navbar-inner">
+    <a href="#hero" class="nav-brand">
+      <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">L</span>
+      <span>La Dolce Vita</span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+    <ul class="nav-links">
+      <li><a href="#hero">Home</a></li>
+      <li><a href="#features">Experience</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#testimonials">Reviews</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li class="mobile-cta"><a href="mailto:info@ladolcevita.ae" class="btn-primary">Reserve Now</a></li>
     </ul>
-    <div class="rest-hamburger" id="restHamburger" onclick="toggleMenu()" onkeydown="if(event.key==='Enter')toggleMenu()" role="button" tabindex="0">
-      <span></span><span></span><span></span>
-    </div>
-  </nav>
+    <a href="mailto:info@ladolcevita.ae" class="nav-cta btn-primary">Reserve Now</a>
+  </div>
+</nav>
 
-  <!-- Hero -->
-  <section class="rest-hero" id="rest-hero">
-    <div class="rest-hero-content">
-      <p class="rest-hero-tagline">Est. 2018 &mdash; Dubai</p>
-      <h1>The Art of<br><em>Fine Dining</em></h1>
-      <p class="rest-hero-desc">Where culinary mastery meets timeless elegance. Every dish is a celebration of flavor, crafted with passion and the finest ingredients from around the world.</p>
-      <a href="#rest-reservation" class="rest-btn">Reserve Your Table</a>
-    </div>
-  </section>
-
-  <!-- About / Story -->
-  <section class="rest-section rest-about" id="rest-about">
-    <div class="rest-about-grid">
-      <div class="rest-about-image rest-fade-in-left">
-        <img src="https://images.pexels.com/photos/691158/pexels-photo-691158.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Restaurant interior with warm lighting and elegant table settings">
+<section data-section-id="hero" data-section-type="hero_asymmetric" id="hero" class="hero-section hero-section-flush" style="background:linear-gradient(135deg,rgba(0,0,0,0.55),rgba(0,0,0,0.7)),url('https://images.pexels.com/photos/16985182/pexels-photo-16985182.jpeg');background-size:cover;background-position:center;">
+  <div class="hero-overlay hero-overlay-left"></div>
+  <div class="container-wide hero-split-grid hero-split-asymmetric text-light">
+    <div class="hero-full-overlay">
+      <span class="section-label">
+        <span class="label-line"></span>
+        AUTHENTIC ITALIAN
+      </span>
+      <h1 class="hero-heading">La Dolce Vita</h1>
+      <p class="hero-subtitle">Premium Italian Fine Dining in Dubai</p>
+      <p class="hero-subtitle">Handmade pasta, wood-fired pizzas, and curated Italian wines in a warm, candlelit ambiance. Experience authentic Italian hospitality in the heart of City Walk.</p>
+      <div class="hero-ctas">
+        <a href="mailto:info@ladolcevita.ae" class="btn-primary-light">Reserve a Table</a>
+        <a href="#features" class="btn-secondary-light">View Menu</a>
       </div>
-      <div class="rest-about-text rest-fade-in-right">
-        <span class="rest-overline" style="font-size:0.8rem;letter-spacing:5px;text-transform:uppercase;color:var(--gold);font-weight:700;display:block;margin-bottom:1rem;">Our Story</span>
-        <h3>A Legacy Built on Flavor</h3>
-        <p>Aurum Dining was born from a simple belief: that great food has the power to bring people together. Nestled in the heart of Dubai, our restaurant draws inspiration from Mediterranean and Middle Eastern culinary traditions, reimagined with modern technique and seasonal ingredients.</p>
-        <p>Our founder, Chef Alessandro Moran, spent two decades refining his craft in kitchens across Italy, Lebanon, and France before opening Aurum in 2018. Every detail, from the hand-selected ceramics to the curated wine list, is designed to create an unforgettable experience.</p>
-        <p class="rest-about-signature">&mdash; Chef Alessandro Moran</p>
-      </div>
+      <p class="trust-line">✨ Authentic recipes from Italy • 🍷 Sommelier-curated wines • 🕯️ Romantic ambiance</p>
     </div>
-  </section>
-
-  <!-- Menu Highlights -->
-  <section class="rest-section rest-menu" id="rest-menu">
-    <div class="rest-section-header rest-fade-in">
-      <span class="rest-overline">The Menu</span>
-      <h2>Culinary Highlights</h2>
-      <div class="rest-divider"></div>
-      <p>A curated selection of our most celebrated dishes, each one telling a story of origin, season, and craft.</p>
-    </div>
-
-    <div class="rest-menu-categories rest-fade-in">
-      <button class="rest-menu-cat-btn active">All</button>
-      <button class="rest-menu-cat-btn">Starters</button>
-      <button class="rest-menu-cat-btn">Mains</button>
-      <button class="rest-menu-cat-btn">Desserts</button>
-    </div>
-
-    <div class="rest-menu-grid">
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/8511835/pexels-photo-8511835.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Seared duck breast with cherry reduction">
+    <div class="relative">
+      <img src="https://images.pexels.com/photos/6287379/pexels-photo-6287379.jpeg" alt="Handmade pasta on rustic table" class="img-cover" loading="eager" decoding="async">
+      <div class="floating-card">
+        <div class="icon-box" style="width: 2.5rem; height: 2.5rem; margin-bottom: 0;">
+          <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
         </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Seared Duck Breast</h4>
-            <span class="rest-menu-price">AED 185</span>
+        <div>
+          <div style="font-weight: 700; font-size: 0.875rem;">4.9/5 Rating</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">200+ Reviews</div>
+        </div>
+      </div>
+      <div class="hero-accent-border"></div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="features" data-section-type="feature_split" id="features" class="stagger-reveal" style="background: var(--bg-surface);">
+  <div class="container grid-2">
+    <div class="md-order-2">
+      <img src="https://images.pexels.com/photos/6287373/pexels-photo-6287373.jpeg" alt="Handmade pasta being prepared" class="img-cover stagger-child" loading="lazy" decoding="async" data-aos="fade-left" data-aos-delay="200">
+    </div>
+    <div class="md-order-1 stagger-child" data-aos="fade-right" data-aos-delay="100">
+      <span class="section-label">
+        <span class="label-line"></span>
+        OUR SPECIALTIES
+      </span>
+      <h2 class="section-title">Handcrafted Italian Excellence</h2>
+      <div class="feature-split-list">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-size: 2rem;">🍝</span>
+            <h3 class="feature-title">Handmade Pasta</h3>
           </div>
-          <p>Pan-seared duck with cherry gastrique, roasted beets, and pistachio crumble on a bed of wilted greens.</p>
+          <p class="feature-text">Every pasta dish is crafted fresh each day, using authentic Italian recipes and the finest ingredients.</p>
         </div>
-      </div>
-
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/2961968/pexels-photo-2961968.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wild mushroom risotto">
-        </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Wild Mushroom Risotto</h4>
-            <span class="rest-menu-price">AED 145</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-size: 2rem;">🍕</span>
+            <h3 class="feature-title">Wood-Fired Pizzas</h3>
           </div>
-          <p>Arborio rice slow-cooked with porcini, chanterelle, and truffle oil, finished with aged Parmigiano-Reggiano.</p>
+          <p class="feature-text">Our pizzas are baked in a traditional wood-fired oven for a crisp, flavorful finish.</p>
         </div>
-      </div>
-
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/313715/pexels-photo-313715.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Grilled lamb chops">
-        </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Herb-Crusted Lamb Rack</h4>
-            <span class="rest-menu-price">AED 225</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <span style="font-size: 2rem;">🍷</span>
+            <h3 class="feature-title">Curated Italian Wines</h3>
           </div>
-          <p>New Zealand lamb rack with rosemary crust, pomegranate molasses, and roasted root vegetables.</p>
+          <p class="feature-text">A sommelier-curated wine list showcases Italy's best vineyards, perfectly matched to your meal.</p>
         </div>
       </div>
+    </div>
+  </div>
+</section>
 
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/34017081/pexels-photo-34017081.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Tuna tartare appetizer">
+<section data-section-id="about" data-section-type="card_grid" id="about" class="stagger-reveal">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">
+        <span class="label-line"></span>
+        WHY CHOOSE US
+      </span>
+      <h2 class="section-title">Experience La Dolce Vita</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card stagger-child" data-aos="fade-up" data-aos-delay="100">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🕯️</div>
+        <h3 class="card-title">Elegant Ambiance</h3>
+        <p class="card-text">Candlelit tables, soft music, and warm service create a welcoming, romantic setting.</p>
+      </div>
+      <div class="card stagger-child" data-aos="fade-up" data-aos-delay="200">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🕔</div>
+        <h3 class="card-title">Open Daily</h3>
+        <p class="card-text">Join us any evening from 5PM to 11PM for an unforgettable dining experience.</p>
+      </div>
+      <div class="card stagger-child" data-aos="fade-up" data-aos-delay="300">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">📍</div>
+        <h3 class="card-title">City Walk, Dubai</h3>
+        <p class="card-text">Located in the heart of Dubai's vibrant City Walk district.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="testimonials" data-section-type="testimonial_cards" id="testimonials" class="stagger-reveal" style="background: var(--bg-surface);">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">
+        <span class="label-line"></span>
+        GUEST REVIEWS
+      </span>
+      <h2 class="section-title">What Our Guests Say</h2>
+    </div>
+    <div class="grid-2">
+      <div class="testimonial-card stagger-child" data-aos="zoom-in" data-aos-delay="100">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
         </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Yellowfin Tuna Tartare</h4>
-            <span class="rest-menu-price">AED 120</span>
+        <p class="testimonial-quote">"Absolutely exquisite food and the ambiance is magical. It feels like dining in Italy itself!"</p>
+        <div class="testimonial-author">
+          <div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">S</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem;">Sara M.</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Verified Guest</div>
           </div>
-          <p>Hand-cut yellowfin tuna with avocado mousse, yuzu dressing, crispy wontons, and micro herbs.</p>
         </div>
       </div>
-
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/4699965/pexels-photo-4699965.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Chocolate fondant dessert">
+      <div class="testimonial-card stagger-child" data-aos="zoom-in" data-aos-delay="200">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
         </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Valrhona Chocolate Fondant</h4>
-            <span class="rest-menu-price">AED 85</span>
+        <p class="testimonial-quote">"The best pasta I've had in Dubai. Highly recommend for a special night out."</p>
+        <div class="testimonial-author">
+          <div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem;">A</div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem;">Ahmed R.</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Verified Guest</div>
           </div>
-          <p>Warm dark chocolate fondant with a molten center, vanilla bean ice cream, and gold leaf garnish.</p>
         </div>
       </div>
+    </div>
+  </div>
+</section>
 
-      <div class="rest-menu-card rest-fade-in">
-        <div class="rest-menu-card-img">
-          <img src="https://images.pexels.com/photos/3640448/pexels-photo-3640448.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Burrata salad">
-        </div>
-        <div class="rest-menu-card-body">
-          <div class="rest-menu-card-top">
-            <h4>Burrata & Heirloom Tomato</h4>
-            <span class="rest-menu-price">AED 95</span>
+<section data-section-id="reservation" data-section-type="cta_centered" id="reservation" class="stagger-reveal" style="position: relative;">
+  <div class="cta-decorative-circle"></div>
+  <div class="container-narrow text-center">
+    <span class="section-label stagger-child" data-aos="fade-up" data-aos-delay="100">
+      <span class="label-line"></span>
+      MAKE A RESERVATION
+    </span>
+    <h2 class="section-title stagger-child" data-aos="fade-up" data-aos-delay="200">Book Your Table</h2>
+    <p class="section-subtitle stagger-child" data-aos="fade-up" data-aos-delay="300">Reserve your place at La Dolce Vita and immerse yourself in the flavors of Italy.</p>
+    <div class="btn-group center stagger-child" data-aos="fade-up" data-aos-delay="400">
+      <a href="mailto:info@ladolcevita.ae" class="btn-primary">Reserve Now</a>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="contact" data-section-type="contact" id="contact" class="fade-up" style="background: var(--bg-surface);">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">
+        <span class="label-line"></span>
+        GET IN TOUCH
+      </span>
+      <h2 class="section-title">Contact & Location</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="contact-info-card">
+          <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">Visit Us</h3>
+          <div class="contact-item">
+            <i class="fa-solid fa-phone contact-icon"></i>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">Phone</div>
+              <div style="color: var(--text-muted);">+971501234567</div>
+            </div>
           </div>
-          <p>Fresh burrata with heirloom tomatoes, aged balsamic reduction, basil oil, and toasted pine nuts.</p>
+          <div class="contact-item">
+            <i class="fa-solid fa-envelope contact-icon"></i>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">Email</div>
+              <div style="color: var(--text-muted);">info@ladolcevita.ae</div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-location-dot contact-icon"></i>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">Address</div>
+              <div style="color: var(--text-muted);">City Walk, Dubai</div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-clock contact-icon"></i>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">Hours</div>
+              <div style="color: var(--text-muted);">Open Daily 5PM–11PM</div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- Chef's Special -->
-  <section class="rest-section rest-special" id="rest-special">
-    <div class="rest-special-grid">
-      <div class="rest-special-text rest-fade-in-left">
-        <span class="rest-overline">Chef's Selection</span>
-        <h2>The <em>Golden Hour</em> Tasting Menu</h2>
-        <p>An eight-course journey through the finest seasonal ingredients. Each dish is paired with wines curated by our sommelier, taking you from the sunlit coasts of the Mediterranean to the spice markets of the Levant.</p>
-        <p>Available Thursday through Saturday evenings. Limited to twelve guests per service for an intimate, unforgettable experience.</p>
-        <div class="rest-special-price">AED 650 per person</div>
-        <a href="#rest-reservation" class="rest-btn">Reserve This Experience</a>
-      </div>
-      <div class="rest-special-img rest-fade-in-right">
-        <img src="https://images.pexels.com/photos/35583855/pexels-photo-35583855.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant plated dish with artistic presentation">
+      <div class="contact-info-card">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem;">Send us a Message</h3>
+        <form class="contact-form">
+          <div class="form-row">
+            <input type="text" class="form-input" placeholder="Your Name" required>
+            <input type="email" class="form-input" placeholder="Your Email" required>
+          </div>
+          <input type="tel" class="form-input" placeholder="Phone Number">
+          <textarea class="form-input form-textarea" placeholder="Tell us about your reservation or inquiry..." rows="4"></textarea>
+          <button type="submit" class="btn-primary" style="width: 100%;">Send Message</button>
+        </form>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Testimonials -->
-  <section class="rest-section rest-testimonials" id="rest-testimonials">
-    <div class="rest-section-header rest-fade-in">
-      <span class="rest-overline">Guest Voices</span>
-      <h2>What Our Guests Say</h2>
-      <div class="rest-divider"></div>
+<footer data-section-type="footer" style="background: #1a1a2e">
+  <div class="container" style="border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:2.5rem;margin-bottom:2.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <h3 style="color:white;font-size:1.25rem;margin-bottom:0.25rem;">Stay Updated</h3>
+        <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin:0;">Subscribe to our newsletter for the latest updates and special offers.</p>
+      </div>
+      <form class="newsletter-form" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <input type="email" placeholder="Enter your email" class="form-input" style="min-width:250px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:white;">
+        <button type="submit" class="btn-primary">Subscribe</button>
+      </form>
     </div>
-
-    <div class="rest-testimonials-grid">
-      <div class="rest-testimonial-card rest-fade-in">
-        <div class="rest-testimonial-quote">&ldquo;</div>
-        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
-        <p>An extraordinary evening from start to finish. The tasting menu was a masterpiece, and the service was impeccable. Aurum is without question the finest dining experience in Dubai.</p>
-        <div class="rest-testimonial-author">Sarah Al-Mansouri</div>
-        <div class="rest-testimonial-role">Food Critic, Gulf Times</div>
-      </div>
-
-      <div class="rest-testimonial-card rest-fade-in">
-        <div class="rest-testimonial-quote">&ldquo;</div>
-        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
-        <p>We celebrated our anniversary here, and it was magical. Chef Alessandro personally visited our table and explained the inspiration behind each course. Truly a special place.</p>
-        <div class="rest-testimonial-author">James & Olivia Richardson</div>
-        <div class="rest-testimonial-role">Returning Guests</div>
-      </div>
-
-      <div class="rest-testimonial-card rest-fade-in">
-        <div class="rest-testimonial-quote">&ldquo;</div>
-        <div class="rest-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
-        <p>The lamb rack is the best I have ever had, anywhere in the world. The atmosphere, the attention to detail, everything about Aurum speaks of genuine passion for the craft.</p>
-        <div class="rest-testimonial-author">Ravi Patel</div>
-        <div class="rest-testimonial-role">Executive Chef, The Oberoi</div>
+  </div>
+  
+  <div class="container footer-grid">
+    <div>
+      <a href="#" class="nav-brand" style="color:white;margin-bottom:1rem;display:inline-flex;">
+        <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">L</span>
+        <span>La Dolce Vita</span>
+      </a>
+      <p class="footer-description">Authentic Italian fine dining in the heart of Dubai, serving handmade pasta, wood-fired pizzas, and curated wines.</p>
+      <div class="social-links">
+        <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="social-link"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" class="social-link"><i class="fa-brands fa-tripadvisor"></i></a>
       </div>
     </div>
-  </section>
-
-  <!-- Reservation CTA -->
-  <section class="rest-section rest-reservation" id="rest-reservation">
-    <div class="rest-reservation-content rest-fade-in">
-      <span class="rest-overline">Reservations</span>
-      <h2>Your Table Awaits</h2>
-      <p>Join us for an evening of exquisite cuisine and warm hospitality. We recommend booking at least 48 hours in advance for weekend dining.</p>
-      <a href="tel:+97145551234" class="rest-btn rest-btn-filled">Book Now</a>
-      <a href="tel:+97145551234" class="rest-reservation-phone">+971 4 555 1234</a>
+    
+    <div>
+      <h4 class="footer-heading">Quick Links</h4>
+      <ul class="footer-links">
+        <li><a href="#features">Our Menu</a></li>
+        <li><a href="#about">Experience</a></li>
+        <li><a href="#testimonials">Reviews</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
     </div>
-  </section>
-
-  <!-- Gallery -->
-  <section class="rest-section rest-gallery" id="rest-gallery">
-    <div class="rest-section-header rest-fade-in">
-      <span class="rest-overline">Gallery</span>
-      <h2>A Glimpse Inside</h2>
-      <div class="rest-divider"></div>
+    
+    <div>
+      <h4 class="footer-heading">Specialties</h4>
+      <ul class="footer-links">
+        <li><a href="#">Handmade Pasta</a></li>
+        <li><a href="#">Wood-Fired Pizza</a></li>
+        <li><a href="#">Italian Wines</a></li>
+        <li><a href="#">Desserts</a></li>
+      </ul>
     </div>
-
-    <div class="rest-gallery-grid">
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/8942305/pexels-photo-8942305.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Elegant restaurant dining room with ambient lighting">
-      </div>
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/251610/pexels-photo-251610.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Bartender crafting cocktails at the bar">
-      </div>
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/2323391/pexels-photo-2323391.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Beautifully plated gourmet dish">
-      </div>
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/35290622/pexels-photo-35290622.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Fresh ingredients and herbs on kitchen counter">
-      </div>
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/6877577/pexels-photo-6877577.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Intimate private dining room">
-      </div>
-      <div class="rest-gallery-item rest-fade-in">
-        <img src="https://images.pexels.com/photos/2664150/pexels-photo-2664150.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wine cellar with curated collection">
-      </div>
-    </div>
-  </section>
-
-  <!-- Contact -->
-  <section class="rest-section rest-contact" id="rest-contact">
-    <div class="rest-section-header rest-fade-in">
-      <span class="rest-overline">Find Us</span>
-      <h2>Visit Aurum</h2>
-      <div class="rest-divider"></div>
-    </div>
-
-    <div class="rest-contact-grid">
-      <div class="rest-contact-card rest-fade-in">
-        <div class="rest-contact-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        </div>
-        <h4>Location</h4>
-        <p>Gate Village, DIFC<br>Dubai, United Arab Emirates<br>Building 7, Ground Floor</p>
-      </div>
-
-      <div class="rest-contact-card rest-fade-in">
-        <div class="rest-contact-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <h4>Opening Hours</h4>
-        <table class="rest-hours-table">
-          <tr><th style="display:none">Day</th><th style="display:none">Hours</th></tr>
-          <tr><td>Monday - Wednesday</td><td>6 PM - 11 PM</td></tr>
-          <tr><td>Thursday - Friday</td><td>6 PM - 12 AM</td></tr>
-          <tr><td>Saturday</td><td>12 PM - 12 AM</td></tr>
-          <tr><td>Sunday</td><td>12 PM - 11 PM</td></tr>
-        </table>
-      </div>
-
-      <div class="rest-contact-card rest-fade-in">
-        <div class="rest-contact-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        </div>
-        <h4>Contact</h4>
-        <p>Phone: +971 4 555 1234<br>Email: hello@aurumdining.ae<br><br>For private events:<br>events@aurumdining.ae</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="rest-footer">
-    <div class="rest-footer-logo">Aurum <span>Dining</span></div>
-    <ul class="rest-footer-links">
-      <li><a href="#rest-about">Our Story</a></li>
-      <li><a href="#rest-menu">Menu</a></li>
-      <li><a href="#rest-gallery">Gallery</a></li>
-      <li><a href="#rest-contact">Contact</a></li>
-      <li><a href="#rest-reservation">Reservations</a></li>
-    </ul>
-    <p class="rest-footer-copy">&copy; 2026 Aurum Dining. All rights reserved.</p>
-  </footer>
-</div>
-
-<script>
-(function() {
-  // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#rest-"]').forEach(function(anchor) {
-    anchor.addEventListener('click', function(e) {
-      e.preventDefault();
-      var target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  });
-
-  // Navbar scroll effect
-  var nav = document.getElementById('restNav');
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 80) {
-      nav.classList.add('scrolled');
-    } else {
-      nav.classList.remove('scrolled');
-    }
-  });
-
-  // Mobile menu toggle
-  window.toggleMenu = function() {
-    var links = document.getElementById('restNavLinks');
-    links.classList.toggle('open');
-  };
-
-  window.closeMenu = function() {
-    var links = document.getElementById('restNavLinks');
-    links.classList.remove('open');
-  };
-
-  // IntersectionObserver for fade-in animations
-  var animElements = document.querySelectorAll('.rest-fade-in, .rest-fade-in-left, .rest-fade-in-right');
-
-  if ('IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -40px 0px'
-    });
-
-    animElements.forEach(function(el) {
-      observer.observe(el);
-    });
-  } else {
-    // Fallback: just show everything
-    animElements.forEach(function(el) {
-      el.classList.add('visible');
-    });
-  }
-
-  // Staggered animation delay for grid items
-  document.querySelectorAll('.rest-menu-grid .rest-fade-in').forEach(function(card, i) {
-    card.style.transitionDelay = (i * 0.1) + 's';
-  });
-
-  document.querySelectorAll('.rest-gallery-grid .rest-fade-in').forEach(function(item, i) {
-    item.style.transitionDelay = (i * 0.08) + 's';
-  });
-
-  document.querySelectorAll('.rest-testimonials-grid .rest-fade-in').forEach(function(card, i) {
-    card.style.transitionDelay = (i * 0.12) + 's';
-  });
-
-  document.querySelectorAll('.rest-contact-grid .rest-fade-in').forEach(function(card, i) {
-    card.style.transitionDelay = (i * 0.1) + 's';
-  });
-})();
-</script>
+    
+    <div>
+      <h4 class="footer-heading">Contact</h4>
+      <ul class="footer-links">
+        <li class="contact-item"><i class="fa-solid fa-location-dot contact-icon"></i><span>City Walk, Dubai, UAE</span></li>
+        <li class="contact-item"><i class="fa-solid fa-phone contact-icon"></i><span>+971 50 123 4567</span></li>
+        <li class="contact-item"><i class="fa-solid fa-envelope contact-icon"></i><span>
