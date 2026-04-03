@@ -587,9 +587,9 @@ def _strip_comment_markers(html: str) -> str:
     HTML tags, preserving the actual HTML content.
     """
     # Pattern: <!-- followed by label text, immediately followed by < (HTML tag)
-    # This catches: <!-- Navbar<nav, <!-- Hero Section<section, <!-- SEO_META<meta, etc.
-    # The label text is any word chars, spaces, ampersands, but NOT < or >
-    html = re.sub(r'<!--\s*[\w\s&/]+(?=<)', '', html)
+    # This catches: <!-- Navbar<nav, <!-- Hero Section<section, <!-- Brand + Social<div, etc.
+    # The label text is anything that's NOT < or > (allows +, -, &, :, etc.)
+    html = re.sub(r'<!--\s*[^<>]+(?=<)', '', html)
 
     # Also strip properly-formatted comment markers (<!-- MARKER -->)
     html = re.sub(r'<!--\s*(?:SEO_META|END_SEO_META|FAVICON|END_FAVICON)\s*-->\s*', '', html)
