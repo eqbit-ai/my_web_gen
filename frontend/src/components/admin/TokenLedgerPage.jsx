@@ -41,21 +41,21 @@ export default function TokenLedgerPage() {
     const [userSearching, setUserSearching] = useState(false);
     const userSearchTimer = React.useRef(null);
 
-    const dateRange = (dateFrom && dateTo) ? { from: dateFrom, to: dateTo } : (dateFrom ? { from: dateFrom, to: new Date().toISOString().split('T')[0] } : null);
+    const dateRange = (dateFrom || dateTo) ? { from: dateFrom || '2020-01-01', to: dateTo || new Date().toISOString().split('T')[0] } : null;
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const [tx, p] = await Promise.all([
-                adminGetTransactions(page, 20, null, txType || null, dateRange),
+                adminGetTransactions(page, 20, null, null, dateRange),
                 adminGetTokenPool().catch(() => null),
             ]);
             setData(tx);
             setPool(p);
         } catch (e) { setError(e.message); }
         finally { setLoading(false); }
-    }, [page, txType, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [page, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { load(); }, [load]);
 
@@ -153,7 +153,7 @@ export default function TokenLedgerPage() {
 
             {/* Summary Cards */}
             {pool && (
-                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 24 }}>
+                <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16 }}>
                     <div className="admin-stat-card admin-stat-accent-blue">
                         <div className="admin-stat-icon"><Coins size={22} /></div>
                         <div className="admin-stat-body">
@@ -175,24 +175,26 @@ export default function TokenLedgerPage() {
                             <div className="admin-stat-label">Outstanding</div>
                         </div>
                     </div>
-                    <div className="admin-stat-card admin-stat-accent-purple">
-                        <div className="admin-stat-icon"><Coins size={22} /></div>
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value" style={{ color: T.warning }}>{fmt(pool.weekly_burn_rate)}</div>
-                            <div className="admin-stat-label">Weekly Burn Rate</div>
-                        </div>
-                    </div>
-                    <div className="admin-stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
-                        <div className="admin-stat-icon" style={{ color: '#f59e0b' }}>$</div>
-                        <div className="admin-stat-body">
-                            <div className="admin-stat-value" style={{ color: '#f59e0b' }}>
-                                ${((Number(pool.total_consumed ?? pool.total_used ?? 0) / 1_000_000) * COST_RATES.default).toFixed(2)}
-                            </div>
-                            <div className="admin-stat-label">Est. Total Cost</div>
-                        </div>
-                    </div>
                 </div>
             )}
+            <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 24 }}>
+                <div className="admin-stat-card admin-stat-accent-purple">
+                    <div className="admin-stat-icon"><Coins size={22} /></div>
+                    <div className="admin-stat-body">
+                        <div className="admin-stat-value" style={{ color: T.warning }}>{pool ? fmt(pool.weekly_burn_rate) : '—'}</div>
+                        <div className="admin-stat-label">Weekly Burn Rate</div>
+                    </div>
+                </div>
+                <div className="admin-stat-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+                    <div className="admin-stat-icon" style={{ color: '#f59e0b', fontSize: 22, fontWeight: 700 }}>$</div>
+                    <div className="admin-stat-body">
+                        <div className="admin-stat-value" style={{ color: '#f59e0b' }}>
+                            ${totalCost > 0 ? totalCost.toFixed(2) : pool ? ((Number(pool.total_consumed ?? pool.total_used ?? 0) / 1_000_000) * COST_RATES.default).toFixed(2) : '0.00'}
+                        </div>
+                        <div className="admin-stat-label">{dateFrom || dateTo ? 'Est. Cost (filtered)' : 'Est. Total Cost'}</div>
+                    </div>
+                </div>
+            </div>
 
             {/* Grant Form */}
             {showGrant && (
@@ -268,27 +270,26 @@ export default function TokenLedgerPage() {
                 </div>
             )}
 
-            {/* Filter */}
-            <div className="admin-toolbar" style={{ gap: 8, flexWrap: 'wrap' }}>
-                <select className="admin-search" style={{ width: 'auto' }} value={txType} onChange={e => { setTxType(e.target.value); setPage(1); }}>
-                    <option value="">All Types</option>
-                    <option value="grant">Grant</option>
-                    <option value="deduction">Deduction</option>
-                    <option value="refund">Refund</option>
-                    <option value="expiry">Expiry</option>
-                </select>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <label style={{ fontSize: 11, color: T.muted }}>From:</label>
-                    <input type="date" className="admin-input" style={{ width: 140, padding: '4px 8px', fontSize: 12 }} value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+            {/* Date Filter */}
+            <div className="admin-toolbar" style={{ gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>From</label>
+                    <input type="date" className="admin-input" style={{ width: 150, padding: '6px 10px', fontSize: 13 }} value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <label style={{ fontSize: 11, color: T.muted }}>To:</label>
-                    <input type="date" className="admin-input" style={{ width: 140, padding: '4px 8px', fontSize: 12 }} value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>To</label>
+                    <input type="date" className="admin-input" style={{ width: 150, padding: '6px 10px', fontSize: 13 }} value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
                 </div>
-                {(dateFrom || dateTo) && (
-                    <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear dates</button>
-                )}
-                <span className="admin-count" style={{ marginLeft: 'auto' }}>{total} transactions{totalCost > 0 ? ` • Est. $${totalCost.toFixed(2)} on this page` : ''}</span>
+                {/* Quick date presets */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { const t = new Date().toISOString().split('T')[0]; setDateFrom(t); setDateTo(t); setPage(1); }}>Today</button>
+                    <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { const d = new Date(); d.setDate(d.getDate() - 7); setDateFrom(d.toISOString().split('T')[0]); setDateTo(new Date().toISOString().split('T')[0]); setPage(1); }}>7 days</button>
+                    <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { const d = new Date(); d.setDate(d.getDate() - 30); setDateFrom(d.toISOString().split('T')[0]); setDateTo(new Date().toISOString().split('T')[0]); setPage(1); }}>30 days</button>
+                    {(dateFrom || dateTo) && (
+                        <button className="admin-btn" style={{ padding: '4px 10px', fontSize: 11, color: T.danger }} onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear</button>
+                    )}
+                </div>
+                <span className="admin-count" style={{ marginLeft: 'auto' }}>{total} transactions</span>
             </div>
 
             <AdminTable
