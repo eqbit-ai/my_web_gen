@@ -995,6 +995,8 @@ const WebsiteGenerator = () => {
                 }
             }
             setHtml(restoreHtml); setCss(restoreCss);
+            // Restore deployedSiteId so redeploys update the same site
+            if (meta.deployedSiteId) setDeployedSiteId(meta.deployedSiteId);
             const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: restoredPages };
             setVersions([v]); setCurrentVersion(0);
             // Restore chat history from metadata if available, otherwise show default message
@@ -2197,7 +2199,8 @@ const WebsiteGenerator = () => {
             isMultipage,
             currentPage: latestCurrentPage,
             pages: allPages,
-            messages: messages.slice(-50), // persist last 50 chat messages
+            messages: messages.slice(-50),
+            deployedSiteId: deployedSiteId || undefined,
         });
         try {
             // For multipage, save index page as top-level for reliable restore
@@ -3224,7 +3227,7 @@ const WebsiteGenerator = () => {
                 </>
             )}
 
-            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} existingSiteId={deployedSiteId} onDeployed={setDeployedSiteId} />
+            <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} existingSiteId={deployedSiteId} onDeployed={(id) => { setDeployedSiteId(id); if (projectId) handleSaveProject(); }} />
 
             {/* Site Settings (SEO, WhatsApp, Contact) */}
             <SeoEditor

@@ -6359,13 +6359,14 @@ body {
 }
 .admin-detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 28px;
 }
 .admin-detail-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 .admin-detail-label {
   font-size: 11px;
@@ -6374,6 +6375,11 @@ body {
   letter-spacing: 0.3px;
   font-weight: 500;
 }
+.admin-detail-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .admin-detail-item code {
   font-size: 12px;
   color: #a78bfa;
@@ -6381,6 +6387,11 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid rgba(99,102,241,0.15);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 100%;
 }
 .admin-detail-item strong {
   font-size: 15px;

@@ -213,7 +213,7 @@ export default function UserDetailPage() {
                                 {typeof v === 'boolean' ? (
                                     <StatusBadge status={v ? 'active' : 'disabled'} size="sm" />
                                 ) : (
-                                    <strong>{v === null ? '—' : k.includes('_at') ? formatDate(v) : String(v)}</strong>
+                                    <strong className="admin-detail-value" title={String(v)}>{v === null ? '—' : k.includes('_at') ? formatDate(v) : String(v)}</strong>
                                 )}
                             </div>
                         ))}
