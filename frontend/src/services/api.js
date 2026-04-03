@@ -3,7 +3,7 @@ import config from '../config';
 const API_BASE_URL = `${config.apiUrl}/api`;
 
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -13,7 +13,7 @@ const getAuthHeaders = () => {
 // ── File Upload ─────────────────────────────────────────────────────────
 
 export const uploadFiles = async (files) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     const res = await fetch(`${API_BASE_URL}/generator/upload-files`, {
@@ -665,7 +665,7 @@ export const syncSession = async (sessionId, html, css, js = '', currentPage = '
 // ── Uploads / Media ─────────────────────────────────────────────────────
 
 export const uploadFile = async (file, projectId = null, category = 'image') => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     const formData = new FormData();
     formData.append('file', file);
     if (projectId) formData.append('project_id', projectId);

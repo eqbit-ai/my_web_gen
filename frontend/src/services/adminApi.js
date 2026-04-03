@@ -3,7 +3,7 @@ import config from '../config';
 const API_BASE_URL = `${config.apiUrl}/api`;
 
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -73,9 +73,9 @@ export default function UserDetailPage() {
             } else if (action === 'impersonate') {
                 result = await adminImpersonateUser(id);
                 if (result?.token) {
-                    const adminToken = localStorage.getItem('token');
-                    localStorage.setItem('admin_token_backup', adminToken);
-                    localStorage.setItem('token', result.token);
+                    const adminToken = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    sessionStorage.setItem('admin_token_backup', adminToken);
+                    sessionStorage.setItem('token', result.token);
                     localStorage.setItem('impersonating', JSON.stringify({
                         userId: id,
                         email: result.user?.email || '',

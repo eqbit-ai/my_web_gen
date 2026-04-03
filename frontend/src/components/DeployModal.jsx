@@ -36,7 +36,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     // Fetch user's available (unconnected) domains when domain tab is shown
     useEffect(() => {
         if (deployed?.site_id && activeTab === 'domain') {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
             fetch(`${config.apiUrl}/api/deploy/${deployed.site_id}/available-domains`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             })
@@ -51,7 +51,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
         setConnectingDomain(domainName);
         setDomainError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
             const resp = await fetch(`${config.apiUrl}/api/deploy/${deployed.site_id}/connect-domain`, {
                 method: 'POST',
                 headers: {
@@ -80,7 +80,7 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
         setIsDeploying(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
             const resp = await fetch(`${config.apiUrl}/api/deploy`, {
                 method: 'POST',
                 headers: {

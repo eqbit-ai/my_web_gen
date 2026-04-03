@@ -2629,9 +2629,11 @@ const WebsiteGenerator = () => {
                 }}>
                     <span>Viewing as: {impersonateInfo.email} (read-only)</span>
                     <button onClick={() => {
-                        const adminToken = localStorage.getItem('admin_token_backup');
-                        if (adminToken) localStorage.setItem('token', adminToken);
+                        const adminToken = sessionStorage.getItem('admin_token_backup') || localStorage.getItem('admin_token_backup');
+                        if (adminToken) sessionStorage.setItem('token', adminToken);
+                        sessionStorage.removeItem('admin_token_backup');
                         localStorage.removeItem('admin_token_backup');
+                        sessionStorage.removeItem('impersonating');
                         localStorage.removeItem('impersonating');
                         window.location.href = '/admin';
                     }} style={{

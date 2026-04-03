@@ -142,7 +142,7 @@ const Dashboard = () => {
     // Fetch user's available (unconnected) domains when connect modal opens
     useEffect(() => {
         if (!connectModal) { setModalOwnedDomains([]); return; }
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
         fetch(`${config.apiUrl}/api/deploy/${connectModal}/available-domains`, {
             headers: { 'Authorization': `Bearer ${token}` },
         })
@@ -739,11 +739,13 @@ const Dashboard = () => {
     const impersonateInfo = impersonating ? JSON.parse(impersonating) : null;
 
     const stopImpersonating = () => {
-        const adminToken = localStorage.getItem('admin_token_backup');
+        const adminToken = sessionStorage.getItem('admin_token_backup') || localStorage.getItem('admin_token_backup');
         if (adminToken) {
-            localStorage.setItem('token', adminToken);
+            sessionStorage.setItem('token', adminToken);
+            sessionStorage.removeItem('admin_token_backup');
             localStorage.removeItem('admin_token_backup');
         }
+        sessionStorage.removeItem('impersonating');
         localStorage.removeItem('impersonating');
         window.location.href = '/admin';
     };
