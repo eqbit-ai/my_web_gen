@@ -283,6 +283,35 @@ async def create_distribution(
 
 
 # ---------------------------------------------------------------------------
+# 3b. Find distribution by domain alias
+# ---------------------------------------------------------------------------
+
+
+async def find_distribution_by_domain(domain: str) -> str | None:
+    """Find a CloudFront distribution ID by its domain alias.
+
+    Returns the distribution ID if found, None otherwise.
+    """
+
+    def _find():
+        client = _cf_client()
+        paginator = client.get_paginator("list_distributions")
+        for page in paginator.paginate():
+            dist_list = page.get("DistributionList", {})
+            for item in dist_list.get("Items", []):
+                aliases = item.get("Aliases", {}).get("Items", [])
+                if domain in aliases or f"www.{domain}" in aliases:
+                    return item["Id"]
+        return None
+
+    try:
+        return await asyncio.to_thread(_find)
+    except ClientError as exc:
+        logger.error("CloudFront find_distribution_by_domain failed for %s: %s", domain, exc)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # 4. Get distribution status
 # ---------------------------------------------------------------------------
 

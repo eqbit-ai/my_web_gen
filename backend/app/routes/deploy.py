@@ -236,6 +236,21 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         refetch = await db.execute(select(Site).where(Site.id == site_id))
         site_obj = refetch.scalar_one_or_none()
         cf_dist_id = getattr(site_obj, "cloudfront_distribution_id", None) if site_obj else None
+
+        # Auto-detect: if site has a domain + cloudfront_domain but no distribution_id,
+        # look it up from AWS and persist it so future deploys auto-invalidate
+        if not cf_dist_id and site_obj and getattr(site_obj, "domain", None) and getattr(site_obj, "cloudfront_domain", None):
+            try:
+                from app.utils.cloudfront_acm import find_distribution_by_domain
+                found_dist = await find_distribution_by_domain(site_obj.domain)
+                if found_dist:
+                    cf_dist_id = found_dist
+                    site_obj.cloudfront_distribution_id = cf_dist_id
+                    await db.commit()
+                    logger.info("Auto-linked CloudFront dist %s to site %s (%s)", cf_dist_id, site_id, site_obj.domain)
+            except Exception as e:
+                logger.warning("Auto-detect CF dist failed for %s: %s", site_obj.domain, e)
+
     if cf_dist_id:
         try:
             inv_result = await invalidate_cache(cf_dist_id)
