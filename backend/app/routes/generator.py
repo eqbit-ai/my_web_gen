@@ -549,15 +549,16 @@ def _fix_url_quotes(html: str) -> str:
 
     Does NOT touch url("data:...") since SVG data URIs may contain single quotes.
     """
+    # Count how many url() with http we find BEFORE fixing
+    before_count = len(re.findall(r'url\([^)]*https?://', html))
+    bad_count = len(re.findall(r'url\(\s*"https?://', html))
+
     def _normalize_http_url(m: re.Match) -> str:
         raw = m.group(1)
-        # Strip ALL leading/trailing quotes and whitespace (handles mismatched " ... ')
         url = raw.strip().strip("\"'").strip()
+        logger.info(f"[URL-FIX] Fixing: url({raw[:60]}...) → url('{url[:60]}...')")
         return f"url('{url}')"
 
-    # Strategy: find url( ... ) where the content contains https://
-    # Use GREEDY [^)]+ to capture everything up to the LAST ) — this ensures
-    # mismatched quotes like url("https://...jpeg') are fully captured.
     html = re.sub(
         r"""url\(\s*([^)]+https?://[^)]+)\s*\)""",
         _normalize_http_url,
@@ -568,6 +569,11 @@ def _fix_url_quotes(html: str) -> str:
         _normalize_http_url,
         html,
     )
+
+    after_bad = len(re.findall(r'url\(\s*"https?://', html))
+    if before_count > 0 or bad_count > 0:
+        logger.info(f"[URL-FIX] Found {before_count} url(http), {bad_count} with double-quote. After fix: {after_bad} bad remaining.")
+
     return html
 
 
