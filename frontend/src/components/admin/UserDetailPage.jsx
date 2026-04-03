@@ -74,9 +74,11 @@ export default function UserDetailPage() {
                 result = await adminImpersonateUser(id);
                 if (result?.token) {
                     const adminToken = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    // Store impersonation data in sessionStorage ONLY (per-tab)
+                    // so other tabs stay as admin
                     sessionStorage.setItem('admin_token_backup', adminToken);
                     sessionStorage.setItem('token', result.token);
-                    localStorage.setItem('impersonating', JSON.stringify({
+                    sessionStorage.setItem('impersonating', JSON.stringify({
                         userId: id,
                         email: result.user?.email || '',
                         readOnly: result.read_only,

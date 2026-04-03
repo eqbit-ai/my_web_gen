@@ -735,7 +735,7 @@ const Dashboard = () => {
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    const impersonating = localStorage.getItem('impersonating');
+    const impersonating = sessionStorage.getItem('impersonating') || localStorage.getItem('impersonating');
     const impersonateInfo = impersonating ? JSON.parse(impersonating) : null;
 
     const stopImpersonating = () => {

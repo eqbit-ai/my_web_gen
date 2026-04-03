@@ -2616,7 +2616,7 @@ const WebsiteGenerator = () => {
     // RENDER
     // ═══════════════════════════════════════════════════════════════════
 
-    const impersonateInfo = (() => { try { const v = localStorage.getItem('impersonating'); return v ? JSON.parse(v) : null; } catch { return null; } })();
+    const impersonateInfo = (() => { try { const v = sessionStorage.getItem('impersonating') || localStorage.getItem('impersonating'); return v ? JSON.parse(v) : null; } catch { return null; } })();
 
     return (
         <div className="gn-layout" style={impersonateInfo ? { paddingTop: 40 } : undefined}>
