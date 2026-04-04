@@ -603,30 +603,16 @@ async def user_consumption(
     deductions_result = await db.execute(_date_filters(deductions_q))
     deductions_map = {r[0]: int(r[1]) for r in deductions_result.fetchall()}
 
-    # Get per-user generation and edit counts
-    gen_counts_q = (
-        select(
-            TokenTransaction.user_id,
-            func.count(),
-        )
-        .where(TokenTransaction.type == "deduction")
-        .where(TokenTransaction.reason.ilike("%generat%"))
-        .group_by(TokenTransaction.user_id)
+    # Get per-user generation and edit counts from users table
+    # These are tracked by increment_usage() after each successful generation/edit
+    usage_result = await db.execute(
+        select(User.id, User.generation_count, User.edit_count)
     )
-    gen_result = await db.execute(_date_filters(gen_counts_q))
-    gen_map = {r[0]: int(r[1]) for r in gen_result.fetchall()}
-
-    edit_counts_q = (
-        select(
-            TokenTransaction.user_id,
-            func.count(),
-        )
-        .where(TokenTransaction.type == "deduction")
-        .where(TokenTransaction.reason.ilike("%edit%"))
-        .group_by(TokenTransaction.user_id)
-    )
-    edit_result = await db.execute(_date_filters(edit_counts_q))
-    edit_map = {r[0]: int(r[1]) for r in edit_result.fetchall()}
+    gen_map = {}
+    edit_map = {}
+    for uid, gen_count, edit_count in usage_result.fetchall():
+        gen_map[uid] = gen_count or 0
+        edit_map[uid] = edit_count or 0
 
     # Get per-user last activity
     last_activity_q = (
