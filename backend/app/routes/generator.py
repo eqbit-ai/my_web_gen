@@ -5514,30 +5514,55 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
 
-    # ── Convert Google Maps share links to embed URLs ─────────────
+    # ── Convert Google Maps links to embed URLs ─────────────
+    # Handle share links (maps.app.goo.gl), direct links (google.com/maps), and place links
     maps_share_re = re.compile(r'https?://(?:maps\.app\.goo\.gl|goo\.gl/maps)/[\w-]+')
-    maps_match = maps_share_re.search(req.prompt)
+    maps_direct_re = re.compile(r'https?://(?:www\.)?google\.com/maps/[^\s"\'<>]+')
+    maps_match = maps_share_re.search(req.prompt) or maps_direct_re.search(req.prompt)
     if maps_match:
         share_url = maps_match.group(0)
         try:
             import httpx
-            async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
-                resp = await client.head(share_url)
-                final_url = str(resp.url)
-                # Extract place/coordinates from the resolved URL
-                # Typical: https://www.google.com/maps/place/Place+Name/@lat,lng,zoom...
+            final_url = share_url
+            # Resolve short links by following redirects with GET (HEAD often fails)
+            if 'goo.gl' in share_url:
+                async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
+                    resp = await client.get(share_url)
+                    final_url = str(resp.url)
+
+            # Extract coordinates — most reliable for correct location
+            coord_match = re.search(r'@([-\d.]+),([-\d.]+)', final_url)
+            # Also try ?q=lat,lng or !3d lat !4d lng patterns
+            if not coord_match:
+                coord_match = re.search(r'[?&]q=([-\d.]+),([-\d.]+)', final_url)
+            if not coord_match:
+                lat_match = re.search(r'!3d([-\d.]+)', final_url)
+                lng_match = re.search(r'!4d([-\d.]+)', final_url)
+                if lat_match and lng_match:
+                    lat, lng = lat_match.group(1), lng_match.group(1)
+                    embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=16"
+                    req.prompt = req.prompt.replace(share_url, embed_url)
+                    logger.info(f"🗺️ Resolved Maps link → {lat},{lng} (from !3d/!4d)")
+                    coord_match = True  # flag to skip further processing
+
+            if coord_match and coord_match is not True:
+                lat, lng = coord_match.group(1), coord_match.group(2)
+                embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=16"
                 place_match = re.search(r'/place/([^/@]+)', final_url)
-                coord_match = re.search(r'@([-\d.]+),([-\d.]+)', final_url)
+                place_name = place_match.group(1).replace('+', ' ') if place_match else f"{lat},{lng}"
+                req.prompt = req.prompt.replace(share_url, f'{embed_url} (location: {place_name})')
+                logger.info(f"🗺️ Resolved Maps link → {lat},{lng} ({place_name})")
+            elif coord_match is not True:
+                # No coordinates found — use place name with coordinates fallback
+                place_match = re.search(r'/place/([^/@]+)', final_url)
                 if place_match:
                     place_name = place_match.group(1).replace('+', ' ')
-                    embed_url = f"https://www.google.com/maps?q={place_match.group(1)}&output=embed&z=15"
+                    # Use place embed which is more accurate than search
+                    embed_url = f"https://www.google.com/maps/embed/v1/place?key=&q={place_match.group(1)}"
+                    # Fallback to search-based embed (no API key needed)
+                    embed_url = f"https://www.google.com/maps?q={place_match.group(1)}&output=embed&z=16"
                     req.prompt = req.prompt.replace(share_url, f'{embed_url} (location: {place_name})')
-                    logger.info(f"🗺️ Resolved Maps link → {place_name}")
-                elif coord_match:
-                    lat, lng = coord_match.group(1), coord_match.group(2)
-                    embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=15"
-                    req.prompt = req.prompt.replace(share_url, embed_url)
-                    logger.info(f"🗺️ Resolved Maps link → {lat},{lng}")
+                    logger.info(f"🗺️ Resolved Maps link → {place_name} (no coords)")
         except Exception as e:
             logger.warning(f"🗺️ Failed to resolve Maps link: {e}")
 
