@@ -143,7 +143,10 @@ def enforce_whitespace(css: str) -> str:
 section[data-section-type] { padding: 6rem 1.5rem; }
 section[data-section-type="hero"] { padding: 0; }
 section[data-section-type="navbar"] { padding: 0; }
-section[data-section-type="footer"] { padding: 4rem 1.5rem; }""")
+section[data-section-type="footer"] { padding: 4rem 1.5rem; }
+/* Hero navbar clearance — ensure hero content is not hidden behind fixed navbar */
+section[data-section-type="hero"] > div:first-child,
+section[data-section-type^="hero"] > div:first-child { padding-top: max(100px, calc(80px + 1.5rem)); }""")
 
     # Card internal padding
     fixes.append("""
