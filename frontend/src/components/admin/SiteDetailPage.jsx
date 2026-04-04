@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, ExternalLink, Clock, RotateCcw, CheckCircle } from 'lucide-react';
 import StatusBadge from './shared/StatusBadge';
-import { adminGetSiteDetail, adminGetSiteVersions, adminRestoreSiteVersion } from '../../services/adminApi';
+import { adminGetSiteDetail, adminGetSitePreview, adminGetSiteVersions, adminRestoreSiteVersion } from '../../services/adminApi';
 import formatDate from './shared/formatDate';
 
 const T = { bg: '#0a0a0f', surface: '#12121a', border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a' };
@@ -19,6 +19,8 @@ export default function SiteDetailPage() {
     const [versionsLoading, setVersionsLoading] = useState(false);
     const [restoring, setRestoring] = useState(null);
     const [restoreMsg, setRestoreMsg] = useState(null);
+    const [previewHtml, setPreviewHtml] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -31,6 +33,25 @@ export default function SiteDetailPage() {
     }, [id]);
 
     useEffect(() => { load(); }, [load]);
+
+    const loadPreview = async () => {
+        setPreviewLoading(true);
+        try {
+            const data = await adminGetSitePreview(id);
+            if (data.html) {
+                setPreviewHtml(data.html);
+            }
+        } catch (e) { console.error('Preview load failed:', e); }
+        setPreviewLoading(false);
+    };
+
+    // Auto-load preview when switching to preview tab
+    useEffect(() => {
+        if (tab === 'preview' && !previewHtml && !previewLoading) {
+            loadPreview();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab]);
 
     const loadVersions = async () => {
         setVersionsLoading(true);
@@ -148,18 +169,34 @@ export default function SiteDetailPage() {
                 <div className="admin-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <div className="admin-card-title" style={{ margin: 0 }}>Live Preview</div>
-                        {(site.deployed_url || site.domain) && (
-                            <a href={site.domain ? `https://${site.domain}` : site.deployed_url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
-                                <ExternalLink size={12} /> Open in new tab
-                            </a>
-                        )}
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {!previewHtml && !previewLoading && (
+                                <button className="admin-btn admin-btn-sm" onClick={loadPreview} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <RefreshCw size={12} /> Load Preview
+                                </button>
+                            )}
+                            {(site.deployed_url || site.domain) && (
+                                <a href={site.domain ? `https://${site.domain}` : site.deployed_url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+                                    <ExternalLink size={12} /> Open in new tab
+                                </a>
+                            )}
+                        </div>
                     </div>
-                    {site.deployed_url ? (
+                    {previewLoading ? (
+                        <div style={{ padding: 60, textAlign: 'center', color: T.muted }}>
+                            <RefreshCw size={20} className="admin-spinner" style={{ marginBottom: 12 }} />
+                            <p>Loading preview...</p>
+                        </div>
+                    ) : previewHtml ? (
+                        <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${T.border}`, background: '#fff' }}>
+                            <iframe srcDoc={previewHtml} title="Site Preview" style={{ width: '100%', height: 600, border: 'none' }} sandbox="allow-scripts" />
+                        </div>
+                    ) : site.deployed_url ? (
                         <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${T.border}`, background: '#fff' }}>
                             <iframe src={site.deployed_url} title="Site Preview" style={{ width: '100%', height: 600, border: 'none' }} sandbox="allow-scripts allow-same-origin" />
                         </div>
                     ) : (
-                        <div className="admin-empty">No deployed URL available</div>
+                        <div className="admin-empty">No deployed URL available. Click "Load Preview" to fetch from cache.</div>
                     )}
                 </div>
             )}

@@ -105,6 +105,8 @@ const GenerationStatsPage = lazyRetry(() => import('./components/admin/Generatio
 const TokenTrendPage = lazyRetry(() => import('./components/admin/TokenTrendPage'));
 const PendingApprovalsPage = lazyRetry(() => import('./components/admin/PendingApprovalsPage'));
 const TokenRequestsPage = lazyRetry(() => import('./components/admin/TokenRequestsPage'));
+const TrashPage = lazyRetry(() => import('./components/admin/TrashPage'));
+const UserConsumptionPage = lazyRetry(() => import('./components/admin/UserConsumptionPage'));
 
 function ProtectedRoute({ children, allowForceReset, allowPending }) {
   const { user, loading } = useAuth();
@@ -172,11 +174,13 @@ function AppLayout() {
             <Route path="token-requests" element={<TokenRequestsPage />} />
             <Route path="token-ledger" element={<TokenLedgerPage />} />
             <Route path="token-pool" element={<TokenPoolPage />} />
+            <Route path="user-consumption" element={<UserConsumptionPage />} />
             <Route path="expiring-tokens" element={<ExpiringTokensPage />} />
             <Route path="templates" element={<TemplateManagerPage />} />
             <Route path="audit-logs" element={<AuditLogPage />} />
             <Route path="announcements" element={<AnnouncementsPage />} />
             <Route path="prompts" element={<PromptManagerPage />} />
+            <Route path="trash" element={<TrashPage />} />
             <Route path="system" element={<SystemHealthPage />} />
             <Route path="growth" element={<GrowthChartPage />} />
             <Route path="generation-stats" element={<GenerationStatsPage />} />

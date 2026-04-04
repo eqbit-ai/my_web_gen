@@ -50,7 +50,10 @@ async def list_projects(user: dict = Depends(require_auth)):
     """List all projects for the current user."""
     async for db in get_tenant_db(user["db_schema"]):
         result = await db.execute(
-            select(Project).where(Project.user_id == user["user_id"]).order_by(Project.updated_at.desc())
+            select(Project).where(
+                Project.user_id == user["user_id"],
+                Project.deleted_at.is_(None),
+            ).order_by(Project.updated_at.desc())
         )
         projects = result.scalars().all()
 
@@ -88,7 +91,7 @@ async def list_projects(user: dict = Depends(require_auth)):
 async def get_project(project_id: str, user: dict = Depends(require_auth)):
     """Get a project with its current code."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"], Project.deleted_at.is_(None)))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -281,16 +284,16 @@ async def rename_project(project_id: str, user: dict = Depends(require_auth), na
 
 @router.delete("/{project_id}")
 async def delete_project(project_id: str, user: dict = Depends(require_auth)):
-    """Delete a project and all its versions."""
+    """Soft-delete a project (can be restored by admin)."""
+    from datetime import datetime, timezone
+
     async for db in get_tenant_db(user["db_schema"]):
         result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Delete versions first (cascade should handle this, but be explicit)
-        await db.execute(delete(ProjectVersion).where(ProjectVersion.project_id == project_id))
-        await db.delete(project)
+        project.deleted_at = datetime.now(timezone.utc)
         await db.commit()
 
         return {"success": True}

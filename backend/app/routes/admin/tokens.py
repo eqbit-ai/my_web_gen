@@ -535,3 +535,82 @@ async def review_token_request(
         websites_added = max(1, granted // 150_000)
         msg += f" — granted {websites_added} website(s) ({granted:,} tokens)"
     return {"message": msg}
+
+
+# ── User Consumption Overview ────────────────────────────────────────────
+
+
+@router.get("/tokens/consumption")
+async def user_consumption(
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Per-user token consumption: total granted, total used, balance, and estimated cost."""
+    # Get all users with their balances
+    users_result = await db.execute(
+        select(
+            User.id, User.email, User.full_name, User.company_name,
+            User.token_balance, User.tokens_used,
+        ).where(User.is_admin.is_(False)).order_by(User.tokens_used.desc())
+    )
+    users = users_result.fetchall()
+
+    # Get per-user grant totals from ledger
+    grants_result = await db.execute(
+        select(
+            TokenTransaction.user_id,
+            func.coalesce(func.sum(TokenTransaction.amount), 0),
+        )
+        .where(TokenTransaction.type == "grant")
+        .group_by(TokenTransaction.user_id)
+    )
+    grants_map = {r[0]: int(r[1]) for r in grants_result.fetchall()}
+
+    # Get per-user deduction totals from ledger
+    deductions_result = await db.execute(
+        select(
+            TokenTransaction.user_id,
+            func.coalesce(func.sum(func.abs(TokenTransaction.amount)), 0),
+        )
+        .where(TokenTransaction.type == "deduction")
+        .group_by(TokenTransaction.user_id)
+    )
+    deductions_map = {r[0]: int(r[1]) for r in deductions_result.fetchall()}
+
+    # Global totals
+    total_granted = sum(grants_map.values())
+    total_used = sum(deductions_map.values())
+    total_balance = sum(r[4] for r in users)
+
+    cost_per_token = 0.000003  # approx $3 per 1M tokens
+
+    items = []
+    for uid, email, full_name, company, balance, tokens_used in users:
+        granted = grants_map.get(uid, 0)
+        used = deductions_map.get(uid, 0)
+        # Fall back to tokens_used from user model if ledger has no deductions
+        if used == 0 and tokens_used:
+            used = tokens_used
+        items.append({
+            "user_id": uid,
+            "email": email,
+            "full_name": full_name or "",
+            "company_name": company or "",
+            "total_granted": granted,
+            "total_used": used,
+            "balance": balance,
+            "est_cost": round(used * cost_per_token, 4),
+        })
+
+    # Sort by total_used descending
+    items.sort(key=lambda x: x["total_used"], reverse=True)
+
+    return {
+        "users": items,
+        "totals": {
+            "total_granted": total_granted,
+            "total_used": total_used,
+            "total_balance": total_balance,
+            "total_est_cost": round(total_used * cost_per_token, 2),
+        },
+    }

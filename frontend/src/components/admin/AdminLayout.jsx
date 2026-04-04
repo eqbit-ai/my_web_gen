@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
     Activity, Globe, AlertTriangle, Clock, Shield, ShoppingCart,
     Users, UserCheck, Receipt, Database, Timer, Coins,
-    FileText, ClipboardList, Bell, Terminal, Server,
+    FileText, ClipboardList, Bell, Terminal, Server, Trash2,
     TrendingUp, BarChart3, PieChart,
     ChevronDown, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Menu,
 } from 'lucide-react';
@@ -44,6 +44,7 @@ const NAV_SECTIONS = [
             { path: '/admin/token-requests', label: 'Token Requests', icon: Coins },
             { path: '/admin/token-ledger', label: 'Transaction Ledger', icon: Receipt },
             { path: '/admin/token-pool', label: 'Token Pool', icon: Database },
+            { path: '/admin/user-consumption', label: 'User Consumption', icon: TrendingUp },
             { path: '/admin/expiring-tokens', label: 'Expiring Tokens', icon: Timer },
         ],
     },
@@ -54,6 +55,7 @@ const NAV_SECTIONS = [
             { path: '/admin/audit-logs', label: 'Audit Logs', icon: ClipboardList },
             { path: '/admin/announcements', label: 'Announcements', icon: Bell },
             { path: '/admin/prompts', label: 'Prompt Manager', icon: Terminal },
+            { path: '/admin/trash', label: 'Trash', icon: Trash2 },
             { path: '/admin/system', label: 'System Health', icon: Server },
         ],
     },

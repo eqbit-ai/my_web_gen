@@ -3520,6 +3520,7 @@ class EditElementRequest(BaseModel):
     sectionType: str = ""
     parentTag: str = ""
     parentClass: str = ""
+    elementOccurrence: int = 0
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -5157,7 +5158,7 @@ RULES:
 - Use inline style for one-off changes, or use the CSS classes listed above
 - BUTTON COLOR CHANGES: When changing a button's background color, use style="background: COLOR !important" (with !important) because .btn-primary has a gradient that will override plain inline styles. For text color changes on buttons, use style="color: COLOR !important".
 - COLOR CHANGES: Apply with inline style using !important to override CSS class styles. Example: style="color: red !important" or style="background-color: #333 !important". Always use !important for color overrides.
-- ALIGNMENT / POSITIONING: Apply via inline style. text-align: center/left/right for text. For flexbox containers, use justify-content and align-items inline. Do NOT restructure the DOM — just add/modify the style attribute.
+- ALIGNMENT / POSITIONING: Apply via inline style. For block elements (div, section, h1-h6, p): text-align: center/left/right. For INLINE elements (span, a, em, strong): convert to display: block (or inline-block) first, then apply text-align, OR use margin: 0 auto with display: block to center. For flexbox containers, use justify-content and align-items inline. Do NOT restructure the DOM — just add/modify the style attribute.
 - SPACING (padding/margin): Apply via inline style. e.g. style="padding: 2rem" or style="margin-bottom: 1rem". Do NOT restructure the DOM.
 - BACKGROUND CHANGES: Apply via inline style. e.g. style="background: #1a1a2e" or style="background: linear-gradient(...)". Do NOT restructure the DOM.
 - VISIBILITY (hide/show): To hide, return an empty HTML comment: <!-- removed -->. Do NOT delete surrounding elements.
@@ -5380,17 +5381,25 @@ def _find_element_end(full_html: str, start: int, tag_name: str) -> int | None:
     return None
 
 
-def _find_element_in_html(full_html: str, element_html: str) -> tuple[int, int] | None:
+def _find_element_in_html(full_html: str, element_html: str, occurrence: int = 0) -> tuple[int, int] | None:
     """Find the exact position of an element's outerHTML in the full page HTML.
 
     Tries exact match first, then normalised whitespace match, then
     prefix match, then attribute-flexible match (handles browser HTML normalization).
     All fallbacks use tag-aware end detection so we never blindly slice by len(element_html).
+
+    occurrence: 0-based index — if the same element_html appears multiple times,
+    skip this many matches to target the right one (e.g., 2nd card vs 1st card).
     """
-    # Exact match
-    idx = full_html.find(element_html)
-    if idx != -1:
-        return idx, idx + len(element_html)
+    # Exact match — skip `occurrence` number of matches
+    search_start = 0
+    for i in range(occurrence + 1):
+        idx = full_html.find(element_html, search_start)
+        if idx == -1:
+            break
+        if i == occurrence:
+            return idx, idx + len(element_html)
+        search_start = idx + 1
 
     tag = re.match(r'<(\w+)', element_html)
     tag_name = tag.group(1) if tag else None
@@ -5522,8 +5531,9 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         if remove_pattern.match(req.prompt.strip()):
             # Try to find and remove the element directly from HTML
             element_snippet = req.elementHtml.strip()
-            if element_snippet and element_snippet in full_html:
-                result_html = full_html.replace(element_snippet, "", 1)
+            pos = _find_element_in_html(full_html, element_snippet, req.elementOccurrence) if element_snippet else None
+            if pos:
+                result_html = full_html[:pos[0]] + full_html[pos[1]:]
                 # Verify we didn't wipe everything
                 if len(result_html.strip()) > 200:
                     logger.info("🖱️ [ELEMENT EDIT] ✅ Direct removal (no LLM) — removed %d chars", len(element_snippet))
@@ -5681,14 +5691,14 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             if target_section:
                 # Replace within the section first, then patch section into page
                 section_html = full_html[target_section["start"]:target_section["end"]]
-                pos = _find_element_in_html(section_html, req.elementHtml)
+                pos = _find_element_in_html(section_html, req.elementHtml, req.elementOccurrence)
                 if pos:
                     new_section = section_html[:pos[0]] + edited_element + section_html[pos[1]:]
                     result_html = replace_section_html(full_html, target_section["id"], new_section)
-                    logger.info("🖱️ [ELEMENT EDIT] Matched element within section")
+                    logger.info("🖱️ [ELEMENT EDIT] Matched element within section (occurrence=%d)", req.elementOccurrence)
                 else:
                     # Fallback: search in full HTML
-                    pos = _find_element_in_html(full_html, req.elementHtml)
+                    pos = _find_element_in_html(full_html, req.elementHtml, req.elementOccurrence)
                     if pos:
                         result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
                         logger.info("🖱️ [ELEMENT EDIT] Matched element in full HTML")
@@ -5719,7 +5729,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                                             logger.info("🖱️ [ELEMENT EDIT] Matched via text content regex")
             else:
                 # Element outside sections (nav, footer, etc.)
-                pos = _find_element_in_html(full_html, req.elementHtml)
+                pos = _find_element_in_html(full_html, req.elementHtml, req.elementOccurrence)
                 if pos:
                     result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
                 else:
@@ -5763,7 +5773,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 logger.error("🖱️ [ELEMENT EDIT] FAILED — no HTML parsed in fallback")
                 raise HTTPException(status_code=500, detail="Failed to parse edited element")
 
-            pos = _find_element_in_html(full_html, req.elementHtml)
+            pos = _find_element_in_html(full_html, req.elementHtml, req.elementOccurrence)
             if pos:
                 result_html = full_html[:pos[0]] + edited_element + full_html[pos[1]:]
             else:

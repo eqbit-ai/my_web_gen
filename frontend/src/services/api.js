@@ -262,6 +262,7 @@ export const editElement = async (sessionId, elementData, prompt, currentCode, c
                 sectionType: elementData.sectionType || '',
                 parentTag: elementData.parentTag || '',
                 parentClass: elementData.parentClass || '',
+                elementOccurrence: elementData.elementOccurrence || 0,
             }),
         });
         const data = await response.json();

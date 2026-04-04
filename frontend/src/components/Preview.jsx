@@ -289,6 +289,19 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                 const sectionId = sectionEl ? (sectionEl.getAttribute('data-section-id') || '') : '';
                 const sectionType = sectionEl ? (sectionEl.getAttribute('data-section-type') || sectionEl.tagName.toLowerCase()) : '';
 
+                // Count which occurrence of identical outerHTML this element is
+                // within the parent section, so backend can target the right one
+                let elementOccurrence = 0;
+                if (sectionEl) {
+                    const elHtml = el.outerHTML;
+                    const walker = document.createTreeWalker(sectionEl, NodeFilter.SHOW_ELEMENT);
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        if (node === el) break;
+                        if (node.outerHTML === elHtml) elementOccurrence++;
+                    }
+                }
+
                 const elementInfo = {
                     tagName: el.tagName.toLowerCase(),
                     id: el.id || null,
@@ -303,6 +316,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
                     sectionType: sectionType,
                     parentTag: el.parentElement ? el.parentElement.tagName.toLowerCase() : '',
                     parentClass: el.parentElement?.className || '',
+                    elementOccurrence: elementOccurrence,
                 };
                 window.parent.postMessage({ type: 'element-selected', element: elementInfo }, '*');
             }, true);

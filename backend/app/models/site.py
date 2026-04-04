@@ -35,6 +35,7 @@ class Site(Base):
     view_count = Column(Integer, default=0, server_default="0", nullable=False)
     recipient_email = Column(String, nullable=True)  # Custom email for form notifications (overrides signup email)
     deploy_error = Column(Text, nullable=True)  # Last deployment error if any
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     last_deployed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

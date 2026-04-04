@@ -79,6 +79,24 @@ export const adminRestoreSiteVersion = async (siteId, deploymentTime) => {
     return apiPost(`/admin/sites/${siteId}/restore/${encodeURIComponent(deploymentTime)}`);
 };
 
+// ── Trash / Deleted Items ────────────────────────────────────────────────
+
+export const adminGetDeletedItems = async () => {
+    return apiGet('/admin/deleted');
+};
+
+export const adminRestoreDeletedSite = async (siteId) => {
+    return apiPost(`/admin/deleted/restore/site/${siteId}`);
+};
+
+export const adminRestoreDeletedProject = async (projectId, dbSchema) => {
+    return apiPost(`/admin/deleted/restore/project/${projectId}?db_schema=${encodeURIComponent(dbSchema)}`);
+};
+
+export const adminPurgeDeletedSite = async (siteId) => {
+    return apiDelete(`/admin/deleted/purge/site/${siteId}`);
+};
+
 // ── Generations ──────────────────────────────────────────────────────────
 
 export const adminGetGenerations = async (page = 1, limit = 20, status = null, userId = null) => {
@@ -338,6 +356,10 @@ export const adminGetGenerationStats = async (days = 30) => {
 
 export const adminGetTokenConsumption = async (days = 30) => {
     return apiGet(`/admin/analytics/token-consumption?days=${days}`);
+};
+
+export const adminGetUserConsumption = async () => {
+    return apiGet('/admin/tokens/consumption');
 };
 
 export const adminGetStats = async () => {

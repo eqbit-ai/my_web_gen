@@ -422,7 +422,7 @@ async def list_deployed_sites(user: dict = Depends(require_auth)):
     async with async_session() as db:
         result = await db.execute(
             select(Site)
-            .where(Site.user_id == user["user_id"])
+            .where(Site.user_id == user["user_id"], Site.deleted_at.is_(None))
             .order_by(Site.updated_at.desc())
         )
         sites = result.scalars().all()
@@ -1111,7 +1111,9 @@ async def get_available_domains(site_id: str, user: dict = Depends(require_auth)
 
 @router.delete("/{site_id}")
 async def delete_deployed_site(site_id: str, user: dict = Depends(require_auth)):
-    """Permanently delete a deployed site — removes S3 files, domain resources, and DB record."""
+    """Soft-delete a deployed site (can be restored by admin). S3 files are preserved."""
+    from datetime import datetime, timezone
+
     async with async_session() as db:
         result = await db.execute(
             select(Site).where(Site.id == site_id, Site.user_id == user["user_id"])
@@ -1120,48 +1122,9 @@ async def delete_deployed_site(site_id: str, user: dict = Depends(require_auth))
         if not site:
             raise HTTPException(status_code=404, detail="Site not found")
 
-        s3_prefix = site.cloudflare_project_name
-        dist_id = site.cloudfront_distribution_id
-        cert_arn = site.acm_certificate_arn
-        zone_id = site.route53_zone_id
-
-        # Delete S3 files
-        if s3_prefix:
-            try:
-                await delete_site(s3_prefix)
-            except Exception as e:
-                logger.warning("Failed to delete S3 files for %s: %s", s3_prefix, e)
-
-        # Delete DB record
-        await db.delete(site)
+        site.deleted_at = datetime.now(timezone.utc)
+        site.status = "offline"
         await db.commit()
-
-    # Background cleanup: CloudFront + ACM + Route53 (best-effort)
-    async def _cleanup():
-        try:
-            if dist_id:
-                try:
-                    await disable_distribution(dist_id)
-                except Exception:
-                    pass
-                for _ in range(60):
-                    await asyncio.sleep(30)
-                    status = await get_distribution_status(dist_id)
-                    if status.get("status") == "Deployed":
-                        break
-                await delete_distribution(dist_id)
-            if cert_arn:
-                await delete_certificate(cert_arn)
-            if zone_id:
-                await delete_hosted_zone(zone_id)
-            logger.info("Cleanup complete for deleted site %s", site_id)
-        except Exception as e:
-            logger.warning("Background cleanup failed for site %s: %s", site_id, e)
-
-    if dist_id or cert_arn or zone_id:
-        task = asyncio.create_task(_cleanup())
-        _background_tasks.add(task)
-        task.add_done_callback(_background_tasks.discard)
 
     return {"success": True, "message": "Site deleted"}
 

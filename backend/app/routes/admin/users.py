@@ -178,7 +178,7 @@ async def get_user_detail(
 
     try:
         result = await db.execute(
-            select(Site).where(Site.user_id == user_id).order_by(Site.created_at.desc()).limit(20)
+            select(Site).where(Site.user_id == user_id, Site.deleted_at.is_(None)).order_by(Site.created_at.desc()).limit(20)
         )
         sites = result.scalars().all()
         user_data["sites"] = [
@@ -425,6 +425,22 @@ async def bulk_user_action(
             .where(User.id.in_(req.user_ids))
             .values(token_balance=User.token_balance + amount)
         )
+
+        # Record each grant in token ledger
+        from app.models.token_transaction import TokenTransaction
+        for uid in req.user_ids:
+            # Fetch updated balance
+            bal_result = await db.execute(select(User.token_balance).where(User.id == uid))
+            bal = bal_result.scalar() or 0
+            txn = TokenTransaction(
+                user_id=uid,
+                type="grant",
+                amount=amount,
+                balance_after=bal,
+                reason="Bulk admin grant",
+                created_by=admin.get("user_id"),
+            )
+            db.add(txn)
         await db.commit()
 
         log_event_bg(
@@ -590,6 +606,18 @@ async def approve_user(
                 is_active=True,
             )
         )
+
+        # Record approval grant in token ledger
+        from app.models.token_transaction import TokenTransaction
+        txn = TokenTransaction(
+            user_id=user_id,
+            type="grant",
+            amount=300_000,
+            balance_after=300_000,
+            reason="Account approval grant",
+            created_by=admin.get("user_id"),
+        )
+        db.add(txn)
         await db.commit()
     except Exception as e:
         await db.rollback()
@@ -752,17 +780,28 @@ async def grant_tokens(
         raise HTTPException(status_code=400, detail="Amount must be positive")
 
     try:
+        new_balance = _safe_getattr(user, "token_balance", 0) + req.amount
         await db.execute(
             update(User)
             .where(User.id == user_id)
             .values(token_balance=User.token_balance + req.amount)
         )
+
+        # Record in token ledger
+        from app.models.token_transaction import TokenTransaction
+        txn = TokenTransaction(
+            user_id=user_id,
+            type="grant",
+            amount=req.amount,
+            balance_after=new_balance,
+            reason="Admin grant",
+            created_by=admin.get("user_id"),
+        )
+        db.add(txn)
         await db.commit()
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to grant tokens: {e}") from e
-
-    new_balance = _safe_getattr(user, "token_balance", 0) + req.amount
 
     log_event_bg(
         user_id=str(admin.get("user_id")),

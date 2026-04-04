@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import get_db, get_tenant_db
+from app.models.project import Project
 from app.models.site import Site
 from app.models.user import User
 from app.utils.redis_client import get_redis
@@ -31,7 +32,7 @@ async def list_sites(
 ):
     """List all sites with pagination and optional filters."""
     try:
-        query = select(Site)
+        query = select(Site).where(Site.deleted_at.is_(None))
 
         if status:
             query = query.where(Site.status == status)
@@ -178,6 +179,25 @@ async def preview_site(
                     if not html:
                         html = session_data.get("html")
                     break
+
+        # 3) Fallback: fetch index.html from S3
+        if not html and site.cloudflare_project_name:
+            try:
+                import os
+
+                import boto3
+
+                bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
+                s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "us-east-1"))
+                s3_key = f"{site.cloudflare_project_name}/index.html"
+                s3_kwargs = {"Bucket": bucket, "Key": s3_key}
+                expected_owner = os.getenv("AWS_ACCOUNT_ID", "")
+                if expected_owner:
+                    s3_kwargs["ExpectedBucketOwner"] = expected_owner
+                obj = s3.get_object(**s3_kwargs)
+                html = obj["Body"].read().decode("utf-8")
+            except Exception as s3_err:
+                logger.warning("S3 preview fallback failed for %s: %s", site_id, s3_err)
 
         return {
             "site_id": str(site.id),
@@ -359,3 +379,175 @@ async def restore_site_version(
     except Exception as e:
         logger.error("Failed to restore site %s: %s", site_id, e)
         raise HTTPException(status_code=500, detail=f"Failed to restore: {e}") from e
+
+
+# ── Deleted Items (Trash) ─────────────────────────────────────────────────
+
+
+@router.get("/deleted")
+async def list_deleted_items(
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all soft-deleted sites and projects across all tenants."""
+    # Deleted sites
+    site_result = await db.execute(
+        select(Site).where(Site.deleted_at.isnot(None)).order_by(Site.deleted_at.desc())
+    )
+    deleted_sites = site_result.scalars().all()
+
+    user_ids = list({s.user_id for s in deleted_sites})
+    user_map = {}
+    if user_ids:
+        user_result = await db.execute(
+            select(User.id, User.email, User.full_name, User.company_name, User.db_schema)
+            .where(User.id.in_(user_ids))
+        )
+        user_map = {r[0]: {"email": r[1], "full_name": r[2], "company_name": r[3], "db_schema": r[4]} for r in user_result.fetchall()}
+
+    sites_list = [
+        {
+            "type": "site",
+            "id": str(s.id),
+            "name": s.name,
+            "user_id": s.user_id,
+            "user_email": user_map.get(s.user_id, {}).get("email", ""),
+            "user_name": user_map.get(s.user_id, {}).get("full_name", ""),
+            "deployed_url": s.deployed_url,
+            "deleted_at": _serialize_datetime(s.deleted_at),
+            "created_at": _serialize_datetime(s.created_at),
+        }
+        for s in deleted_sites
+    ]
+
+    # Deleted projects — scan all tenant schemas
+    all_users = await db.execute(select(User.id, User.email, User.full_name, User.db_schema))
+    all_users_list = all_users.fetchall()
+
+    projects_list = []
+    for uid, email, full_name, db_schema in all_users_list:
+        if not db_schema:
+            continue
+        try:
+            async for tenant_db in get_tenant_db(db_schema):
+                result = await tenant_db.execute(
+                    select(Project).where(Project.deleted_at.isnot(None)).order_by(Project.deleted_at.desc())
+                )
+                for p in result.scalars().all():
+                    projects_list.append({
+                        "type": "project",
+                        "id": p.id,
+                        "name": p.name,
+                        "user_id": uid,
+                        "user_email": email,
+                        "user_name": full_name,
+                        "has_content": bool(p.current_html),
+                        "deleted_at": _serialize_datetime(p.deleted_at),
+                        "created_at": _serialize_datetime(p.created_at),
+                        "db_schema": db_schema,
+                    })
+        except Exception as e:
+            logger.warning("Failed to scan tenant %s for deleted projects: %s", db_schema, e)
+
+    # Merge and sort by deleted_at
+    all_items = sites_list + projects_list
+    all_items.sort(key=lambda x: x.get("deleted_at") or "", reverse=True)
+
+    return {"items": all_items, "total": len(all_items)}
+
+
+@router.post("/deleted/restore/site/{site_id}")
+async def restore_deleted_site(
+    site_id: str,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Restore a soft-deleted site."""
+    result = await db.execute(select(Site).where(Site.id == site_id))
+    site = result.scalar_one_or_none()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    if not site.deleted_at:
+        raise HTTPException(status_code=400, detail="Site is not deleted")
+
+    site.deleted_at = None
+    site.status = "published"
+    await db.commit()
+
+    from app.utils.audit_log import log_event_bg
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="restore_deleted_site",
+        resource_type="site",
+        resource_id=str(site_id),
+        details={"site_name": site.name},
+    )
+
+    return {"success": True, "message": f"Site '{site.name}' restored"}
+
+
+@router.post("/deleted/restore/project/{project_id}")
+async def restore_deleted_project(
+    project_id: str,
+    db_schema: str = Query(...),
+    admin=Depends(require_admin),
+):
+    """Restore a soft-deleted project."""
+    async for tenant_db in get_tenant_db(db_schema):
+        result = await tenant_db.execute(select(Project).where(Project.id == project_id))
+        project = result.scalar_one_or_none()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        if not project.deleted_at:
+            raise HTTPException(status_code=400, detail="Project is not deleted")
+
+        project.deleted_at = None
+        await tenant_db.commit()
+
+        from app.utils.audit_log import log_event_bg
+        log_event_bg(
+            user_id=str(admin.get("user_id")),
+            action="restore_deleted_project",
+            resource_type="project",
+            resource_id=project_id,
+            details={"project_name": project.name, "db_schema": db_schema},
+        )
+
+        return {"success": True, "message": f"Project '{project.name}' restored"}
+
+
+@router.delete("/deleted/purge/site/{site_id}")
+async def purge_deleted_site(
+    site_id: str,
+    admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Permanently delete a soft-deleted site and its S3 files."""
+    result = await db.execute(select(Site).where(Site.id == site_id))
+    site = result.scalar_one_or_none()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    if not site.deleted_at:
+        raise HTTPException(status_code=400, detail="Site is not in trash — soft-delete it first")
+
+    # Delete S3 files
+    if site.cloudflare_project_name:
+        try:
+            from app.utils.s3_deploy import delete_site
+            await delete_site(site.cloudflare_project_name)
+        except Exception as e:
+            logger.warning("Failed to delete S3 files for %s: %s", site.cloudflare_project_name, e)
+
+    await db.delete(site)
+    await db.commit()
+
+    from app.utils.audit_log import log_event_bg
+    log_event_bg(
+        user_id=str(admin.get("user_id")),
+        action="purge_deleted_site",
+        resource_type="site",
+        resource_id=str(site_id),
+        details={"site_name": site.name},
+    )
+
+    return {"success": True, "message": f"Site '{site.name}' permanently deleted"}
