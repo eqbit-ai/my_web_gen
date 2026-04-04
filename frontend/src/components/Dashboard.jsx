@@ -679,7 +679,7 @@ const Dashboard = () => {
                         name: data.name,
                         html: data.html,
                         css: data.css,
-                        js: '',
+                        js: data.js || '',
                         isTemplate: true,
                     },
                 },
@@ -1217,7 +1217,7 @@ const Dashboard = () => {
                                     </div>
                                     <iframe
                                         title="Template Preview"
-                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${templatePreviews[previewModal].css || ''}</style></head><body>${templatePreviews[previewModal].html || ''}</body></html>`}
+                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${templatePreviews[previewModal].css || ''}</style></head><body>${templatePreviews[previewModal].html || ''}<script>${templatePreviews[previewModal].js || ''}<\/script></body></html>`}
                                         className="dash-template-modal-iframe"
                                         sandbox="allow-same-origin allow-scripts"
                                     />

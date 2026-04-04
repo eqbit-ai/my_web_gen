@@ -7,6 +7,10 @@ import os
 from fastapi import APIRouter, HTTPException
 from fastapi.security import HTTPBearer
 
+from app.utils.animations import get_animation_js
+from app.utils.form_handler import inject_form_handler
+from app.utils.section_parser import inject_section_ids
+
 router = APIRouter()
 security = HTTPBearer()
 
@@ -256,8 +260,12 @@ TEMPLATE_CATALOG = [
 ]
 
 
-def _load_template_file(template_id: str) -> tuple[str, str]:
-    """Load a template HTML file and split into HTML body + CSS."""
+def _load_template_file(template_id: str) -> tuple[str, str, str]:
+    """Load a template HTML file and split into HTML body + CSS + JS.
+
+    Injects section IDs, form handler attributes, and standard animation JS
+    so templates work identically to pipeline-generated sites.
+    """
     # Sanitize template_id to prevent path traversal
     safe_id = os.path.basename(template_id)
     file_path = os.path.join(TEMPLATES_DIR, f"{safe_id}.html")
@@ -279,7 +287,14 @@ def _load_template_file(template_id: str) -> tuple[str, str]:
         css = content[style_start:style_end].strip()
         html = content[style_end + len("</style>") :].strip()
 
-    return html, css
+    # Inject section IDs so section operations work
+    html = inject_section_ids(html)
+
+    # Inject form handler attributes and JS
+    js = get_animation_js()
+    html, js = inject_form_handler(html, js)
+
+    return html, css, js
 
 
 @router.get("/")
@@ -290,33 +305,35 @@ async def list_templates():
 
 @router.get("/{template_id}")
 async def get_template(template_id: str):
-    """Get a specific template with its full HTML and CSS."""
+    """Get a specific template with its full HTML, CSS, and JS."""
     # Find metadata
     meta = next((t for t in TEMPLATE_CATALOG if t["id"] == template_id), None)
     if not meta:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    html, css = _load_template_file(template_id)
+    html, css, js = _load_template_file(template_id)
 
     return {
         **meta,
         "html": html,
         "css": css,
+        "js": js,
     }
 
 
 @router.get("/{template_id}/preview")
 async def get_template_preview(template_id: str):
-    """Get template HTML+CSS combined for iframe preview."""
+    """Get template HTML+CSS+JS combined for iframe preview."""
     meta = next((t for t in TEMPLATE_CATALOG if t["id"] == template_id), None)
     if not meta:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    html, css = _load_template_file(template_id)
+    html, css, js = _load_template_file(template_id)
 
     return {
         "id": template_id,
         "name": meta["name"],
         "html": html,
         "css": css,
+        "js": js,
     }
