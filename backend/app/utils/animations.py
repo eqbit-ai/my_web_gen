@@ -689,8 +689,8 @@ document.addEventListener('DOMContentLoaded', function() {
      Mobile Hamburger Menu Toggle — Event Delegation
      ------------------------------------------------------------------ */
   (function() {
-    var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label="Menu"],.mobile-menu-btn,.burger';
-    var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav';
+    var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label="Menu"],button[aria-label="Toggle menu"],.mobile-menu-btn,.burger,[class*="-menu-toggle"],[class*="-mobile-toggle"],[class*="nav-hamburger"],[class*="__hamburger"],[class*="__menu-toggle"]';
+    var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav,[class*="-nav-links"],[class*="-menu-items"],[class*="-nav-menu"],[class*="__nav-links"],[class*="__menu-items"]';
 
     document.addEventListener('click', function(e) {
       var btn = e.target.closest(tSel);
