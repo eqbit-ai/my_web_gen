@@ -5630,24 +5630,11 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         )
         _is_image_edit = bool(_image_keywords.search(req.prompt))
 
-        # Extract ALL background-image URLs from the FULL page HTML before LLM edit.
-        # After the edit, if the user didn't ask about images, we restore any URLs
-        # that the LLM replaced with {{IMG:}} or hallucinated URLs.
-        # We extract from the ENTIRE page so we catch URLs on parent sections,
-        # not just the element being edited (background is usually on <section>, not <h1>).
-        _original_bg_urls = []
-        _original_img_srcs = []
-        if not _is_image_edit:
-            _original_bg_urls = re.findall(
-                r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
-                full_html,
-            )
-            _original_img_srcs = re.findall(
-                r'<img[^>]+src=["\']?(https?://[^"\'>\s]+)["\']?',
-                full_html,
-            )
-            if _original_bg_urls or _original_img_srcs:
-                logger.info(f"🖱️ [ELEMENT EDIT] Preserving {len(_original_bg_urls)} bg URLs + {len(_original_img_srcs)} img srcs (non-image edit)")
+        # Note: image URL preservation is NOT needed for element edits because:
+        # - Precise edits only patch the edited element — other images stay untouched
+        # - Structural edits only replace the target section — other sections stay untouched
+        # - The _resolve_images_safe call below ONLY resolves {{IMG:}} placeholders,
+        #   not existing pexels/unsplash URLs, so valid images won't be swapped out
 
         # ── Protect navbar/header from structural rewrites ──────
         # Nav/header sections are fragile — structural edits (which rewrite
@@ -5853,46 +5840,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # hallucinated URLs even when the user only asked about text/color/font.
         # Compare before/after: any URL from the original that's missing in the
         # result gets restored by replacing whatever new URL took its place.
-        if not _is_image_edit and (_original_bg_urls or _original_img_srcs):
-            # Restore background-image URLs
-            if _original_bg_urls:
-                result_urls = re.findall(
-                    r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
-                    result_html,
-                )
-                orig_set = set(_original_bg_urls)
-                result_set = set(result_urls)
-                missing = orig_set - result_set
-                added = result_set - orig_set
-
-                if missing and added:
-                    missing_list = list(missing)
-                    added_list = list(added)
-                    for i, new_url in enumerate(added_list):
-                        if i < len(missing_list):
-                            old_url = missing_list[i]
-                            result_html = result_html.replace(new_url, old_url)
-                            logger.info(f"🖱️ [ELEMENT EDIT] Restored BG URL: ...{new_url[-40:]} → ...{old_url[-40:]}")
-
-            # Restore <img src> URLs
-            if _original_img_srcs:
-                result_img_srcs = re.findall(
-                    r'<img[^>]+src=["\']?(https?://[^"\'>\s]+)["\']?',
-                    result_html,
-                )
-                orig_img_set = set(_original_img_srcs)
-                result_img_set = set(result_img_srcs)
-                missing_imgs = orig_img_set - result_img_set
-                added_imgs = result_img_set - orig_img_set
-
-                if missing_imgs and added_imgs:
-                    missing_list = list(missing_imgs)
-                    added_list = list(added_imgs)
-                    for i, new_url in enumerate(added_list):
-                        if i < len(missing_list):
-                            old_url = missing_list[i]
-                            result_html = result_html.replace(new_url, old_url)
-                            logger.info(f"🖱️ [ELEMENT EDIT] Restored IMG src: ...{new_url[-40:]} → ...{old_url[-40:]}")
+        # (Image URL restoration removed — not needed for element edits, see note above)
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
