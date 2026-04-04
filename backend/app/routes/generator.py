@@ -731,16 +731,25 @@ def _ensure_hero_has_image(html: str, niche_key: str = None) -> str:
     return html
 
 
-async def _resolve_images_safe(html: str, niche_key: str = None, user_images: list[dict] | None = None) -> str:
-    """Resolve image placeholders with safety cleanup for any unresolved ones."""
+async def _resolve_images_safe(html: str, niche_key: str = None, user_images: list[dict] | None = None, is_edit: bool = False) -> str:
+    """Resolve image placeholders with safety cleanup for any unresolved ones.
+
+    Args:
+        is_edit: If True, skip hallucinated URL conversion — during edits, existing
+                 pexels/unsplash URLs are real images placed by the user or previous
+                 edits, not LLM hallucinations.
+    """
     # First: ensure hero has a background image (inject {{IMG:}} if missing)
-    html = _ensure_hero_has_image(html, niche_key)
+    if not is_edit:
+        html = _ensure_hero_has_image(html, niche_key)
 
     # Apply user-assigned images
     html = _apply_user_images(html, user_images)
 
-    # Then: convert any hallucinated Pexels/Unsplash URLs to {{IMG:}} placeholders
-    html = _convert_hallucinated_urls_to_placeholders(html)
+    # Convert hallucinated URLs — ONLY for new generations, NOT edits.
+    # During edits, pexels/unsplash URLs are real images from prior edits or templates.
+    if not is_edit:
+        html = _convert_hallucinated_urls_to_placeholders(html)
 
     # Then resolve placeholders to real image URLs
     html = await resolve_image_placeholders(html, niche_key=niche_key)
@@ -2665,11 +2674,11 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
         updated_html = replace_section_html(updated_html, target_id, new_section_html)
         logger.info(f'✅ Section Replaced → id="{target_id}" patched into full HTML')
 
-    # Resolve any {{IMG:}} placeholders the model may have added (with hallucination safety)
-    if "{{IMG:" in updated_html or re.search(r'src=["\']https?://images\.(pexels|unsplash)\.com/', updated_html):
+    # Resolve any {{IMG:}} placeholders the model may have added
+    if "{{IMG:" in updated_html:
         plan = session.get("plan", {})
         niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
-        updated_html = await _resolve_images_safe(updated_html, niche_key=niche_key)
+        updated_html = await _resolve_images_safe(updated_html, niche_key=niche_key, is_edit=True)
 
     return {"html": updated_html, "css": css, "js": js}
 
@@ -3315,9 +3324,9 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
             f"✅ Section Generated → {section_type} ({len(new_section_html):,} chars) in {_fmt_duration(duration)}"
         )
 
-        # Resolve image placeholders (with hallucination safety)
+        # Resolve image placeholders — new sections may have hallucinated URLs
         niche_key = brand.get("industry", "general")
-        new_section_html = await _resolve_images_safe(new_section_html, niche_key=niche_key)
+        new_section_html = await _resolve_images_safe(new_section_html, niche_key=niche_key, is_edit=False)
 
         # Insert the new section at the right position
         footer_exists = any(s["type"] == "footer" for s in sections)
