@@ -60,11 +60,13 @@ async def _ensure_deleted_at(db, schema: str):
         return
     try:
         await db.execute(sa_text(
-            f'ALTER TABLE "{schema}".projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ'
+            'ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ'
         ))
         await db.commit()
-    except Exception:
+        logger.info("Added deleted_at column to projects table in schema %s", schema)
+    except Exception as e:
         await db.rollback()
+        logger.warning("Failed to add deleted_at column in schema %s: %s", schema, e)
     _schemas_with_deleted_at.add(schema)
 
 
