@@ -14,9 +14,14 @@ from sqlalchemy.exc import ProgrammingError
 
 logger = logging.getLogger(__name__)
 
+from sqlalchemy import text as sa_text
+
 from app.database import get_tenant_db
 from app.models.project import Project, ProjectVersion
 from app.utils.auth import decode_access_token
+
+# Cache which tenant schemas already have deleted_at column
+_schemas_with_deleted_at: set[str] = set()
 
 router = APIRouter()
 security = HTTPBearer()
@@ -49,28 +54,31 @@ class RollbackRequest(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────
 
 
+async def _ensure_deleted_at(db, schema: str):
+    """Ensure deleted_at column exists on the projects table for this tenant schema."""
+    if schema in _schemas_with_deleted_at:
+        return
+    try:
+        await db.execute(sa_text(
+            f'ALTER TABLE "{schema}".projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ'
+        ))
+        await db.commit()
+    except Exception:
+        await db.rollback()
+    _schemas_with_deleted_at.add(schema)
+
+
 @router.get("/")
 async def list_projects(user: dict = Depends(require_auth)):
     """List all projects for the current user."""
     async for db in get_tenant_db(user["db_schema"]):
-        try:
-            result = await db.execute(
-                select(Project).where(
-                    Project.user_id == user["user_id"],
-                    Project.deleted_at.is_(None),
-                ).order_by(Project.updated_at.desc())
-            )
-        except (ProgrammingError, Exception) as e:
-            if "deleted_at" in str(e):
-                await db.rollback()
-                logger.warning("deleted_at column missing for schema %s, querying without it", user["db_schema"])
-                result = await db.execute(
-                    select(Project).where(
-                        Project.user_id == user["user_id"],
-                    ).order_by(Project.updated_at.desc())
-                )
-            else:
-                raise
+        await _ensure_deleted_at(db, user["db_schema"])
+        result = await db.execute(
+            select(Project).where(
+                Project.user_id == user["user_id"],
+                Project.deleted_at.is_(None),
+            ).order_by(Project.updated_at.desc())
+        )
         projects = result.scalars().all()
 
         items = []
@@ -107,14 +115,8 @@ async def list_projects(user: dict = Depends(require_auth)):
 async def get_project(project_id: str, user: dict = Depends(require_auth)):
     """Get a project with its current code."""
     async for db in get_tenant_db(user["db_schema"]):
-        try:
-            result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"], Project.deleted_at.is_(None)))
-        except (ProgrammingError, Exception) as e:
-            if "deleted_at" in str(e):
-                await db.rollback()
-                result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
-            else:
-                raise
+        await _ensure_deleted_at(db, user["db_schema"])
+        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"], Project.deleted_at.is_(None)))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -311,21 +313,13 @@ async def delete_project(project_id: str, user: dict = Depends(require_auth)):
     from datetime import datetime, timezone
 
     async for db in get_tenant_db(user["db_schema"]):
+        await _ensure_deleted_at(db, user["db_schema"])
         result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        try:
-            project.deleted_at = datetime.now(timezone.utc)
-            await db.commit()
-        except (ProgrammingError, Exception) as e:
-            if "deleted_at" in str(e):
-                await db.rollback()
-                logger.warning("deleted_at column missing, hard-deleting project %s", project_id)
-                await db.execute(delete(Project).where(Project.id == project_id))
-                await db.commit()
-            else:
-                raise
+        project.deleted_at = datetime.now(timezone.utc)
+        await db.commit()
 
         return {"success": True}
