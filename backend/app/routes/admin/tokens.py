@@ -544,19 +544,43 @@ async def review_token_request(
 async def user_consumption(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
+    start_date: str | None = Query(None, description="Filter from date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="Filter to date (YYYY-MM-DD)"),
 ):
     """Per-user token consumption: total granted, total used, balance, and estimated cost."""
+    # Parse date filters
+    date_from = None
+    date_to = None
+    if start_date:
+        try:
+            date_from = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=UTC)
+        except ValueError:
+            raise HTTPException(400, "Invalid start_date format, use YYYY-MM-DD")
+    if end_date:
+        try:
+            date_to = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=UTC) + timedelta(days=1)
+        except ValueError:
+            raise HTTPException(400, "Invalid end_date format, use YYYY-MM-DD")
+
     # Get all users with their balances
     users_result = await db.execute(
         select(
             User.id, User.email, User.full_name, User.company_name,
-            User.token_balance, User.tokens_used,
-        ).where(User.is_admin.is_(False)).order_by(User.tokens_used.desc())
+            User.token_balance, User.tokens_used, User.created_at,
+        ).order_by(User.tokens_used.desc())
     )
     users = users_result.fetchall()
 
+    # Build date filter conditions
+    def _date_filters(query):
+        if date_from:
+            query = query.where(TokenTransaction.created_at >= date_from)
+        if date_to:
+            query = query.where(TokenTransaction.created_at < date_to)
+        return query
+
     # Get per-user grant totals from ledger
-    grants_result = await db.execute(
+    grants_q = (
         select(
             TokenTransaction.user_id,
             func.coalesce(func.sum(TokenTransaction.amount), 0),
@@ -564,10 +588,11 @@ async def user_consumption(
         .where(TokenTransaction.type == "grant")
         .group_by(TokenTransaction.user_id)
     )
+    grants_result = await db.execute(_date_filters(grants_q))
     grants_map = {r[0]: int(r[1]) for r in grants_result.fetchall()}
 
     # Get per-user deduction totals from ledger
-    deductions_result = await db.execute(
+    deductions_q = (
         select(
             TokenTransaction.user_id,
             func.coalesce(func.sum(func.abs(TokenTransaction.amount)), 0),
@@ -575,7 +600,45 @@ async def user_consumption(
         .where(TokenTransaction.type == "deduction")
         .group_by(TokenTransaction.user_id)
     )
+    deductions_result = await db.execute(_date_filters(deductions_q))
     deductions_map = {r[0]: int(r[1]) for r in deductions_result.fetchall()}
+
+    # Get per-user generation and edit counts
+    gen_counts_q = (
+        select(
+            TokenTransaction.user_id,
+            func.count(),
+        )
+        .where(TokenTransaction.type == "deduction")
+        .where(TokenTransaction.reason.ilike("%generat%"))
+        .group_by(TokenTransaction.user_id)
+    )
+    gen_result = await db.execute(_date_filters(gen_counts_q))
+    gen_map = {r[0]: int(r[1]) for r in gen_result.fetchall()}
+
+    edit_counts_q = (
+        select(
+            TokenTransaction.user_id,
+            func.count(),
+        )
+        .where(TokenTransaction.type == "deduction")
+        .where(TokenTransaction.reason.ilike("%edit%"))
+        .group_by(TokenTransaction.user_id)
+    )
+    edit_result = await db.execute(_date_filters(edit_counts_q))
+    edit_map = {r[0]: int(r[1]) for r in edit_result.fetchall()}
+
+    # Get per-user last activity
+    last_activity_q = (
+        select(
+            TokenTransaction.user_id,
+            func.max(TokenTransaction.created_at),
+        )
+        .where(TokenTransaction.type == "deduction")
+        .group_by(TokenTransaction.user_id)
+    )
+    last_result = await db.execute(_date_filters(last_activity_q))
+    last_map = {r[0]: r[1] for r in last_result.fetchall()}
 
     # Global totals
     total_granted = sum(grants_map.values())
@@ -585,11 +648,11 @@ async def user_consumption(
     cost_per_token = 0.000003  # approx $3 per 1M tokens
 
     items = []
-    for uid, email, full_name, company, balance, tokens_used in users:
+    for uid, email, full_name, company, balance, tokens_used, created_at in users:
         granted = grants_map.get(uid, 0)
         used = deductions_map.get(uid, 0)
-        # Fall back to tokens_used from user model if ledger has no deductions
-        if used == 0 and tokens_used:
+        # Fall back to tokens_used from user model if no date filter and ledger has no deductions
+        if used == 0 and tokens_used and not date_from and not date_to:
             used = tokens_used
         items.append({
             "user_id": uid,
@@ -600,6 +663,10 @@ async def user_consumption(
             "total_used": used,
             "balance": balance,
             "est_cost": round(used * cost_per_token, 4),
+            "generations": gen_map.get(uid, 0),
+            "edits": edit_map.get(uid, 0),
+            "last_activity": _serialize_datetime(last_map.get(uid)),
+            "joined": _serialize_datetime(created_at),
         })
 
     # Sort by total_used descending

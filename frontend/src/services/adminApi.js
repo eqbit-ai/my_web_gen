@@ -358,8 +358,12 @@ export const adminGetTokenConsumption = async (days = 30) => {
     return apiGet(`/admin/analytics/token-consumption?days=${days}`);
 };
 
-export const adminGetUserConsumption = async () => {
-    return apiGet('/admin/tokens/consumption');
+export const adminGetUserConsumption = async (startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const qs = params.toString();
+    return apiGet(`/admin/tokens/consumption${qs ? `?${qs}` : ''}`);
 };
 
 export const adminGetStats = async () => {
