@@ -5636,13 +5636,18 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # We extract from the ENTIRE page so we catch URLs on parent sections,
         # not just the element being edited (background is usually on <section>, not <h1>).
         _original_bg_urls = []
+        _original_img_srcs = []
         if not _is_image_edit:
             _original_bg_urls = re.findall(
                 r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
                 full_html,
             )
-            if _original_bg_urls:
-                logger.info(f"🖱️ [ELEMENT EDIT] Preserving {len(_original_bg_urls)} background URLs (non-image edit)")
+            _original_img_srcs = re.findall(
+                r'<img[^>]+src=["\']?(https?://[^"\'>\s]+)["\']?',
+                full_html,
+            )
+            if _original_bg_urls or _original_img_srcs:
+                logger.info(f"🖱️ [ELEMENT EDIT] Preserving {len(_original_bg_urls)} bg URLs + {len(_original_img_srcs)} img srcs (non-image edit)")
 
         # ── Protect navbar/header from structural rewrites ──────
         # Nav/header sections are fragile — structural edits (which rewrite
@@ -5823,39 +5828,71 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             result_css = css
 
         # ── Resolve image placeholders ───────────────────────────
-        # LLM may return {{IMG:...}} placeholders or hallucinated pexels/unsplash URLs
-        if "{{IMG:" in result_html or re.search(r'src=["\']https?://images\.(pexels|unsplash)\.com/', result_html):
+        # Only resolve {{IMG:...}} placeholders — do NOT touch existing pexels/unsplash
+        # URLs as they may be valid images the user or a previous edit placed there.
+        # _resolve_images_safe also calls _convert_hallucinated_urls_to_placeholders
+        # which would replace valid user-chosen images with random ones.
+        if "{{IMG:" in result_html:
             s_tmp = await redis_get_session(req.sessionId) if req.sessionId else None
             plan = s_tmp.get("plan", {}) if s_tmp else {}
             niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
-            result_html = await _resolve_images_safe(result_html, niche_key=niche_key)
-            logger.info("🖱️ [ELEMENT EDIT] Resolved image placeholders")
+            # Only resolve {{IMG:}} placeholders, skip hallucination detection
+            result_html = await resolve_image_placeholders(result_html, niche_key=niche_key)
+            # Clean up any unresolved placeholders
+            unresolved = re.findall(r'\{\{IMG:[^}]+\}\}', result_html)
+            if unresolved:
+                result_html = re.sub(
+                    r'\{\{IMG:[^}]+\}\}',
+                    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop',
+                    result_html,
+                )
+            logger.info("🖱️ [ELEMENT EDIT] Resolved {{IMG:}} placeholders")
 
         # ── Restore background URLs if user didn't ask about images ──
         # The LLM often replaces existing background-image URLs with {{IMG:}} or
         # hallucinated URLs even when the user only asked about text/color/font.
         # Compare before/after: any URL from the original that's missing in the
         # result gets restored by replacing whatever new URL took its place.
-        if not _is_image_edit and _original_bg_urls:
-            result_urls = re.findall(
-                r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
-                result_html,
-            )
-            # Find URLs that were in the original but are now missing
-            orig_set = set(_original_bg_urls)
-            result_set = set(result_urls)
-            missing = orig_set - result_set  # URLs that were removed/replaced
-            added = result_set - orig_set    # New URLs that appeared
+        if not _is_image_edit and (_original_bg_urls or _original_img_srcs):
+            # Restore background-image URLs
+            if _original_bg_urls:
+                result_urls = re.findall(
+                    r"url\(['\"]?(https?://[^)'\"\s]+)['\"]?\)",
+                    result_html,
+                )
+                orig_set = set(_original_bg_urls)
+                result_set = set(result_urls)
+                missing = orig_set - result_set
+                added = result_set - orig_set
 
-            if missing and added:
-                # The LLM replaced original URLs with new ones — swap them back
-                missing_list = list(missing)
-                added_list = list(added)
-                for i, new_url in enumerate(added_list):
-                    if i < len(missing_list):
-                        old_url = missing_list[i]
-                        result_html = result_html.replace(new_url, old_url)
-                        logger.info(f"🖱️ [ELEMENT EDIT] Restored BG URL: ...{new_url[-40:]} → ...{old_url[-40:]}")
+                if missing and added:
+                    missing_list = list(missing)
+                    added_list = list(added)
+                    for i, new_url in enumerate(added_list):
+                        if i < len(missing_list):
+                            old_url = missing_list[i]
+                            result_html = result_html.replace(new_url, old_url)
+                            logger.info(f"🖱️ [ELEMENT EDIT] Restored BG URL: ...{new_url[-40:]} → ...{old_url[-40:]}")
+
+            # Restore <img src> URLs
+            if _original_img_srcs:
+                result_img_srcs = re.findall(
+                    r'<img[^>]+src=["\']?(https?://[^"\'>\s]+)["\']?',
+                    result_html,
+                )
+                orig_img_set = set(_original_img_srcs)
+                result_img_set = set(result_img_srcs)
+                missing_imgs = orig_img_set - result_img_set
+                added_imgs = result_img_set - orig_img_set
+
+                if missing_imgs and added_imgs:
+                    missing_list = list(missing_imgs)
+                    added_list = list(added_imgs)
+                    for i, new_url in enumerate(added_list):
+                        if i < len(missing_list):
+                            old_url = missing_list[i]
+                            result_html = result_html.replace(new_url, old_url)
+                            logger.info(f"🖱️ [ELEMENT EDIT] Restored IMG src: ...{new_url[-40:]} → ...{old_url[-40:]}")
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
