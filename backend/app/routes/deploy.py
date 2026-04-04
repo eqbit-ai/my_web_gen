@@ -16,13 +16,16 @@ import os
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.sql import func
 
 from app.database import async_session
 from app.utils import sanitize_log
 from app.models.site import Site
 from app.utils.auth import decode_access_token
+
+# Ensure deleted_at column exists on sites table (production safety)
+_sites_deleted_at_checked = False
 from app.utils.cloudfront_acm import (
     check_certificate_status,
     cleanup_old_distribution_for_domain,
@@ -89,6 +92,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     Extracts HTML/CSS/JS from the Redis session and pushes to S3.
     Creates or updates a Site record in the database.
     """
+    await _ensure_sites_deleted_at()
     # 1. Get session data
     session = await get_session(req.session_id)
     if not session:
@@ -233,6 +237,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
         if site:
             site.name = site_name
             site.status = "published"
+            site.deleted_at = None  # Clear soft-delete if site was previously trashed
             site.deployed_url = result["url"]
             site.cloudflare_project_name = result["project_name"]
             site.session_id = req.session_id
@@ -415,9 +420,26 @@ async def get_deploy_status(site_id: str, user: dict = Depends(require_auth)):
 # ── List User's Sites ───────────────────────────────────────────────────
 
 
+async def _ensure_sites_deleted_at():
+    """Ensure deleted_at column exists on sites table."""
+    global _sites_deleted_at_checked
+    if _sites_deleted_at_checked:
+        return
+    try:
+        async with async_session() as db:
+            await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ"))
+            await db.commit()
+        _sites_deleted_at_checked = True
+        logger.info("[SITES] Ensured deleted_at column exists")
+    except Exception as e:
+        logger.warning("[SITES] Failed to ensure deleted_at column: %s", e)
+        _sites_deleted_at_checked = True  # Don't retry on every request
+
+
 @router.get("")
 async def list_deployed_sites(user: dict = Depends(require_auth)):
     """List all deployed sites for the current user."""
+    await _ensure_sites_deleted_at()
     from app.models.domain import Domain as DomainModel
     async with async_session() as db:
         result = await db.execute(
