@@ -1073,6 +1073,13 @@ def build_page_html_prompt(plan: dict, page: dict, shared_sections: list) -> str
     nav_context += "- \"Meet the Team\" → href=\"/team.html\"\n"
     nav_context += "- Do NOT use href=\"#contact\" or href=\"#services\" — those sections are on DIFFERENT PAGES.\n"
     nav_context += "- Only use anchor links (href=\"#section\") for sections that exist ON THIS PAGE.\n"
+    nav_context += "\n═══ FIXED NAVBAR OVERLAP — CRITICAL ═══\n"
+    nav_context += "The navbar is position:fixed with height ~80px. The body has padding-top:80px.\n"
+    nav_context += "Hero sections MUST account for this:\n"
+    nav_context += "- Full-bleed hero (hero-section-flush): add padding-top: 100px to the hero container/content\n"
+    nav_context += "- OR use the class .hero-section-flush which already has CSS for this\n"
+    nav_context += "- The hero text/content must NOT be hidden behind the navbar\n"
+    nav_context += "- This applies to ALL pages, not just the homepage\n"
 
     # Extract design tokens from the plan for explicit color/font instructions
     design = plan.get("design", {})

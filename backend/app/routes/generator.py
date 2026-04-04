@@ -2989,6 +2989,68 @@ def _update_all_page_navbars(pages_dict: dict, new_slug: str, new_title: str) ->
     return pages_dict
 
 
+def _extract_brand_element(html: str) -> str | None:
+    """Extract the nav-brand / logo element from a page's navbar."""
+    # Match <a> with class containing "brand" or "logo"
+    for pattern in [
+        r'<a\s[^>]*class="[^"]*(?:nav-brand|brand|logo)[^"]*"[^>]*>.*?</a>',
+        r'<a\s[^>]*class="[^"]*(?:brand|logo)[^"]*"[^>]*>.*?</a>',
+    ]:
+        m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
+        if m:
+            return m.group(0)
+    return None
+
+
+def _sync_brand_across_pages(pages_dict: dict) -> dict:
+    """Sync the navbar and footer brand/logo from the index page to all subpages."""
+    index_html = pages_dict.get("index", {}).get("html", "")
+    if not index_html:
+        return pages_dict
+
+    index_brand = _extract_brand_element(index_html)
+    if not index_brand:
+        return pages_dict
+
+    # Also extract footer brand from index
+    footer_match = re.search(r'<footer[^>]*>(.*?)</footer>', index_html, re.DOTALL | re.IGNORECASE)
+    index_footer_brand = None
+    if footer_match:
+        index_footer_brand = _extract_brand_element(footer_match.group(1))
+
+    for slug, page_data in pages_dict.items():
+        if slug == "index":
+            continue
+        page_html = page_data.get("html", "")
+        if not page_html:
+            continue
+
+        updated = page_html
+
+        # Sync navbar brand
+        page_brand = _extract_brand_element(updated)
+        if page_brand and page_brand != index_brand:
+            updated = updated.replace(page_brand, index_brand, 1)
+            logger.info(f'[BRAND SYNC] Synced navbar logo in "{slug}"')
+
+        # Sync footer brand
+        if index_footer_brand:
+            footer_m = re.search(r'<footer[^>]*>(.*?)</footer>', updated, re.DOTALL | re.IGNORECASE)
+            if footer_m:
+                page_footer_brand = _extract_brand_element(footer_m.group(1))
+                if page_footer_brand and page_footer_brand != index_footer_brand:
+                    # Replace only within footer section
+                    footer_content = footer_m.group(0)
+                    new_footer = footer_content.replace(page_footer_brand, index_footer_brand, 1)
+                    updated = updated.replace(footer_content, new_footer, 1)
+                    logger.info(f'[BRAND SYNC] Synced footer logo in "{slug}"')
+
+        if updated != page_html:
+            pages_dict[slug] = {**page_data, "html": updated}
+
+    return pages_dict
+
+
 def _rebuild_multipage_navbars(pages_dict: dict) -> dict:
     """Full navbar rebuild for all pages — used after single→multipage conversion.
 
@@ -2997,6 +3059,7 @@ def _rebuild_multipage_navbars(pages_dict: dict) -> dict:
     2. Replaces the entire nav-links content in every page
     3. Keeps CTA buttons intact
     4. Rebuilds footer quick links too
+    5. Syncs the brand/logo from the index page to all subpages
 
     This ensures every page has consistent, working inter-page navigation.
     """
@@ -3021,6 +3084,9 @@ def _rebuild_multipage_navbars(pages_dict: dict) -> dict:
         if updated != page_html:
             pages_dict[current_slug] = {**page_data, "html": updated}
             logger.info(f'[NAV REBUILD] Rebuilt navbar + footer in "{current_slug}"')
+
+    # Sync brand/logo from index to all subpages
+    pages_dict = _sync_brand_across_pages(pages_dict)
 
     return pages_dict
 
