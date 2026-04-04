@@ -5286,6 +5286,13 @@ IMAGE RULES (when adding/changing images):
   - Icon/thumbnail: width: 48-64px, height: auto
   - General: max-width: 100%, height: auto (responsive default)
 - Always add alt attribute describing the image
+
+GOOGLE MAPS RULES (when adding maps or direction links):
+- For CLICKABLE links/buttons (Get Directions, View Map): use href="https://www.google.com/maps/search/?api=1&query=PLACE+NAME" with target="_blank"
+  Example: <a href="https://www.google.com/maps/search/?api=1&query=JBR+Dubai" target="_blank">Get Directions</a>
+- For EMBEDDED maps (showing map on page): use <iframe src="https://www.google.com/maps?q=PLACE+NAME&output=embed" ...></iframe>
+- NEVER use https://www.google.com/maps/embed?... URLs for clickable links — those only work inside iframes
+- If user provides a Google Maps share link (maps.app.goo.gl/...), the system auto-resolves it to an embed URL — use that for iframes, but for buttons/links use the search URL format above
 - Add loading="lazy" for images below the fold
 
 GOOGLE MAPS (when user provides a map link or asks to add/change a map location):
