@@ -4,11 +4,15 @@ Supports undo/redo/rollback via versioned snapshots.
 """
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import ProgrammingError
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_tenant_db
 from app.models.project import Project, ProjectVersion
@@ -49,12 +53,24 @@ class RollbackRequest(BaseModel):
 async def list_projects(user: dict = Depends(require_auth)):
     """List all projects for the current user."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(
-            select(Project).where(
-                Project.user_id == user["user_id"],
-                Project.deleted_at.is_(None),
-            ).order_by(Project.updated_at.desc())
-        )
+        try:
+            result = await db.execute(
+                select(Project).where(
+                    Project.user_id == user["user_id"],
+                    Project.deleted_at.is_(None),
+                ).order_by(Project.updated_at.desc())
+            )
+        except (ProgrammingError, Exception) as e:
+            if "deleted_at" in str(e):
+                await db.rollback()
+                logger.warning("deleted_at column missing for schema %s, querying without it", user["db_schema"])
+                result = await db.execute(
+                    select(Project).where(
+                        Project.user_id == user["user_id"],
+                    ).order_by(Project.updated_at.desc())
+                )
+            else:
+                raise
         projects = result.scalars().all()
 
         items = []
@@ -91,7 +107,14 @@ async def list_projects(user: dict = Depends(require_auth)):
 async def get_project(project_id: str, user: dict = Depends(require_auth)):
     """Get a project with its current code."""
     async for db in get_tenant_db(user["db_schema"]):
-        result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"], Project.deleted_at.is_(None)))
+        try:
+            result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"], Project.deleted_at.is_(None)))
+        except (ProgrammingError, Exception) as e:
+            if "deleted_at" in str(e):
+                await db.rollback()
+                result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user["user_id"]))
+            else:
+                raise
         project = result.scalar_one_or_none()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -284,7 +307,7 @@ async def rename_project(project_id: str, user: dict = Depends(require_auth), na
 
 @router.delete("/{project_id}")
 async def delete_project(project_id: str, user: dict = Depends(require_auth)):
-    """Soft-delete a project (can be restored by admin)."""
+    """Soft-delete a project (can be restored by admin). Falls back to hard delete if column missing."""
     from datetime import datetime, timezone
 
     async for db in get_tenant_db(user["db_schema"]):
@@ -293,7 +316,16 @@ async def delete_project(project_id: str, user: dict = Depends(require_auth)):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        project.deleted_at = datetime.now(timezone.utc)
-        await db.commit()
+        try:
+            project.deleted_at = datetime.now(timezone.utc)
+            await db.commit()
+        except (ProgrammingError, Exception) as e:
+            if "deleted_at" in str(e):
+                await db.rollback()
+                logger.warning("deleted_at column missing, hard-deleting project %s", project_id)
+                await db.execute(delete(Project).where(Project.id == project_id))
+                await db.commit()
+            else:
+                raise
 
         return {"success": True}
