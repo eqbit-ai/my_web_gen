@@ -1950,14 +1950,28 @@ const WebsiteGenerator = () => {
         let restoreHtml = v.html;
         let restoreCss = v.css;
         if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
-            setPages(v.pages);
+            // Merge version pages with current pages to preserve pages not in this version
+            switchingPageRef.current = true;
+            setPages(prev => {
+                const merged = { ...prev, ...v.pages };
+                return merged;
+            });
             setIsMultipage(true);
             // Use the current page's content from the version's pages dict
             const pageData = v.pages[curPage];
             if (pageData) {
                 restoreHtml = pageData.html || v.html;
                 restoreCss = pageData.css || v.css;
+            } else {
+                // Current page not in this version — keep current page's content unchanged
+                const curPages = pagesRef.current;
+                const curPageData = curPages[curPage];
+                if (curPageData) {
+                    restoreHtml = curPageData.html;
+                    restoreCss = curPageData.css || v.css;
+                }
             }
+            requestAnimationFrame(() => { switchingPageRef.current = false; });
         }
         setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(prev);
@@ -1977,13 +1991,27 @@ const WebsiteGenerator = () => {
         let restoreHtml = v.html;
         let restoreCss = v.css;
         if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
-            setPages(v.pages);
+            // Merge version pages with current pages to preserve pages not in this version
+            switchingPageRef.current = true;
+            setPages(prev => {
+                const merged = { ...prev, ...v.pages };
+                return merged;
+            });
             setIsMultipage(true);
             const pageData = v.pages[curPage];
             if (pageData) {
                 restoreHtml = pageData.html || v.html;
                 restoreCss = pageData.css || v.css;
+            } else {
+                // Current page not in this version — keep current page's content unchanged
+                const curPages = pagesRef.current;
+                const curPageData = curPages[curPage];
+                if (curPageData) {
+                    restoreHtml = curPageData.html;
+                    restoreCss = curPageData.css || v.css;
+                }
             }
+            requestAnimationFrame(() => { switchingPageRef.current = false; });
         }
         setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(next);
@@ -2442,10 +2470,10 @@ const WebsiteGenerator = () => {
         setCurrentPage(slug);
 
         // 5. Clear switching guard after React processes the batch
-        // Use requestAnimationFrame to ensure all state updates have been committed
-        requestAnimationFrame(() => {
+        // Use setTimeout to ensure all state updates and effects have been committed
+        setTimeout(() => {
             switchingPageRef.current = false;
-        });
+        }, 100);
 
         // 5b. Scroll iframe to top when switching pages
         try {
@@ -2486,7 +2514,7 @@ const WebsiteGenerator = () => {
     const lastSyncedPageRef = useRef(null);
     useEffect(() => {
         if (!isMultipage || !currentPage || !html) return;
-        // Skip if we're in the middle of a page switch
+        // Skip if we're in the middle of a page switch or undo/redo
         if (switchingPageRef.current) return;
         setPages(prev => {
             const cur = prev[currentPage];
@@ -2498,6 +2526,26 @@ const WebsiteGenerator = () => {
                 for (const [slug, pg] of Object.entries(prev)) {
                     if (slug !== currentPage && pg.html === html) {
                         return prev;
+                    }
+                }
+                // Additional safety: check if the html contains page-specific markers
+                // that don't match the current page (e.g., index hero on a contact page)
+                // If this page had a very different structure before (>50% size difference),
+                // it might be stale data from another page
+                if (cur.html.length > 500 && html.length > 500) {
+                    const sizeRatio = html.length / cur.html.length;
+                    // If the new html is drastically different size AND this page is not index
+                    // AND the html looks like it might be the index page, skip
+                    if (currentPage !== 'index' && (sizeRatio > 3 || sizeRatio < 0.33)) {
+                        const indexPage = prev['index'];
+                        if (indexPage && indexPage.html) {
+                            // Check first 200 chars similarity with index
+                            const indexStart = indexPage.html.substring(0, 200);
+                            const htmlStart = html.substring(0, 200);
+                            if (indexStart === htmlStart) {
+                                return prev; // This looks like index HTML being written to non-index page
+                            }
+                        }
                     }
                 }
             }
