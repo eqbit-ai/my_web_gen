@@ -7,6 +7,7 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -139,6 +140,28 @@ async def lifespan(app: FastAPI):
                     await db.execute(text(f'ALTER TABLE "{schema}".projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ'))
             await db.commit()
             logger.info("db_migration: schema updated")
+
+            # Auto-purge: permanently delete items in trash older than 15 days
+            purge_cutoff = datetime.utcnow() - timedelta(days=15)
+            # Purge old deleted sites
+            purged_sites = await db.execute(
+                text("DELETE FROM sites WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff"),
+                {"cutoff": purge_cutoff},
+            )
+            # Purge old deleted projects in all tenant schemas
+            purged_projects = 0
+            for (schema,) in (await db.execute(text("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'"))).fetchall():
+                has_col = await db.execute(text(
+                    f"SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = '{schema}' AND table_name = 'projects' AND column_name = 'deleted_at')"
+                ))
+                if has_col.scalar():
+                    r = await db.execute(text(
+                        f'DELETE FROM "{schema}".projects WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff'
+                    ), {"cutoff": purge_cutoff})
+                    purged_projects += r.rowcount
+            await db.commit()
+            if purged_sites.rowcount or purged_projects:
+                logger.info("trash_auto_purge: removed %d sites, %d projects older than 15 days", purged_sites.rowcount, purged_projects)
     except Exception as e:
         # Already done or column doesn't exist — safe to ignore
         logger.debug(f"db_migration: skipped ({e})")

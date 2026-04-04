@@ -5,6 +5,8 @@ import formatDate from './shared/formatDate';
 
 const T = { bg: '#0a0a0f', surface: '#12121a', border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a' };
 
+const PURGE_DAYS = 15;
+
 function timeAgo(dateStr) {
     if (!dateStr) return '';
     const now = new Date();
@@ -18,6 +20,15 @@ function timeAgo(dateStr) {
     if (days < 30) return `${days}d ago`;
     const months = Math.floor(days / 30);
     return `${months}mo ago`;
+}
+
+function daysLeft(dateStr) {
+    if (!dateStr) return PURGE_DAYS;
+    const deletedAt = new Date(dateStr);
+    const purgeAt = new Date(deletedAt.getTime() + PURGE_DAYS * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const remaining = Math.ceil((purgeAt - now) / (24 * 60 * 60 * 1000));
+    return Math.max(0, remaining);
 }
 
 export default function TrashPage() {
@@ -124,7 +135,7 @@ export default function TrashPage() {
                 <div>
                     <h1 className="admin-page-title">Trash</h1>
                     <p style={{ color: T.muted, fontSize: 13, marginTop: 4 }}>
-                        Deleted sites and projects — no auto-purge, items stay until manually removed
+                        Deleted sites and projects — auto-purged after {PURGE_DAYS} days
                     </p>
                 </div>
                 <button className="admin-btn" onClick={load} disabled={loading}>
@@ -268,11 +279,19 @@ export default function TrashPage() {
                                                                     {item.type}
                                                                 </span>
                                                             </div>
-                                                            <div style={{ fontSize: 11, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                            <div style={{ fontSize: 11, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                                                 <Clock size={10} />
                                                                 <span>Deleted {timeAgo(item.deleted_at)}</span>
                                                                 <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
                                                                 <span>{formatDate(item.deleted_at)}</span>
+                                                                <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
+                                                                {(() => {
+                                                                    const dl = daysLeft(item.deleted_at);
+                                                                    const color = dl <= 3 ? '#ef4444' : dl <= 7 ? '#f59e0b' : T.muted;
+                                                                    return <span style={{ color, fontWeight: dl <= 3 ? 600 : 400 }}>
+                                                                        {dl === 0 ? 'Purging soon' : `${dl}d until auto-purge`}
+                                                                    </span>;
+                                                                })()}
                                                                 {item.type === 'project' && !item.has_content && (
                                                                     <>
                                                                         <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
