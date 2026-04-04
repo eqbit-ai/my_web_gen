@@ -5213,6 +5213,15 @@ IMAGE RULES (when adding/changing images):
 - Always add alt attribute describing the image
 - Add loading="lazy" for images below the fold
 
+GOOGLE MAPS (when user provides a map link or asks to add/change a map location):
+- If user gives a Google Maps share link (maps.app.goo.gl/... or goo.gl/maps/... or google.com/maps/...), convert it to an embed URL.
+  Use: src="https://www.google.com/maps?q=PLACE+NAME+OR+ADDRESS&output=embed&z=15"
+  Extract the location/place name from context (the user's prompt, the link text, or existing page content like business name/address).
+- If user provides a Google Maps embed URL (google.com/maps/embed/...), use it directly as the iframe src.
+- Map iframe: <iframe src="URL" width="100%" height="400" style="border:0; border-radius: 12px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+- If replacing existing content with a map, keep the container dimensions.
+- If user says "add map" without a link, use a placeholder location from the page (address, city, business name).
+
 JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
 .testimonial-slide, .slider-dot, .carousel-container, .carousel-track,
@@ -5300,6 +5309,13 @@ IMAGE RULES (when adding/changing images):
   Navbar logo: max-height: 40-50px | Card: width:100%, height:200-280px, object-fit:cover
   Hero: width:100%, max-height:500px | Avatar: 80-120px, border-radius:50% | General: max-width:100%, height:auto
 - Always add alt attribute, loading="lazy" for below-fold images
+
+GOOGLE MAPS (when user provides a map link or asks to add/change a map location):
+- If user gives a Google Maps share link (maps.app.goo.gl/... or goo.gl/maps/... or google.com/maps/...), convert it to an embed URL.
+  Use: src="https://www.google.com/maps?q=PLACE+NAME+OR+ADDRESS&output=embed&z=15"
+  Extract the location/place name from context (the user's prompt, the link text, or existing page content).
+- If user provides a Google Maps embed URL (google.com/maps/embed/...), use it directly.
+- Map iframe: <iframe src="URL" width="100%" height="400" style="border:0; border-radius: 12px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 
 JS-DEPENDENT CLASS NAMES (do NOT rename):
 .nav-links, .nav-toggle, .faq-item, .faq-question, .faq-answer,
@@ -5498,12 +5514,38 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
 
+    # ── Convert Google Maps share links to embed URLs ─────────────
+    maps_share_re = re.compile(r'https?://(?:maps\.app\.goo\.gl|goo\.gl/maps)/[\w-]+')
+    maps_match = maps_share_re.search(req.prompt)
+    if maps_match:
+        share_url = maps_match.group(0)
+        try:
+            import httpx
+            async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
+                resp = await client.head(share_url)
+                final_url = str(resp.url)
+                # Extract place/coordinates from the resolved URL
+                # Typical: https://www.google.com/maps/place/Place+Name/@lat,lng,zoom...
+                place_match = re.search(r'/place/([^/@]+)', final_url)
+                coord_match = re.search(r'@([-\d.]+),([-\d.]+)', final_url)
+                if place_match:
+                    place_name = place_match.group(1).replace('+', ' ')
+                    embed_url = f"https://www.google.com/maps?q={place_match.group(1)}&output=embed&z=15"
+                    req.prompt = req.prompt.replace(share_url, f'{embed_url} (location: {place_name})')
+                    logger.info(f"🗺️ Resolved Maps link → {place_name}")
+                elif coord_match:
+                    lat, lng = coord_match.group(1), coord_match.group(2)
+                    embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=15"
+                    req.prompt = req.prompt.replace(share_url, embed_url)
+                    logger.info(f"🗺️ Resolved Maps link → {lat},{lng}")
+        except Exception as e:
+            logger.warning(f"🗺️ Failed to resolve Maps link: {e}")
+
     # ── Check token budget ──────────────────────────────────────────
     budget = await check_budget(user["user_id"])
     if not budget["ok"]:
         raise HTTPException(status_code=402, detail="[RESTRICTED] Token budget exhausted. Contact admin for more tokens.")
     _current_user_id.set(user["user_id"])
-
 
     log_event_bg(
         user_id=str(user["user_id"]),
