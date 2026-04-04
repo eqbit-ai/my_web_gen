@@ -129,6 +129,14 @@ async def lifespan(app: FastAPI):
             await db.execute(text("UPDATE users SET generation_count = 0 WHERE generation_count > max_generations"))
             # Site recipient email column
             await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS recipient_email VARCHAR"))
+            # Soft-delete column
+            await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ"))
+            # Add deleted_at to all tenant project tables
+            tenant_schemas = await db.execute(text("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'"))
+            for (schema,) in tenant_schemas.fetchall():
+                has_projects = await db.execute(text(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '{schema}' AND table_name = 'projects')"))
+                if has_projects.scalar():
+                    await db.execute(text(f'ALTER TABLE "{schema}".projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ'))
             await db.commit()
             logger.info("db_migration: schema updated")
     except Exception as e:
