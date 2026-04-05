@@ -532,11 +532,12 @@ def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> st
         # Skip if already pointing to our API
         if "/api/forms/submit/" in tag:
             return tag
-        # Add/replace action and method
+        # Add/replace action, method, and data-form-handler
         tag = re.sub(r'action\s*=\s*["\'][^"\']*["\']', '', tag)
         tag = re.sub(r'method\s*=\s*["\'][^"\']*["\']', '', tag)
+        tag = re.sub(r'data-form-handler\s*=\s*["\'][^"\']*["\']', '', tag)
         tag = tag.rstrip(">")
-        tag += f' action="{form_url}" method="POST">'
+        tag += f' action="{form_url}" method="POST" data-form-handler="{form_url}">'
         # Add hidden page field
         hidden = f'<input type="hidden" name="_page" value="{page_slug}">'
         return tag + hidden
@@ -565,15 +566,14 @@ def _inject_form_action(html: str, site_id: str, page_slug: str = "index") -> st
         flags=re.IGNORECASE,
     )
 
-    # Fallback: match ANY form tag that doesn't already have our API action
-    # (catches forms without class/id/data attributes)
-    if "/api/forms/submit/" not in html:
-        html = re.sub(
-            r'<form(?![^>]*/api/forms/submit)[^>]*>',
-            _patch_form,
-            html,
-            flags=re.IGNORECASE,
-        )
+    # Fallback: match ANY remaining form tag that doesn't already have our API action
+    # (catches forms without contact/inquiry class/id/data attributes — e.g. newsletter, reservation)
+    html = re.sub(
+        r'<form(?![^>]*/api/forms/submit)[^>]*>',
+        _patch_form,
+        html,
+        flags=re.IGNORECASE,
+    )
 
     return html
 

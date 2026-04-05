@@ -1793,17 +1793,29 @@ const WebsiteGenerator = () => {
                     } else {
                         // Normal iteration (chat edit)
                         mp = result.isMultipage || isMultipage;
+                        const editTargetPage = currentPageRef.current || 'index';
                         if (mp && result.pages) {
-                            // Backend sent updated pages dict — use it
-                            resultPages = result.pages;
-                            setIsMultipage(true);
-                            setPages(result.pages);
-                        } else if (isMultipage && currentPage) {
-                            // Fallback: update just the current page locally
-                            // Use pagesRef.current to avoid stale closure — pages captured at
-                            // handleGenerate() call time may be outdated by SSE completion
+                            // Backend sent updated pages dict — merge with current to prevent
+                            // stale backend data from overwriting pages edited locally
                             const latestPgs = pagesRef.current;
-                            resultPages = { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } };
+                            const merged = { ...latestPgs };
+                            for (const [slug, pgData] of Object.entries(result.pages)) {
+                                if (slug === editTargetPage) {
+                                    // Always use the edited page from the backend result
+                                    merged[slug] = pgData;
+                                } else if (!merged[slug]) {
+                                    // New page from backend — add it
+                                    merged[slug] = pgData;
+                                }
+                                // For other existing pages, keep the local version (fresher)
+                            }
+                            resultPages = merged;
+                            setIsMultipage(true);
+                            setPages(merged);
+                        } else if (isMultipage && editTargetPage) {
+                            // Fallback: update just the current page locally
+                            const latestPgs = pagesRef.current;
+                            resultPages = { ...latestPgs, [editTargetPage]: { html: newHtml, css: newCss } };
                             setPages(resultPages);
                         }
                         msgText = 'Changes applied! What else would you like to adjust?';
@@ -1950,12 +1962,9 @@ const WebsiteGenerator = () => {
         let restoreHtml = v.html;
         let restoreCss = v.css;
         if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
-            // Merge version pages with current pages to preserve pages not in this version
+            // Use the version's full pages state (it was captured at that version)
             switchingPageRef.current = true;
-            setPages(prev => {
-                const merged = { ...prev, ...v.pages };
-                return merged;
-            });
+            setPages(v.pages);
             setIsMultipage(true);
             // Use the current page's content from the version's pages dict
             const pageData = v.pages[curPage];
@@ -1991,12 +2000,9 @@ const WebsiteGenerator = () => {
         let restoreHtml = v.html;
         let restoreCss = v.css;
         if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
-            // Merge version pages with current pages to preserve pages not in this version
+            // Use the version's full pages state (it was captured at that version)
             switchingPageRef.current = true;
-            setPages(prev => {
-                const merged = { ...prev, ...v.pages };
-                return merged;
-            });
+            setPages(v.pages);
             setIsMultipage(true);
             const pageData = v.pages[curPage];
             if (pageData) {
@@ -2135,12 +2141,15 @@ const WebsiteGenerator = () => {
         setIsEditingElement(true);
         setError(null);
 
+        // Capture target page NOW — before the async call, so tab switches don't corrupt it
+        const targetPage = currentPageRef.current;
+
         try {
             let finalPrompt = elementPrompt;
             if (elementAttachment?.url) {
                 finalPrompt += `\n\nUse this uploaded image URL: ${elementAttachment.url}`;
             }
-            const result = await editElement(sessionId, selectedElement, finalPrompt, { html, css }, currentPage);
+            const result = await editElement(sessionId, selectedElement, finalPrompt, { html, css }, targetPage);
             if (result.success && !result.manualReplace) {
                 const newHtml = result.website.html;
                 // Safety: reject empty or near-empty HTML (LLM deleted everything)
@@ -2152,20 +2161,24 @@ const WebsiteGenerator = () => {
                 }
                 const newCss = result.website.css || css; // Preserve existing CSS if backend returns empty
                 const newJs = result.website.js || js;
-                setHtml(newHtml); setCss(newCss);
-                if (result.website.js) setJs(result.website.js);
 
-                // Update multi-page state
+                // Only update visible state if we're still on the same page
+                if (currentPageRef.current === targetPage) {
+                    setHtml(newHtml); setCss(newCss);
+                    if (result.website.js) setJs(result.website.js);
+                }
+
+                // Update multi-page state — always use targetPage, not currentPage
                 if (isMultipage) {
-                    setPages(prev => ({ ...prev, [currentPage]: { html: newHtml, css: newCss } }));
+                    setPages(prev => ({ ...prev, [targetPage]: { html: newHtml, css: newCss } }));
                 }
 
                 const latestPgs = pagesRef.current;
-                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: isMultipage ? { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } } : {} };
+                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: isMultipage ? { ...latestPgs, [targetPage]: { html: newHtml, css: newCss } } : {} };
                 setVersions(prev => { const u = [...prev.slice(0, currentVersion + 1), newVersion]; setCurrentVersion(u.length - 1); return u; });
 
-                // Sync to backend Redis session
-                if (sessionId) syncSession(sessionId, newHtml, newCss, newJs, currentPage)
+                // Sync to backend Redis session — use targetPage
+                if (sessionId) syncSession(sessionId, newHtml, newCss, newJs, targetPage)
                     .then(d => { if (d.sections) setSections(d.sections); })
                     .catch(() => {});
 

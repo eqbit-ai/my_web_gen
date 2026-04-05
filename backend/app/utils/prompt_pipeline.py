@@ -544,9 +544,10 @@ IMAGE_QUERY MANDATORY SECTIONS (MUST include image_query):
 - image_carousel: MUST include image_query on EACH ITEM (each carousel slide gets a photo)
 - cta_split / testimonial_split: section-level image_query
 - about: section-level image_query
+- service_modal: MUST include image_query on EACH ITEM (each service card gets a photo shown in the modal popup)
 
 Sections WITHOUT images (NO image_query needed):
-- stats_row, faq_accordion, pricing_table, card_grid, icon_grid, cta_banner, cta_gradient, cta_centered, logo_cloud, logo_carousel, footer, feature_stacked, feature_steps, service_modal, timeline, newsletter_cta, comparison_table, trust_badges
+- stats_row, faq_accordion, pricing_table, card_grid, icon_grid, cta_banner, cta_gradient, cta_centered, logo_cloud, logo_carousel, footer, feature_stacked, feature_steps, timeline, newsletter_cta, comparison_table, trust_badges
 IMPORTANT: logo_cloud uses TEXT-ONLY logos (<span> tags), NOT <img> tags. Do NOT add image_query to logo_cloud items.
 IMPORTANT: card_grid and icon_grid use ICONS only — do NOT add image_query to their items.
 
@@ -573,6 +574,7 @@ RULES FOR MULTI-PAGE:
 - Subpages should have 5-7 content sections each — NOT just a hero and footer. Each page needs RICH content.
 - Every page MUST have unique content — don't repeat sections across pages
 - NEWSLETTER STRIP: Include ONLY on the HOME page footer — do NOT add newsletter/subscribe sections on subpages
+- FORM LIMIT: Only the Contact page (or Home page if single-page) should have a <form>. Do NOT add forms to About, Services, Gallery, or other pages. Other pages should use CTA buttons linking to the Contact page ("/contact.html").
 
 PAGE-SPECIFIC DESIGN VARIETY (CRITICAL — each page must feel DISTINCT while sharing the same brand):
 - Each page MUST use a DIFFERENT hero pattern. If homepage uses hero_split, About uses hero_full_image, Services uses hero_center, Contact uses hero_asymmetric. NEVER repeat the same hero pattern on two pages.
@@ -801,6 +803,7 @@ OUTPUT FORMAT:
 - NO <html>, <head>, <body>, <link>, <meta> tags
 - Do NOT add Font Awesome <script> or <link> tags — FA is pre-loaded
 - Do NOT include any JavaScript
+- Do NOT add HTML comments (<!-- ... -->) anywhere in the output. No section markers, no explanatory comments, no TODO notes. Output clean HTML only.
 
 MANDATORY STRUCTURE:
 1. <style> block with:
@@ -834,6 +837,7 @@ ADD THESE ELEMENTS:
 - WhatsApp float button (fixed bottom-right, green background #25D366)
 - Back-to-top button (fixed, hidden by default, shows on scroll)
 - CONTACT FORM: MUST include a contact section with a working <form> (name, email, phone, message fields). All CTA buttons ("Book Now", "Enquire Now", "Get Started", "Reserve") MUST link to href="#contact".
+- FORM LIMIT: Include ONLY ONE <form> element per page — in the contact section. Do NOT add forms in the footer, newsletter, CTA, or any other section. Newsletter subscribe sections should use a simple CTA button linking to #contact, NOT a separate form.
 - CTA BUTTON TARGETS: Every CTA button's href MUST match the section it refers to. E.g. "Meet the Team" → href="#team", "View Services" → href="#services", "See Our Work" → href="#portfolio". Generic CTAs ("Get Started", "Learn More") → href="#contact".
 
 Return ONLY the HTML. No explanation."""
@@ -1423,7 +1427,8 @@ RULES:
 - Only use new Unsplash/Pexels URLs if no existing image is suitable
 - All images must have: loading="lazy", alt text, width/height attributes
 - Responsive: mobile-first with @media breakpoints
-- Do NOT include any explanation — just the html code block"""
+- Do NOT include any explanation — just the html code block
+- Do NOT add HTML comments (<!-- ... -->). Output clean HTML only."""
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1559,6 +1564,7 @@ RULES:
 - Use CSS variables: var(--primary), var(--bg), var(--accent), etc.
 - NO Tailwind utility classes. Write proper CSS in the <style> block.
 - Maintain existing design and functionality unless changes are requested
+- Do NOT add HTML comments (<!-- ... -->). Output clean HTML only.
 - Do NOT include any explanation, just the two code blocks
 
 CRITICAL — PRESERVE ALL SECTIONS:
@@ -1679,6 +1685,7 @@ RULES:
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
 - Do NOT include any explanation, just the html code block
+- Do NOT add HTML comments (<!-- ... -->). Output clean HTML only.
 - You CAN freely change the section's internal layout/structure when the user asks for it (e.g., converting hero_split to hero with background image)
 - Do NOT generate large inline SVGs or decorative clip-path shapes — use CSS gradients, borders, and the existing utility classes instead
 - Keep decorative elements minimal and CSS-based (gradients, box-shadows, border-radius, pseudo-elements)
@@ -1843,6 +1850,7 @@ RULES:
 - Do NOT add Font Awesome script tags — icons are already loaded
 - Do NOT wrap in extra divs or add <html>/<head>/<body> tags
 - Do NOT include any explanation, just the html code block
+- Do NOT add HTML comments (<!-- ... -->). Output clean HTML only.
 - Use standard section padding consistent with the existing page
 - Footer sections: use dark background (style="background: #1a1a2e")
 

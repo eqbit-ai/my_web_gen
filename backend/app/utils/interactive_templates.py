@@ -216,7 +216,7 @@ For EACH card/service item in the section, add these data attributes to the card
 - data-detail-title="[Service/Feature Name]"
 - data-detail-desc="[2-3 sentences with detailed description about this service, specific to the business]"
 - data-detail-features="Feature 1|Feature 2|Feature 3|Feature 4|Feature 5|Feature 6" (pipe-separated list of 4-6 key features/benefits)
-- data-detail-image="[keep existing image src if the card has one]"
+- data-detail-image="[keep existing image src if the card has one — look for <img> tags inside the card and copy their src]"
 - data-detail-cta="Book Appointment" (or appropriate CTA for the business type)
 - data-detail-cta-link="#contact"
 

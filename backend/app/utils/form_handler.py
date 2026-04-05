@@ -13,14 +13,20 @@ import re
 
 FORM_HANDLER_JS = """
 // ── Universal Form Handler ──────────────────────────────────────────
-// Runs after a delay to ensure ALL other scripts (including LLM-generated ones) have attached their handlers.
-// Then cloneNode removes those handlers, and only our AJAX handler remains.
+// Handles ALL forms on the page (not just those with data-form-handler).
+// Idempotent — safe to include multiple times.
+if (!window.__formHandlerInit) {
+window.__formHandlerInit = true;
 setTimeout(function() {
-    document.querySelectorAll('form[data-form-handler]').forEach(function(form) {
+    document.querySelectorAll('form').forEach(function(form) {
+        // Skip if already handled
+        if (form.getAttribute('data-handler-bound')) return;
+
         // Remove ALL existing submit handlers (LLM-generated JS, inline scripts, etc.)
         var clone = form.cloneNode(true);
         form.parentNode.replaceChild(clone, form);
         form = clone;
+        form.setAttribute('data-handler-bound', '1');
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -43,7 +49,6 @@ setTimeout(function() {
             var endpoint = form.getAttribute('data-form-handler') || form.action;
             // Treat empty, hash-only, relative, or same-page URLs as "no real endpoint" → demo mode
             if (!endpoint || endpoint === '#' || endpoint === window.location.href || endpoint.startsWith('#') || (endpoint.startsWith('/') && !endpoint.startsWith('/api/'))) {
-                // No real endpoint configured — show success (demo mode)
                 form.reset();
                 if (btn.tagName === 'INPUT') {
                     btn.value = 'Sent!';
@@ -107,6 +112,7 @@ setTimeout(function() {
         });
     });
 }, 500);
+}
 """
 
 

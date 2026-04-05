@@ -633,6 +633,7 @@ const Dashboard = () => {
             loadTemplates();
         } else if (activeTab === 'inbox') {
             loadSubmissions();
+            if (deployedSites.length === 0) loadDeployedSites();
         } else if (activeTab === 'gallery') {
             loadGallery();
         }

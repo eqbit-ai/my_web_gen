@@ -540,6 +540,27 @@ def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
     return html
 
 
+def _strip_html_comments(html: str) -> str:
+    """Remove HTML comments from LLM output, preserving system markers."""
+    # Preserve system comments
+    html = re.sub(r'<!-- SEO_META', '\x00SEO_META', html)
+    html = re.sub(r'END_SEO_META -->', 'END_SEO_META\x00', html)
+    html = re.sub(r'<!-- FAVICON', '\x00FAVICON', html)
+    html = re.sub(r'END_FAVICON -->', 'END_FAVICON\x00', html)
+    html = re.sub(r'<!--\s*removed\s*-->', '\x00REMOVED\x00', html)
+    # Strip all HTML comments
+    html = re.sub(r'<!--[\s\S]*?-->', '', html)
+    # Strip stray fragments like --> or ----> that remain from truncated comments
+    html = re.sub(r'<!-+>|(?<!\w)--+>(?!\s*\})', '', html)
+    # Restore system comments
+    html = html.replace('\x00SEO_META', '<!-- SEO_META')
+    html = html.replace('END_SEO_META\x00', 'END_SEO_META -->')
+    html = html.replace('\x00FAVICON', '<!-- FAVICON')
+    html = html.replace('END_FAVICON\x00', 'END_FAVICON -->')
+    html = html.replace('\x00REMOVED\x00', '<!-- removed -->')
+    return html
+
+
 def _fix_url_quotes(html: str) -> str:
     """Normalize all url() with http/https or {{IMG:}} URLs to use single quotes.
 
@@ -2680,6 +2701,9 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
         niche_key = plan.get("brand", {}).get("industry", "general") if plan else "general"
         updated_html = await _resolve_images_safe(updated_html, niche_key=niche_key, is_edit=True)
 
+    # Strip stray HTML comments
+    updated_html = _strip_html_comments(updated_html)
+
     return {"html": updated_html, "css": css, "js": js}
 
 
@@ -3293,7 +3317,8 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     if page_css:
         merged_css = ref_css + f"\n\n/* === {page_title} Page Styles === */\n" + page_css
 
-    # Inject section IDs
+    # Strip LLM HTML comments & inject section IDs
+    page_html_clean = _strip_html_comments(page_html_clean)
     page_html_clean = inject_section_ids(page_html_clean)
 
     # Apply the same post-processing fixes as the main pipeline
@@ -4620,6 +4645,9 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     await emit("stage", {"stage": 1, "name": "edit", "status": "done", "message": "Changes applied"})
 
             # ── Finalize ───────────────────────────────────────────
+            # Strip stray HTML comments (LLM artifacts that leak as visible text)
+            code["html"] = _strip_html_comments(code["html"])
+
             code["html"] = inject_section_ids(code["html"])
             sections_list = parse_sections(code["html"])
 
@@ -4686,7 +4714,7 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             elif not is_new and existing.get("multipage"):
                 session_data["multipage"] = existing.get("multipage", False)
                 session_data["pages"] = existing.get("pages") or {}
-                # Update the correct page slot with edited code
+                # Update ONLY the edited page slot — never overwrite other pages
                 current_page = getattr(req, "currentPage", "index") or "index"
                 session_data["pages"][current_page] = {"html": code["html"], "css": code["css"]}
                 # session["html"] should always reflect the index page
@@ -4695,6 +4723,10 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     if index_data:
                         session_data["html"] = index_data["html"]
                         session_data["css"] = index_data["css"]
+                # Debug: verify page isolation — log first 80 chars of each page
+                for _pg_slug, _pg_data in session_data["pages"].items():
+                    _pg_preview = (_pg_data.get("html", "") or "")[:80].replace("\n", " ")
+                    logger.info(f"[MULTIPAGE SAVE] page={_pg_slug} html_len={len(_pg_data.get('html', '')):,} preview={_pg_preview}")
 
             await redis_save_session(session_id, session_data)
 
@@ -5119,6 +5151,10 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 if index_data:
                     session_data["html"] = index_data["html"]
                     session_data["css"] = index_data["css"]
+            # Debug: verify page isolation
+            for _pg_slug, _pg_data in session_data["pages"].items():
+                _pg_preview = (_pg_data.get("html", "") or "")[:80].replace("\n", " ")
+                logger.info(f"[MULTIPAGE SAVE] page={_pg_slug} html_len={len(_pg_data.get('html', '')):,} preview={_pg_preview}")
         await redis_save_session(session_id, session_data)
 
         current_plan = plan if is_new else existing.get("plan", {})
@@ -5245,6 +5281,7 @@ RULES:
 - Do NOT add extra wrapper divs
 - Do NOT generate inline SVGs or decorative clip-path shapes
 - Do NOT include explanation — just the code block
+- Do NOT add HTML comments (<!-- ... -->) unless it is a removal marker
 - For background images: use inline style background-image with overlay
 - Icons: use <i class="fa-solid fa-xxx"> (Font Awesome is pre-loaded)
 - REMOVAL: If user asks to remove/delete this element, return ONLY: <!-- removed -->
@@ -5942,12 +5979,8 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 )
             logger.info("🖱️ [ELEMENT EDIT] Resolved {{IMG:}} placeholders")
 
-        # ── Restore background URLs if user didn't ask about images ──
-        # The LLM often replaces existing background-image URLs with {{IMG:}} or
-        # hallucinated URLs even when the user only asked about text/color/font.
-        # Compare before/after: any URL from the original that's missing in the
-        # result gets restored by replacing whatever new URL took its place.
-        # (Image URL restoration removed — not needed for element edits, see note above)
+        # Strip stray HTML comments (LLM artifacts that leak as visible text)
+        result_html = _strip_html_comments(result_html)
 
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None

@@ -117,22 +117,26 @@ PATTERNS = {
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container grid-3">
     <div class="modal-trigger card" data-modal="modal-1" data-aos="fade-right" data-aos-delay="100">
-      <div class="icon-box" style="background: color-mix(in srgb, var(--accent) 12%, transparent)"><i class="fa-solid fa-xxx"></i></div>
-      <h3 class="card-title">Service Title</h3>
-      <p class="card-text" style="margin-bottom: 0.75rem;">Short description visible on the card.</p>
-      <span class="card-link">Learn More <i class="fa-solid fa-arrow-right"></i></span>
+      <img src="{{IMG:descriptive service image keywords}}" alt="Service Title" class="card-image" loading="lazy" style="width:100%;height:200px;object-fit:cover;border-radius:12px 12px 0 0;">
+      <div style="padding: 1.5rem;">
+        <h3 class="card-title">Service Title</h3>
+        <p class="card-text" style="margin-bottom: 0.75rem;">Short description visible on the card.</p>
+        <span class="card-link">Learn More <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
     </div>
   </div>
   <!-- Modals (one per card, hidden by default) -->
   <div id="modal-1" class="detail-modal">
     <div class="modal-content">
       <button class="modal-close">&times;</button>
-      <div class="icon-box" style="background: color-mix(in srgb, var(--accent) 12%, transparent)"><i class="fa-solid fa-xxx"></i></div>
-      <h3 class="card-title" style="font-size: 1.25rem; margin-bottom: 0.75rem;">Service Title</h3>
-      <p class="card-text">Expanded detailed description of this service. Include specifics, benefits, process details, what the client gets, etc.</p>
+      <img src="{{IMG:descriptive service image keywords}}" alt="Service Title" loading="lazy" style="width:100%;height:240px;object-fit:cover;border-radius:12px 12px 0 0;">
+      <div style="padding: 1.5rem;">
+        <h3 class="card-title" style="font-size: 1.25rem; margin-bottom: 0.75rem;">Service Title</h3>
+        <p class="card-text">Expanded detailed description of this service. Include specifics, benefits, process details, what the client gets, etc.</p>
+      </div>
     </div>
   </div>
-  NOTE: Each card has data-modal="modal-N" pointing to matching modal ID. Use modal-1, modal-2, modal-3, etc. JS handles open/close.""",
+  NOTE: Each card has data-modal="modal-N" pointing to matching modal ID. Use modal-1, modal-2, modal-3, etc. JS handles open/close. Each card and its modal MUST include an <img> with a unique {{IMG:...}} placeholder.""",
     "timeline": """timeline pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="timeline-container container-narrow">
