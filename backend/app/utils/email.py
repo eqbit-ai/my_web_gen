@@ -1,5 +1,5 @@
 """
-AWS SES email service for transactional emails.
+Resend email service for transactional emails.
 
 Handles: password reset, signup welcome, form submission notifications,
 account approval notifications, and admin alerts.
@@ -9,42 +9,51 @@ Usage:
 """
 
 import asyncio
+import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 
 logger = logging.getLogger(__name__)
 
-SENDER = os.getenv("SES_SENDER_EMAIL", "noreply@meydanfzai.com")
-REGION = os.getenv("AWS_REGION", "us-east-1")
+SENDER = os.getenv("RESEND_SENDER_EMAIL", "noreply@meydanfzai.com")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://meydanfzai.com")
 
 _executor = ThreadPoolExecutor(max_workers=2)
 
 
-def _ses_client():
-    return boto3.client("ses", region_name=REGION)
-
-
 def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
-    """Send an email via SES (blocking — call from thread pool)."""
+    """Send an email via Resend API (blocking — call from thread pool)."""
+    api_key = RESEND_API_KEY
+    if not api_key:
+        logger.warning("[EMAIL] RESEND_API_KEY not set — skipping email to %s", to)
+        return
+
+    payload = json.dumps({
+        "from": f"Meydan Free Zone <{SENDER}>",
+        "to": [to],
+        "subject": subject,
+        "html": html_body,
+    }).encode("utf-8")
+
+    req = Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
     try:
-        _ses_client().send_email(
-            Source=f"Meydan Free Zone <{SENDER}>",
-            Destination={"ToAddresses": [to]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Html": {"Data": html_body, "Charset": "UTF-8"},
-                    "Text": {"Data": text_body or subject, "Charset": "UTF-8"},
-                },
-            },
-        )
+        with urlopen(req, timeout=10) as resp:
+            resp.read()
         logger.info(f"[EMAIL] Sent '{subject}' to {to}")
-    except (BotoCoreError, ClientError) as e:
+    except URLError as e:
         logger.error(f"[EMAIL] Failed to send '{subject}' to {to}: {e}")
     except Exception as e:
         logger.error(f"[EMAIL] Unexpected error sending to {to}: {e}")
