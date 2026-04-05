@@ -178,12 +178,17 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     elif not site_name:
         plan = session.get("plan", {})
         if isinstance(plan, dict):
-            site_name = plan.get("company_name") or plan.get("business_name") or ""
+            site_name = plan.get("brand", {}).get("name", "") or plan.get("company_name") or plan.get("business_name") or ""
         if not site_name:
             site_name = f"site-{req.session_id[:8]}"
 
     # 4. Create or get site record BEFORE deploy (so we have site_id for form injection)
-    s3_project_name = existing_site.cloudflare_project_name if existing_site and existing_site.cloudflare_project_name else None
+    # If user explicitly provided a site_name, use it for the S3 prefix (even if redeploying)
+    # Only reuse old prefix when user didn't provide a name
+    if req.site_name and req.site_name.strip():
+        s3_project_name = None  # Will use _sanitize_project_name(site_name) in deploy_site
+    else:
+        s3_project_name = existing_site.cloudflare_project_name if existing_site and existing_site.cloudflare_project_name else None
     page_count = len(pages) if pages else 1
     async with async_session() as db:
         if existing_site:
