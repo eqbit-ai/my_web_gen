@@ -196,7 +196,11 @@ async def submit_form(site_id: str, request: Request):
                 owner = owner_result.scalar_one_or_none()
                 notify_email = owner.email if owner else None
             if notify_email:
-                send_form_notification(notify_email, site.name or "Your Website", fields, source_page)
+                # Use a clean display name — remove site- prefix and format nicely
+                display_name = site.name or "Your Website"
+                if display_name.startswith("site-"):
+                    display_name = "Your Website"
+                send_form_notification(notify_email, display_name, fields, source_page)
         except Exception as e:
             logger.warning(f"[FORMS] Failed to send notification email: {e}")
 

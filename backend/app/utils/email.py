@@ -146,7 +146,7 @@ def send_form_notification(to: str, site_name: str, fields: dict, source_page: s
 <h3>New Form Submission</h3>
 <p>You received a new contact form submission on <strong>{site_name}</strong>{page_info}:</p>
 {fields_html}
-<p style="text-align:center"><a href="{FRONTEND_URL}/dashboard" class="btn">View in Inbox</a></p>
+<p style="text-align:center"><a href="{FRONTEND_URL}/dashboard#inbox" class="btn">View in Inbox</a></p>
 <p style="font-size:13px;color:#6b7280;">You can view and manage all submissions in your dashboard inbox.</p>
 """)
     send_email_bg(to, f"New message on {site_name} — Meydan Free Zone", html)
