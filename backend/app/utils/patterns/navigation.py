@@ -35,10 +35,9 @@ PATTERNS = {
         <h3 style="color:white;font-size:1.25rem;margin-bottom:0.25rem;">Stay Updated</h3>
         <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin:0;">Subscribe to our newsletter for the latest updates.</p>
       </div>
-      <form class="newsletter-form" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-        <input type="email" placeholder="Enter your email" class="form-input" style="min-width:250px;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:white;">
-        <button type="submit" class="btn-primary">Subscribe</button>
-      </form>
+      <div class="newsletter-form" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <a href="#contact" class="btn-primary" style="text-decoration:none;">Get in Touch</a>
+      </div>
     </div>
   </div>
   <div class="container footer-grid">
@@ -90,12 +89,13 @@ PATTERNS = {
     <p>&copy; <span id="year"></span> Brand. All rights reserved.</p>
   </div>
   FOOTER RULES (CRITICAL — follow ALL):
-  - Footer MUST include the newsletter strip above the 4 columns — this is standard for premium templates
+  - Footer MUST include a CTA strip above the 4 columns (a simple heading + button linking to #contact, NOT a form)
+  - Do NOT put any <form> element in the footer. Newsletter/subscribe sections should use a CTA button, not a form.
   - Footer MUST have EXACTLY 4 columns: Brand+Social, Quick Links, Services, Contact
   - Quick Links column: use anchor links (#services, #about, etc.) matching actual page sections
   - Services column: list 4-5 real services from the plan — NOT placeholder text
   - Contact column: include address, phone, email, and business hours with icons. CRITICAL: If the user provided specific contact details (phone, email, address) in their prompt, use those EXACT values — do NOT make up different ones.
   - Footer section element MUST have an inline dark background: style="background: #1a1a2e" — this is MANDATORY regardless of theme. Footer is ALWAYS dark.
   - ALL footer text uses white/white-opacity colors. NEVER use dark text in footer.
-  - NEVER output a minimal footer with just logo + address. ALL 4 columns + newsletter strip are mandatory.""",
+  - NEVER output a minimal footer with just logo + address. ALL 4 columns + CTA strip are mandatory.""",
 }

@@ -153,6 +153,10 @@ def inject_form_handler(html: str, js: str) -> tuple[str, str]:
         if "data-form-handler" in tag.lower():
             return tag
 
+        # Skip newsletter/subscribe forms — they are not contact forms
+        if re.search(r'class="[^"]*newsletter[^"]*"', tag, re.I):
+            return tag
+
         # Use existing action as the handler endpoint, or empty string
         action_match = re.search(r'action\s*=\s*["\']([^"\']*)["\']', tag, re.I)
         if action_match:

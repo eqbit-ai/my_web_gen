@@ -156,14 +156,12 @@ PATTERNS = {
     "newsletter_cta": """newsletter_cta pattern:
   <div class="container-xs" style="text-align: center;">
     <h2 class="section-title">Headline</h2>
-    <p class="section-subtitle">Short pitch about why they should subscribe.</p>
-    <form class="newsletter-form">
-      <input type="email" placeholder="Enter your email" required class="form-input">
-      <button type="submit" class="btn-primary">Subscribe</button>
-    </form>
-    <p class="form-hint">No spam. Unsubscribe anytime.</p>
+    <p class="section-subtitle">Short pitch about why they should get in touch or take action.</p>
+    <div class="btn-group center">
+      <a href="#contact" class="btn-primary">Get Started</a>
+    </div>
   </div>
-  NOTE: JS handles form submit with inline success message (not alert).""",
+  NOTE: Do NOT use a <form> here. Use a CTA button linking to the contact section instead.""",
     "comparison_table": """comparison_table pattern:
   <div class="section-header"><h2 class="section-title">Headline</h2><p class="section-subtitle">Subheadline</p></div>
   <div class="container-narrow" style="overflow-x: auto;" data-aos="fade-up">
