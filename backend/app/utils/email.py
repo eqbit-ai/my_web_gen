@@ -9,12 +9,11 @@ Usage:
 """
 
 import asyncio
-import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from urllib.request import Request, urlopen
-from urllib.error import URLError
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -32,31 +31,27 @@ def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
         logger.warning("[EMAIL] RESEND_API_KEY not set — skipping email to %s", to)
         return
 
-    payload = json.dumps({
-        "from": f"Meydan Free Zone <{SENDER}>",
-        "to": [to],
-        "subject": subject,
-        "html": html_body,
-    }).encode("utf-8")
-
-    req = Request(
-        "https://api.resend.com/emails",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-
     try:
-        with urlopen(req, timeout=10) as resp:
-            resp.read()
-        logger.info(f"[EMAIL] Sent '{subject}' to {to}")
-    except URLError as e:
-        logger.error(f"[EMAIL] Failed to send '{subject}' to {to}: {e}")
+        resp = httpx.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": f"Meydan Free Zone <{SENDER}>",
+                "to": [to],
+                "subject": subject,
+                "html": html_body,
+            },
+            timeout=10,
+        )
+        if resp.status_code >= 400:
+            logger.error(f"[EMAIL] Resend API error {resp.status_code}: {resp.text} (to={to})")
+        else:
+            logger.info(f"[EMAIL] Sent '{subject}' to {to}")
     except Exception as e:
-        logger.error(f"[EMAIL] Unexpected error sending to {to}: {e}")
+        logger.error(f"[EMAIL] Failed to send '{subject}' to {to}: {e}")
 
 
 def send_email_bg(to: str, subject: str, html_body: str, text_body: str = ""):
