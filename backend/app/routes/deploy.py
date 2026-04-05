@@ -250,11 +250,11 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             site.page_count = page_count
             site.deploy_error = None
             site.last_deployed_at = func.now()
-            # Carry recipient_email from session if set (user configured it in settings)
+            # Carry recipient_email from session — always update if user changed it
             session_recipient = session.get("recipient_email") or (session.get("contact_config") or {}).get("recipientEmail")
-            if session_recipient and not site.recipient_email:
+            if session_recipient:
                 site.recipient_email = session_recipient
-                logger.info("[DEPLOY] recipient_email carried from session: %s", site.recipient_email)
+                logger.info("[DEPLOY] recipient_email set from session: %s", site.recipient_email)
             await db.commit()
             await db.refresh(site)
             site_id = str(site.id)

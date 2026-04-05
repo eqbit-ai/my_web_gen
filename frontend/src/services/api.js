@@ -831,7 +831,7 @@ export const updateContactConfig = async (sessionId, config) => {
             body: JSON.stringify({ sessionId, ...config }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.detail || 'Failed to update contact config');
+        if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail) || 'Failed to update contact config');
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
