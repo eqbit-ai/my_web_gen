@@ -2266,6 +2266,8 @@ body {
 .dm-owned-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 4px; }
 .dm-owned-divider::before, .dm-owned-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .dm-owned-divider span { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+.dm-connect-status { padding: 4px 14px 8px; font-size: 0.75rem; color: #a78bfa; display: flex; align-items: center; gap: 6px; }
+.dm-connect-error { margin: 8px 0 0; }
 
 /* ── Domain Search Hero ── */
 .dm-domain-hero { text-align: center; margin-bottom: 20px; }

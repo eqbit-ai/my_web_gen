@@ -52,6 +52,8 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
         setDomainError(null);
         try {
             const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000);
             const resp = await fetch(`${config.apiUrl}/api/deploy/${deployed.site_id}/connect-domain`, {
                 method: 'POST',
                 headers: {
@@ -59,12 +61,17 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({ domain_name: domainName }),
+                signal: controller.signal,
             });
+            clearTimeout(timeoutId);
             const data = await resp.json();
             if (!resp.ok) throw new Error(data.detail || 'Failed to connect domain');
             setDomainPurchased({ domain: domainName, ...data });
         } catch (err) {
-            setDomainError(err.message);
+            const msg = err.name === 'AbortError'
+                ? 'Connection timed out. Please try again.'
+                : (err.message || 'Failed to connect domain');
+            setDomainError(msg);
         } finally {
             setConnectingDomain(null);
         }
@@ -402,27 +409,37 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
                                 </div>
                                 <div className="dm-owned-list">
                                     {ownedDomains.map(d => (
-                                        <div key={d.id} className="dm-owned-row">
-                                            <div className="dm-owned-info">
-                                                <span className="dm-owned-name">{d.domain_name}</span>
-                                                {d.instant_connect && (
-                                                    <span className="dm-instant-badge"><Zap size={10} /> Instant</span>
-                                                )}
+                                        <div key={d.id} className="dm-owned-row-wrap">
+                                            <div className="dm-owned-row">
+                                                <div className="dm-owned-info">
+                                                    <span className="dm-owned-name">{d.domain_name}</span>
+                                                    {d.instant_connect && (
+                                                        <span className="dm-instant-badge"><Zap size={10} /> Instant</span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    className="dm-btn dm-btn-sm dm-btn-connect"
+                                                    onClick={() => handleConnectOwnedDomain(d.domain_name)}
+                                                    disabled={!!connectingDomain}
+                                                >
+                                                    {connectingDomain === d.domain_name ? (
+                                                        <><Loader2 className="spinning" size={13} /> Connecting...</>
+                                                    ) : (
+                                                        <>Connect<ArrowRight size={14} /></>
+                                                    )}
+                                                </button>
                                             </div>
-                                            <button
-                                                className="dm-btn dm-btn-sm dm-btn-connect"
-                                                onClick={() => handleConnectOwnedDomain(d.domain_name)}
-                                                disabled={!!connectingDomain}
-                                            >
-                                                {connectingDomain === d.domain_name ? (
-                                                    <Loader2 className="spinning" size={13} />
-                                                ) : (
-                                                    <>Connect<ArrowRight size={14} /></>
-                                                )}
-                                            </button>
+                                            {connectingDomain === d.domain_name && (
+                                                <div className="dm-connect-status">
+                                                    <span>Setting up DNS &amp; SSL — this may take up to 30 seconds...</span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
+                                {domainError && !connectingDomain && (
+                                    <div className="dm-error dm-connect-error"><AlertCircle size={15} />{domainError}</div>
+                                )}
                                 <div className="dm-owned-divider">
                                     <span>or register a new domain</span>
                                 </div>
