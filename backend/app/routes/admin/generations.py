@@ -66,10 +66,11 @@ async def list_generations(
         for log in logs:
             if not log.created_at or log.status != "completed":
                 continue
-            start = log.created_at
-            # Use duration_ms if available, otherwise assume 3-minute window
-            duration = timedelta(milliseconds=log.duration_ms) if log.duration_ms else timedelta(minutes=3)
-            end = start + duration + timedelta(seconds=5)  # 5s buffer
+            # created_at is when the log was inserted (AFTER generation finished)
+            # So the token deductions happened BEFORE created_at
+            duration = timedelta(milliseconds=log.duration_ms) if log.duration_ms else timedelta(minutes=15)
+            end = log.created_at + timedelta(seconds=10)  # small buffer after log insert
+            start = log.created_at - duration - timedelta(seconds=30)  # look back over the generation window
 
             tx_result = await db.execute(
                 select(
