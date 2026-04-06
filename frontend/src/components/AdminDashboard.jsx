@@ -932,7 +932,7 @@ function OperationsPage() {
         <div>
             <SectionHeader title="Platform Operations" />
             <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
-                {['templates', 'audit', 'announcements', 'prompts', 'system'].map(tab => (
+                {['templates', 'audit', 'announcements', 'system'].map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)}
                         style={{ ...btnGhost, background: activeTab === tab ? T.accent : 'transparent', color: activeTab === tab ? '#fff' : T.muted, padding: '8px 16px', fontSize: 13, textTransform: 'capitalize' }}>
                         {tab}

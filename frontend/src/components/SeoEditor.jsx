@@ -15,8 +15,6 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     const [whatsapp, setWhatsapp] = useState(initialMeta?.whatsappNumber || '');
     const [contact, setContact] = useState(initialContact || {
         recipientEmail: '',
-        fields: ['name', 'email', 'message'],
-        successMessage: 'Thank you! We\'ll get back to you soon.',
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -32,15 +30,6 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         } catch (err) {
             setError('Failed to upload favicon');
         }
-    };
-
-    const toggleContactField = (field) => {
-        setContact(prev => ({
-            ...prev,
-            fields: prev.fields.includes(field)
-                ? prev.fields.filter(f => f !== field)
-                : [...prev.fields, field],
-        }));
     };
 
     const handleSaveMeta = async () => {
@@ -149,21 +138,7 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
                             <div className="seo-field">
                                 <label>Recipient Email</label>
                                 <input type="email" value={contact.recipientEmail} onChange={e => setContact(c => ({ ...c, recipientEmail: e.target.value }))} placeholder="you@example.com" />
-                            </div>
-                            <div className="seo-field">
-                                <label>Form Fields</label>
-                                <div className="seo-checkbox-grid">
-                                    {['name', 'email', 'phone', 'company', 'subject', 'message'].map(field => (
-                                        <label key={field} className="seo-checkbox">
-                                            <input type="checkbox" checked={contact.fields.includes(field)} onChange={() => toggleContactField(field)} />
-                                            <span>{field.charAt(0).toUpperCase() + field.slice(1)}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="seo-field">
-                                <label>Success Message</label>
-                                <input type="text" value={contact.successMessage} onChange={e => setContact(c => ({ ...c, successMessage: e.target.value }))} />
+                                <span className="seo-hint">Contact form submissions will be sent to this email address.</span>
                             </div>
                             <div className="seo-footer">
                                 <button className="seo-save" onClick={handleSaveContact} disabled={saving}>
