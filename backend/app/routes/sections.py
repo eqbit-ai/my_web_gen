@@ -418,7 +418,7 @@ class UpdateMetaRequest(BaseModel):
 class UpdateContactRequest(BaseModel):
     sessionId: str
     recipientEmail: str
-    fields: list[str]
+    fields: list[str] | None = None
     successMessage: str | None = None
     pageSlug: str = "index"
 
