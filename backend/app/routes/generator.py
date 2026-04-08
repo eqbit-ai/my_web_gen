@@ -1249,12 +1249,20 @@ def validate_js(js: str) -> str:
     # NOTE: backtick replacement removed — JS is now injected via
     # doc.createElement('script') + appendChild, not embedded in a template literal,
     # so backticks in generated JS are safe and should be left as-is.
-    # Strip verbose comments to reduce size
-    if len(js) > 20000:
-        js = re.sub(r'^\s*//[^\n]*\n', '', js, flags=re.MULTILINE)  # single-line comments
-        js = re.sub(r'/\*[\s\S]*?\*/', '', js)  # block comments
-        js = re.sub(r'\n{3,}', '\n\n', js)  # collapse blank lines
-        logger.warning(f"[validate_js] JS was oversized, stripped comments → {len(js):,} chars")
+    #
+    # NOTE: regex-based comment stripping was removed (it used to fire on
+    # js > 20KB to "compress" the output). The non-greedy block-comment regex
+    # `/\*[\s\S]*?\*/` is fundamentally unsafe on real JavaScript: it has no
+    # awareness of strings, regex literals, or template literals, so it would
+    # cross string boundaries and chop arbitrary content. Concrete failure
+    # case: when the LLM emits `var styles = '<style>/* dark */ ...</style>'`
+    # OR when a string literal contains `/*` followed later by a real
+    # comment's `*/`, the regex matches across the string and deletes
+    # everything between — leaving statements truncated mid-expression.
+    # Symptom on the live site: "Unexpected token '.'" or "Unexpected
+    # identifier 'document'" parse errors, all interactive JS dead.
+    # The 50KB hard limit below stays as a sanity check; real minification
+    # (if ever needed) belongs in a proper AST-based tool, not regex.
     if len(js) > 50000:
         raise ValueError(f"JS too large ({len(js)} chars)")
 
@@ -5354,7 +5362,14 @@ RULES:
 - Use inline style for one-off changes, or use the CSS classes listed above
 - BUTTON COLOR CHANGES: When changing a button's background color, use style="background: COLOR !important" (with !important) because .btn-primary has a gradient that will override plain inline styles. For text color changes on buttons, use style="color: COLOR !important".
 - COLOR CHANGES: Apply with inline style using !important to override CSS class styles. Example: style="color: red !important" or style="background-color: #333 !important". Always use !important for color overrides.
-- ALIGNMENT / POSITIONING: Apply via inline style. For block elements (div, section, h1-h6, p): text-align: center/left/right. For INLINE elements (span, a, em, strong): convert to display: block (or inline-block) first, then apply text-align, OR use margin: 0 auto with display: block to center. For flexbox containers, use justify-content and align-items inline. Do NOT restructure the DOM — just add/modify the style attribute.
+- ALIGNMENT / CENTERING / POSITIONING: Apply via inline style on the element.
+  - For TEXT inside a block element: text-align: center/left/right.
+  - To CENTER A BLOCK ELEMENT in its parent: prefer "margin: 0 auto" together with a max-width. If the parent is a flex/grid container, use "align-self: center" or rely on the parent's justify-content/align-items.
+  - For flexbox CONTAINERS that should center their children: display: flex; justify-content: center; align-items: center.
+  - NEVER use "position: absolute; top: 50%; left: 50%" as a centering technique — that places the element's TOP-LEFT CORNER at the center, not the element itself, so the element ends up offset to the bottom-right. If absolute positioning is truly required, you MUST also include "transform: translate(-50%, -50%)" — never omit it and never set transform: none alongside top/left 50%.
+  - Do NOT explicitly set "transform: none" — leave the transform property out unless the edit specifically requires removing an existing transform.
+  - Words like "position", "place", "move to center", "put in the middle" all mean centering — use the centering techniques above, NOT position: absolute.
+  - Do NOT restructure the DOM — only add/modify the style attribute.
 - SPACING (padding/margin): Apply via inline style. e.g. style="padding: 2rem" or style="margin-bottom: 1rem". Do NOT restructure the DOM.
 - BACKGROUND CHANGES: Apply via inline style. e.g. style="background: #1a1a2e" or style="background: linear-gradient(...)". Do NOT restructure the DOM.
 - VISIBILITY (hide/show): To hide, return an empty HTML comment: <!-- removed -->. Do NOT delete surrounding elements.
@@ -5485,6 +5500,8 @@ ALIGNMENT CHANGES:
 - To LEFT-ALIGN a hero: add .hero-full-overlay class to the content wrapper, remove .text-center, set text-align: left.
 - For non-hero sections: add style="text-align: center/left/right" on the container or wrapper div.
 - ALL child elements (heading, subtitle, buttons, trust line) must have the SAME alignment — never mix.
+- NEVER use "position: absolute; top: 50%; left: 50%" as a centering technique — that places the element's TOP-LEFT CORNER at the center, not the element itself, so the element ends up offset to the bottom-right. Use the class-swap above for heroes, or text-align/flex centering for other sections. Words like "position", "place", "move to center", "put in the middle" all mean centering — never reach for position: absolute.
+- Do NOT explicitly set "transform: none" — leave the transform property out of the inline style.
 
 TYPOGRAPHY & STYLING (when changing text appearance):
 - Font size: inline style font-size in rem (0.875rem, 1rem, 1.25rem, 1.5rem, 2rem, 3rem)
