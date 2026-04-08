@@ -34,6 +34,73 @@ def _region() -> str:
     return os.getenv("AWS_REGION", "me-central-1")
 
 
+def _strip_html_comments_for_deploy(html: str) -> str:
+    """Strip HTML comments before uploading to S3.
+
+    Two failure modes this guards against on the live site:
+      1. Closed comments (``<!-- ... -->``) leaking visible LLM artefacts.
+      2. UNCLOSED comment labels (``<!-- Hero Section<section ...``) — without
+         the closing ``-->`` the browser treats everything after ``<!--`` as a
+         comment, blanking the page.
+
+    CRITICAL: ``<script>`` and ``<style>`` blocks are masked out before the
+    regex runs. Inline JS frequently contains strings like ``"<!-- foo"`` for
+    legacy reasons, and my unclosed-comment regex would greedily eat
+    everything up to the next ``<`` character in the script — truncating the
+    JS mid-file and causing ``Uncaught SyntaxError: Unexpected end of input``
+    on the deployed site. Masking them preserves script bodies verbatim.
+    """
+    if not html:
+        return html
+
+    # ── Mask <script> and <style> blocks so the comment regexes below can't
+    #    chew on their contents (JS often contains "<!--" in strings and CSS
+    #    occasionally contains legacy comment-hiding markers). ──
+    script_blocks: list[str] = []
+    style_blocks: list[str] = []
+
+    def _stash_script(m):
+        script_blocks.append(m.group(0))
+        return f"\x00SCRIPT_{len(script_blocks) - 1}\x00"
+
+    def _stash_style(m):
+        style_blocks.append(m.group(0))
+        return f"\x00STYLE_{len(style_blocks) - 1}\x00"
+
+    html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', _stash_script, html, flags=re.IGNORECASE)
+    html = re.sub(r'<style\b[^>]*>[\s\S]*?</style>', _stash_style, html, flags=re.IGNORECASE)
+
+    # Preserve removal markers (in-app uses them to hide elements). Tolerate
+    # near-miss spellings: <!-- removed -->, <!-- remove -->, <!-- delete(d) -->.
+    html = re.sub(
+        r'<!--\s*(?:removed?|deleted?|element\s+removed)\s*-->',
+        '\x00REMOVED\x00',
+        html,
+        flags=re.IGNORECASE,
+    )
+    # Strip CLOSED HTML comments FIRST. This must run before the unclosed
+    # fallback below — otherwise a properly-formed comment that wraps inline
+    # markup (e.g. `<!-- CTA <strong>Book</strong> -->`) would be partially
+    # eaten by the unclosed regex, leaving the inner markup as visible content.
+    html = re.sub(r'<!--[\s\S]*?-->', '', html)
+    # Strip UNCLOSED comment labels (no closing `-->` before the next tag).
+    # Safe to run AFTER the closed-comment strip because all well-formed
+    # comments have already been removed.
+    html = re.sub(r'<!--\s*[^<>]+?(?=<)', '', html)
+    # Strip stray fragments like --> or ----> from truncated comments
+    html = re.sub(r'<!-+>|(?<!\w)--+>(?!\s*\})', '', html)
+    # Restore removal markers
+    html = html.replace('\x00REMOVED\x00', '<!-- removed -->')
+
+    # ── Restore <script> and <style> blocks ──
+    for i, block in enumerate(script_blocks):
+        html = html.replace(f"\x00SCRIPT_{i}\x00", block)
+    for i, block in enumerate(style_blocks):
+        html = html.replace(f"\x00STYLE_{i}\x00", block)
+
+    return html
+
+
 def _sanitize_project_name(name: str) -> str:
     """Convert a site name to a valid S3 key prefix (lowercase, hyphens, max 58 chars)."""
     slug = re.sub(r"[^a-z0-9-]", "-", name.lower().strip())
@@ -121,22 +188,44 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
     # Strip any kit.fontawesome.com scripts (replaced by CDN link above)
     html = re.sub(r'<script[^>]*src=["\']https?://kit\.fontawesome\.com/[^"\']*["\'][^>]*></script>', '', html)
 
-    # Fix hero-stagger + Splitting.js conflict:
-    # Remove data-splitting from elements that also have hero-stagger class.
-    # Splitting.js auto-inits on [data-splitting] and wraps chars in spans,
-    # then hero-stagger JS also processes .hero-stagger and wipes innerHTML → invisible text.
-    # Removing data-splitting lets hero-stagger handle the animation alone.
-    html = re.sub(
-        r'(<[^>]*class="[^"]*hero-stagger[^"]*"[^>]*)\s+data-splitting(?:="[^"]*")?',
-        r'\1',
-        html,
-    )
-    # Also handle reverse attribute order: data-splitting before class
-    html = re.sub(
-        r'(<[^>]*)\s+data-splitting(?:="[^"]*")?\s+([^>]*class="[^"]*hero-stagger[^"]*")',
-        r'\1 \2',
-        html,
-    )
+    # ── Strip `hero-stagger` class from every element ──
+    #
+    # The hero-stagger animation JS (in animations.py) does:
+    #     el.textContent → flatten all descendant text
+    #     el.innerHTML = ''  → WIPE h1, p, buttons, background structure
+    #     rebuild as flat list of word spans
+    #
+    # LLM-generated sites frequently put `hero-stagger` on the entire <section>
+    # element (not just the h1), so this destructive JS wipes the whole hero's
+    # HTML structure — leaving a flat stream of text with no layout. The user
+    # sees "AUTHENTICITALIANExperiencethetruetaste..." jammed together.
+    #
+    # Disabling the class neuters the JS without touching anything else. The
+    # page still renders with all the normal fade/scroll animations.
+    html = re.sub(r'\bhero-stagger\b', '', html)
+    # Clean up any empty class="" attrs left behind
+    html = re.sub(r'\s*class="\s*"', '', html)
+    # Collapse extra spaces inside class attributes
+    html = re.sub(r'(class="[^"]*?)\s{2,}([^"]*?")', r'\1 \2', html)
+
+    # Strip data-splitting from EVERY element (not just .hero-stagger).
+    #
+    # Splitting.js auto-initializes on any element with [data-splitting] and
+    # replaces its text content with per-character <span class="char"> nodes.
+    # The .char spans use display:inline-block which — combined with the way
+    # Splitting.js handles the text nodes — collapses whitespace between
+    # words, so "Authentic Italian Pizza" renders as "AuthenticItalianPizza"
+    # on the deployed site.
+    #
+    # The in-app preview is unaffected because its iframe never loads
+    # Splitting.js and force-disables all animations, so the DOM mutation
+    # never happens there — making the bug invisible until deploy.
+    #
+    # Splitting.js has caused more bugs than value across the codebase, so
+    # we disable it entirely on deployed output. All the animation effects
+    # users actually care about (fade-up, slide-in, stagger) come from AOS
+    # and from our own animation CSS, not Splitting.js.
+    html = re.sub(r'\s+data-splitting(?:="[^"]*")?', '', html)
 
     animation_css = get_animation_css()
     animation_js = get_animation_js()
@@ -144,6 +233,21 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
   <script>
     if (typeof AOS !== 'undefined') { AOS.init({ duration: 800, once: true, offset: 50 }); }
   </script>"""
+
+    # CRITICAL FIX: Templates (and legacy projects built from templates) store
+    # a copy of animation_js in their `js` field via templates.py. Without
+    # this guard we inject animation_js twice — once via _inline_css_js below
+    # and once via the user `js` block — which creates two nested
+    # `document.addEventListener('DOMContentLoaded', function() {` wrappers.
+    # The second one's `});` closes the inner scope, but the outer one is
+    # never closed → "Uncaught SyntaxError: Unexpected end of input" and ALL
+    # inline JS stops executing (hero hidden/mangled, animations don't run).
+    # Detect the signature marker and strip the duplicate copy from user js.
+    ANIMATION_JS_MARKER = "ANIMATION & EFFECT LIBRARY"
+    if js and ANIMATION_JS_MARKER in js:
+        # User js is (or contains) a copy of the animation library.
+        # Remove it entirely — the canonical copy is injected below.
+        js = ""
 
     has_doctype = "<!DOCTYPE" in html[:50] or "<!doctype" in html[:50]
     has_html_tag = "<html" in html[:200]
@@ -186,15 +290,28 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
         # scroll observer JS doesn't fire properly on deployed sites
         body_inject += """<script>
 (function(){
+  // Force-visibility fallback. IMPORTANT: do NOT reset `transform` on
+  // arbitrary elements — that wipes user-applied positioning transforms from
+  // the element editor. Only reset transform on elements that explicitly
+  // opt in to a reveal animation.
+  function isAnimEl(el){
+    return el.hasAttribute('data-aos')
+      || el.classList.contains('stagger-child')
+      || el.classList.contains('fade-in')
+      || el.classList.contains('slide-up')
+      || el.classList.contains('slide-in-left')
+      || el.classList.contains('slide-in-right')
+      || el.classList.contains('hero-stagger');
+  }
   function showAll(){
     document.querySelectorAll('section, [data-section-type]').forEach(function(el){
       el.style.opacity='1';
-      el.style.transform='none';
+      if(isAnimEl(el)) el.style.transform='none';
       el.classList.add('visible');
     });
     document.querySelectorAll('.hero-content, .hero-center-content, .hero-full-overlay').forEach(function(el){
       el.style.opacity='1';
-      el.style.transform='none';
+      if(isAnimEl(el)) el.style.transform='none';
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(showAll,100)});}
@@ -230,13 +347,20 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
         if(orig)el.textContent=orig;
       }
     });
-    // Also fix any h1 inside hero sections that might be invisible
+    // Also fix any h1 inside hero sections that might be invisible.
+    // Only touch transform if the element is actually invisible (opacity 0
+    // or zero-height), to avoid wiping user-applied positioning transforms.
     document.querySelectorAll('[data-section-type="hero"] h1, .hero-section h1').forEach(function(h1){
       var cs=window.getComputedStyle(h1);
       if(cs.opacity==='0'||h1.offsetHeight===0){
         h1.style.opacity='1';
-        h1.style.transform='none';
         h1.style.visibility='visible';
+        // Only reset transform if it looks like an animation transform
+        // (matrix with translation or scale!=1). Skip if user has set an
+        // inline transform via the element editor.
+        if(!h1.style.transform || h1.style.transform==='none'){
+          h1.style.transform='none';
+        }
         h1.querySelectorAll('span').forEach(function(s){
           s.style.opacity='1';
           s.style.transform='none';
@@ -301,12 +425,22 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
         body_end += f"<script>\n{js}\n</script>"
     body_end += """<script>
 (function(){
+  // See note in body_inject above — never blanket-reset transform here.
+  function isAnimEl(el){
+    return el.hasAttribute('data-aos')
+      || el.classList.contains('stagger-child')
+      || el.classList.contains('fade-in')
+      || el.classList.contains('slide-up')
+      || el.classList.contains('slide-in-left')
+      || el.classList.contains('slide-in-right')
+      || el.classList.contains('hero-stagger');
+  }
   function showAll(){
     document.querySelectorAll('section, [data-section-type]').forEach(function(el){
-      el.style.opacity='1';el.style.transform='none';el.classList.add('visible');
+      el.style.opacity='1';if(isAnimEl(el))el.style.transform='none';el.classList.add('visible');
     });
     document.querySelectorAll('.hero-content, .hero-center-content, .hero-full-overlay').forEach(function(el){
-      el.style.opacity='1';el.style.transform='none';
+      el.style.opacity='1';if(isAnimEl(el))el.style.transform='none';
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(showAll,100)});}
@@ -324,7 +458,9 @@ def _inline_css_js(html: str, css: str, js: str) -> str:
     document.querySelectorAll('[data-section-type="hero"] h1, .hero-section h1').forEach(function(h1){
       var cs=window.getComputedStyle(h1);
       if(cs.opacity==='0'||h1.offsetHeight===0){
-        h1.style.opacity='1';h1.style.transform='none';h1.style.visibility='visible';
+        h1.style.opacity='1';h1.style.visibility='visible';
+        // Only reset transform if user has not set their own inline transform.
+        if(!h1.style.transform||h1.style.transform==='none'){h1.style.transform='none';}
         h1.querySelectorAll('span').forEach(function(s){s.style.opacity='1';s.style.transform='none';});
       }
     });
@@ -675,6 +811,11 @@ async def deploy_site(
         for slug, page_data in pages.items():
             page_html = page_data.get("html", "")
             page_css = page_data.get("css", css)
+            # Strip stray HTML comments (closed AND unclosed labels) BEFORE
+            # any further transformation. This heals legacy sessions where
+            # the in-app strip pass missed an unclosed `<!--` and the live
+            # site renders blank.
+            page_html = _strip_html_comments_for_deploy(page_html)
             full_html = _inline_css_js(page_html, page_css, js)
             # Convert absolute links to relative for S3 prefix hosting
             full_html = _make_links_relative(full_html)
@@ -692,6 +833,8 @@ async def deploy_site(
             else:
                 files[f"{slug}.html"] = full_html
     else:
+        # Single-page deploy — apply the same comment-strip safety net.
+        html = _strip_html_comments_for_deploy(html)
         full_html = _inline_css_js(html, css, js)
         full_html = _upload_local_images(full_html, project_name, s3, bucket)
         # Inject form submission endpoint

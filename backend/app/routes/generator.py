@@ -541,15 +541,58 @@ def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
 
 
 def _strip_html_comments(html: str) -> str:
-    """Remove HTML comments from LLM output, preserving system markers."""
+    """Remove HTML comments from LLM output, preserving system markers.
+
+    Also strips UNCLOSED comment labels like ``<!-- Hero Section<section ...``
+    that the LLM emits during edits — without the closing ``-->`` the browser
+    treats everything after ``<!--`` as a comment, blanking the page.
+
+    CRITICAL: ``<script>`` and ``<style>`` blocks are masked out before the
+    regexes run. Inline JS frequently contains strings like ``"<!-- foo"`` and
+    the unclosed-comment regex would greedily eat everything up to the next
+    ``<`` character inside the script — truncating the JS mid-file and causing
+    ``Uncaught SyntaxError: Unexpected end of input`` on the deployed site.
+    """
+    # ── Mask <script> and <style> blocks so the comment regexes below can't
+    #    chew on their contents (JS often contains "<!--" in strings). ──
+    script_blocks: list[str] = []
+    style_blocks: list[str] = []
+
+    def _stash_script(m):
+        script_blocks.append(m.group(0))
+        return f"\x00SCRIPT_{len(script_blocks) - 1}\x00"
+
+    def _stash_style(m):
+        style_blocks.append(m.group(0))
+        return f"\x00STYLE_{len(style_blocks) - 1}\x00"
+
+    html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', _stash_script, html, flags=re.IGNORECASE)
+    html = re.sub(r'<style\b[^>]*>[\s\S]*?</style>', _stash_style, html, flags=re.IGNORECASE)
+
     # Preserve system comments
     html = re.sub(r'<!-- SEO_META', '\x00SEO_META', html)
     html = re.sub(r'END_SEO_META -->', 'END_SEO_META\x00', html)
     html = re.sub(r'<!-- FAVICON', '\x00FAVICON', html)
     html = re.sub(r'END_FAVICON -->', 'END_FAVICON\x00', html)
-    html = re.sub(r'<!--\s*removed\s*-->', '\x00REMOVED\x00', html)
-    # Strip all HTML comments
+    # Tolerate near-miss removal sentinels: <!-- removed -->, <!-- remove -->,
+    # <!-- delete -->, <!-- deleted -->, with or without surrounding spaces.
+    html = re.sub(
+        r'<!--\s*(?:removed?|deleted?|element\s+removed)\s*-->',
+        '\x00REMOVED\x00',
+        html,
+        flags=re.IGNORECASE,
+    )
+    # Strip CLOSED HTML comments FIRST. This must run before the unclosed
+    # fallback below — otherwise a properly-formed comment that wraps inline
+    # markup (e.g. `<!-- CTA <strong>Book</strong> -->`) would be partially
+    # eaten by the unclosed regex, leaving the inner markup as visible content.
     html = re.sub(r'<!--[\s\S]*?-->', '', html)
+    # Strip UNCLOSED comment labels (no closing `-->` before the next tag).
+    # Pattern: `<!--` + label text (no `<` or `>`) + lookahead `<` (start of tag).
+    # Catches `<!-- Hero Section<section ...`, `<!-- Footer<footer ...`, etc.
+    # Safe to run AFTER the closed-comment strip because all well-formed
+    # comments have already been removed.
+    html = re.sub(r'<!--\s*[^<>]+?(?=<)', '', html)
     # Strip stray fragments like --> or ----> that remain from truncated comments
     html = re.sub(r'<!-+>|(?<!\w)--+>(?!\s*\})', '', html)
     # Restore system comments
@@ -558,6 +601,13 @@ def _strip_html_comments(html: str) -> str:
     html = html.replace('\x00FAVICON', '<!-- FAVICON')
     html = html.replace('END_FAVICON\x00', 'END_FAVICON -->')
     html = html.replace('\x00REMOVED\x00', '<!-- removed -->')
+
+    # ── Restore <script> and <style> blocks ──
+    for i, block in enumerate(script_blocks):
+        html = html.replace(f"\x00SCRIPT_{i}\x00", block)
+    for i, block in enumerate(style_blocks):
+        html = html.replace(f"\x00STYLE_{i}\x00", block)
+
     return html
 
 
@@ -613,16 +663,38 @@ def _strip_comment_markers(html: str) -> str:
     This function strips ALL unclosed <!-- markers that run directly into
     HTML tags, preserving the actual HTML content.
     """
-    # Pattern: <!-- followed by label text, immediately followed by < (HTML tag)
-    # This catches: <!-- Navbar<nav, <!-- Hero Section<section, <!-- Brand + Social<div, etc.
-    # The label text is anything that's NOT < or > (allows +, -, &, :, etc.)
-    html = re.sub(r'<!--\s*[^<>]+(?=<)', '', html)
+    # Mask <script> and <style> blocks so the comment regexes can't chew on
+    # their contents (JS often contains "<!--" in strings — see _strip_html_comments).
+    script_blocks: list[str] = []
+    style_blocks: list[str] = []
 
-    # Also strip properly-formatted comment markers (<!-- MARKER -->)
+    def _stash_script(m):
+        script_blocks.append(m.group(0))
+        return f"\x00SCRIPT_{len(script_blocks) - 1}\x00"
+
+    def _stash_style(m):
+        style_blocks.append(m.group(0))
+        return f"\x00STYLE_{len(style_blocks) - 1}\x00"
+
+    html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', _stash_script, html, flags=re.IGNORECASE)
+    html = re.sub(r'<style\b[^>]*>[\s\S]*?</style>', _stash_style, html, flags=re.IGNORECASE)
+
+    # Strip properly-formatted comment markers FIRST so the unclosed-fallback
+    # below cannot partially eat a well-formed comment that wraps inline markup.
     html = re.sub(r'<!--\s*(?:SEO_META|END_SEO_META|FAVICON|END_FAVICON)\s*-->\s*', '', html)
+
+    # Unclosed comment fallback. Pattern: <!-- + label text + lookahead <.
+    # Catches: <!-- Navbar<nav, <!-- Hero Section<section, etc.
+    html = re.sub(r'<!--\s*[^<>]+(?=<)', '', html)
 
     # Strip plain text markers that leaked without <!-- -->
     html = re.sub(r'\b(?:SEO_META|END_SEO_META|FAVICON|END_FAVICON)\b', '', html)
+
+    # Restore <script> and <style> blocks
+    for i, block in enumerate(script_blocks):
+        html = html.replace(f"\x00SCRIPT_{i}\x00", block)
+    for i, block in enumerate(style_blocks):
+        html = html.replace(f"\x00STYLE_{i}\x00", block)
 
     return html
 
@@ -3787,13 +3859,20 @@ async def sync_session(req: SyncSessionRequest, user: dict = Depends(require_aut
     html = inject_section_ids(req.html)
 
     # Multi-page aware: write to the correct page slot
-    if session.get("multipage") and req.currentPage:
+    if session.get("multipage"):
+        # Defensive: never clobber the index html with another page's content.
+        # If the frontend forgot to send currentPage (legacy clients), refuse
+        # to overwrite session["html"]/session["pages"] — the in-memory edit
+        # will still propagate via the per-page setPages on the frontend, but
+        # we won't corrupt the canonical multipage state on the backend.
+        page_slug = req.currentPage or "index"
         if "pages" not in session:
             session["pages"] = {}
-        session["pages"][req.currentPage] = {"html": html, "css": req.css}
-        if req.currentPage == "index":
+        session["pages"][page_slug] = {"html": html, "css": req.css}
+        if page_slug == "index":
             session["html"] = html
             session["css"] = req.css
+        # else: leave session["html"] alone — it always reflects the index page
     else:
         session["html"] = html
         session["css"] = req.css
@@ -4789,8 +4868,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
 
             await _complete_job(job_id, "completed")
 
-            # Log generation to admin dashboard (fire-and-forget)
-            from app.utils.usage_limits import increment_usage
+            # Log generation to admin dashboard (fire-and-forget).
+            # NOTE: _log_generation_bg already increments user.generation_count
+            # when status == "completed" — see _log_generation_bg() at the top
+            # of this file. Do NOT call increment_usage("generation") here as
+            # well, or the count goes up by 2 per successful generation and
+            # users hit their cap in half the expected runs.
             if is_new:
                 _page_count = len(pages_dict) if is_multipage and pages_dict else 1
                 _log_generation_bg(
@@ -4805,10 +4888,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     performance_score=quality_scores.get("performance_score"),
                     seo_score=quality_scores.get("seo_score"),
                 )
-                # Increment generation count
-                asyncio.ensure_future(increment_usage(user["user_id"], "generation"))
             else:
-                # Increment edit count for modifications
+                # Increment edit count for modifications. Edits don't have
+                # the _log_generation_bg double-counting problem because
+                # _log_generation_bg is only called on new generations, not
+                # edits — so increment_usage is the only counter for edits.
+                from app.utils.usage_limits import increment_usage
                 asyncio.ensure_future(increment_usage(user["user_id"], "edit"))
 
             await emit("complete", complete_payload)
@@ -5183,6 +5268,9 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
         # Log generation to admin dashboard (fire-and-forget)
         if is_new:
             _page_count = len(pages_dict) if is_multipage_gen and pages_dict else 1
+            # _log_generation_bg increments user.generation_count itself when
+            # status == "completed". Do NOT also call increment_usage here —
+            # see comment in generate_website_stream above for the same bug.
             _log_generation_bg(
                 user_id=user["user_id"],
                 prompt=req.prompt,
@@ -5193,9 +5281,6 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 is_multipage=is_multipage_gen,
                 page_count=_page_count,
             )
-            # Increment generation count
-            from app.utils.usage_limits import increment_usage
-            await increment_usage(user["user_id"], "generation")
 
         return result
 

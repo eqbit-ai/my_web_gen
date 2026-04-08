@@ -843,13 +843,25 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         });
       }, 1000);
     }
-    // Force visibility for any hidden-by-default animation elements
+    // Force visibility for any hidden-by-default animation elements.
+    // IMPORTANT: only target elements that explicitly opt in to an animation
+    // (data-aos / known animation classes). Do NOT blanket-reset transform on
+    // every direct child of the hero section — that wipes out user-applied
+    // positioning transforms (e.g. "position to center" element edits) and
+    // causes the element to snap back to its parent's flex alignment ~2s
+    // after each iframe rebuild.
     setTimeout(function() {
       var s = document.createElement('style');
       s.textContent = '[data-aos]{opacity:1!important;transform:none!important;transition:none!important}' +
         '.stagger-child{opacity:1!important;transform:none!important}' +
         '.fade-in,.slide-up,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}' +
-        'section[data-section-type="hero"]>*{opacity:1!important;transform:none!important;animation:none!important}';
+        'section[data-section-type="hero"]>*{opacity:1!important;animation:none!important}' +
+        'section[data-section-type="hero"] [data-aos],' +
+        'section[data-section-type="hero"] .stagger-child,' +
+        'section[data-section-type="hero"] .fade-in,' +
+        'section[data-section-type="hero"] .slide-up,' +
+        'section[data-section-type="hero"] .slide-in-left,' +
+        'section[data-section-type="hero"] .slide-in-right{transform:none!important}';
       document.head.appendChild(s);
     }, 2000);
 
@@ -1003,11 +1015,20 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       document.querySelectorAll('section[data-section-type]').forEach(function(s) {
         s.classList.add('visible');
       });
-      // Force hero children visible (premium animations set opacity:0)
+      // Force hero children visible (premium animations set opacity:0).
+      // IMPORTANT: do NOT reset transform here — that wipes out user-applied
+      // positioning transforms from element edits. Only reset transform on
+      // children that have an animation marker (data-aos / known stagger
+      // classes), where the transform is provably from a reveal animation.
       document.querySelectorAll('section[data-section-type="hero"] > *').forEach(function(el) {
         el.style.opacity = '1';
-        el.style.transform = 'none';
         el.style.animation = 'none';
+        if (el.hasAttribute('data-aos') || el.classList.contains('stagger-child') ||
+            el.classList.contains('fade-in') || el.classList.contains('slide-up') ||
+            el.classList.contains('slide-in-left') || el.classList.contains('slide-in-right') ||
+            el.classList.contains('hero-stagger')) {
+          el.style.transform = 'none';
+        }
       });
       // Force AOS elements visible too — AOS may load but not trigger in iframes
       document.querySelectorAll('[data-aos]').forEach(function(el) {
