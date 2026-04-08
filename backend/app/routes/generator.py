@@ -1972,10 +1972,14 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
     )
     logger.info(f"⚙️ JS Prompt Built → {len(system):,} chars, sending to LLM...")
 
+    # max_tokens=8000 (~30KB output) — observed JS sizes for complex pages
+    # are 25-27KB, so the previous 4000-token cap (~12-16KB) was truncating
+    # mid-statement and producing the same "Unexpected end of input" symptom
+    # as the (now-fixed) regex stripper bug. 8000 gives comfortable headroom.
     text, _usage = await _llm_stream(
         client,
         "claude-sonnet-4-20250514",
-        4000,
+        8000,
         system,
         "Generate the JavaScript for this website. Return only the js code block.",
     )
