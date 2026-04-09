@@ -1357,5 +1357,29 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
     # Just save config — no form injection or LLM regeneration
     await redis_save_session(req.sessionId, session)
 
+    # Return:
+    #   - html/css/js for the page the user is CURRENTLY viewing (not always
+    #     "index"), so the iframe doesn't get swapped to a different page on
+    #     save. The frontend passes pageSlug from currentPage.
+    #   - the FULL pages dict (multipage projects) so the frontend can update
+    #     its in-memory `pages` state in one shot. Without this the frontend
+    #     would only see the visible page's updated HTML, leaving every other
+    #     page slot stale until reload — which is exactly the
+    #     "settings only updates current page" bug users hit on multipage
+    #     projects after adding a social link.
     page_html = _get_page_html(session, req.pageSlug)
-    return {"success": True, "html": page_html, "css": session.get("css", ""), "js": session.get("js", "")}
+    response: dict = {
+        "success": True,
+        "html": page_html,
+        "css": session.get("css", ""),
+        "js": session.get("js", ""),
+    }
+    if session.get("multipage") and session.get("pages"):
+        # Slim down each page's payload — frontend only needs html + css
+        response["pages"] = {
+            slug: {"html": pg.get("html", ""), "css": pg.get("css", "")}
+            for slug, pg in session["pages"].items()
+            if isinstance(pg, dict)
+        }
+        response["isMultipage"] = True
+    return response

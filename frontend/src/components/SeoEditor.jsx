@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { X, Save, Loader, Globe, Phone, Mail, FileText, Upload, Share2 } from 'lucide-react';
 import { updateSiteMeta, updateContactConfig, uploadFile } from '../services/api';
 
-const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMeta, contactConfig: initialContact, onUpdate }) => {
+const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMeta, contactConfig: initialContact, onUpdate, currentPage = 'index' }) => {
     const [meta, setMeta] = useState(initialMeta || {
         title: '',
         description: '',
@@ -65,16 +65,25 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         setSaving(false);
     };
 
-    const handleSaveContact = async () => {
+    // Wrapper that calls updateContactConfig with the current page slug AND
+    // forwards the full pages dict to onUpdate so the parent can refresh
+    // every page slot in its in-memory state — not just the visible one.
+    // This is what fixes the "settings only updates current page" bug on
+    // multipage projects (#3 in the user-reported list).
+    const _saveContactPatch = async (patch) => {
         setSaving(true);
         setError('');
         setSuccess('');
         try {
             const result = await updateContactConfig(sessionId, {
-                recipientEmail: contact.recipientEmail || '',
+                ...patch,
+                pageSlug: currentPage,
             });
             if (result.success && onUpdate) {
-                onUpdate(result.html, result.css, result.js);
+                // 4-arg signature: (html, css, js, pages?)
+                // Parent's handler in WebsiteGenerator.jsx checks for the 4th
+                // arg and updates the multipage `pages` dict atomically.
+                onUpdate(result.html, result.css, result.js, result.pages || null);
                 setSaving(false);
                 onClose();
                 return;
@@ -84,53 +93,21 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         }
         setSaving(false);
     };
+
+    const handleSaveContact = () => _saveContactPatch({ recipientEmail: contact.recipientEmail || '' });
 
     // Save WhatsApp via the unified contact_config endpoint. The legacy
     // siteMeta.whatsappNumber path is left intact for backward compat with
     // older projects, but new edits write to contact_config.whatsapp.
-    const handleSaveWhatsapp = async () => {
-        setSaving(true);
-        setError('');
-        setSuccess('');
-        try {
-            const result = await updateContactConfig(sessionId, {
-                whatsappNumber: whatsapp,
-            });
-            if (result.success && onUpdate) {
-                onUpdate(result.html, result.css, result.js);
-                setSaving(false);
-                onClose();
-                return;
-            }
-        } catch (err) {
-            setError('Failed to save: ' + err.message);
-        }
-        setSaving(false);
-    };
+    const handleSaveWhatsapp = () => _saveContactPatch({ whatsappNumber: whatsapp });
 
-    const handleSaveSocial = async () => {
-        setSaving(true);
-        setError('');
-        setSuccess('');
-        try {
-            const result = await updateContactConfig(sessionId, {
-                socialFacebook: socialFb,
-                socialInstagram: socialIg,
-                socialTiktok: socialTk,
-                socialLinkedin: socialLi,
-                socialYoutube: socialYt,
-            });
-            if (result.success && onUpdate) {
-                onUpdate(result.html, result.css, result.js);
-                setSaving(false);
-                onClose();
-                return;
-            }
-        } catch (err) {
-            setError('Failed to save: ' + err.message);
-        }
-        setSaving(false);
-    };
+    const handleSaveSocial = () => _saveContactPatch({
+        socialFacebook: socialFb,
+        socialInstagram: socialIg,
+        socialTiktok: socialTk,
+        socialLinkedin: socialLi,
+        socialYoutube: socialYt,
+    });
 
     if (!isOpen) return null;
 

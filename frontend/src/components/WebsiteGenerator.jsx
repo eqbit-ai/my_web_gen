@@ -529,16 +529,30 @@ const composeWizardPrompt = (data) => {
         prompt += `\nColor scheme: ${data.colorScheme.name} — use these colors: ${data.colorScheme.colors.join(', ')}`;
     }
     const ci = data.contactInfo || {};
-    // ONLY phone/email/address go in the LLM prompt — those belong inside the
-    // contact section's body content. WhatsApp and social media URLs are
-    // intentionally NOT mentioned to the LLM: they're floating UI widgets
-    // injected programmatically post-generation, so generation stays
-    // deterministic regardless of which platforms the user filled.
+    // ONLY phone/email/address/mapLink go in the LLM prompt — those belong
+    // inside the contact section's body content. WhatsApp and social media
+    // URLs are intentionally NOT mentioned to the LLM: they're floating UI
+    // widgets injected programmatically post-generation, so generation
+    // stays deterministic regardless of which platforms the user filled.
     if (ci.phone || ci.email || ci.address) {
         prompt += '\nContact details:';
         if (ci.phone) prompt += ` Phone: ${ci.phone}.`;
         if (ci.email) prompt += ` Email: ${ci.email}.`;
         if (ci.address) prompt += ` Address: ${ci.address}.`;
+    }
+    if (ci.mapLink) {
+        // Tell the LLM exactly what to do with the map link. The string is
+        // pasted verbatim so the LLM doesn't have to guess at intent. The
+        // generation prompt elsewhere already knows how to convert
+        // share-link formats into embed URLs (see GOOGLE MAPS RULES in
+        // backend prompts), but the explicit instruction here ensures the
+        // map ACTUALLY gets embedded in the contact section instead of
+        // dropped or used as a plain text link.
+        prompt += `\nGoogle Maps location: ${ci.mapLink}`;
+        prompt += '\nMUST embed this Google Map as an <iframe> inside the contact section. ';
+        prompt += 'If the link is a share URL (maps.app.goo.gl, goo.gl/maps), use the address above as the iframe query: ';
+        prompt += '<iframe src="https://www.google.com/maps?q=ENCODED_ADDRESS&output=embed&z=15" width="100%" height="400" style="border:0;border-radius:12px" allowfullscreen loading="lazy"></iframe>. ';
+        prompt += 'If the link is already an embed URL or contains "/embed", use it directly as the iframe src.';
     }
     return prompt;
 };
@@ -552,6 +566,7 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
     const [contactPhone, setContactPhone] = React.useState(data.contactInfo?.phone || '');
     const [contactEmail, setContactEmail] = React.useState(data.contactInfo?.email || '');
     const [contactAddress, setContactAddress] = React.useState(data.contactInfo?.address || '');
+    const [contactMapLink, setContactMapLink] = React.useState(data.contactInfo?.mapLink || '');
     const [contactWhatsapp, setContactWhatsapp] = React.useState(data.contactInfo?.whatsapp || '');
     const [contactSocialFb, setContactSocialFb] = React.useState(data.contactInfo?.social?.facebook || '');
     const [contactSocialIg, setContactSocialIg] = React.useState(data.contactInfo?.social?.instagram || '');
@@ -752,11 +767,18 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
                     <div className="wizard-contact-fields">
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginBottom: '0.25rem' }}>CONTACT DETAILS</div>
                         <input type="text" placeholder="Phone (e.g. +971 50 123 4567)" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
-                        <input type="email" placeholder="Email — also used as form recipient (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
-                        <input type="text" placeholder="Address (optional)" value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
-
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginTop: '0.75rem', marginBottom: '0.25rem' }}>WHATSAPP BUTTON</div>
                         <input type="text" placeholder="WhatsApp number with country code (e.g. +971501234567) — adds floating button" value={contactWhatsapp} onChange={e => setContactWhatsapp(e.target.value)} />
+                        <input type="email" placeholder="Email — also used as form recipient (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                        <input type="text" placeholder="Address (optional) — appears on the contact page" value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
+                        <input
+                            type="text"
+                            placeholder="Google Maps link (optional) — embeds an interactive map on the contact page"
+                            value={contactMapLink}
+                            onChange={e => setContactMapLink(e.target.value)}
+                        />
+                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '-0.25rem', marginLeft: '0.25rem' }}>
+                            Tip: open Google Maps, search your business, click "Share" → "Embed a map", and paste the URL or the full embed code.
+                        </div>
 
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginTop: '0.75rem', marginBottom: '0.25rem' }}>SOCIAL LINKS — only filled platforms appear in the floating button</div>
                         <input type="url" placeholder="Facebook profile URL (optional)" value={contactSocialFb} onChange={e => setContactSocialFb(e.target.value)} />
@@ -772,6 +794,7 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
                                     phone: contactPhone.trim(),
                                     email: contactEmail.trim(),
                                     address: contactAddress.trim(),
+                                    mapLink: contactMapLink.trim(),
                                     whatsapp: contactWhatsapp.trim(),
                                     social: {
                                         facebook: contactSocialFb.trim(),
@@ -802,9 +825,34 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
                                     <span className="wizard-summary-colors">{data.colorScheme.colors.map((c, i) => <span key={i} style={{ background: c }} />)}</span>
                                 )}
                             </div>
-                            {(data.contactInfo?.phone || data.contactInfo?.email) && (
-                                <div><strong>Contact:</strong> {[data.contactInfo.phone, data.contactInfo.email].filter(Boolean).join(' | ')}</div>
+                            {(data.contactInfo?.phone || data.contactInfo?.email || data.contactInfo?.address) && (
+                                <div><strong>Contact:</strong> {[data.contactInfo.phone, data.contactInfo.email, data.contactInfo.address].filter(Boolean).join(' | ')}</div>
                             )}
+                            {data.contactInfo?.mapLink && (
+                                <div><strong>Map:</strong> Embedded on contact page</div>
+                            )}
+                            {data.contactInfo?.whatsapp && (
+                                <div><strong>WhatsApp:</strong> {data.contactInfo.whatsapp}</div>
+                            )}
+                            {(() => {
+                                // Build a list of social platforms the user filled in.
+                                // We render their PLATFORM NAME (not the full URL) for
+                                // brevity in the summary card. The actual URLs are still
+                                // in wizardData.contactInfo.social and get injected as
+                                // floating-button hrefs by the backend after generation.
+                                const social = data.contactInfo?.social || {};
+                                const filled = [
+                                    social.facebook && 'Facebook',
+                                    social.instagram && 'Instagram',
+                                    social.tiktok && 'TikTok',
+                                    social.linkedin && 'LinkedIn',
+                                    social.youtube && 'YouTube',
+                                ].filter(Boolean);
+                                if (filled.length === 0) return null;
+                                return (
+                                    <div><strong>Social:</strong> {filled.join(', ')}</div>
+                                );
+                            })()}
                         </div>
                         <div className="wizard-disclaimer">
                             <strong>Before we start:</strong>
@@ -1426,7 +1474,7 @@ const WebsiteGenerator = () => {
             siteType: '', pages: ['Home', 'About', 'Services', 'Contact'],
             colorScheme: null,
             contactInfo: {
-                phone: '', email: '', address: '',
+                phone: '', email: '', address: '', mapLink: '',
                 whatsapp: '',
                 social: { facebook: '', instagram: '', tiktok: '', linkedin: '', youtube: '' },
             },
@@ -1861,8 +1909,16 @@ const WebsiteGenerator = () => {
         }
     };
 
-    const handleGenerate = async (text, niche, templateId = null, assignedImages = undefined) => {
+    const handleGenerate = async (text, niche, templateId = null, assignedImages = undefined, displayText = null) => {
         const promptText = text || prompt.trim();
+        // displayPrompt is what we show in the chat bubble for the user's
+        // message. It can differ from promptText so the wizard can include
+        // info that the LLM should NOT see (e.g. WhatsApp number, social
+        // media URLs — those are programmatically injected post-generation
+        // and listing them in the LLM prompt would risk the model rendering
+        // them as page elements that then collide with the floating widgets
+        // we inject ourselves). Defaults to promptText when not provided.
+        const displayPrompt = displayText || promptText;
         if (!promptText || isGeneratingRef.current) return;
 
         // Block e-commerce requests immediately
@@ -1871,7 +1927,7 @@ const WebsiteGenerator = () => {
         if (_ecomKeywords.some(kw => _lower.includes(kw))) {
             setPrompt('');
             setMessages(prev => [...prev,
-                { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
                 { role: 'assistant', text: 'E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce.', timestamp: new Date().toLocaleTimeString(), isError: true },
             ]);
             // Restart wizard if no website generated yet
@@ -1890,7 +1946,7 @@ const WebsiteGenerator = () => {
             if (genCount >= maxGen) {
                 setPrompt('');
                 setMessages(prev => [...prev,
-                    { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                    { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
                     { role: 'assistant', text: `You've used all ${maxGen} website generations. Request more from the dashboard.`, timestamp: new Date().toLocaleTimeString(), isError: true },
                 ]);
                 localStorage.removeItem(ONBOARDING_KEY);
@@ -1913,7 +1969,7 @@ const WebsiteGenerator = () => {
             setPrompt('');
             setMessages(prev => [
                 ...prev,
-                { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() },
+                { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
                 { role: 'assistant', text: helpAnswer, timestamp: new Date().toLocaleTimeString(), isHelp: true },
             ]);
             return;
@@ -1925,7 +1981,7 @@ const WebsiteGenerator = () => {
         setLoadingMessage(versions.length === 0 ? 'Analyzing your request...' : 'Applying changes...');
         setPrompt('');
 
-        setMessages(prev => [...prev, { role: 'user', text: promptText, timestamp: new Date().toLocaleTimeString() }]);
+        setMessages(prev => [...prev, { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() }]);
 
         // Async mode: submit to job queue and poll
         if (useAsync && versions.length === 0) {
@@ -2176,9 +2232,39 @@ const WebsiteGenerator = () => {
         if (uploadedFiles.text) {
             composedPrompt += `\n\nAdditional business information from uploaded files:\n${uploadedFiles.text}`;
         }
+
+        // Build a DISPLAY-ONLY version of the prompt for the chat bubble.
+        // This includes the WhatsApp number and social media platforms the
+        // user filled in — things the user wants to SEE confirmed in the
+        // chat, but that we deliberately keep OUT of the LLM prompt
+        // (composedPrompt) because they're injected as floating widgets
+        // post-generation. Listing them in the LLM prompt would risk the
+        // model rendering its own buttons that then collide with the
+        // floating ones we inject ourselves.
+        let displayPrompt = composedPrompt;
+        const ci = wizardData.contactInfo || {};
+        const extras = [];
+        if (ci.whatsapp) {
+            extras.push(`WhatsApp button: ${ci.whatsapp}`);
+        }
+        const social = ci.social || {};
+        const filledSocial = [
+            social.facebook && 'Facebook',
+            social.instagram && 'Instagram',
+            social.tiktok && 'TikTok',
+            social.linkedin && 'LinkedIn',
+            social.youtube && 'YouTube',
+        ].filter(Boolean);
+        if (filledSocial.length > 0) {
+            extras.push(`Social media floating button: ${filledSocial.join(', ')}`);
+        }
+        if (extras.length > 0) {
+            displayPrompt += `\n\n${extras.join('\n')}\n(These will be added automatically as floating buttons after the website is generated.)`;
+        }
+
         setProjectName(wizardData.companyName);
         setWizardStep(-1);
-        handleGenerate(composedPrompt, null, null);
+        handleGenerate(composedPrompt, null, null, undefined, displayPrompt);
     };
 
     // ── Rollback to a specific message version ──────────────────────────
@@ -3688,10 +3774,26 @@ const WebsiteGenerator = () => {
                 onClose={() => setShowSiteSettings(false)}
                 sessionId={sessionId}
                 siteMeta={siteMeta}
-                onUpdate={(newHtml, newCss, newJs) => {
+                currentPage={currentPage}
+                onUpdate={(newHtml, newCss, newJs, newPages) => {
+                    // Update the visible page state. newHtml is the HTML for
+                    // the page the user is CURRENTLY viewing (settings save
+                    // now passes pageSlug=currentPage so the backend returns
+                    // the right page, not always index).
                     setHtml(newHtml);
                     if (newCss) setCss(newCss);
                     if (newJs) setJs(newJs);
+
+                    // Multipage: also refresh every other page's slot from
+                    // the full pages dict the backend now returns. Without
+                    // this the OTHER pages stay stale and the floating
+                    // widgets only appear on the page the user was viewing
+                    // when they hit save — exactly the bug users hit when
+                    // they added a social link from the home page and the
+                    // FAB only showed up on home, not on contact/about/etc.
+                    if (newPages && isMultipage) {
+                        setPages(newPages);
+                    }
                 }}
             />
 
