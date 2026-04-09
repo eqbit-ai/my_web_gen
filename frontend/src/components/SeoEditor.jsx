@@ -1,8 +1,8 @@
 // src/components/SeoEditor.jsx
-// Page title, meta description, favicon, WhatsApp, contact form config
+// Page title, meta description, favicon, WhatsApp, contact form, social links
 
 import React, { useState } from 'react';
-import { X, Save, Loader, Globe, Phone, Mail, FileText, Upload } from 'lucide-react';
+import { X, Save, Loader, Globe, Phone, Mail, FileText, Upload, Share2 } from 'lucide-react';
 import { updateSiteMeta, updateContactConfig, uploadFile } from '../services/api';
 
 const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMeta, contactConfig: initialContact, onUpdate }) => {
@@ -12,14 +12,23 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         keywords: '',
     });
     const [faviconUrl, setFaviconUrl] = useState(initialMeta?.faviconUrl || '');
-    const [whatsapp, setWhatsapp] = useState(initialMeta?.whatsappNumber || '');
+    // WhatsApp now lives in contact_config (unified path). The legacy
+    // siteMeta.whatsappNumber is read as a fallback for projects that
+    // were saved before the unification.
+    const [whatsapp, setWhatsapp] = useState(initialContact?.whatsapp || initialMeta?.whatsappNumber || '');
     const [contact, setContact] = useState(initialContact || {
         recipientEmail: '',
     });
+    // Social media URLs — only filled platforms appear in the floating FAB
+    const [socialFb, setSocialFb] = useState(initialContact?.social?.facebook || '');
+    const [socialIg, setSocialIg] = useState(initialContact?.social?.instagram || '');
+    const [socialTk, setSocialTk] = useState(initialContact?.social?.tiktok || '');
+    const [socialLi, setSocialLi] = useState(initialContact?.social?.linkedin || '');
+    const [socialYt, setSocialYt] = useState(initialContact?.social?.youtube || '');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [tab, setTab] = useState('seo'); // seo | contact | whatsapp
+    const [tab, setTab] = useState('seo'); // seo | contact | whatsapp | social
 
     const handleFaviconUpload = async (e) => {
         const file = e.target.files[0];
@@ -61,7 +70,56 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         setError('');
         setSuccess('');
         try {
-            const result = await updateContactConfig(sessionId, contact);
+            const result = await updateContactConfig(sessionId, {
+                recipientEmail: contact.recipientEmail || '',
+            });
+            if (result.success && onUpdate) {
+                onUpdate(result.html, result.css, result.js);
+                setSaving(false);
+                onClose();
+                return;
+            }
+        } catch (err) {
+            setError('Failed to save: ' + err.message);
+        }
+        setSaving(false);
+    };
+
+    // Save WhatsApp via the unified contact_config endpoint. The legacy
+    // siteMeta.whatsappNumber path is left intact for backward compat with
+    // older projects, but new edits write to contact_config.whatsapp.
+    const handleSaveWhatsapp = async () => {
+        setSaving(true);
+        setError('');
+        setSuccess('');
+        try {
+            const result = await updateContactConfig(sessionId, {
+                whatsappNumber: whatsapp,
+            });
+            if (result.success && onUpdate) {
+                onUpdate(result.html, result.css, result.js);
+                setSaving(false);
+                onClose();
+                return;
+            }
+        } catch (err) {
+            setError('Failed to save: ' + err.message);
+        }
+        setSaving(false);
+    };
+
+    const handleSaveSocial = async () => {
+        setSaving(true);
+        setError('');
+        setSuccess('');
+        try {
+            const result = await updateContactConfig(sessionId, {
+                socialFacebook: socialFb,
+                socialInstagram: socialIg,
+                socialTiktok: socialTk,
+                socialLinkedin: socialLi,
+                socialYoutube: socialYt,
+            });
             if (result.success && onUpdate) {
                 onUpdate(result.html, result.css, result.js);
                 setSaving(false);
@@ -93,6 +151,9 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
                     </button>
                     <button className={tab === 'whatsapp' ? 'active' : ''} onClick={() => setTab('whatsapp')}>
                         <Phone size={14} /> WhatsApp
+                    </button>
+                    <button className={tab === 'social' ? 'active' : ''} onClick={() => setTab('social')}>
+                        <Share2 size={14} /> Social Links
                     </button>
                 </div>
 
@@ -153,10 +214,43 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
                             <div className="seo-field">
                                 <label>WhatsApp Number</label>
                                 <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+971501234567" />
-                                <span className="seo-hint">Include country code. This number will appear on the floating WhatsApp button.</span>
+                                <span className="seo-hint">Include country code. The floating WhatsApp button is added automatically; clear this field to remove the button.</span>
                             </div>
                             <div className="seo-footer">
-                                <button className="seo-save" onClick={handleSaveMeta} disabled={saving}>
+                                <button className="seo-save" onClick={handleSaveWhatsapp} disabled={saving}>
+                                    {saving ? <Loader size={14} className="spinning" /> : <Save size={14} />} Save
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {tab === 'social' && (
+                        <>
+                            <div className="seo-field">
+                                <label>Facebook URL</label>
+                                <input type="url" value={socialFb} onChange={e => setSocialFb(e.target.value)} placeholder="https://facebook.com/yourpage" />
+                            </div>
+                            <div className="seo-field">
+                                <label>Instagram URL</label>
+                                <input type="url" value={socialIg} onChange={e => setSocialIg(e.target.value)} placeholder="https://instagram.com/yourhandle" />
+                            </div>
+                            <div className="seo-field">
+                                <label>TikTok URL</label>
+                                <input type="url" value={socialTk} onChange={e => setSocialTk(e.target.value)} placeholder="https://tiktok.com/@yourhandle" />
+                            </div>
+                            <div className="seo-field">
+                                <label>LinkedIn URL</label>
+                                <input type="url" value={socialLi} onChange={e => setSocialLi(e.target.value)} placeholder="https://linkedin.com/company/yourcompany" />
+                            </div>
+                            <div className="seo-field">
+                                <label>YouTube URL</label>
+                                <input type="url" value={socialYt} onChange={e => setSocialYt(e.target.value)} placeholder="https://youtube.com/@yourchannel" />
+                            </div>
+                            <div className="seo-hint" style={{ marginBottom: '0.75rem' }}>
+                                Only filled platforms appear in the floating social button. Clear all four fields to remove the button entirely.
+                            </div>
+                            <div className="seo-footer">
+                                <button className="seo-save" onClick={handleSaveSocial} disabled={saving}>
                                     {saving ? <Loader size={14} className="spinning" /> : <Save size={14} />} Save
                                 </button>
                             </div>

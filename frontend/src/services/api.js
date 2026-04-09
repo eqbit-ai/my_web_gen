@@ -46,13 +46,16 @@ export const generateWebsite = async (prompt, sessionId = null, niche = null) =>
     }
 };
 
-export const generateWebsiteStream = (prompt, sessionId = null, niche = null, onStage, onComplete, onError, templateId = null, currentPage = 'index', userImages = null) => {
+export const generateWebsiteStream = (prompt, sessionId = null, niche = null, onStage, onComplete, onError, templateId = null, currentPage = 'index', userImages = null, contactConfig = null) => {
     const controller = new AbortController();
     const headers = getAuthHeaders();
 
     const body = { prompt, sessionId, niche, currentPage };
     if (templateId) body.templateId = templateId;
     if (userImages && userImages.length > 0) body.userImages = userImages;
+    // Wizard-collected floating widgets (WhatsApp + social FAB). The backend
+    // injects them post-generation, so the LLM never sees them.
+    if (contactConfig) body.contactConfig = contactConfig;
 
     // ── Keep-alive: Web Lock (keeps event loop active in background tabs) ──
     let lockRelease = null;

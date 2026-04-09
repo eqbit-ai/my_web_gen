@@ -1,16 +1,31 @@
 // src/components/Dashboard.jsx
 
 import config from '../config';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains, getFormSubmissions, getUnreadCount, markSubmissionRead, deleteFormSubmission, exportSiteZip, getCustomCode, updateCustomCode, getSiteAnalytics, listAllUploads, uploadFile, deleteUpload } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, connectDomainAndWait, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, purchaseDomainAndWait, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains, getFormSubmissions, getUnreadCount, markSubmissionRead, deleteFormSubmission, exportSiteZip, getCustomCode, updateCustomCode, getSiteAnalytics, listAllUploads, uploadFile, deleteUpload } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
 
+// Trap every <a> click inside the preview iframe so href="#", empty hashes
+// and full URLs can't navigate the iframe (which inherits the parent's
+// origin and would otherwise replace the template preview with the dashboard
+// or open the link in-place). Also disables form submissions.
+const IFRAME_CLICK_TRAP = `
+(function(){
+  function stop(e){
+    var a = e.target && e.target.closest && e.target.closest('a');
+    if (a) { e.preventDefault(); e.stopPropagation(); return false; }
+  }
+  document.addEventListener('click', stop, true);
+  document.addEventListener('submit', function(e){ e.preventDefault(); e.stopPropagation(); return false; }, true);
+})();
+`;
+
 const buildSrcDoc = (css, html, withScripts = false) =>
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}</body></html>`;
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}<script>${IFRAME_CLICK_TRAP}<\/script></body></html>`;
 
 
 const Dashboard = () => {
@@ -25,15 +40,17 @@ const Dashboard = () => {
         return () => { window.removeEventListener('focus', handleFocus); clearInterval(interval); };
     }, []);
     const navigate = useNavigate();
-    const [prompt, setPrompt] = useState('');
+    // Inline parked-domain picker (opens below the "Use Existing Domain"
+    // button on the home tab — see render below for full reasoning).
+    const [existingDomainPickerOpen, setExistingDomainPickerOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(() => {
         const hash = window.location.hash.replace('#', '');
-        return ['home', 'projects', 'templates', 'domains', 'inbox', 'gallery'].includes(hash) ? hash : 'home';
+        const allowed = ['home', 'projects', 'templates', 'domains', 'inbox', 'gallery'];
+        return allowed.includes(hash) ? hash : 'home';
     });
     const [expandedSections, setExpandedSections] = useState({});
-    const textareaRef = useRef(null);
     const userMenuRef = useRef(null);
 
     // Projects state
@@ -128,7 +145,7 @@ const Dashboard = () => {
     useEffect(() => {
         getActiveAnnouncements().then(res => {
             setAnnouncements(res?.announcements || []);
-        }).catch(() => {});
+        }).catch(() => { });
     }, []);
 
     const dismissAnnouncement = (id) => {
@@ -245,7 +262,7 @@ const Dashboard = () => {
             const data = await getMyTokenRequests();
             setTokenRequests(data.requests || []);
             setTokenRequestsLoaded(true);
-        } catch {}
+        } catch { }
     };
 
     const handleTokenRequest = async () => {
@@ -455,6 +472,142 @@ const Dashboard = () => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchaseConfirm, setPurchaseConfirm] = useState(null); // { sld, tld, siteId, price }
 
+    // ── Entry-flow modal: "Buy Domain or Build Website" gate ─────────────
+    // stage: null | 'choice' | 'domainSearch' | 'domainConfirm' | 'purchasing' | 'domainSuccess'
+    const [entryStage, setEntryStage] = useState(null);
+    const [entrySearchInput, setEntrySearchInput] = useState('');
+    const [entrySearchResults, setEntrySearchResults] = useState(null);
+    const [entrySearchLoading, setEntrySearchLoading] = useState(false);
+    const [entrySearchError, setEntrySearchError] = useState(null);
+    const [entryPurchaseTarget, setEntryPurchaseTarget] = useState(null); // { sld, tld, price }
+    const [entryPurchasedDomain, setEntryPurchasedDomain] = useState(null); // { domain }
+    // Prompt typed in the home chat input — preserved across the choice
+    // modal so a typed prompt still flows through to the generator.
+    const [pendingPrompt, setPendingPrompt] = useState('');
+
+    const openEntryFlow = useCallback(() => {
+        setEntryStage('choice');
+        setEntrySearchInput('');
+        setEntrySearchResults(null);
+        setEntrySearchError(null);
+        setEntryPurchaseTarget(null);
+        setEntryPurchasedDomain(null);
+        // Lazy-load owned domains so we can show a "Use my domain" option
+        // alongside Buy / Build. Only refetch if we don't have data yet.
+        if (myDomains.length === 0) loadMyDomains();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myDomains.length]);
+
+    const closeEntryFlow = useCallback(() => {
+        setEntryStage(null);
+        setEntryPurchaseTarget(null);
+        setPendingPrompt('');
+    }, []);
+
+    // Derive a human-readable brand name from a domain. "acme-shop.shop" → "Acme Shop"
+    const brandFromDomain = (domainStr) => {
+        if (!domainStr) return '';
+        const sld = String(domainStr).split('.')[0] || '';
+        return sld
+            .split(/[-_]/)
+            .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+            .join(' ');
+    };
+
+    const handleEntryUseOwnedDomain = (domainStr) => {
+        const brand = brandFromDomain(domainStr);
+        const carry = pendingPrompt;
+        closeEntryFlow();
+        navigate('/generator', {
+            state: {
+                newSession: true,
+                wizardDomain: domainStr,
+                wizardBrand: brand,
+                ...(carry ? { wizardPrefill: carry } : {}),
+            },
+        });
+    };
+
+    const handleEntryChoiceBuild = useCallback(() => {
+        // "Build website" → if the user already typed a prompt in the home
+        // chat input, skip the templates modal and go straight to the
+        // generator with the prompt prefilled. Otherwise open the existing
+        // templates / "Start from scratch" modal.
+        const carry = pendingPrompt;
+        setEntryStage(null);
+        setPendingPrompt('');
+        if (carry) {
+            navigate('/generator', { state: { newSession: true, wizardPrefill: carry } });
+            return;
+        }
+        setNewDesignModal(true);
+        if (templates.length === 0) loadTemplates();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [templates.length, pendingPrompt, navigate]);
+
+    const handleEntryDomainSearch = async (e) => {
+        if (e?.preventDefault) e.preventDefault();
+        const raw = entrySearchInput.trim();
+        if (!raw) return;
+        setEntrySearchLoading(true);
+        setEntrySearchError(null);
+        setEntrySearchResults(null);
+        try {
+            const parts = raw.includes('.') ? raw.split('.') : [raw];
+            const sld = parts[0];
+            const baseExts = [
+                'com', 'ae', 'net', 'org', 'io',
+                'co', 'app', 'shop', 'online', 'store',
+                'site', 'tech', 'dev', 'me', 'xyz',
+            ];
+            const extensions = parts[1]
+                ? [parts[1], ...baseExts.filter(x => x !== parts[1])].slice(0, 15)
+                : baseExts;
+            const data = await searchDomains(sld, extensions);
+            setEntrySearchResults(data.results || []);
+        } catch (err) {
+            setEntrySearchError(err.message || 'Search failed');
+        } finally {
+            setEntrySearchLoading(false);
+        }
+    };
+
+    const handleEntryPurchaseConfirm = async () => {
+        if (!entryPurchaseTarget) return;
+        setEntryStage('purchasing');
+        setEntrySearchError(null);
+        try {
+            // Resilient buy: races the purchase call against polling
+            // listUserDomains so we recover from ALB-timeout-induced hangs.
+            const result = await purchaseDomainAndWait(
+                entryPurchaseTarget.sld, entryPurchaseTarget.tld, null, 1,
+            );
+            setEntryPurchasedDomain({ domain: result.domain.domain_name });
+            // If polling already gave us a fresh list, use it; otherwise refetch.
+            if (result.domains && result.domains.length) {
+                setMyDomains(result.domains);
+            } else {
+                loadMyDomains();
+            }
+            setEntryStage('domainSuccess');
+        } catch (err) {
+            // Timeout case: don't drop the user back to confirm — show the
+            // success screen with a "still processing" note so they don't
+            // accidentally retry and double-buy.
+            if (err.code === 'PURCHASE_TIMEOUT') {
+                setEntryPurchasedDomain({
+                    domain: `${entryPurchaseTarget.sld}.${entryPurchaseTarget.tld}`,
+                    pending: true,
+                });
+                loadMyDomains();
+                setEntryStage('domainSuccess');
+                return;
+            }
+            setEntrySearchError(err.message || 'Purchase failed');
+            setEntryStage('domainConfirm');
+        }
+    };
+
     const handleSearchDomain = async () => {
         if (!domainInput.trim()) return;
         setSearchLoading(true);
@@ -464,7 +617,16 @@ const Dashboard = () => {
             const d = domainInput.trim();
             const parts = d.includes('.') ? d.split('.') : [d];
             const sld = parts[0];
-            const extensions = parts[1] ? [parts[1], 'com', 'ae', 'net', 'org', 'io'] : ['com', 'ae', 'net', 'org', 'io', 'co'];
+            // 15 extensions so the popup shows a rich list of alternatives.
+            // If user typed a specific TLD, surface it first.
+            const baseExts = [
+                'com', 'ae', 'net', 'org', 'io',
+                'co', 'app', 'shop', 'online', 'store',
+                'site', 'tech', 'dev', 'me', 'xyz',
+            ];
+            const extensions = parts[1]
+                ? [parts[1], ...baseExts.filter(e => e !== parts[1])].slice(0, 15)
+                : baseExts;
             const results = await searchDomains(sld, extensions);
             setDomainSearchResults(results.results || []);
             setConnectStep(2);
@@ -481,13 +643,22 @@ const Dashboard = () => {
         setConnecting(true);
         setConnectError(null);
         try {
-            const result = await connectDomain(connectModal, domain);
+            // Resilient connect: races the POST with getDomainStatus polling so
+            // an ALB-60s-timeout-induced fetch hang can't strand the spinner.
+            const result = await connectDomainAndWait(connectModal, domain);
             setConnectResult(result);
             setConnectStep(3);
             loadDeployedSites();
         } catch (e) {
             const msg = e.message || 'Failed to connect domain';
-            if (msg.includes('not registered')) {
+            if (e.code === 'CONNECT_TIMEOUT') {
+                // Soft success — backend is still working in the background.
+                // Refresh lists and advance the UI instead of showing an error.
+                showToast(msg, 'info', 8000);
+                loadDeployedSites();
+                loadMyDomains();
+                setConnectModal(null);
+            } else if (msg.includes('not registered')) {
                 setConnectError('not_registered');
                 handleSearchDomain();
             } else {
@@ -511,12 +682,22 @@ const Dashboard = () => {
         setConnectingOwned(domainName);
         setConnectError(null);
         try {
-            const result = await connectDomain(connectModal, domainName);
+            // Resilient connect: races the POST with getDomainStatus polling so
+            // an ALB-60s-timeout-induced fetch hang can't strand the spinner.
+            const result = await connectDomainAndWait(connectModal, domainName);
             setConnectResult(result);
             setConnectStep(3);
             loadDeployedSites();
         } catch (e) {
-            setConnectError(e.message || 'Failed to connect domain');
+            if (e.code === 'CONNECT_TIMEOUT') {
+                // Soft success — backend is still working in the background.
+                showToast(e.message, 'info', 8000);
+                loadDeployedSites();
+                loadMyDomains();
+                setConnectModal(null);
+            } else {
+                setConnectError(e.message || 'Failed to connect domain');
+            }
         }
         setConnectingOwned(null);
     };
@@ -524,16 +705,29 @@ const Dashboard = () => {
     const handleQuickPurchase = async (sld, tld, siteId) => {
         setPurchasing(true);
         try {
-            await purchaseDomain(sld, tld, siteId, 1);
+            // Resilient buy: races purchase API with listUserDomains polling
+            // so an ALB-timeout-induced fetch hang doesn't strand the spinner.
+            await purchaseDomainAndWait(sld, tld, siteId, 1);
             setPurchaseConfirm(null);
             setConnectModal(null);
             setConnectError(null);
             setDomainSearchResults(null);
             loadDeployedSites();
+            loadMyDomains();
             showToast(`${sld}.${tld} purchased and connected successfully!`, 'success');
         } catch (e) {
-            const msg = typeof e.message === 'string' ? e.message : JSON.stringify(e.message);
-            showToast(msg || 'Purchase failed', 'error');
+            // Timeout case: domain is being registered in the background.
+            // Don't surface as a hard error — give the user a useful nudge.
+            if (e.code === 'PURCHASE_TIMEOUT') {
+                setPurchaseConfirm(null);
+                setConnectModal(null);
+                loadDeployedSites();
+                loadMyDomains();
+                showToast(`${sld}.${tld} is registering in the background. Check My Domains in a minute.`, 'info', 8000);
+            } else {
+                const msg = typeof e.message === 'string' ? e.message : JSON.stringify(e.message);
+                showToast(msg || 'Purchase failed', 'error');
+            }
         }
         setPurchasing(false);
     };
@@ -582,6 +776,16 @@ const Dashboard = () => {
         return 'gray';
     };
 
+    // Load owned domains when the home tab activates so we know whether to
+    // show the "Use Existing Domain" button (only shown if at least one
+    // domain is parked / not connected to any site).
+    useEffect(() => {
+        if (activeTab === 'home') {
+            loadMyDomains();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
+
     useEffect(() => {
         if (activeTab === 'domains') {
             loadDeployedSites();
@@ -594,28 +798,15 @@ const Dashboard = () => {
                     // For any site with pending status, poll domain-status to trigger Phase 2
                     for (const site of sites) {
                         if (site.domain && (site.domain_status === 'pending_validation' || site.domain_status === 'pending_deployment' || site.domain_status === 'creating_cdn')) {
-                            try { await getDomainStatus(site.id); } catch (_) {}
+                            try { await getDomainStatus(site.id); } catch (_) { }
                         }
                     }
-                } catch (_) {}
+                } catch (_) { }
             }, 30000);
         }
         return () => { if (domainPollRef.current) clearInterval(domainPollRef.current); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!prompt.trim()) return;
-        navigate('/generator', { state: { newSession: true, wizardPrefill: prompt.trim() } });
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-        }
-    };
 
     const handleLogout = () => {
         logout();
@@ -625,19 +816,23 @@ const Dashboard = () => {
     // Fetch unread count on mount (for inbox badge)
     useEffect(() => { loadUnreadCount(); }, []);
 
-    // Load projects/templates/inbox when their tab is active
+    // Load tab content on activation.
     useEffect(() => {
         if (activeTab === 'projects') {
             loadProjects();
         } else if (activeTab === 'templates') {
             loadTemplates();
+        } else if (activeTab === 'domains') {
+            // Unified domains view loads BOTH owned domains and deployed sites
+            // since both are rendered together (no more sub-tabs).
+            if (myDomains.length === 0) loadMyDomains();
         } else if (activeTab === 'inbox') {
             loadSubmissions();
             if (deployedSites.length === 0) loadDeployedSites();
         } else if (activeTab === 'gallery') {
             loadGallery();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, inboxSiteFilter, inboxReadFilter]);
 
     const loadProjects = async () => {
@@ -662,7 +857,7 @@ const Dashboard = () => {
             for (const t of (data.templates || [])) {
                 getTemplateFull(t.id).then(full => {
                     setTemplatePreviews(prev => ({ ...prev, [t.id]: full }));
-                }).catch(() => {});
+                }).catch(() => { });
             }
         } catch (err) {
             console.error('Failed to load templates:', err);
@@ -710,14 +905,6 @@ const Dashboard = () => {
     };
 
     // Auto-resize textarea
-    useEffect(() => {
-        const ta = textareaRef.current;
-        if (ta) {
-            ta.style.height = 'auto';
-            ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
-        }
-    }, [prompt]);
-
     // Close user menu on outside click
     useEffect(() => {
         const handleClick = (e) => {
@@ -807,7 +994,7 @@ const Dashboard = () => {
 
                     <button
                         className="dash-new-chat"
-                        onClick={() => { setNewDesignModal(true); if (templates.length === 0) loadTemplates(); }}
+                        onClick={openEntryFlow}
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -816,14 +1003,24 @@ const Dashboard = () => {
                     </button>
 
                     <nav className="dash-nav">
+                        {/* Domains tab — moved to top so users can manage domain-first */}
+                        <button
+                            className={`dash-nav-item ${activeTab === 'domains' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('domains')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                            {sidebarOpen && <span>Domains</span>}
+                        </button>
                         <button
                             className={`dash-nav-item ${activeTab === 'home' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('home'); refreshUser(); }}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
                             </svg>
-                            {sidebarOpen && <span>Home</span>}
+                            {sidebarOpen && <span>Website Builder</span>}
                         </button>
                         <button
                             className={`dash-nav-item ${activeTab === 'projects' ? 'active' : ''}`}
@@ -843,24 +1040,7 @@ const Dashboard = () => {
                             </svg>
                             {sidebarOpen && <span>Templates</span>}
                         </button>
-                        <button
-                            className={`dash-nav-item ${activeTab === 'domains' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('domains')}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                            </svg>
-                            {sidebarOpen && <span>Domains</span>}
-                        </button>
-                        <button
-                            className={`dash-nav-item ${activeTab === 'gallery' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('gallery')}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            {sidebarOpen && <span>Gallery</span>}
-                        </button>
+                        {/* Inbox promoted up the sidebar — high frequency for active users */}
                         <button
                             className={`dash-nav-item ${activeTab === 'inbox' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('inbox'); window.location.hash = 'inbox'; }}
@@ -874,6 +1054,15 @@ const Dashboard = () => {
                                     {unreadCount > 0 && <span style={{ fontSize: '0.65rem', background: '#ef4444', color: 'white', padding: '1px 6px', borderRadius: 10, fontWeight: 700, minWidth: 18, textAlign: 'center' }}>{unreadCount}</span>}
                                 </span>
                             )}
+                        </button>
+                        <button
+                            className={`dash-nav-item ${activeTab === 'gallery' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('gallery')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            {sidebarOpen && <span>Gallery</span>}
                         </button>
                         {user?.is_admin && (
                             <button
@@ -965,7 +1154,7 @@ const Dashboard = () => {
                                 {getGreeting()}, {firstName}
                             </h1>
                             <p className="dash-greeting-sub">
-                                Create websites by chatting with Web AI
+                                Pick how you'd like to start
                             </p>
                             {(() => {
                                 const used = user?.generation_count || 0;
@@ -1011,43 +1200,197 @@ const Dashboard = () => {
                             })()}
                         </div>
 
-                        <div className="dash-input-area">
-                            <form className="dash-input-form" onSubmit={handleSubmit}>
-                                <div className="dash-input-wrapper">
+                        {/* ── Action Buttons (replaces the legacy chatbox) ─── */}
+                        {/*
+                            Three CTAs:
+                              1. Buy Domain — opens entry-flow modal at the
+                                 domain search stage. After purchase the
+                                 existing flow runs the wizard and auto-
+                                 connects the new domain on deploy.
+                              2. Create Website — straight to /generator
+                                 (the wizard) with no domain attached.
+                              3. Use Existing Domain — only shown if the
+                                 user owns at least one parked domain
+                                 (one without a site_id). Opens an inline
+                                 popover that lists those parked domains;
+                                 picking one navigates to /generator with
+                                 wizardDomain set so the wizard auto-attaches
+                                 it after deploy.
+                        */}
+                        {(() => {
+                            const parkedDomains = (myDomains || []).filter(d => !d.site_id);
+                            const hasParked = parkedDomains.length > 0;
+                            return (
+                                <div className="dash-action-buttons" style={{
+                                    marginTop: 36, display: 'flex', gap: 16, flexWrap: 'wrap',
+                                    justifyContent: 'center', maxWidth: 880, marginLeft: 'auto', marginRight: 'auto',
+                                }}>
+                                    {/* Buy Domain */}
                                     <button
                                         type="button"
-                                        onClick={() => navigate('/generator', { state: { newSession: true, openFileUpload: true } })}
-                                        title="Upload files (PDF, text, images, ZIP)"
-                                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
+                                        onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                                        style={{
+                                            flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
+                                            background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
+                                            border: '1px solid rgba(52,211,153,0.25)',
+                                            borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                            gap: 10, textAlign: 'left',
+                                            transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                        }}
+                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.25)'; }}
                                     >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-                                        </svg>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                            <div style={{
+                                                width: 44, height: 44, borderRadius: 10,
+                                                background: 'rgba(52,211,153,0.15)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                                </svg>
+                                            </div>
+                                            <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Buy Domain</strong>
+                                        </div>
+                                        <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                            Register your domain.
+                                        </span>
                                     </button>
-                                    <textarea
-                                        ref={textareaRef}
-                                        className="dash-textarea"
-                                        value={prompt}
-                                        onChange={(e) => setPrompt(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        placeholder="Describe the website you want to create..."
-                                        rows={1}
-                                    />
+
+                                    {/* Create Website */}
                                     <button
-                                        type="submit"
-                                        className={`dash-send-btn ${prompt.trim() ? 'active' : ''}`}
-                                        disabled={!prompt.trim()}
+                                        type="button"
+                                        onClick={() => navigate('/generator', { state: { newSession: true } })}
+                                        style={{
+                                            flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
+                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02))',
+                                            border: '1px solid rgba(99,102,241,0.25)',
+                                            borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                            gap: 10, textAlign: 'left',
+                                            transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                        }}
+                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'; }}
                                     >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
-                                        </svg>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                            <div style={{
+                                                width: 44, height: 44, borderRadius: 10,
+                                                background: 'rgba(99,102,241,0.15)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+                                                </svg>
+                                            </div>
+                                            <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Create Website</strong>
+                                        </div>
+                                        <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                            Generate your website with AI now, Associate the domain later.
+                                        </span>
                                     </button>
+
+                                    {/* Use Existing Domain — only if user has parked domains */}
+                                    {hasParked && (
+                                        <div style={{ flex: '1 1 240px', minHeight: 140, position: 'relative' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setExistingDomainPickerOpen(v => !v)}
+                                                style={{
+                                                    width: '100%', minHeight: 140, padding: '24px 20px',
+                                                    background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02))',
+                                                    border: '1px solid rgba(251,191,36,0.25)',
+                                                    borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                                    gap: 10, textAlign: 'left',
+                                                    transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                                }}
+                                                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.5)'; }}
+                                                onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.25)'; }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                                    <div style={{
+                                                        width: 44, height: 44, borderRadius: 10,
+                                                        background: 'rgba(251,191,36,0.15)', display: 'flex',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                    }}>
+                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+                                                        </svg>
+                                                    </div>
+                                                    <strong style={{ fontSize: 17, color: '#f3f4f6' }}>
+                                                        Use Existing Domain
+                                                        <span style={{ marginLeft: 8, fontSize: 12, color: '#fbbf24', fontWeight: 500 }}>
+                                                            ({parkedDomains.length})
+                                                        </span>
+                                                    </strong>
+                                                </div>
+                                                <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                                    Build a new website using one of your parked domains. Auto-connects after deploy.
+                                                </span>
+                                            </button>
+
+                                            {/* Parked-domain popover — opens below the button on click */}
+                                            {existingDomainPickerOpen && (
+                                                <>
+                                                    {/* Click-outside catcher */}
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Close domain picker"
+                                                        onClick={() => setExistingDomainPickerOpen(false)}
+                                                        style={{
+                                                            position: 'fixed', inset: 0, background: 'transparent',
+                                                            border: 'none', cursor: 'default', zIndex: 998,
+                                                        }}
+                                                    />
+                                                    <div style={{
+                                                        position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
+                                                        background: '#18181b', border: '1px solid #27272a',
+                                                        borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                                        zIndex: 999, maxHeight: 320, overflowY: 'auto', padding: 8,
+                                                    }}>
+                                                        <div style={{
+                                                            fontSize: 11, fontWeight: 600, color: '#71717a',
+                                                            textTransform: 'uppercase', letterSpacing: 0.5,
+                                                            padding: '8px 10px 6px',
+                                                        }}>
+                                                            Parked domains — pick one
+                                                        </div>
+                                                        {parkedDomains.map(d => (
+                                                            <button
+                                                                key={d.id || d.domain_name}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setExistingDomainPickerOpen(false);
+                                                                    handleEntryUseOwnedDomain(d.domain_name);
+                                                                }}
+                                                                style={{
+                                                                    display: 'block', width: '100%', textAlign: 'left',
+                                                                    padding: '10px 12px', background: 'transparent',
+                                                                    border: 'none', color: '#e5e7eb', cursor: 'pointer',
+                                                                    borderRadius: 6, fontSize: 14,
+                                                                    transition: 'background 0.15s',
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = '#27272a'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
+                                                            >
+                                                                <strong>{d.domain_name}</strong>
+                                                                {d.status && d.status !== 'active' && (
+                                                                    <span style={{ marginLeft: 8, fontSize: 11, color: '#fbbf24' }}>
+                                                                        {d.status}
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                <span className="dash-input-hint">
-                                    Press Enter to send, Shift+Enter for new line
-                                </span>
-                            </form>
-                        </div>
+                            );
+                        })()}
                     </div>
                 )}
 
@@ -1056,7 +1399,7 @@ const Dashboard = () => {
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
                             <h1 className="dash-domain-title">My Projects</h1>
-                            <button className="dash-domain-add-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
+                            <button className="dash-domain-add-btn" onClick={openEntryFlow}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
@@ -1075,7 +1418,7 @@ const Dashboard = () => {
                                 </svg>
                                 <h3>No projects yet</h3>
                                 <p>Generate a website and save it to see it here</p>
-                                <button className="dash-domain-add-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
+                                <button className="dash-domain-add-btn" onClick={openEntryFlow}>
                                     Create Your First Website
                                 </button>
                             </div>
@@ -1135,60 +1478,93 @@ const Dashboard = () => {
                 )}
 
                 {/* ── Templates Tab ──────────────────────────────────── */}
+                {/* ── Templates Tab ──────────────────────────────────── */}
                 {activeTab === 'templates' && (
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
-                            <h1 className="dash-domain-title">Website Templates</h1>
-                            <p style={{ color: '#666', fontSize: 14, margin: 0 }}>Choose a template and customize it with AI</p>
+                            <div>
+                                <h1 className="dash-domain-title">Website Templates</h1>
+                                <p className="dash-domain-subtitle">Hand-crafted designs you can use as a starting point — edit them inline, chat with AI, or use the visual editor.</p>
+                            </div>
                         </div>
 
                         {templatesLoading ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
                                 Loading templates...
                             </div>
+                        ) : templates.length === 0 ? (
+                            <div className="dsite-empty">
+                                <div className="dsite-empty-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                </div>
+                                <h3>No templates available</h3>
+                                <p>Something went wrong loading the templates. Try refreshing.</p>
+                            </div>
                         ) : (
-                            <div className="dash-templates-grid">
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
                                 {templates.map(template => {
                                     const preview = templatePreviews[template.id];
                                     return (
-                                        <div key={template.id} className="dash-template-card">
-                                            <div className="dash-template-thumb" onClick={() => setPreviewModal(template.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewModal(template.id); }} role="button" tabIndex={0}>
+                                        <div
+                                            key={template.id}
+                                            style={{
+                                                background: '#18181b',
+                                                border: '1px solid #27272a',
+                                                borderRadius: 14,
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                transition: 'transform 0.2s, border-color 0.2s',
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = '#52525b'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#27272a'; }}
+                                        >
+                                            {/* Thumbnail iframe — scaled down with pointer-events: none so clicks don't escape */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewModal(template.id)}
+                                                style={{ background: '#0f0f1a', height: 260, position: 'relative', overflow: 'hidden', cursor: 'pointer', border: 'none', padding: 0, width: '100%' }}
+                                            >
                                                 {preview ? (
                                                     <iframe
                                                         title={template.name}
-                                                        srcDoc={buildSrcDoc(preview.css, preview.html)}
-                                                        sandbox="allow-same-origin allow-scripts"
+                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1400,initial-scale=1"><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
+                                                        sandbox="allow-same-origin"
                                                         scrolling="no"
-                                                        className="dash-template-iframe"
+                                                        style={{
+                                                            width: '1400px',
+                                                            height: '900px',
+                                                            border: 0,
+                                                            transform: 'scale(0.25)',
+                                                            transformOrigin: 'top left',
+                                                            pointerEvents: 'none',
+                                                        }}
                                                     />
                                                 ) : (
-                                                    <div className="dash-template-placeholder">
-                                                        <div className="dash-template-colors">
-                                                            {(template.colors || []).map((c, i) => (
-                                                                <span key={i} className="dash-template-swatch" style={{ background: c }} />
-                                                            ))}
-                                                        </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#52525b', fontSize: 13 }}>
+                                                        Loading preview...
                                                     </div>
                                                 )}
-                                                <div className="dash-template-overlay">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                    Preview
+                                                <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, padding: '4px 10px', borderRadius: 999, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, backdropFilter: 'blur(6px)' }}>
+                                                    {template.category}
                                                 </div>
-                                            </div>
-                                            <div className="dash-template-body">
-                                                <span className="dash-template-category">{template.category}</span>
-                                                <h4 className="dash-template-name">{template.name}</h4>
-                                                <p className="dash-template-desc">{template.description}</p>
+                                            </button>
+                                            <div style={{ padding: '18px 20px 20px' }}>
+                                                <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: '#f3f4f6' }}>{template.name}</h3>
+                                                <p style={{ margin: '0 0 16px', fontSize: 13, color: '#a1a1aa', lineHeight: 1.5, minHeight: 38 }}>{template.description}</p>
                                                 <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button className="dash-template-preview-btn" onClick={() => setPreviewModal(template.id)}>
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                                        </svg>
+                                                    <button
+                                                        onClick={() => setPreviewModal(template.id)}
+                                                        style={{ flex: 1, background: 'transparent', border: '1px solid #3f3f46', color: '#e4e4e7', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                                                         Preview
                                                     </button>
-                                                    <button className="dash-template-use-btn" onClick={() => handleUseTemplate(template.id)}>
+                                                    <button
+                                                        onClick={() => handleUseTemplate(template.id)}
+                                                        style={{ flex: 1, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', color: 'white', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                                         Use Template
                                                     </button>
                                                 </div>
@@ -1200,28 +1576,50 @@ const Dashboard = () => {
                         )}
 
                         {/* Full-screen preview modal */}
-                        {previewModal && templatePreviews[previewModal] && (
-                            <div className="dash-template-modal-overlay" onClick={() => setPreviewModal(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPreviewModal(null); }} role="button" tabIndex={0}>
-                                <div className="dash-template-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
-                                    <div className="dash-template-modal-header">
-                                        <h3>{templates.find(t => t.id === previewModal)?.name}</h3>
-                                        <div className="dash-template-modal-actions">
-                                            <button className="dash-template-use-btn" onClick={() => { setPreviewModal(null); handleUseTemplate(previewModal); }}>
-                                                Use This Template
-                                            </button>
-                                            <button className="dash-template-modal-close" onClick={() => setPreviewModal(null)}>
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                        {previewModal && (
+                            <div
+                                style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column' }}
+                                onClick={() => setPreviewModal(null)}
+                                onKeyDown={(e) => { if (e.key === 'Escape') setPreviewModal(null); }}
+                                role="button"
+                                tabIndex={0}
+                            >
+                                <div
+                                    onClick={e => e.stopPropagation()}
+                                    onKeyDown={e => e.stopPropagation()}
+                                    role="presentation"
+                                    style={{ background: '#0f0f1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderBottom: '1px solid #27272a' }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <button
+                                            onClick={() => setPreviewModal(null)}
+                                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                                            Back
+                                        </button>
+                                        <div style={{ color: '#f3f4f6', fontSize: 16, fontWeight: 700 }}>{templates.find(t => t.id === previewModal)?.name}</div>
+                                        <span style={{ fontSize: 11, color: '#a1a1aa', background: 'rgba(255,255,255,0.06)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{templates.find(t => t.id === previewModal)?.category}</span>
                                     </div>
-                                    <iframe
-                                        title="Template Preview"
-                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${templatePreviews[previewModal].css || ''}</style></head><body>${templatePreviews[previewModal].html || ''}<script>${templatePreviews[previewModal].js || ''}<\/script></body></html>`}
-                                        className="dash-template-modal-iframe"
-                                        sandbox="allow-same-origin allow-scripts"
-                                    />
+                                    <button
+                                        onClick={() => { setPreviewModal(null); handleUseTemplate(previewModal); }}
+                                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none', color: 'white', padding: '10px 22px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        Use This Template
+                                    </button>
+                                </div>
+                                <div style={{ flex: 1, background: '#fff', overflow: 'hidden' }}>
+                                    {templatePreviews[previewModal] ? (
+                                        <iframe
+                                            title="Template Preview"
+                                            srcDoc={buildSrcDoc(templatePreviews[previewModal].css, templatePreviews[previewModal].html)}
+                                            sandbox="allow-same-origin allow-scripts"
+                                            style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+                                        />
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#52525b' }}>Loading preview...</div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1233,76 +1631,89 @@ const Dashboard = () => {
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
                             <div>
-                                <h1 className="dash-domain-title">{domainSubTab === 'sites' ? 'Deployed Sites' : 'My Domains'}</h1>
-                                <p className="dash-domain-subtitle">{domainSubTab === 'sites' ? 'Manage your websites, domains, and DNS configuration' : 'Manage your purchased and connected domains'}</p>
+                                <h1 className="dash-domain-title">Domains & Sites</h1>
+                                <p className="dash-domain-subtitle">Your purchased domains and the sites connected to them — all in one place.</p>
                             </div>
+                            <button
+                                className="dash-domain-add-btn"
+                                onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                Buy domain
+                            </button>
                         </div>
 
-                        {/* Sub-tabs */}
-                        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #27272a' }}>
-                            <button onClick={() => setDomainSubTab('sites')} style={{ padding: '10px 20px', background: 'none', border: 'none', borderBottom: domainSubTab === 'sites' ? '2px solid #22c55e' : '2px solid transparent', color: domainSubTab === 'sites' ? '#f3f4f6' : '#71717a', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-                                Sites & Domains
-                            </button>
-                            <button onClick={() => { setDomainSubTab('mydomains'); if (myDomains.length === 0) loadMyDomains(); }} style={{ padding: '10px 20px', background: 'none', border: 'none', borderBottom: domainSubTab === 'mydomains' ? '2px solid #22c55e' : '2px solid transparent', color: domainSubTab === 'mydomains' ? '#f3f4f6' : '#71717a', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-                                My Domains
-                            </button>
-                        </div>
-
-                        {/* My Domains sub-tab */}
-                        {domainSubTab === 'mydomains' ? (
-                            <div>
-                                {myDomainsLoading ? (
-                                    <div className="dash-projects-empty"><p>Loading domains...</p></div>
-                                ) : myDomains.length === 0 ? (
-                                    <div className="dsite-empty">
-                                        <div className="dsite-empty-icon">
-                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                                        </div>
-                                        <h3>No domains yet</h3>
-                                        <p>Purchase a domain through the Connect Domain flow on any deployed site</p>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'grid', gap: 12 }}>
-                                        {myDomains.map(d => (
-                                            <div key={d.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                                                        <strong style={{ color: '#f3f4f6', fontSize: 15 }}>{d.domain_name}</strong>
-                                                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 500, background: d.status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)', color: d.status === 'active' ? '#22c55e' : '#fbbf24' }}>
-                                                            {d.status || 'pending'}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ fontSize: 13, color: '#71717a', display: 'flex', gap: 16 }}>
-                                                        <span>Connected to: <strong style={{ color: '#a1a1aa' }}>{d.site_name || d.site_id || 'Not connected'}</strong></span>
-                                                        {d.expiry_date && <span>Expires: {new Date(d.expiry_date).toLocaleDateString()}</span>}
-                                                        {d.ssl_status && <span>SSL: {d.ssl_status}</span>}
-                                                    </div>
+                        {/* ─── My Domains section (always visible) ─── */}
+                        <div style={{ marginBottom: 32 }}>
+                            <h2 style={{ fontSize: 14, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, margin: '0 0 12px' }}>
+                                My Domains {myDomains.length > 0 && <span style={{ color: '#52525b', fontWeight: 400 }}>({myDomains.length})</span>}
+                            </h2>
+                            {myDomainsLoading ? (
+                                <div style={{ padding: 24, textAlign: 'center', color: '#71717a', fontSize: 13 }}>Loading domains…</div>
+                            ) : myDomains.length === 0 ? (
+                                <div style={{ background: '#0f172a', border: '1px dashed #27272a', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
+                                    <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9ca3af' }}>You don't own any domains yet.</p>
+                                    <button
+                                        className="dsite-cta-btn"
+                                        onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                                        style={{ display: 'inline-flex' }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                                        Buy your first domain
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gap: 12 }}>
+                                    {myDomains.map(d => (
+                                        <div key={d.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                                            <div style={{ flex: 1, minWidth: 220 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                                                    <strong style={{ color: '#f3f4f6', fontSize: 15 }}>{d.domain_name}</strong>
+                                                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 500, background: d.status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)', color: d.status === 'active' ? '#22c55e' : '#fbbf24' }}>
+                                                        {d.status || 'pending'}
+                                                    </span>
                                                 </div>
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                    {!d.site_id && deployedSites.length > 0 && (
-                                                        <select onChange={e => { if (e.target.value) { handleConnectOwnedDomain(d.domain_name); } }} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #374151', background: '#1f2937', color: '#e5e7eb', fontSize: 12 }}>
-                                                            <option value="">Connect to site...</option>
-                                                            {deployedSites.map(s => <option key={s.id} value={s.id}>{s.name || s.id}</option>)}
-                                                        </select>
-                                                    )}
+                                                <div style={{ fontSize: 13, color: '#71717a', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                                                    <span>{d.site_id ? <>Connected to <strong style={{ color: '#a1a1aa' }}>{d.site_name || 'a site'}</strong></> : <span style={{ color: '#fbbf24' }}>Not connected</span>}</span>
+                                                    {d.expiry_date && <span>Expires {new Date(d.expiry_date).toLocaleDateString()}</span>}
+                                                    {d.ssl_status && <span>SSL: {d.ssl_status}</span>}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ) : domainsLoading ? (
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                {!d.site_id && deployedSites.length > 0 && (
+                                                    <select onChange={e => { if (e.target.value) { handleConnectOwnedDomain(d.domain_name); } }} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #374151', background: '#1f2937', color: '#e5e7eb', fontSize: 12 }}>
+                                                        <option value="">Connect to site…</option>
+                                                        {deployedSites.map(s => <option key={s.id} value={s.id}>{s.name || s.id}</option>)}
+                                                    </select>
+                                                )}
+                                                {!d.site_id && deployedSites.length === 0 && (
+                                                    <span style={{ fontSize: 12, color: '#6b7280' }}>Build a site to connect</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ─── Deployed Sites section ─── */}
+                        <h2 style={{ fontSize: 14, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, margin: '0 0 12px' }}>
+                            Deployed Sites {deployedSites.length > 0 && <span style={{ color: '#52525b', fontWeight: 400 }}>({deployedSites.length})</span>}
+                        </h2>
+                        {domainsLoading ? (
                             <div className="dash-projects-empty"><p>Loading sites...</p></div>
                         ) : deployedSites.length === 0 ? (
                             <div className="dsite-empty">
                                 <div className="dsite-empty-icon">
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
                                 </div>
-                                <h3>No deployed sites yet</h3>
-                                <p>Deploy a website first, then manage domains here</p>
-                                <button className="dsite-cta-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
+                                <h3>Nothing deployed yet</h3>
+                                <p>Buy a domain or build a website to get started.</p>
+                                <button className="dsite-cta-btn" onClick={openEntryFlow}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                                    Create Website
+                                    Get started
                                 </button>
                             </div>
                         ) : (
@@ -1311,353 +1722,353 @@ const Dashboard = () => {
                                     const sColor = statusColor(site.domain_status || site.status);
                                     const sLabel = (site.domain_status || site.status || 'draft').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                                     return (
-                                    <div key={site.id} className="dsite-card">
-                                        {/* Card Header */}
-                                        <div className="dsite-card-top">
-                                            <div className="dsite-info">
-                                                <div className="dsite-icon-wrap">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                                                    </svg>
+                                        <div key={site.id} className="dsite-card">
+                                            {/* Card Header */}
+                                            <div className="dsite-card-top">
+                                                <div className="dsite-info">
+                                                    <div className="dsite-icon-wrap">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="dsite-meta">
+                                                        <h3 className="dsite-name">{site.domain || site.name}</h3>
+                                                        {site.url && (
+                                                            <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-url">
+                                                                {site.url}
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="dsite-meta">
-                                                    <h3 className="dsite-name">{site.domain || site.name}</h3>
-                                                    {site.url && (
-                                                        <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-url">
-                                                            {site.url}
-                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                                                        </a>
-                                                    )}
-                                                </div>
+                                                <span className={`dsite-badge dsite-badge-${sColor}`}>{sLabel}</span>
                                             </div>
-                                            <span className={`dsite-badge dsite-badge-${sColor}`}>{sLabel}</span>
-                                        </div>
 
-                                        {/* Quick Stats */}
-                                        <div className="dsite-stats-row">
-                                            <div className="dsite-stat">
-                                                <span className="dsite-stat-label">Domain</span>
-                                                <span className="dsite-stat-value">{site.domain || 'Not connected'}</span>
-                                            </div>
-                                            <div className="dsite-stat">
-                                                <span className="dsite-stat-label">SSL</span>
-                                                <span className="dsite-stat-value">{site.domain ? (site.cloudfront_domain ? 'Active' : 'Pending') : '—'}</span>
-                                            </div>
-                                            <div className="dsite-stat">
-                                                <span className="dsite-stat-label">CDN</span>
-                                                <span className="dsite-stat-value">{site.cloudfront_domain ? 'Active' : '—'}</span>
-                                            </div>
-                                            {site.last_deployed_at && (
+                                            {/* Quick Stats */}
+                                            <div className="dsite-stats-row">
                                                 <div className="dsite-stat">
-                                                    <span className="dsite-stat-label">Deployed</span>
-                                                    <span className="dsite-stat-value">{new Date(site.last_deployed_at).toLocaleDateString()}</span>
+                                                    <span className="dsite-stat-label">Domain</span>
+                                                    <span className="dsite-stat-value">{site.domain || 'Not connected'}</span>
                                                 </div>
-                                            )}
-                                        </div>
+                                                <div className="dsite-stat">
+                                                    <span className="dsite-stat-label">SSL</span>
+                                                    <span className="dsite-stat-value">{site.domain ? (site.cloudfront_domain ? 'Active' : 'Pending') : '—'}</span>
+                                                </div>
+                                                <div className="dsite-stat">
+                                                    <span className="dsite-stat-label">CDN</span>
+                                                    <span className="dsite-stat-value">{site.cloudfront_domain ? 'Active' : '—'}</span>
+                                                </div>
+                                                {site.last_deployed_at && (
+                                                    <div className="dsite-stat">
+                                                        <span className="dsite-stat-label">Deployed</span>
+                                                        <span className="dsite-stat-value">{new Date(site.last_deployed_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                        {/* CNAME Target — always shown */}
-                                        <div style={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: 8, padding: 16, margin: '12px 0' }}>
-                                            <h4 style={{ fontSize: 13, fontWeight: 600, color: site.domain_status === 'active' ? '#34d399' : site.domain ? '#fbbf24' : '#818cf8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    {site.domain_status === 'active'
-                                                        ? <><polyline points="20 6 9 17 4 12" /></>
-                                                        : <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>
-                                                    }
-                                                </svg>
-                                                {site.domain_status === 'active' ? 'Domain Active' : site.domain ? 'Domain Setup Required' : 'CNAME Target'}
-                                            </h4>
+                                            {/* CNAME Target — always shown */}
+                                            <div style={{ background: '#1a1a2e', border: '1px solid #374151', borderRadius: 8, padding: 16, margin: '12px 0' }}>
+                                                <h4 style={{ fontSize: 13, fontWeight: 600, color: site.domain_status === 'active' ? '#34d399' : site.domain ? '#fbbf24' : '#818cf8', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        {site.domain_status === 'active'
+                                                            ? <><polyline points="20 6 9 17 4 12" /></>
+                                                            : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>
+                                                        }
+                                                    </svg>
+                                                    {site.domain_status === 'active' ? 'Domain Active' : site.domain ? 'Domain Setup Required' : 'CNAME Target'}
+                                                </h4>
 
-                                            {/* CNAME record */}
-                                            <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
-                                                {site.domain
-                                                    ? 'Point your domain\'s CNAME record to this address:'
-                                                    : 'Use this CNAME target to connect a custom domain:'}
-                                            </p>
-                                            <div style={{ background: '#0f0f1a', borderRadius: 6, padding: '10px 14px', fontFamily: 'monospace', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div>
-                                                    {site.domain && (
+                                                {/* CNAME record */}
+                                                <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
+                                                    {site.domain
+                                                        ? 'Point your domain\'s CNAME record to this address:'
+                                                        : 'Use this CNAME target to connect a custom domain:'}
+                                                </p>
+                                                <div style={{ background: '#0f0f1a', borderRadius: 6, padding: '10px 14px', fontFamily: 'monospace', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        {site.domain && (
+                                                            <>
+                                                                <span style={{ color: '#818cf8' }}>www.{site.domain}</span>
+                                                                <span style={{ color: '#6b7280' }}> → CNAME → </span>
+                                                            </>
+                                                        )}
+                                                        <span style={{ color: '#34d399' }}>{site.cname_target || site.cloudfront_domain || site.s3_hostname || '(pending)'}</span>
+                                                    </div>
+                                                    {(site.cname_target || site.cloudfront_domain || site.s3_hostname) && (
+                                                        <button onClick={() => navigator.clipboard.writeText(site.cname_target || site.cloudfront_domain || site.s3_hostname)} style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                                    )}
+                                                </div>
+
+                                                {/* Status line */}
+                                                <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                                    {site.domain ? (
                                                         <>
-                                                            <span style={{ color: '#818cf8' }}>www.{site.domain}</span>
-                                                            <span style={{ color: '#6b7280' }}> → CNAME → </span>
+                                                            Status: <span style={{ color: site.domain_status === 'pending_validation' ? '#fbbf24' : site.domain_status === 'active' ? '#22c55e' : '#818cf8' }}>{(site.domain_status || '').replace(/_/g, ' ')}</span>
+                                                            {site.domain_status !== 'active' && ' · SSL and CDN will activate automatically once DNS propagates.'}
                                                         </>
+                                                    ) : (
+                                                        <>Add a CNAME record at your DNS provider pointing to the address above, then click "Connect Domain".</>
                                                     )}
-                                                    <span style={{ color: '#34d399' }}>{site.cname_target || site.cloudfront_domain || site.s3_hostname || '(pending)'}</span>
-                                                </div>
-                                                {(site.cname_target || site.cloudfront_domain || site.s3_hostname) && (
-                                                    <button onClick={() => navigator.clipboard.writeText(site.cname_target || site.cloudfront_domain || site.s3_hostname)} style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid #374151', background: 'none', color: '#9ca3af', fontSize: 11, cursor: 'pointer' }}>Copy</button>
+                                                </p>
+
+                                                {/* DNS records from backend */}
+                                                {site.dns_records && site.dns_records.length > 0 && (
+                                                    <div style={{ marginTop: 12, borderTop: '1px solid #374151', paddingTop: 10 }}>
+                                                        <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 6 }}>DNS Records</p>
+                                                        {site.dns_records.map((rec, i) => (
+                                                            <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, fontFamily: 'monospace', padding: '3px 0', color: '#d1d5db' }}>
+                                                                <span style={{ color: '#818cf8', minWidth: 50 }}>{rec.type}</span>
+                                                                <span style={{ color: '#9ca3af', flex: 1 }}>{rec.name}</span>
+                                                                <span style={{ color: '#34d399' }}>{rec.value}</span>
+                                                                <span style={{ color: '#6b7280', fontSize: 10 }}>{rec.purpose}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
 
-                                            {/* Status line */}
-                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
-                                                {site.domain ? (
-                                                    <>
-                                                        Status: <span style={{ color: site.domain_status === 'pending_validation' ? '#fbbf24' : site.domain_status === 'active' ? '#22c55e' : '#818cf8' }}>{(site.domain_status || '').replace(/_/g, ' ')}</span>
-                                                        {site.domain_status !== 'active' && ' · SSL and CDN will activate automatically once DNS propagates.'}
-                                                    </>
-                                                ) : (
-                                                    <>Add a CNAME record at your DNS provider pointing to the address above, then click "Connect Domain".</>
+                                            {/* Actions Bar */}
+                                            <div className="dsite-actions">
+                                                {!site.domain && site.status === 'published' && (
+                                                    <button className="dsite-action-btn dsite-action-primary" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); setConnectStep(1); }}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                                        Connect Domain
+                                                    </button>
                                                 )}
-                                            </p>
-
-                                            {/* DNS records from backend */}
-                                            {site.dns_records && site.dns_records.length > 0 && (
-                                                <div style={{ marginTop: 12, borderTop: '1px solid #374151', paddingTop: 10 }}>
-                                                    <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 6 }}>DNS Records</p>
-                                                    {site.dns_records.map((rec, i) => (
-                                                        <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, fontFamily: 'monospace', padding: '3px 0', color: '#d1d5db' }}>
-                                                            <span style={{ color: '#818cf8', minWidth: 50 }}>{rec.type}</span>
-                                                            <span style={{ color: '#9ca3af', flex: 1 }}>{rec.name}</span>
-                                                            <span style={{ color: '#34d399' }}>{rec.value}</span>
-                                                            <span style={{ color: '#6b7280', fontSize: 10 }}>{rec.purpose}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Actions Bar */}
-                                        <div className="dsite-actions">
-                                            {!site.domain && site.status === 'published' && (
-                                                <button className="dsite-action-btn dsite-action-primary" onClick={() => { setConnectModal(site.id); setConnectResult(null); setDomainInput(''); setConnectStep(1); }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                                                    Connect Domain
-                                                </button>
-                                            )}
-                                            {site.url && (
-                                                <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-action-btn">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                                                    Visit Site
-                                                </a>
-                                            )}
-                                            {site.domain && (
-                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'dns'); if (!dnsRecords[site.id]) loadDnsRecords(site.id); }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
-                                                    DNS Records
-                                                </button>
-                                            )}
-                                            {site.domain && (
-                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'ns'); if (!nameservers[site.id]) loadNameservers(site.id); }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                                                    Nameservers
-                                                </button>
-                                            )}
-                                            {site.domain_record_id && (
-                                                <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'contact'); loadContactInfo(site.domain_record_id); }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                                    Contact Info
-                                                </button>
-                                            )}
-                                            {/* Export ZIP */}
-                                            {site.status === 'published' && (
-                                                <button className="dsite-action-btn" onClick={() => handleExportZip(site.id, site.name)} disabled={exporting === site.id}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                                                    {exporting === site.id ? 'Exporting...' : 'Export ZIP'}
-                                                </button>
-                                            )}
-                                            {/* Custom Code */}
-                                            <button className="dsite-action-btn" onClick={() => handleOpenCustomCode(site.id)}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
-                                                Code Inject
-                                            </button>
-                                            {/* Analytics */}
-                                            <button className="dsite-action-btn" onClick={() => handleOpenAnalytics(site.id)}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
-                                                Analytics
-                                            </button>
-                                            <div className="dsite-actions-right">
+                                                {site.url && (
+                                                    <a href={site.url} target="_blank" rel="noopener noreferrer" className="dsite-action-btn">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                                                        Visit Site
+                                                    </a>
+                                                )}
                                                 {site.domain && (
-                                                    <button className="dsite-action-btn dsite-action-danger" onClick={() => setDisconnectConfirm(site.id)}>Disconnect</button>
+                                                    <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'dns'); if (!dnsRecords[site.id]) loadDnsRecords(site.id); }}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                                        DNS Records
+                                                    </button>
                                                 )}
-                                                <button className="dsite-action-btn dsite-action-danger" onClick={() => setDeleteSiteConfirm(site.id)}>
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
-                                                    Delete
+                                                {site.domain && (
+                                                    <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'ns'); if (!nameservers[site.id]) loadNameservers(site.id); }}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                                                        Nameservers
+                                                    </button>
+                                                )}
+                                                {site.domain_record_id && (
+                                                    <button className="dsite-action-btn" onClick={() => { toggleSection(site.id, 'contact'); loadContactInfo(site.domain_record_id); }}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                                        Contact Info
+                                                    </button>
+                                                )}
+                                                {/* Export ZIP */}
+                                                {site.status === 'published' && (
+                                                    <button className="dsite-action-btn" onClick={() => handleExportZip(site.id, site.name)} disabled={exporting === site.id}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                                        {exporting === site.id ? 'Exporting...' : 'Export ZIP'}
+                                                    </button>
+                                                )}
+                                                {/* Custom Code */}
+                                                <button className="dsite-action-btn" onClick={() => handleOpenCustomCode(site.id)}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
+                                                    Code Inject
                                                 </button>
-                                            </div>
-                                        </div>
-
-                                        {/* DNS Records Panel */}
-                                        {site.domain && isSectionExpanded(site.id, 'dns') && (
-                                            <div className="dsite-panel">
-                                                <div className="dsite-panel-header">
-                                                    <h4>DNS Records</h4>
-                                                    <button className="dsite-panel-btn" onClick={() => setAddRecordModal(site.id)}>+ Add Record</button>
-                                                </div>
-                                                <table className="dash-domain-table">
-                                                    <thead>
-                                                        <tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th><th></th></tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {(dnsRecords[site.id] || []).map((rec, i) => (
-                                                            <tr key={i}>
-                                                                <td><span className="dash-domain-type-badge">{rec.type}</span></td>
-                                                                <td style={{ fontSize: 13 }}>{rec.name}</td>
-                                                                <td className="dash-domain-value-cell">{rec.is_alias ? `ALIAS \u2192 ${rec.alias_target || rec.value}` : rec.value}</td>
-                                                                <td>{rec.ttl || '\u2014'}</td>
-                                                                <td>
-                                                                    {!rec.managed ? (
-                                                                        <button className="dash-domain-edit-btn" title="Delete" onClick={() => setDeleteRecordConfirm({ siteId: site.id, record: rec })} style={{ color: '#ef4444' }}>
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
-                                                                        </button>
-                                                                    ) : <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>System</span>}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                        {!dnsRecords[site.id] && (
-                                                            <tr><td colSpan="5" className="dsite-panel-empty">Loading records...</td></tr>
-                                                        )}
-                                                        {dnsRecords[site.id] && dnsRecords[site.id].length === 0 && (
-                                                            <tr><td colSpan="5" className="dsite-panel-empty">
-                                                                {site.route53_zone_id ? 'No DNS records found' : 'No hosted zone \u2014 connect a domain first'}
-                                                            </td></tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-
-                                        {/* Nameservers Panel */}
-                                        {site.domain && isSectionExpanded(site.id, 'ns') && (
-                                            <div className="dsite-panel">
-                                                <div className="dsite-panel-header">
-                                                    <h4>Nameservers</h4>
-                                                </div>
-                                                <p className="dsite-panel-hint">Point your domain to these nameservers at your registrar:</p>
-                                                <div className="dsite-ns-grid">
-                                                    {!nameservers[site.id] ? (
-                                                        <p className="dsite-panel-empty">Loading nameservers...</p>
-                                                    ) : nameservers[site.id].length > 0 ? (
-                                                        nameservers[site.id].map((ns, i) => (
-                                                            <div key={i} className="dsite-ns-item">
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                                                                <code>{ns}</code>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <p className="dsite-panel-empty">
-                                                            {site.route53_zone_id ? 'No nameservers found' : 'No hosted zone \u2014 connect a domain first'}
-                                                        </p>
+                                                {/* Analytics */}
+                                                <button className="dsite-action-btn" onClick={() => handleOpenAnalytics(site.id)}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+                                                    Analytics
+                                                </button>
+                                                <div className="dsite-actions-right">
+                                                    {site.domain && (
+                                                        <button className="dsite-action-btn dsite-action-danger" onClick={() => setDisconnectConfirm(site.id)}>Disconnect</button>
                                                     )}
+                                                    <button className="dsite-action-btn dsite-action-danger" onClick={() => setDeleteSiteConfirm(site.id)}>
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {/* Contact Info Panel */}
-                                        {site.domain_record_id && isSectionExpanded(site.id, 'contact') && (
-                                            <div className="dsite-panel">
-                                                <div className="dsite-panel-header">
-                                                    <h4>Contact Information</h4>
-                                                    {contactInfo[site.domain_record_id] && contactEditing !== site.domain_record_id && (
-                                                        <button className="dsite-panel-btn" onClick={() => handleContactEdit(site.domain_record_id)}>Edit</button>
-                                                    )}
-                                                </div>
-                                                {contactLoading[site.domain_record_id] || !(site.domain_record_id in contactInfo) ? (
-                                                    <p className="dsite-panel-empty">Loading contact info...</p>
-                                                ) : !contactInfo[site.domain_record_id] ? (
-                                                    <p className="dsite-panel-empty">No contact information available</p>
-                                                ) : contactEditing === site.domain_record_id ? (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '8px 0' }}>
-                                                        {['first_name', 'last_name', 'company_name', 'email', 'phone'].map(field => (
-                                                            <div key={field} style={field === 'company_name' ? { gridColumn: '1 / -1' } : {}}>
-                                                                <label style={{ fontSize: 11, color: '#9ca3af', textTransform: 'capitalize', display: 'block', marginBottom: 3 }}>{field.replace(/_/g, ' ')}</label>
-                                                                <input
-                                                                    value={contactForm[field] || ''}
-                                                                    onChange={e => setContactForm(prev => ({ ...prev, [field]: e.target.value }))}
-                                                                    style={{ width: '100%', padding: '6px 10px', fontSize: 13, background: '#1f2937', border: '1px solid #374151', borderRadius: 6, color: '#f3f4f6', outline: 'none', boxSizing: 'border-box' }}
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                                                            <button onClick={() => setContactEditing(null)} style={{ padding: '6px 14px', fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
-                                                            <button onClick={() => handleContactSave(site.domain_record_id)} disabled={contactSaving} style={{ padding: '6px 14px', fontSize: 12, background: '#3b82f6', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', opacity: contactSaving ? 0.5 : 1 }}>{contactSaving ? 'Saving...' : 'Save'}</button>
-                                                        </div>
+                                            {/* DNS Records Panel */}
+                                            {site.domain && isSectionExpanded(site.id, 'dns') && (
+                                                <div className="dsite-panel">
+                                                    <div className="dsite-panel-header">
+                                                        <h4>DNS Records</h4>
+                                                        <button className="dsite-panel-btn" onClick={() => setAddRecordModal(site.id)}>+ Add Record</button>
                                                     </div>
-                                                ) : (
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', padding: '8px 0' }}>
-                                                        {[
-                                                            ['Name', `${contactInfo[site.domain_record_id].first_name || ''} ${contactInfo[site.domain_record_id].last_name || ''}`.trim()],
-                                                            ['Company', contactInfo[site.domain_record_id].company_name],
-                                                            ['Email', contactInfo[site.domain_record_id].email],
-                                                            ['Phone', contactInfo[site.domain_record_id].phone],
-                                                        ].map(([label, value]) => (
-                                                            <div key={label}>
-                                                                <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>{label}</span>
-                                                                <span style={{ fontSize: 13, color: '#e5e7eb' }}>{value || '—'}</span>
-                                                            </div>
-                                                        ))}
-                                                        {contactInfo[site.domain_record_id].address && (
-                                                            <div style={{ gridColumn: '1 / -1' }}>
-                                                                <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>Address</span>
-                                                                <span style={{ fontSize: 13, color: '#e5e7eb' }}>
-                                                                    {[contactInfo[site.domain_record_id].address.street, contactInfo[site.domain_record_id].address.number, contactInfo[site.domain_record_id].address.city, contactInfo[site.domain_record_id].address.state, contactInfo[site.domain_record_id].address.country].filter(Boolean).join(', ')}
-                                                                </span>
-                                                            </div>
+                                                    <table className="dash-domain-table">
+                                                        <thead>
+                                                            <tr><th>Type</th><th>Name</th><th>Value</th><th>TTL</th><th></th></tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {(dnsRecords[site.id] || []).map((rec, i) => (
+                                                                <tr key={i}>
+                                                                    <td><span className="dash-domain-type-badge">{rec.type}</span></td>
+                                                                    <td style={{ fontSize: 13 }}>{rec.name}</td>
+                                                                    <td className="dash-domain-value-cell">{rec.is_alias ? `ALIAS \u2192 ${rec.alias_target || rec.value}` : rec.value}</td>
+                                                                    <td>{rec.ttl || '\u2014'}</td>
+                                                                    <td>
+                                                                        {!rec.managed ? (
+                                                                            <button className="dash-domain-edit-btn" title="Delete" onClick={() => setDeleteRecordConfirm({ siteId: site.id, record: rec })} style={{ color: '#ef4444' }}>
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                                            </button>
+                                                                        ) : <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>System</span>}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                            {!dnsRecords[site.id] && (
+                                                                <tr><td colSpan="5" className="dsite-panel-empty">Loading records...</td></tr>
+                                                            )}
+                                                            {dnsRecords[site.id] && dnsRecords[site.id].length === 0 && (
+                                                                <tr><td colSpan="5" className="dsite-panel-empty">
+                                                                    {site.route53_zone_id ? 'No DNS records found' : 'No hosted zone \u2014 connect a domain first'}
+                                                                </td></tr>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            )}
+
+                                            {/* Nameservers Panel */}
+                                            {site.domain && isSectionExpanded(site.id, 'ns') && (
+                                                <div className="dsite-panel">
+                                                    <div className="dsite-panel-header">
+                                                        <h4>Nameservers</h4>
+                                                    </div>
+                                                    <p className="dsite-panel-hint">Point your domain to these nameservers at your registrar:</p>
+                                                    <div className="dsite-ns-grid">
+                                                        {!nameservers[site.id] ? (
+                                                            <p className="dsite-panel-empty">Loading nameservers...</p>
+                                                        ) : nameservers[site.id].length > 0 ? (
+                                                            nameservers[site.id].map((ns, i) => (
+                                                                <div key={i} className="dsite-ns-item">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+                                                                    <code>{ns}</code>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <p className="dsite-panel-empty">
+                                                                {site.route53_zone_id ? 'No nameservers found' : 'No hosted zone \u2014 connect a domain first'}
+                                                            </p>
                                                         )}
                                                     </div>
-                                                )}
+                                                </div>
+                                            )}
 
-                                                {/* Transfer Request section */}
-                                                <div style={{ borderTop: '1px solid #374151', marginTop: 12, paddingTop: 12 }}>
-                                                    {site.transfer_requested_at ? (
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                                                <span style={{ fontSize: 13, color: '#fbbf24' }}>Transfer requested on {new Date(site.transfer_requested_at).toLocaleDateString()}</span>
+                                            {/* Contact Info Panel */}
+                                            {site.domain_record_id && isSectionExpanded(site.id, 'contact') && (
+                                                <div className="dsite-panel">
+                                                    <div className="dsite-panel-header">
+                                                        <h4>Contact Information</h4>
+                                                        {contactInfo[site.domain_record_id] && contactEditing !== site.domain_record_id && (
+                                                            <button className="dsite-panel-btn" onClick={() => handleContactEdit(site.domain_record_id)}>Edit</button>
+                                                        )}
+                                                    </div>
+                                                    {contactLoading[site.domain_record_id] || !(site.domain_record_id in contactInfo) ? (
+                                                        <p className="dsite-panel-empty">Loading contact info...</p>
+                                                    ) : !contactInfo[site.domain_record_id] ? (
+                                                        <p className="dsite-panel-empty">No contact information available</p>
+                                                    ) : contactEditing === site.domain_record_id ? (
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '8px 0' }}>
+                                                            {['first_name', 'last_name', 'company_name', 'email', 'phone'].map(field => (
+                                                                <div key={field} style={field === 'company_name' ? { gridColumn: '1 / -1' } : {}}>
+                                                                    <label style={{ fontSize: 11, color: '#9ca3af', textTransform: 'capitalize', display: 'block', marginBottom: 3 }}>{field.replace(/_/g, ' ')}</label>
+                                                                    <input
+                                                                        value={contactForm[field] || ''}
+                                                                        onChange={e => setContactForm(prev => ({ ...prev, [field]: e.target.value }))}
+                                                                        style={{ width: '100%', padding: '6px 10px', fontSize: 13, background: '#1f2937', border: '1px solid #374151', borderRadius: 6, color: '#f3f4f6', outline: 'none', boxSizing: 'border-box' }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                                                                <button onClick={() => setContactEditing(null)} style={{ padding: '6px 14px', fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
+                                                                <button onClick={() => handleContactSave(site.domain_record_id)} disabled={contactSaving} style={{ padding: '6px 14px', fontSize: 12, background: '#3b82f6', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', opacity: contactSaving ? 0.5 : 1 }}>{contactSaving ? 'Saving...' : 'Save'}</button>
                                                             </div>
-                                                            <button onClick={() => handleCancelTransfer(site.domain_record_id)} style={{ fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 10px', color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
                                                         </div>
                                                     ) : (
-                                                        <button
-                                                            onClick={() => { setTransferModal(site.domain_record_id); setTransferReason(''); setTransferResult(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '6px 14px', color: '#9ca3af', cursor: 'pointer' }}
-                                                        >
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
-                                                            Request Domain Transfer
-                                                        </button>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', padding: '8px 0' }}>
+                                                            {[
+                                                                ['Name', `${contactInfo[site.domain_record_id].first_name || ''} ${contactInfo[site.domain_record_id].last_name || ''}`.trim()],
+                                                                ['Company', contactInfo[site.domain_record_id].company_name],
+                                                                ['Email', contactInfo[site.domain_record_id].email],
+                                                                ['Phone', contactInfo[site.domain_record_id].phone],
+                                                            ].map(([label, value]) => (
+                                                                <div key={label}>
+                                                                    <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>{label}</span>
+                                                                    <span style={{ fontSize: 13, color: '#e5e7eb' }}>{value || '—'}</span>
+                                                                </div>
+                                                            ))}
+                                                            {contactInfo[site.domain_record_id].address && (
+                                                                <div style={{ gridColumn: '1 / -1' }}>
+                                                                    <span style={{ fontSize: 11, color: '#6b7280', display: 'block' }}>Address</span>
+                                                                    <span style={{ fontSize: 13, color: '#e5e7eb' }}>
+                                                                        {[contactInfo[site.domain_record_id].address.street, contactInfo[site.domain_record_id].address.number, contactInfo[site.domain_record_id].address.city, contactInfo[site.domain_record_id].address.state, contactInfo[site.domain_record_id].address.country].filter(Boolean).join(', ')}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     )}
-                                                </div>
-                                            </div>
-                                        )}
 
-                                        {/* Pending status notice with refresh */}
-                                        {(site.domain_status === 'pending_validation' || site.domain_status === 'pending_deployment' || site.domain_status === 'creating_cdn') && (
-                                            <div className="dsite-notice" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                                    {site.domain_status === 'pending_validation' ? 'SSL certificate pending validation...' :
-                                                     site.domain_status === 'creating_cdn' ? 'Creating CDN distribution...' :
-                                                     'CloudFront deployment in progress...'}
+                                                    {/* Transfer Request section */}
+                                                    <div style={{ borderTop: '1px solid #374151', marginTop: 12, paddingTop: 12 }}>
+                                                        {site.transfer_requested_at ? (
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                                    <span style={{ fontSize: 13, color: '#fbbf24' }}>Transfer requested on {new Date(site.transfer_requested_at).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <button onClick={() => handleCancelTransfer(site.domain_record_id)} style={{ fontSize: 12, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 10px', color: '#9ca3af', cursor: 'pointer' }}>Cancel</button>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => { setTransferModal(site.domain_record_id); setTransferReason(''); setTransferResult(null); }}
+                                                                style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '6px 14px', color: '#9ca3af', cursor: 'pointer' }}
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+                                                                Request Domain Transfer
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <button
-                                                    onClick={async (e) => {
-                                                        const btn = e.currentTarget;
-                                                        btn.disabled = true;
-                                                        btn.textContent = 'Checking...';
-                                                        try {
-                                                            const result = await getDomainStatus(site.id);
-                                                            // Refresh the sites list
-                                                            const data = await listDeployedSites();
-                                                            setDeployedSites(data.sites || []);
-                                                            if (result.domain_status === 'active') {
-                                                                btn.textContent = 'Active!';
-                                                                btn.style.color = '#34d399';
-                                                            } else {
-                                                                btn.textContent = 'Still pending';
+                                            )}
+
+                                            {/* Pending status notice with refresh */}
+                                            {(site.domain_status === 'pending_validation' || site.domain_status === 'pending_deployment' || site.domain_status === 'creating_cdn') && (
+                                                <div className="dsite-notice" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                        {site.domain_status === 'pending_validation' ? 'SSL certificate pending validation...' :
+                                                            site.domain_status === 'creating_cdn' ? 'Creating CDN distribution...' :
+                                                                'CloudFront deployment in progress...'}
+                                                    </div>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            const btn = e.currentTarget;
+                                                            btn.disabled = true;
+                                                            btn.textContent = 'Checking...';
+                                                            try {
+                                                                const result = await getDomainStatus(site.id);
+                                                                // Refresh the sites list
+                                                                const data = await listDeployedSites();
+                                                                setDeployedSites(data.sites || []);
+                                                                if (result.domain_status === 'active') {
+                                                                    btn.textContent = 'Active!';
+                                                                    btn.style.color = '#34d399';
+                                                                } else {
+                                                                    btn.textContent = 'Still pending';
+                                                                    setTimeout(() => { btn.textContent = 'Refresh'; btn.disabled = false; }, 2000);
+                                                                }
+                                                            } catch (err) {
+                                                                btn.textContent = 'Error';
                                                                 setTimeout(() => { btn.textContent = 'Refresh'; btn.disabled = false; }, 2000);
                                                             }
-                                                        } catch (err) {
-                                                            btn.textContent = 'Error';
-                                                            setTimeout(() => { btn.textContent = 'Refresh'; btn.disabled = false; }, 2000);
-                                                        }
-                                                    }}
-                                                    style={{ background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 12px', color: '#9ca3af', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
-                                                    Refresh
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                                        }}
+                                                        style={{ background: 'none', border: '1px solid #4b5563', borderRadius: 6, padding: '4px 12px', color: '#9ca3af', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+                                                        Refresh
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -1702,7 +2113,7 @@ const Dashboard = () => {
                                     </div>
                                 </>
 
-                            /* Step 2: Search Results */
+                                /* Step 2: Search Results */
                             ) : connectStep === 2 && domainSearchResults ? (
                                 <>
                                     <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Domain Search Results</h3>
@@ -1748,7 +2159,7 @@ const Dashboard = () => {
                                     </div>
                                 </>
 
-                            /* Step 1: Search */
+                                /* Step 1: Search */
                             ) : (
                                 <>
                                     <h3 style={{ marginBottom: 4, color: '#f3f4f6' }}>Connect Domain</h3>
@@ -1764,16 +2175,23 @@ const Dashboard = () => {
                                             <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>Your available domains</p>
                                             <div style={{ borderRadius: 8, border: '1px solid #374151', overflow: 'hidden' }}>
                                                 {modalOwnedDomains.map((d, i) => (
-                                                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < modalOwnedDomains.length - 1 ? '1px solid #374151' : 'none', background: '#1f2937' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <span style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</span>
-                                                            {d.instant_connect && (
-                                                                <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: 4 }}>Instant</span>
-                                                            )}
+                                                    <div key={d.id} style={{ borderBottom: i < modalOwnedDomains.length - 1 ? '1px solid #374151' : 'none', background: '#1f2937' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <span style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</span>
+                                                                {d.instant_connect && (
+                                                                    <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '2px 6px', borderRadius: 4 }}>Instant</span>
+                                                                )}
+                                                            </div>
+                                                            <button onClick={() => handleConnectOwnedDomain(d.domain_name)} disabled={!!connectingOwned} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: connectingOwned ? 'wait' : 'pointer', opacity: connectingOwned ? 0.6 : 1 }}>
+                                                                {connectingOwned === d.domain_name ? 'Connecting...' : 'Connect'}
+                                                            </button>
                                                         </div>
-                                                        <button onClick={() => handleConnectOwnedDomain(d.domain_name)} disabled={!!connectingOwned} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: connectingOwned ? 'wait' : 'pointer', opacity: connectingOwned ? 0.6 : 1 }}>
-                                                            {connectingOwned === d.domain_name ? 'Connecting...' : 'Connect'}
-                                                        </button>
+                                                        {connectingOwned === d.domain_name && (
+                                                            <div style={{ padding: '0 14px 10px', fontSize: 11, color: '#9ca3af' }}>
+                                                                Setting up DNS &amp; SSL — this may take up to 60 seconds...
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -1923,9 +2341,9 @@ const Dashboard = () => {
                                 <>
                                     <div className="dash-domain-modal-icon" style={{ background: transferResult.status === 'error' ? '#fef2f2' : '#ecfdf5' }}>
                                         {transferResult.status === 'error' ? (
-                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
                                         ) : (
-                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                         )}
                                     </div>
                                     <h3 style={{ marginBottom: 8, color: '#f3f4f6' }}>{transferResult.status === 'error' ? 'Error' : 'Transfer Requested'}</h3>
@@ -2135,6 +2553,332 @@ const Dashboard = () => {
                     </div>
                 )}
 
+                {/* ─── Entry-flow Modal: Buy Domain or Build Website ─── */}
+                {entryStage && (
+                    <div
+                        className="dash-domain-modal-overlay"
+                        onClick={closeEntryFlow}
+                        onKeyDown={(e) => { if (e.key === 'Escape') closeEntryFlow(); }}
+                        role="button"
+                        tabIndex={0}
+                    >
+                        <div
+                            className="dash-domain-modal"
+                            onClick={e => e.stopPropagation()}
+                            onKeyDown={e => e.stopPropagation()}
+                            role="presentation"
+                            style={{ maxWidth: entryStage === 'domainSearch' ? 640 : 520, padding: 0, overflow: 'hidden' }}
+                        >
+                            {/* Close button (top-right) */}
+                            <button
+                                onClick={closeEntryFlow}
+                                aria-label="Close"
+                                style={{ position: 'absolute', top: 14, right: 14, background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 6, borderRadius: 6, zIndex: 2 }}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
+
+                            {/* Stage 1: choice between Buy Domain and Build Website */}
+                            {entryStage === 'choice' && (
+                                <div style={{ padding: '32px 28px 28px' }}>
+                                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                        <h2 style={{ margin: '0 0 6px', fontSize: 22, color: '#f3f4f6', fontWeight: 700 }}>How would you like to start?</h2>
+                                        <p style={{ margin: 0, fontSize: 14, color: '#9ca3af' }}>Pick a path — you can always do the other one later.</p>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: myDomains.length > 0 ? '1fr 1fr 1fr' : '1fr 1fr', gap: 14 }}>
+                                        {/* Buy Domain card */}
+                                        <button
+                                            onClick={() => setEntryStage('domainSearch')}
+                                            style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid #334155', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
+                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#3b82f6'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#334155'; }}
+                                        >
+                                            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa' }}>
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                                            </div>
+                                            <div>
+                                                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Buy a Domain</h3>
+                                                <p style={{ margin: 0, fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}> Register your domain.</p>
+                                            </div>
+                                            <div style={{ marginTop: 'auto', fontSize: 12, color: '#60a5fa', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                Search domains
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                                            </div>
+                                        </button>
+
+                                        {/* Build Website card */}
+                                        <button
+                                            onClick={handleEntryChoiceBuild}
+                                            style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '1px solid #4338ca', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
+                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#818cf8'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#4338ca'; }}
+                                        >
+                                            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(129,140,248,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc' }}>
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /></svg>
+                                            </div>
+                                            <div>
+                                                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Build Website</h3>
+                                                <p style={{ margin: 0, fontSize: 12, color: '#a5b4fc', lineHeight: 1.5 }}>Generate your site with AI now, associate with a domain later.</p>
+                                            </div>
+                                            <div style={{ marginTop: 'auto', fontSize: 12, color: '#a5b4fc', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                Start building
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                                            </div>
+                                        </button>
+
+                                        {/* Use my domain — only shown if the user already owns at least one */}
+                                        {myDomains.length > 0 && (
+                                            <button
+                                                onClick={() => setEntryStage('pickOwned')}
+                                                style={{ background: 'linear-gradient(135deg, #064e3b, #022c22)', border: '1px solid #047857', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#34d399'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#047857'; }}
+                                            >
+                                                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(52,211,153,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399' }}>
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                </div>
+                                                <div>
+                                                    <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Use my domain</h3>
+                                                    <p style={{ margin: 0, fontSize: 12, color: '#a7f3d0', lineHeight: 1.5 }}>You own {myDomains.length} domain{myDomains.length !== 1 ? 's' : ''}. Pick one and build your site on it.</p>
+                                                </div>
+                                                <div style={{ marginTop: 'auto', fontSize: 12, color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    Pick a domain
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stage 1b: pick from owned domains */}
+                            {entryStage === 'pickOwned' && (
+                                <div style={{ padding: '28px 28px 24px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                                        <button
+                                            onClick={() => setEntryStage('choice')}
+                                            style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                                            Back
+                                        </button>
+                                    </div>
+                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>Pick a domain</h2>
+                                    <p style={{ margin: '0 0 18px', fontSize: 13, color: '#9ca3af' }}>We'll start a new website using this domain as your brand.</p>
+
+                                    <div style={{ maxHeight: 360, overflowY: 'auto', borderRadius: 10, border: '1px solid #1f2937' }}>
+                                        {myDomains.map((d, i) => (
+                                            <button
+                                                key={d.id}
+                                                onClick={() => handleEntryUseOwnedDomain(d.domain_name)}
+                                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < myDomains.length - 1 ? '1px solid #1f2937' : 'none', background: i % 2 === 0 ? '#0b1220' : '#0f172a', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                            >
+                                                <div>
+                                                    <div style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</div>
+                                                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                                                        {d.site_id ? `Connected to ${d.site_name || 'a site'}` : 'Not connected — perfect for a new site'}
+                                                    </div>
+                                                </div>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stage 2: domain search + results */}
+                            {entryStage === 'domainSearch' && (
+                                <div style={{ padding: '28px 28px 24px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                                        <button
+                                            onClick={() => { setEntryStage('choice'); setEntrySearchResults(null); setEntrySearchError(null); }}
+                                            style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                                            Back
+                                        </button>
+                                    </div>
+                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>Find your perfect domain</h2>
+                                    <p style={{ margin: '0 0 18px', fontSize: 13, color: '#9ca3af' }}>Type your business name to see available extensions.</p>
+
+                                    <form onSubmit={handleEntryDomainSearch} style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                                        <input
+                                            type="text"
+                                            value={entrySearchInput}
+                                            onChange={e => setEntrySearchInput(e.target.value)}
+                                            placeholder="e.g. mybusiness"
+                                            autoFocus
+                                            style={{ flex: 1, background: '#0f172a', border: '1px solid #334155', color: '#f3f4f6', padding: '12px 14px', borderRadius: 8, fontSize: 14, outline: 'none' }}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={entrySearchLoading || !entrySearchInput.trim()}
+                                            style={{ background: '#3b82f6', border: 'none', color: '#fff', padding: '0 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: entrySearchLoading ? 'wait' : 'pointer', opacity: entrySearchLoading || !entrySearchInput.trim() ? 0.5 : 1 }}
+                                        >
+                                            {entrySearchLoading ? 'Searching…' : 'Search'}
+                                        </button>
+                                    </form>
+
+                                    {entrySearchError && (
+                                        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '10px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>
+                                            {entrySearchError}
+                                        </div>
+                                    )}
+
+                                    {entrySearchLoading && (
+                                        <div style={{ textAlign: 'center', padding: 30, color: '#94a3b8', fontSize: 13 }}>
+                                            Checking 15 extensions…
+                                        </div>
+                                    )}
+
+                                    {entrySearchResults && !entrySearchLoading && (
+                                        <div style={{ maxHeight: 360, overflowY: 'auto', borderRadius: 10, border: '1px solid #1f2937' }}>
+                                            {entrySearchResults.length === 0 ? (
+                                                <div style={{ padding: 24, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>No results</div>
+                                            ) : (
+                                                entrySearchResults.map((r, i) => {
+                                                    const isFree = r.status === 'free';
+                                                    return (
+                                                        <div
+                                                            key={`${r.sld}.${r.tld}`}
+                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: i < entrySearchResults.length - 1 ? '1px solid #1f2937' : 'none', background: i % 2 === 0 ? '#0b1220' : '#0f172a' }}
+                                                        >
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                                                                <span style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>
+                                                                    {r.sld}<span style={{ color: '#60a5fa' }}>.{r.tld}</span>
+                                                                </span>
+                                                                {isFree ? (
+                                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Available</span>
+                                                                ) : (
+                                                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', background: 'rgba(156,163,175,0.12)', padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Taken</span>
+                                                                )}
+                                                            </div>
+                                                            {isFree && r.price ? (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                    <span style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 600 }}>${r.price.amount}/yr</span>
+                                                                    <button
+                                                                        onClick={() => { setEntryPurchaseTarget({ sld: r.sld, tld: r.tld, price: r.price }); setEntryStage('domainConfirm'); }}
+                                                                        style={{ background: '#3b82f6', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                                                    >
+                                                                        Buy
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span style={{ fontSize: 12, color: '#6b7280' }}>—</span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Stage 3: confirm purchase */}
+                            {entryStage === 'domainConfirm' && entryPurchaseTarget && (
+                                <div style={{ padding: '32px 28px 28px' }}>
+                                    <h2 style={{ margin: '0 0 8px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>Confirm purchase</h2>
+                                    <p style={{ margin: '0 0 20px', fontSize: 13, color: '#9ca3af' }}>You're about to register this domain for 1 year.</p>
+
+                                    <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, padding: 18, marginBottom: 18 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                            <span style={{ fontSize: 12, color: '#94a3b8' }}>Domain</span>
+                                            <span style={{ fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>{entryPurchaseTarget.sld}.{entryPurchaseTarget.tld}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: 12, color: '#94a3b8' }}>Total (1 year)</span>
+                                            <span style={{ fontSize: 16, fontWeight: 700, color: '#34d399' }}>${entryPurchaseTarget.price.amount}</span>
+                                        </div>
+                                    </div>
+
+                                    {entrySearchError && (
+                                        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '10px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>
+                                            {entrySearchError}
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <button
+                                            onClick={() => { setEntryStage('domainSearch'); setEntryPurchaseTarget(null); setEntrySearchError(null); }}
+                                            style={{ flex: 1, background: 'transparent', border: '1px solid #334155', color: '#cbd5e1', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleEntryPurchaseConfirm}
+                                            style={{ flex: 1, background: '#3b82f6', border: 'none', color: '#fff', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                            Confirm purchase
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stage 4: purchasing spinner */}
+                            {entryStage === 'purchasing' && (
+                                <div style={{ padding: 60, textAlign: 'center' }}>
+                                    <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid #1f2937', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                                    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                                    <h3 style={{ margin: '20px 0 6px', fontSize: 16, color: '#f3f4f6' }}>Registering your domain…</h3>
+                                    <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>This usually takes 10–30 seconds.</p>
+                                </div>
+                            )}
+
+                            {/* Stage 5: success → ready to build? */}
+                            {entryStage === 'domainSuccess' && entryPurchasedDomain && (
+                                <div style={{ padding: '36px 28px 28px', textAlign: 'center' }}>
+                                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: entryPurchasedDomain.pending ? 'rgba(251,191,36,0.18)' : 'rgba(52,211,153,0.15)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: entryPurchasedDomain.pending ? '#fbbf24' : '#34d399', marginBottom: 16 }}>
+                                        {entryPurchasedDomain.pending ? (
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                        ) : (
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        )}
+                                    </div>
+                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>{entryPurchasedDomain.pending ? 'Almost there…' : 'Domain ready!'}</h2>
+                                    <p style={{ margin: '0 0 6px', fontSize: 14, color: '#94a3b8' }}>
+                                        <strong style={{ color: '#60a5fa' }}>{entryPurchasedDomain.domain}</strong> {entryPurchasedDomain.pending ? 'is being registered.' : 'is now in your account.'}
+                                    </p>
+                                    <p style={{ margin: '0 0 24px', fontSize: 13, color: '#9ca3af' }}>
+                                        {entryPurchasedDomain.pending
+                                            ? 'It usually finishes within a couple of minutes — refresh My Domains to confirm.'
+                                            : <>You can find it under <strong>Domains → My Domains</strong>.</>}
+                                    </p>
+
+                                    <h3 style={{ margin: '0 0 14px', fontSize: 15, color: '#f3f4f6' }}>Build your website now?</h3>
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <button
+                                            onClick={() => { closeEntryFlow(); }}
+                                            style={{ flex: 1, background: 'transparent', border: '1px solid #334155', color: '#cbd5e1', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                                        >
+                                            Maybe later
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const carry = pendingPrompt;
+                                                const domainStr = entryPurchasedDomain?.domain;
+                                                const brand = brandFromDomain(domainStr);
+                                                closeEntryFlow();
+                                                navigate('/generator', {
+                                                    state: {
+                                                        newSession: true,
+                                                        ...(carry ? { wizardPrefill: carry } : {}),
+                                                        ...(domainStr ? { wizardDomain: domainStr, wizardBrand: brand } : {}),
+                                                    },
+                                                });
+                                            }}
+                                            style={{ flex: 1, background: '#3b82f6', border: 'none', color: '#fff', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                            Yes, build now
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* New Design Modal */}
                 {newDesignModal && (
                     <div className="dash-domain-modal-overlay" onClick={() => { setNewDesignModal(false); setNewDesignPreview(null); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setNewDesignModal(false); setNewDesignPreview(null); } }} role="button" tabIndex={0}>
@@ -2226,7 +2970,7 @@ const Dashboard = () => {
                                     </div>
                                     <iframe
                                         title="Template Preview"
-                                        srcDoc={templatePreviews[newDesignPreview] ? `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${templatePreviews[newDesignPreview].css || ''}</style></head><body>${templatePreviews[newDesignPreview].html || ''}</body></html>` : ''}
+                                        srcDoc={templatePreviews[newDesignPreview] ? buildSrcDoc(templatePreviews[newDesignPreview].css, templatePreviews[newDesignPreview].html) : ''}
                                         className="dash-newdesign-preview-iframe"
                                         sandbox="allow-same-origin allow-scripts"
                                     />
@@ -2285,36 +3029,36 @@ const Dashboard = () => {
                                 {galleryImages.map(img => {
                                     const imgSrc = img.url?.startsWith('http') ? img.url : `${config.apiUrl}${img.url}`;
                                     return (
-                                    <div key={img.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 10, overflow: 'hidden', transition: 'all 0.15s' }}>
-                                        <div style={{ position: 'relative', paddingBottom: '75%', overflow: 'hidden', background: '#111' }}>
-                                            <img
-                                                src={imgSrc}
-                                                alt={img.original_name}
-                                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                        <div style={{ padding: '10px 12px' }}>
-                                            <p style={{ fontSize: 12, color: '#e5e7eb', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.original_name}</p>
-                                            <p style={{ fontSize: 11, color: '#6b7280', margin: '4px 0 0' }}>
-                                                {img.width && img.height ? `${img.width}×${img.height}` : ''}{img.size_bytes ? ` · ${(img.size_bytes / 1024).toFixed(0)}KB` : ''}
-                                            </p>
-                                            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                                                <button
-                                                    onClick={() => handleCopyImageUrl(imgSrc)}
-                                                    style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: '1px solid #374151', background: 'none', color: galleryCopied === imgSrc ? '#34d399' : '#9ca3af', fontSize: 11, cursor: 'pointer' }}
-                                                >
-                                                    {galleryCopied === imgSrc ? 'Copied!' : 'Copy URL'}
-                                                </button>
-                                                <button
-                                                    onClick={() => setGalleryDeleteConfirm(img.filename)}
-                                                    style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /></svg>
-                                                </button>
+                                        <div key={img.id} style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 10, overflow: 'hidden', transition: 'all 0.15s' }}>
+                                            <div style={{ position: 'relative', paddingBottom: '75%', overflow: 'hidden', background: '#111' }}>
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={img.original_name}
+                                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div style={{ padding: '10px 12px' }}>
+                                                <p style={{ fontSize: 12, color: '#e5e7eb', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.original_name}</p>
+                                                <p style={{ fontSize: 11, color: '#6b7280', margin: '4px 0 0' }}>
+                                                    {img.width && img.height ? `${img.width}×${img.height}` : ''}{img.size_bytes ? ` · ${(img.size_bytes / 1024).toFixed(0)}KB` : ''}
+                                                </p>
+                                                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                                                    <button
+                                                        onClick={() => handleCopyImageUrl(imgSrc)}
+                                                        style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: '1px solid #374151', background: 'none', color: galleryCopied === imgSrc ? '#34d399' : '#9ca3af', fontSize: 11, cursor: 'pointer' }}
+                                                    >
+                                                        {galleryCopied === imgSrc ? 'Copied!' : 'Copy URL'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setGalleryDeleteConfirm(img.filename)}
+                                                        style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #374151', background: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer' }}
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
                                     );
                                 })}
                             </div>

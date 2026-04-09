@@ -417,10 +417,18 @@ class UpdateMetaRequest(BaseModel):
 
 class UpdateContactRequest(BaseModel):
     sessionId: str
-    recipientEmail: str
+    recipientEmail: str | None = None  # form recipient — None means "leave unchanged"
     fields: list[str] | None = None
     successMessage: str | None = None
     pageSlug: str = "index"
+    # Floating contact widgets — all optional. Empty/missing values cause the
+    # corresponding widget to be removed from the page on next inject.
+    whatsappNumber: str | None = None
+    socialFacebook: str | None = None
+    socialInstagram: str | None = None
+    socialTiktok: str | None = None
+    socialLinkedin: str | None = None
+    socialYoutube: str | None = None
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────
@@ -1263,12 +1271,56 @@ async def update_contact(req: UpdateContactRequest, user: dict = Depends(require
 async def _update_contact_impl(req: UpdateContactRequest, user: dict):
     session = await _verify_session_ownership(req.sessionId, user)
 
-    # Store contact config in session
-    session["contact_config"] = {
-        "recipientEmail": req.recipientEmail,
-        "fields": req.fields,
-        "successMessage": req.successMessage or "Thank you! Your message has been sent.",
-    }
+    # Merge new contact config with whatever's already there. Each field is
+    # optional — passing None for any field means "leave unchanged", passing
+    # an empty string means "clear this field". This lets the settings UI
+    # update WhatsApp without having to also re-send the recipient email.
+    existing = session.get("contact_config") or {}
+    cfg = dict(existing)  # shallow copy
+
+    if req.recipientEmail is not None:
+        cfg["recipientEmail"] = req.recipientEmail
+    if req.fields is not None:
+        cfg["fields"] = req.fields
+    if req.successMessage is not None:
+        cfg["successMessage"] = req.successMessage
+    cfg.setdefault("successMessage", "Thank you! Your message has been sent.")
+
+    # Floating widgets — WhatsApp and social media URLs.
+    if req.whatsappNumber is not None:
+        cfg["whatsapp"] = req.whatsappNumber
+    # Social: only update keys that were actually sent (not None).
+    social = dict(cfg.get("social") or {})
+    if req.socialFacebook is not None:
+        social["facebook"] = req.socialFacebook
+    if req.socialInstagram is not None:
+        social["instagram"] = req.socialInstagram
+    if req.socialTiktok is not None:
+        social["tiktok"] = req.socialTiktok
+    if req.socialLinkedin is not None:
+        social["linkedin"] = req.socialLinkedin
+    if req.socialYoutube is not None:
+        social["youtube"] = req.socialYoutube
+    if social:
+        cfg["social"] = social
+
+    session["contact_config"] = cfg
+
+    # Re-inject the floating widgets into every page so the change is
+    # immediately visible in the editor preview. Idempotent — old widgets
+    # are stripped first.
+    from app.utils.contact_widgets import inject_contact_widgets
+
+    if session.get("multipage") and session.get("pages"):
+        for slug in list(session["pages"].keys()):
+            pg = session["pages"][slug]
+            if isinstance(pg, dict) and pg.get("html"):
+                pg["html"] = inject_contact_widgets(pg["html"], cfg)
+        # session["html"] always mirrors the index page in multipage mode
+        if "index" in session["pages"]:
+            session["html"] = session["pages"]["index"]["html"]
+    elif session.get("html"):
+        session["html"] = inject_contact_widgets(session["html"], cfg)
 
     # Store recipient email in Redis session (deploy code reads it from here)
     _log = logging.getLogger(__name__)

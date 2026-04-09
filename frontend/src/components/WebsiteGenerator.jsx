@@ -528,7 +528,12 @@ const composeWizardPrompt = (data) => {
     if (data.colorScheme && !data.colorScheme.isSurprise) {
         prompt += `\nColor scheme: ${data.colorScheme.name} — use these colors: ${data.colorScheme.colors.join(', ')}`;
     }
-    const ci = data.contactInfo;
+    const ci = data.contactInfo || {};
+    // ONLY phone/email/address go in the LLM prompt — those belong inside the
+    // contact section's body content. WhatsApp and social media URLs are
+    // intentionally NOT mentioned to the LLM: they're floating UI widgets
+    // injected programmatically post-generation, so generation stays
+    // deterministic regardless of which platforms the user filled.
     if (ci.phone || ci.email || ci.address) {
         prompt += '\nContact details:';
         if (ci.phone) prompt += ` Phone: ${ci.phone}.`;
@@ -547,6 +552,12 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
     const [contactPhone, setContactPhone] = React.useState(data.contactInfo?.phone || '');
     const [contactEmail, setContactEmail] = React.useState(data.contactInfo?.email || '');
     const [contactAddress, setContactAddress] = React.useState(data.contactInfo?.address || '');
+    const [contactWhatsapp, setContactWhatsapp] = React.useState(data.contactInfo?.whatsapp || '');
+    const [contactSocialFb, setContactSocialFb] = React.useState(data.contactInfo?.social?.facebook || '');
+    const [contactSocialIg, setContactSocialIg] = React.useState(data.contactInfo?.social?.instagram || '');
+    const [contactSocialTk, setContactSocialTk] = React.useState(data.contactInfo?.social?.tiktok || '');
+    const [contactSocialLi, setContactSocialLi] = React.useState(data.contactInfo?.social?.linkedin || '');
+    const [contactSocialYt, setContactSocialYt] = React.useState(data.contactInfo?.social?.youtube || '');
 
     // ── Domain suggestion (step 0 only) ──
     // Debounced availability check on the typed company name. If the user
@@ -739,13 +750,37 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
             case 7: // Contact info
                 return (
                     <div className="wizard-contact-fields">
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginBottom: '0.25rem' }}>CONTACT DETAILS</div>
                         <input type="text" placeholder="Phone (e.g. +971 50 123 4567)" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
-                        <input type="email" placeholder="Email (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                        <input type="email" placeholder="Email — also used as form recipient (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
                         <input type="text" placeholder="Address (optional)" value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
+
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginTop: '0.75rem', marginBottom: '0.25rem' }}>WHATSAPP BUTTON</div>
+                        <input type="text" placeholder="WhatsApp number with country code (e.g. +971501234567) — adds floating button" value={contactWhatsapp} onChange={e => setContactWhatsapp(e.target.value)} />
+
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginTop: '0.75rem', marginBottom: '0.25rem' }}>SOCIAL LINKS — only filled platforms appear in the floating button</div>
+                        <input type="url" placeholder="Facebook profile URL (optional)" value={contactSocialFb} onChange={e => setContactSocialFb(e.target.value)} />
+                        <input type="url" placeholder="Instagram profile URL (optional)" value={contactSocialIg} onChange={e => setContactSocialIg(e.target.value)} />
+                        <input type="url" placeholder="TikTok profile URL (optional)" value={contactSocialTk} onChange={e => setContactSocialTk(e.target.value)} />
+                        <input type="url" placeholder="LinkedIn profile URL (optional)" value={contactSocialLi} onChange={e => setContactSocialLi(e.target.value)} />
+                        <input type="url" placeholder="YouTube channel URL (optional)" value={contactSocialYt} onChange={e => setContactSocialYt(e.target.value)} />
+
                         <div className="wizard-contact-actions">
                             <button
                                 className="wizard-confirm-btn"
-                                onClick={() => onAnswer({ phone: contactPhone.trim(), email: contactEmail.trim(), address: contactAddress.trim() })}
+                                onClick={() => onAnswer({
+                                    phone: contactPhone.trim(),
+                                    email: contactEmail.trim(),
+                                    address: contactAddress.trim(),
+                                    whatsapp: contactWhatsapp.trim(),
+                                    social: {
+                                        facebook: contactSocialFb.trim(),
+                                        instagram: contactSocialIg.trim(),
+                                        tiktok: contactSocialTk.trim(),
+                                        linkedin: contactSocialLi.trim(),
+                                        youtube: contactSocialYt.trim(),
+                                    },
+                                })}
                             >
                                 Continue
                             </button>
@@ -1389,7 +1424,12 @@ const WebsiteGenerator = () => {
         setWizardData({
             companyName: '', businessDescription: '', tagline: '', purpose: '', purposeLabel: '',
             siteType: '', pages: ['Home', 'About', 'Services', 'Contact'],
-            colorScheme: null, contactInfo: { phone: '', email: '', address: '' },
+            colorScheme: null,
+            contactInfo: {
+                phone: '', email: '', address: '',
+                whatsapp: '',
+                social: { facebook: '', instagram: '', tiktok: '', linkedin: '', youtube: '' },
+            },
         });
         setMessages([{
             role: 'assistant',
@@ -2117,6 +2157,14 @@ const WebsiteGenerator = () => {
                 templateId,
                 currentPage,
                 assignedImages || null,
+                // Wizard-collected floating widgets (WhatsApp + social FAB).
+                // The backend injects them after Stage 3, so the LLM never
+                // sees them — generation stays deterministic.
+                wizardData?.contactInfo ? {
+                    recipientEmail: wizardData.contactInfo.email || '',
+                    whatsapp: wizardData.contactInfo.whatsapp || '',
+                    social: wizardData.contactInfo.social || {},
+                } : null,
             );
         }
     };

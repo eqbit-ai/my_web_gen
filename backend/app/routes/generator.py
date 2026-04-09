@@ -540,6 +540,47 @@ def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
     return html
 
 
+def _apply_contact_widgets_to_session(session_data: dict, contact_config: dict | None) -> None:
+    """Apply contact widget injection (WhatsApp + social FAB) to every page
+    in a session_data dict, in place.
+
+    Reads ``contact_config`` (the wizard-collected blob), saves it to
+    ``session_data["contact_config"]``, and runs ``inject_contact_widgets``
+    over the single-page html OR every page in a multipage `pages` dict.
+
+    Idempotent — safe to call multiple times. If ``contact_config`` is empty
+    or has no widget fields, this is essentially a no-op (the helper strips
+    any old widgets and inserts nothing new).
+
+    Called from both the streaming and non-streaming generation pipelines
+    right before redis_save_session, so the wizard data lands in the
+    saved session and the widgets are visible the moment the user sees
+    the generated site.
+    """
+    from app.utils.contact_widgets import inject_contact_widgets
+
+    if not contact_config:
+        return
+
+    session_data["contact_config"] = contact_config
+    # Mirror recipient_email to the legacy session key the deploy path reads
+    if contact_config.get("recipientEmail"):
+        session_data["recipient_email"] = contact_config["recipientEmail"]
+
+    # Multipage: inject into every page slot
+    if session_data.get("multipage") and session_data.get("pages"):
+        for slug in list(session_data["pages"].keys()):
+            pg = session_data["pages"][slug]
+            if isinstance(pg, dict) and pg.get("html"):
+                pg["html"] = inject_contact_widgets(pg["html"], contact_config)
+        # session["html"] always mirrors index in multipage mode
+        index_pg = session_data["pages"].get("index")
+        if index_pg and index_pg.get("html"):
+            session_data["html"] = index_pg["html"]
+    elif session_data.get("html"):
+        session_data["html"] = inject_contact_widgets(session_data["html"], contact_config)
+
+
 def _strip_html_comments(html: str) -> str:
     """Remove HTML comments from LLM output, preserving system markers.
 
@@ -3688,6 +3729,12 @@ class GenerateRequest(BaseModel):
     templateId: str | None = None
     currentPage: str = "index"
     userImages: list[dict] | None = None  # [{url, filename, section}] — user-assigned images
+    # Floating contact widgets (collected by the wizard). Optional. Shape:
+    #   { recipientEmail, whatsapp, social: { facebook, instagram, tiktok, linkedin } }
+    # The widgets are programmatically injected after Stage 3 — the LLM never
+    # sees them, so generation is deterministic regardless of which fields
+    # the user filled.
+    contactConfig: dict | None = None
 
 
 class EditElementRequest(BaseModel):
@@ -4826,6 +4873,12 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                     _pg_preview = (_pg_data.get("html", "") or "")[:80].replace("\n", " ")
                     logger.info(f"[MULTIPAGE SAVE] page={_pg_slug} html_len={len(_pg_data.get('html', '')):,} preview={_pg_preview}")
 
+            # ── Inject contact widgets (WhatsApp + social FAB) ──
+            # The wizard collected these in `req.contactConfig`. Inject AFTER
+            # all the multipage pages dict shuffling above, so every page
+            # slot gets the widgets, not just session["html"].
+            _apply_contact_widgets_to_session(session_data, getattr(req, "contactConfig", None))
+
             await redis_save_session(session_id, session_data)
 
             # Extract SEO metadata from plan
@@ -5259,6 +5312,10 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             for _pg_slug, _pg_data in session_data["pages"].items():
                 _pg_preview = (_pg_data.get("html", "") or "")[:80].replace("\n", " ")
                 logger.info(f"[MULTIPAGE SAVE] page={_pg_slug} html_len={len(_pg_data.get('html', '')):,} preview={_pg_preview}")
+
+        # Inject contact widgets (see streaming pipeline for full reasoning)
+        _apply_contact_widgets_to_session(session_data, getattr(req, "contactConfig", None))
+
         await redis_save_session(session_id, session_data)
 
         current_plan = plan if is_new else existing.get("plan", {})
