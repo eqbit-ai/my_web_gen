@@ -811,6 +811,18 @@ async def deploy_site(
         for slug, page_data in pages.items():
             page_html = page_data.get("html", "")
             page_css = page_data.get("css", css)
+            # Defensive: skip pages that have no HTML at all. Without this
+            # guard, an empty page_data (e.g. from a race during page-add
+            # before the HTML was written) would deploy as a literal blank
+            # file at /{slug}.html, and the user would see a white page on
+            # the live site. Better to skip and log so they notice it's
+            # missing rather than ship a broken page.
+            if not page_html or not page_html.strip():
+                logger.warning(
+                    "deploy_site: skipping empty page slug=%r in project %r — page_data has no html",
+                    slug, project_name,
+                )
+                continue
             # Strip stray HTML comments (closed AND unclosed labels) BEFORE
             # any further transformation. This heals legacy sessions where
             # the in-app strip pass missed an unclosed `<!--` and the live

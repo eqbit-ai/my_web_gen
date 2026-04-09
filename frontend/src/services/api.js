@@ -88,10 +88,15 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
     };
 
     // ── Recovery: poll session if stream drops to check if generation finished ──
+    // Capped at 6 attempts × 5s = 30s. The previous 80 × 5s = 400s (~6.7 min)
+    // wedged the UI in a "recovering" state for far too long when the SSE
+    // connection died for good — users had no cancel button and no feedback
+    // that anything was wrong. 30s is enough time for a brief network blip
+    // to resolve, after which the user gets a real error and can retry.
     const pollForRecovery = async (sid) => {
         if (!sid) return false;
         onStage({ stage: -2, name: 'recovering', status: 'running', message: 'Reconnecting — checking if your website is ready...' });
-        for (let attempt = 0; attempt < 80; attempt++) {
+        for (let attempt = 0; attempt < 6; attempt++) {
             await new Promise(r => setTimeout(r, 5000));
             try {
                 const session = await getSession(sid);
@@ -855,6 +860,9 @@ export const listDeployedSites = async () => {
 };
 
 export const connectDomain = async (siteId, domainName) => {
+    // No client-side AbortController: the ALB closes idle connections at 60s
+    // and the request can outlive that. Callers should use connectDomainAndWait
+    // for resilient UX. This raw call still works for fast paths (<60s).
     const response = await fetch(`${API_BASE_URL}/deploy/${siteId}/connect-domain`, {
         method: 'POST', headers: getAuthHeaders(),
         body: JSON.stringify({ domain_name: domainName }),
@@ -862,6 +870,65 @@ export const connectDomain = async (siteId, domainName) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || 'Failed to connect domain');
     return data;
+};
+
+// Resilient domain-connect that survives ALB 60s idle timeout drops.
+// Mirrors purchaseDomainAndWait: fires the long POST without awaiting,
+// polls getDomainStatus(siteId) in parallel, returns as soon as either
+// signal wins. If both stall past timeoutMs, throws CONNECT_TIMEOUT so
+// the caller can treat it as a soft success ("almost ready, refreshing...").
+export const connectDomainAndWait = async (siteId, domainName, { timeoutMs = 120000, pollMs = 4000 } = {}) => {
+    const targetDomain = String(domainName).toLowerCase().trim().replace(/\.$/, '');
+
+    let connectSettled = false;
+    let connectError = null;
+    let connectResult = null;
+    const connectPromise = connectDomain(siteId, targetDomain)
+        .then(data => { connectSettled = true; connectResult = data; })
+        .catch(err => { connectSettled = true; connectError = err; });
+
+    const started = Date.now();
+    // Small grace period so the request has a chance to start writing to the DB
+    await new Promise(r => setTimeout(r, 1500));
+
+    while (Date.now() - started < timeoutMs) {
+        // Surface real 4xx errors from the connect call immediately
+        if (connectSettled && connectError) {
+            throw connectError;
+        }
+        if (connectSettled && connectResult) {
+            return connectResult;
+        }
+
+        // Poll: did the backend already attach this domain to the site?
+        try {
+            const status = await getDomainStatus(siteId);
+            const attachedDomain = (status?.domain || '').toLowerCase().replace(/\.$/, '');
+            if (attachedDomain === targetDomain) {
+                // Backend has done its work. Let the in-flight call resolve in the
+                // background; return a synthesized success so the UI can advance.
+                connectPromise.catch(() => {});
+                return {
+                    success: true,
+                    domain: attachedDomain,
+                    domain_status: status.domain_status || 'pending_deployment',
+                    cloudfront_domain: status.cloudfront_domain,
+                    dns_records: status.dns_records || [],
+                    reused_infrastructure: true,
+                    polled: true,
+                };
+            }
+        } catch { /* ignore polling errors — keep trying */ }
+
+        await new Promise(r => setTimeout(r, pollMs));
+    }
+
+    // Neither signal arrived in time. The backend is almost certainly still
+    // working — surface a soft-success so the UI nudges the user to refresh
+    // instead of stranding the spinner.
+    const err = new Error('Domain connect is taking longer than usual. It will appear connected within a minute — refresh to check.');
+    err.code = 'CONNECT_TIMEOUT';
+    throw err;
 };
 
 export const getDomainStatus = async (siteId) => {
@@ -992,6 +1059,28 @@ export const getActiveAnnouncements = async () => {
     const response = await fetch(`${API_BASE_URL}/admin/announcements/active`, { headers: getAuthHeaders() });
     const data = await response.json();
     if (!response.ok) return { announcements: [] };
+    return data;
+};
+
+// ── Email Verification ─────────────────────────────────────────────────
+
+export const verifyEmail = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Verification failed');
+    return data;
+};
+
+export const resendVerification = async (email) => {
+    const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Request failed');
     return data;
 };
 
@@ -1164,6 +1253,79 @@ export const listUserDomains = async () => {
     return data;
 };
 
+/**
+ * Buy a domain and wait until it actually exists in the user's account.
+ *
+ * Why this exists: the backend /domains/purchase endpoint does 4 sequential
+ * network calls (OpenProvider register → Route53 zone → nameserver update →
+ * DB write) which can exceed the ALB 60s idle timeout. When that happens the
+ * browser fetch hangs forever even though the domain is being registered in
+ * the background. To recover, we poll listUserDomains alongside the purchase
+ * call — whichever proves the domain exists first wins.
+ *
+ * Resolves with the matching domain object (from listUserDomains) on success.
+ * Rejects only when (a) the purchase call returns a real error or (b) the
+ * timeout elapses with no sign of the domain.
+ */
+export const purchaseDomainAndWait = async (sld, tld, siteId = null, period = 1, { timeoutMs = 150000, pollMs = 4000 } = {}) => {
+    const fullDomain = `${String(sld).toLowerCase()}.${String(tld).toLowerCase()}`;
+
+    // Fire the purchase request — DON'T await it. We track its outcome
+    // separately so polling can win the race if the connection hangs.
+    let purchaseSettled = false;
+    let purchaseError = null;
+    const purchasePromise = purchaseDomain(sld, tld, siteId, period)
+        .then(() => { purchaseSettled = true; })
+        .catch(err => { purchaseSettled = true; purchaseError = err; });
+
+    const started = Date.now();
+    // First poll: small grace period so the request has a chance to start
+    await new Promise(r => setTimeout(r, 1500));
+
+    while (Date.now() - started < timeoutMs) {
+        // Check if the purchase call surfaced a real error (e.g. 4xx)
+        if (purchaseSettled && purchaseError) {
+            // Real failure — surface it to the caller
+            throw purchaseError;
+        }
+
+        try {
+            const data = await listUserDomains();
+            const domains = data.domains || [];
+            const found = domains.find(d => d.domain_name === fullDomain);
+            if (found) {
+                // Best effort: also let the in-flight purchase resolve so the
+                // caller's "domains have refreshed" data is consistent.
+                purchasePromise.catch(() => {});
+                return { domain: found, domains };
+            }
+        } catch { /* ignore polling errors — keep trying */ }
+
+        if (purchaseSettled && !purchaseError) {
+            // Purchase reported success but the listing hasn't caught up yet
+            // (eventual consistency). One more poll for a fresh listing.
+            try {
+                const data = await listUserDomains();
+                const domains = data.domains || [];
+                const found = domains.find(d => d.domain_name === fullDomain);
+                if (found) return { domain: found, domains };
+                // Listing still stale — fabricate a stub so the UI can advance
+                return { domain: { domain_name: fullDomain, status: 'active' }, domains };
+            } catch {
+                return { domain: { domain_name: fullDomain, status: 'active' }, domains: [] };
+            }
+        }
+
+        await new Promise(r => setTimeout(r, pollMs));
+    }
+
+    // Timed out — but the registration is likely still in progress in the
+    // background. Tell the caller we don't know yet.
+    const err = new Error('Registration is taking longer than usual. The domain will appear in My Domains within a few minutes.');
+    err.code = 'PURCHASE_TIMEOUT';
+    throw err;
+};
+
 export const getDomainDetail = async (domainId) => {
     const response = await fetch(`${API_BASE_URL}/domains/${domainId}`, { headers: getAuthHeaders() });
     const data = await response.json();
@@ -1269,8 +1431,9 @@ const api = {
     uploadFile, listUploads, deleteUpload, saveStockPhoto, transformImage,
     updateNavConfig, updateFooterConfig, updateSiteMeta, updateContactConfig,
     forgotPassword, resetPassword, changePassword,
-    listDeployedSites, connectDomain, getDomainStatus, disconnectDomain,
-    searchDomains, purchaseDomain, listUserDomains, getDomainDetail,
+    verifyEmail, resendVerification,
+    listDeployedSites, connectDomain, connectDomainAndWait, getDomainStatus, disconnectDomain,
+    searchDomains, purchaseDomain, purchaseDomainAndWait, listUserDomains, getDomainDetail,
     connectDomainToSite, disconnectDomainFromSite, retryDomainActivation,
     getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer,
     listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers,

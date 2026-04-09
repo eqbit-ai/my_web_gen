@@ -3872,12 +3872,19 @@ async def sync_session(req: SyncSessionRequest, user: dict = Depends(require_aut
 
     # Multi-page aware: write to the correct page slot
     if session.get("multipage"):
-        # Defensive: never clobber the index html with another page's content.
-        # If the frontend forgot to send currentPage (legacy clients), refuse
-        # to overwrite session["html"]/session["pages"] — the in-memory edit
-        # will still propagate via the per-page setPages on the frontend, but
-        # we won't corrupt the canonical multipage state on the backend.
-        page_slug = req.currentPage or "index"
+        # Defensive: refuse to write at all if the frontend didn't tell us
+        # which page slot to update. The previous version silently defaulted
+        # to "index", which meant a buggy or legacy client could overwrite
+        # the home page with whatever HTML it sent (e.g. contact-page HTML
+        # if the user was editing contact when sync fired). Better to fail
+        # loudly so the bug surfaces in the frontend before it corrupts
+        # session state. Frontend MUST always pass currentPage on multipage.
+        if not req.currentPage:
+            raise HTTPException(
+                status_code=400,
+                detail="currentPage is required for sync-session on multipage projects",
+            )
+        page_slug = req.currentPage
         if "pages" not in session:
             session["pages"] = {}
         session["pages"][page_slug] = {"html": html, "css": req.css}
@@ -5954,13 +5961,25 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             )
             logger.info(f"🖱️ [ELEMENT EDIT] Precise prompt: {len(system):,} chars")
 
+            # max_tokens=8000 — element edits on hero sections can include
+            # embedded SVG / inline CSS / image grids that easily exceed
+            # 4000 tokens (~12-16KB output). Truncated responses produce
+            # an unparseable result and a silent 500. 8000 (~30KB) gives
+            # comfortable headroom and matches the structural-edit cap.
             text, _ = await _llm_stream(
-                client, "claude-sonnet-4-20250514", 4000, system,
+                client, "claude-sonnet-4-20250514", 8000, system,
                 f"Edit this element: {req.prompt}"
             )
             edited_element = parse_single_code_block(text, "html")
             if not edited_element:
-                logger.error(f"🖱️ [ELEMENT EDIT] FAILED — no HTML parsed. Response: {text[:500]}")
+                # Log the FULL response (not truncated) so support can
+                # diagnose user reports. The truncated logger above hid
+                # the actual failure mode (e.g. truncation mid-tag).
+                logger.error(
+                    "🖱️ [ELEMENT EDIT] FAILED — no HTML parsed.\n"
+                    "─── FULL LLM RESPONSE (%d chars) ───\n%s\n─── END RESPONSE ───",
+                    len(text), text,
+                )
                 raise HTTPException(status_code=500, detail="Failed to parse edited element")
 
             # If LLM returned a removal marker, treat as element removal
@@ -6050,11 +6069,16 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 prompt=req.prompt,
                 animation_ref=_anim_fallback(),
             )
-            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 4000, system,
+            # max_tokens=8000 — see note on the precise edit call above.
+            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 8000, system,
                                         f"Edit this element: {req.prompt}")
             edited_element = parse_single_code_block(text, "html")
             if not edited_element:
-                logger.error("🖱️ [ELEMENT EDIT] FAILED — no HTML parsed in fallback")
+                logger.error(
+                    "🖱️ [ELEMENT EDIT] FAILED — no HTML parsed in fallback.\n"
+                    "─── FULL LLM RESPONSE (%d chars) ───\n%s\n─── END RESPONSE ───",
+                    len(text), text,
+                )
                 raise HTTPException(status_code=500, detail="Failed to parse edited element")
 
             pos = _find_element_in_html(full_html, req.elementHtml, req.elementOccurrence)

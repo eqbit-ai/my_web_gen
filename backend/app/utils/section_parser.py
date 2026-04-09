@@ -102,6 +102,12 @@ def parse_sections(html: str) -> list[dict]:
     current_tag = None
     current_attrs = None
     section_index = 0
+    # Track IDs already assigned so duplicates get a uniqueness suffix.
+    # Without this, two sections with the same id="hero" would both get
+    # the same section_id, and replace_section_html (which returns the
+    # FIRST match) could only ever update the first one — the second
+    # becomes un-editable.
+    seen_ids: set[str] = set()
 
     for m in tag_pattern.finditer(html):
         is_closing = m.group(1) == "/"
@@ -147,6 +153,16 @@ def parse_sections(html: str) -> list[dict]:
                 label = re.sub(r"<[^>]+>", "", label).strip()
 
                 section_id = existing_id or f"section-{section_index}"
+                # Dedupe against earlier sections in this same parse pass.
+                # If the LLM emitted two <section id="hero">, the second one
+                # gets renamed to "hero-2", "hero-3", etc. so it's still
+                # individually addressable.
+                if section_id in seen_ids:
+                    suffix = 2
+                    while f"{section_id}-{suffix}" in seen_ids:
+                        suffix += 1
+                    section_id = f"{section_id}-{suffix}"
+                seen_ids.add(section_id)
 
                 sections.append(
                     {

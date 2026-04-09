@@ -24,11 +24,17 @@ import {
     generateWebsiteStream, clearSession, editElement, uploadFile, uploadFiles,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
     submitJob, getJobStatus, restoreSession, getSession,
+    searchDomains, purchaseDomain, purchaseDomainAndWait,
 } from '../services/api';
 import config from '../config';
 
 const SESSION_STORAGE_KEY = 'meydan_generator_session';
 const ONBOARDING_KEY = 'meydan_onboarding_complete';
+// Cap on the in-memory undo/redo history. Each version stores full
+// html/css/js + the multipage `pages` dict — roughly 50–100KB per entry.
+// Without a cap, a long editing session can grow to 10s of MB and crash
+// the tab on lower-end devices. 50 entries ≈ 5MB worst case.
+const MAX_HISTORY_VERSIONS = 50;
 
 // ---------------------------------------------------------------------------
 // Error Banner Component (UX Enhancement #1)
@@ -533,7 +539,7 @@ const composeWizardPrompt = (data) => {
 };
 
 // Wizard question renderer (inline in chat)
-const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates, onFileUpload, uploadedFileCount }) => {
+const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, onBrowseTemplates, onFileUpload, uploadedFileCount, hasSelectedDomain, onRequestBuyDomain }) => {
     // Pre-fill text input from wizard data (e.g. dashboard chatbox prefill)
     const prefillMap = { 0: data.companyName, 1: data.businessDescription, 2: data.tagline };
     const [textVal, setTextVal] = React.useState(prefillMap[step] || '');
@@ -542,10 +548,63 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
     const [contactEmail, setContactEmail] = React.useState(data.contactInfo?.email || '');
     const [contactAddress, setContactAddress] = React.useState(data.contactInfo?.address || '');
 
+    // ── Domain suggestion (step 0 only) ──
+    // Debounced availability check on the typed company name. If the user
+    // already secured a domain in the entry-flow modal, suppress suggestions.
+    const [domainSuggestion, setDomainSuggestion] = React.useState(null); // { sld, results: [...] }
+    const [suggestLoading, setSuggestLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        if (step !== 0) return undefined;
+        if (hasSelectedDomain) return undefined;
+        const trimmed = textVal.trim();
+        if (trimmed.length < 3) {
+            setDomainSuggestion(null);
+            return undefined;
+        }
+        // Slugify the typed company name into a candidate SLD
+        const sld = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 40);
+        if (sld.length < 3) return undefined;
+
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            setSuggestLoading(true);
+            try {
+                // 5 popular extensions for the inline nudge — keeps the
+                // suggestion compact (the dashboard buy modal still shows 15).
+                const data2 = await searchDomains(sld, ['com', 'ae', 'shop', 'co', 'io']);
+                if (cancelled) return;
+                setDomainSuggestion({ sld, results: data2.results || [] });
+            } catch {
+                if (!cancelled) setDomainSuggestion(null);
+            } finally {
+                if (!cancelled) setSuggestLoading(false);
+            }
+        }, 700);
+        return () => { cancelled = true; clearTimeout(t); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [textVal, step, hasSelectedDomain]);
+
     const handleTextSubmit = (e) => {
         e?.preventDefault();
         if (textVal.trim()) { onAnswer(textVal.trim()); setTextVal(''); }
     };
+
+    // Pick the best free domain to surface — prefer .com, then .ae, then any free
+    const bestSuggestion = React.useMemo(() => {
+        if (!domainSuggestion?.results?.length) return null;
+        const free = domainSuggestion.results.filter(r => r.status === 'free' && r.price);
+        if (free.length === 0) return null;
+        const order = ['com', 'ae', 'shop', 'co', 'io'];
+        for (const tld of order) {
+            const m = free.find(r => r.tld === tld);
+            if (m) return m;
+        }
+        return free[0];
+    }, [domainSuggestion]);
+
+    const comDotResult = domainSuggestion?.results?.find(r => r.tld === 'com');
+    const comTaken = comDotResult && comDotResult.status !== 'free';
 
     const renderInput = () => {
         switch (step) {
@@ -553,28 +612,63 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
             case 1: // Business description
             case 2: // Tagline
                 return (
-                    <form onSubmit={handleTextSubmit} className="wizard-text-input">
-                        <input
-                            type="text"
-                            value={textVal}
-                            onChange={e => setTextVal(e.target.value)}
-                            placeholder={step === 0 ? 'e.g. Falcon Trading LLC' : step === 1 ? 'e.g. We import and distribute premium coffee beans across the UAE...' : 'e.g. Quality You Can Trust'}
-                            autoFocus
-                        />
-                        <button type="submit" disabled={!textVal.trim()}>Next</button>
-                        {step === 0 && onFileUpload && (
-                            <>
-                                <input id="wizard-file-input" type="file" multiple accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip" style={{ display: 'none' }} onChange={e => { onFileUpload(e.target.files); e.target.value = ''; }} />
-                                <button type="button" className="wizard-skip-btn" onClick={() => document.getElementById('wizard-file-input')?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                    <Paperclip size={13} /> Upload Files
-                                </button>
-                            </>
+                    <>
+                        <form onSubmit={handleTextSubmit} className="wizard-text-input">
+                            <input
+                                type="text"
+                                value={textVal}
+                                onChange={e => setTextVal(e.target.value)}
+                                placeholder={step === 0 ? 'e.g. Falcon Trading LLC' : step === 1 ? 'e.g. We import and distribute premium coffee beans across the UAE...' : 'e.g. Quality You Can Trust'}
+                                autoFocus
+                            />
+                            <button type="submit" disabled={!textVal.trim()}>Next</button>
+                            {step === 0 && onFileUpload && (
+                                <>
+                                    <input id="wizard-file-input" type="file" multiple accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip" style={{ display: 'none' }} onChange={e => { onFileUpload(e.target.files); e.target.value = ''; }} />
+                                    <button type="button" className="wizard-skip-btn" onClick={() => document.getElementById('wizard-file-input')?.click()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                        <Paperclip size={13} /> Upload Files
+                                    </button>
+                                </>
+                            )}
+                            {step === 0 && uploadedFileCount > 0 && (
+                                <span style={{ fontSize: 11, color: '#34d399', marginLeft: 4 }}>{uploadedFileCount} file{uploadedFileCount > 1 ? 's' : ''} ready</span>
+                            )}
+                            {step === 2 && <button type="button" className="wizard-skip-btn" onClick={() => onSkip()}>Skip</button>}
+                        </form>
+
+                        {/* Inline domain suggestion (step 0 only, hidden if user already secured a domain) */}
+                        {step === 0 && !hasSelectedDomain && (suggestLoading || bestSuggestion) && (
+                            <div style={{ marginTop: 10, padding: '12px 14px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 10, fontSize: 13 }}>
+                                {suggestLoading && !bestSuggestion && (
+                                    <span style={{ color: '#94a3b8' }}>Checking domain availability…</span>
+                                )}
+                                {bestSuggestion && (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                                        <div style={{ flex: 1, minWidth: 200 }}>
+                                            {comTaken && bestSuggestion.tld !== 'com' ? (
+                                                <div style={{ color: '#cbd5e1' }}>
+                                                    <strong style={{ color: '#fbbf24' }}>{domainSuggestion.sld}.com</strong> is taken — but{' '}
+                                                    <strong style={{ color: '#60a5fa' }}>{bestSuggestion.sld}.{bestSuggestion.tld}</strong> is available.
+                                                </div>
+                                            ) : (
+                                                <div style={{ color: '#cbd5e1' }}>
+                                                    <strong style={{ color: '#60a5fa' }}>{bestSuggestion.sld}.{bestSuggestion.tld}</strong> is available.
+                                                </div>
+                                            )}
+                                            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>Secure it now and we'll auto-connect it after deploy.</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => onRequestBuyDomain(bestSuggestion)}
+                                            style={{ background: '#3b82f6', border: 'none', color: '#fff', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                        >
+                                            ${bestSuggestion.price.amount}/yr · Buy
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
-                        {step === 0 && uploadedFileCount > 0 && (
-                            <span style={{ fontSize: 11, color: '#34d399', marginLeft: 4 }}>{uploadedFileCount} file{uploadedFileCount > 1 ? 's' : ''} ready</span>
-                        )}
-                        {step === 2 && <button type="button" className="wizard-skip-btn" onClick={() => onSkip()}>Skip</button>}
-                    </form>
+                    </>
                 );
             case 3: // Purpose
                 return (
@@ -871,6 +965,13 @@ const WebsiteGenerator = () => {
         colorScheme: null, contactInfo: { phone: '', email: '', address: '' },
     });
     const wizardActive = wizardStep >= 0;
+    // Domain selected/bought via the dashboard entry-flow modal — used to
+    // pre-fill the wizard and to auto-connect at deploy time.
+    const [selectedDomain, setSelectedDomain] = useState(null);
+    // In-wizard domain buy: when the user clicks the inline suggestion in
+    // step 0, we pop a confirmation modal owned by this component.
+    const [wizardBuyTarget, setWizardBuyTarget] = useState(null); // { sld, tld, price }
+    const [wizardBuyState, setWizardBuyState] = useState({ purchasing: false, error: null });
 
     // ── UX Enhancement State ────────────────────────────────────────────
     const [showShortcuts, setShowShortcuts] = useState(false);
@@ -947,6 +1048,36 @@ const WebsiteGenerator = () => {
             setHtml(pd.html || ''); setCss(pd.css || ''); setJs(pd.js || '');
             setProjectId(pd.id || null); setIsNewDesign(false);
             if (pd.name) setProjectName(pd.name);
+
+            // Templates arrive without a project_id, which means every edit
+            // path (auto-save, handleSaveProject, element-edit, CMS, chat
+            // edit) skips persisting because they all gate on `projectId`.
+            // Create a fresh project row immediately so subsequent edits save.
+            if (pd.isTemplate) {
+                saveProject({
+                    name: pd.name || 'Untitled Template Project',
+                    html: pd.html || '',
+                    css: pd.css || '',
+                    js: pd.js || '',
+                    prompt: `Loaded from template: ${pd.name || 'Untitled'}`,
+                    metadata: JSON.stringify({
+                        isMultipage: false,
+                        currentPage: 'index',
+                        pages: {},
+                        messages: [],
+                        fromTemplate: true,
+                    }),
+                })
+                    .then(result => {
+                        if (result?.project_id) {
+                            setProjectId(result.project_id);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to auto-create project from template:', err);
+                        addToast('Could not save template as a project. Your edits may not persist until you click Save.', 'error', 8000);
+                    });
+            }
             // Restore multipage data from metadata
             const meta = pd.metadata || {};
             let restoreHtml = pd.html || '';
@@ -1076,6 +1207,22 @@ const WebsiteGenerator = () => {
                 const prefill = state.wizardPrefill;
                 setWizardData(prev => ({ ...prev, businessDescription: prefill }));
                 setWizardStep(0); // still start at company name, but step 1 will be pre-filled
+            }
+            // If the user reached the generator after buying / picking a domain
+            // in the entry-flow modal, pre-fill the company name from the
+            // domain (e.g. "acme-shop.shop" → "Acme Shop") and store the domain
+            // so the deploy step can auto-connect it later.
+            if (state.wizardBrand || state.wizardDomain) {
+                setWizardData(prev => ({
+                    ...prev,
+                    companyName: state.wizardBrand || prev.companyName,
+                }));
+                if (state.wizardDomain) {
+                    setSelectedDomain(state.wizardDomain);
+                }
+                // Stay on step 0 so the user can confirm or edit the
+                // pre-filled company name (the input renders prefillMap[0] =
+                // data.companyName).
             }
             // Auto-open file picker if coming from dashboard with openFileUpload flag
             if (state.openFileUpload) {
@@ -1290,6 +1437,39 @@ const WebsiteGenerator = () => {
         setWizardStep(nextStep);
     }, [wizardStep, wizardData.siteType]);
 
+    const handleConfirmWizardDomainBuy = async () => {
+        if (!wizardBuyTarget) return;
+        setWizardBuyState({ purchasing: true, error: null });
+        const fullDomain = `${wizardBuyTarget.sld}.${wizardBuyTarget.tld}`;
+        const brandFromDomain = (s) => {
+            const sld = String(s).split('.')[0] || '';
+            return sld.split(/[-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        };
+        try {
+            // Resilient buy: races purchase API with listUserDomains polling
+            // so an ALB-timeout-induced fetch hang doesn't strand the spinner.
+            await purchaseDomainAndWait(wizardBuyTarget.sld, wizardBuyTarget.tld, null, 1);
+            setSelectedDomain(fullDomain);
+            setWizardData(prev => ({ ...prev, companyName: prev.companyName || brandFromDomain(fullDomain) }));
+            setWizardBuyTarget(null);
+            setWizardBuyState({ purchasing: false, error: null });
+            addToast(`${fullDomain} secured!`, 'success');
+        } catch (e) {
+            // Timeout case: domain is being registered in the background.
+            // Treat as soft success — the user shouldn't be punished for our
+            // backend being slow, and the domain WILL appear in My Domains.
+            if (e.code === 'PURCHASE_TIMEOUT') {
+                setSelectedDomain(fullDomain);
+                setWizardData(prev => ({ ...prev, companyName: prev.companyName || brandFromDomain(fullDomain) }));
+                setWizardBuyTarget(null);
+                setWizardBuyState({ purchasing: false, error: null });
+                addToast(`${fullDomain} is registering in the background. We'll connect it after deploy.`, 'info', 8000);
+                return;
+            }
+            setWizardBuyState({ purchasing: false, error: e.message || 'Purchase failed' });
+        }
+    };
+
     const handleWizardBack = useCallback(() => {
         let prevStep = wizardStep - 1;
         if (prevStep === 5 && wizardData.siteType === 'single') prevStep = 4;
@@ -1363,9 +1543,19 @@ const WebsiteGenerator = () => {
 
                     const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: '[async job]', isMultipage: mp, pages: mp ? result.pages : {} };
                     setVersions(prev => {
-                        const updated = [...prev, newVersion];
-                        setCurrentVersion(updated.length - 1);
-                        return updated;
+                        // Truncate any redo branch (matches handleElementEdit pattern)
+                        // and cap total history at MAX_VERSIONS to prevent unbounded
+                        // memory growth on long editing sessions. Each version stores
+                        // full html/css/js + the pages dict, so for multipage projects
+                        // each version is ~100KB; without a cap, 500 edits = 50MB =
+                        // browser tab OOM on lower-end devices.
+                        const trimmed = prev.slice(0, currentVersion + 1);
+                        const updated = [...trimmed, newVersion];
+                        const capped = updated.length > MAX_HISTORY_VERSIONS
+                            ? updated.slice(-MAX_HISTORY_VERSIONS)
+                            : updated;
+                        setCurrentVersion(capped.length - 1);
+                        return capped;
                     });
 
                     setMessages(prev => [...prev, {
@@ -1540,6 +1730,21 @@ const WebsiteGenerator = () => {
 
     const getHelpResponse = (text) => {
         const trimmed = text.trim();
+
+        // Gate: only attempt help-intent matching when the prompt actually
+        // looks like a question. Otherwise the bare-keyword patterns below
+        // (e.g. /gallery/i, /multipage/i, /inbox/i) hijack legitimate action
+        // requests like "make this website multipage with gallery and
+        // contact" — which clearly is a command, not a question.
+        const looksLikeQuestion =
+            // Starts with a question word
+            /^(how|what|where|why|can\s+you|could\s+you|do\s+i|is\s+there|tell\s+me)\b/i.test(trimmed)
+            // OR is a very short single-word query (≤3 words, ≤30 chars)
+            || (trimmed.length <= 30 && trimmed.split(/\s+/).length <= 3)
+            // OR ends with a question mark
+            || trimmed.endsWith('?');
+        if (!looksLikeQuestion) return null;
+
         for (const entry of helpResponses) {
             for (const pattern of entry.patterns) {
                 if (pattern.test(trimmed)) return entry.answer;
@@ -1707,6 +1912,14 @@ const WebsiteGenerator = () => {
         {
             const isNew = !sessionId || versions.length === 0;
             const planMsgId = Date.now();
+            // CRITICAL: capture the target page slot AT SEND TIME, not when the
+            // response arrives. If the user switches tabs while the LLM is
+            // working, currentPageRef will have moved by the time onComplete
+            // fires — we must apply the result to the page the user originally
+            // requested the edit on, not the page they happen to be looking at
+            // when the response lands. This is the same pattern handleElementEdit
+            // already uses (see `targetPage` capture there).
+            const editTargetPage = isNew ? 'index' : (currentPageRef.current || 'index');
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 text: isNew ? 'Let me plan your website...' : 'Applying your changes...',
@@ -1755,7 +1968,17 @@ const WebsiteGenerator = () => {
                     const newHtml = result.website.html;
                     const newCss = result.website.css;
                     const newJs = result.website.js || '';
-                    setHtml(newHtml); setCss(newCss); setJs(newJs);
+                    // Only update visible html/css/js if the user is still on
+                    // the page this edit was originally for. Otherwise the
+                    // visible state would briefly show the wrong page's HTML
+                    // (and trigger the racy auto-sync useEffect) — see the
+                    // editTargetPage capture above for the full reasoning.
+                    // For new generations (isNew=true), always update — there
+                    // is no "other tab" the user could have switched to yet.
+                    const stillOnTargetPage = isNew || currentPageRef.current === editTargetPage;
+                    if (stillOnTargetPage) {
+                        setHtml(newHtml); setCss(newCss); setJs(newJs);
+                    }
                     setSessionId(result.sessionId);
                     setIsNewDesign(result.isNewDesign !== false);
                     if (result.meta) setSiteMeta(result.meta);
@@ -1791,9 +2014,12 @@ const WebsiteGenerator = () => {
                             msgText = 'Your website is ready! Let me know if you\'d like any changes.';
                         }
                     } else {
-                        // Normal iteration (chat edit)
+                        // Normal iteration (chat edit) — uses the editTargetPage
+                        // captured at SEND TIME (see top of this block). Do NOT
+                        // re-read currentPageRef here: the user may have switched
+                        // tabs while the LLM was working, and re-reading would
+                        // route the result into the wrong slot.
                         mp = result.isMultipage || isMultipage;
-                        const editTargetPage = currentPageRef.current || 'index';
                         if (mp && result.pages) {
                             // Backend sent updated pages dict — merge with current to prevent
                             // stale backend data from overwriting pages edited locally
@@ -1823,9 +2049,17 @@ const WebsiteGenerator = () => {
 
                     const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: promptText, isMultipage: mp, pages: resultPages };
                     setVersions(prev => {
-                        const updated = [...prev, newVersion];
-                        setCurrentVersion(updated.length - 1);
-                        return updated;
+                        // See note on the async-job setVersions call above —
+                        // truncate redo branch + cap total history at
+                        // MAX_HISTORY_VERSIONS to prevent unbounded memory
+                        // growth.
+                        const trimmed = prev.slice(0, currentVersion + 1);
+                        const updated = [...trimmed, newVersion];
+                        const capped = updated.length > MAX_HISTORY_VERSIONS
+                            ? updated.slice(-MAX_HISTORY_VERSIONS)
+                            : updated;
+                        setCurrentVersion(capped.length - 1);
+                        return capped;
                     });
 
                     setMessages(prev => {
@@ -1838,7 +2072,15 @@ const WebsiteGenerator = () => {
                         }];
                     });
 
-                    autoSave(newHtml, newCss, newJs, projectName || promptText.substring(0, 50));
+                    // Pass the merged pages dict so autosave targets the
+                    // correct slot — `resultPages` was just computed above
+                    // using the captured editTargetPage / addedPage / new
+                    // generation result.
+                    autoSave(
+                        newHtml, newCss, newJs,
+                        projectName || promptText.substring(0, 50),
+                        mp && Object.keys(resultPages || {}).length ? resultPages : undefined,
+                    );
 
                     setIsLoading(false); setLoadingMessage('');
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
@@ -2049,6 +2291,14 @@ const WebsiteGenerator = () => {
 
     useEffect(() => {
         const handleCmsMessage = (e) => {
+            // SECURITY: only accept messages from our own origin. The preview
+            // iframe is rendered via srcDoc with no `src` URL, so its
+            // window.location.origin is the parent's origin (same-origin
+            // sandbox). Any cross-origin postMessage is from an untrusted
+            // source — drop it. Without this check, a malicious script in
+            // a third-party tab targeting this window could trigger CMS
+            // edits as if the user typed them.
+            if (e.origin && e.origin !== window.location.origin) return;
             if (e.data?.type !== 'cms-edit') return;
             const { editType } = e.data;
             const st = cmsStateRef.current;
@@ -2076,25 +2326,39 @@ const WebsiteGenerator = () => {
 
             setHtml(newHtml);
 
+            // Build the merged pages dict ONCE off the captured st.currentPage
+            // so the targeted slot is consistent across pages state, version
+            // history and project autosave.
+            const cmsTargetPage = st.currentPage;
+            const cmsMergedPages = st.isMultipage
+                ? { ...st.pages, [cmsTargetPage]: { html: newHtml, css: st.css } }
+                : null;
+
             // Update multi-page state
             if (st.isMultipage) {
-                setPages(prev => ({ ...prev, [st.currentPage]: { html: newHtml, css: st.css } }));
+                setPages(cmsMergedPages);
             }
 
-            // Push to version history for undo support
-            const newVersion = { html: newHtml, css: st.css, js: st.js, prompt: `[CMS: ${editType} edit]`, isMultipage: st.isMultipage, pages: st.isMultipage ? { ...st.pages, [st.currentPage]: { html: newHtml, css: st.css } } : {} };
-            const newVersions = [...st.versions.slice(0, st.currentVersion + 1), newVersion];
-            setVersions(newVersions);
-            setCurrentVersion(newVersions.length - 1);
+            // Push to version history for undo support. Cap at
+            // MAX_HISTORY_VERSIONS to prevent unbounded memory growth.
+            const newVersion = { html: newHtml, css: st.css, js: st.js, prompt: `[CMS: ${editType} edit]`, isMultipage: st.isMultipage, pages: cmsMergedPages || {} };
+            const trimmed = st.versions.slice(0, st.currentVersion + 1);
+            const newVersions = [...trimmed, newVersion];
+            const cappedVersions = newVersions.length > MAX_HISTORY_VERSIONS
+                ? newVersions.slice(-MAX_HISTORY_VERSIONS)
+                : newVersions;
+            setVersions(cappedVersions);
+            setCurrentVersion(cappedVersions.length - 1);
 
             // Sync to backend Redis session so AI edits work on updated HTML
-            if (st.sessionId) syncSession(st.sessionId, newHtml, st.css, st.js, st.currentPage)
+            if (st.sessionId) syncSession(st.sessionId, newHtml, st.css, st.js, cmsTargetPage)
                 .then(d => { if (d.sections) setSections(d.sections); })
                 .catch(() => {});
 
-            // Auto-save to project if project exists
+            // Auto-save to project if project exists — pass the merged pages
+            // dict so the captured page slot is preserved.
             if (st.projectId) {
-                handleSaveProject({ html: newHtml, css: st.css, js: st.js });
+                handleSaveProject({ html: newHtml, css: st.css, js: st.js, pages: cmsMergedPages || undefined });
             }
 
             addToast('Content updated', 'success');
@@ -2168,14 +2432,26 @@ const WebsiteGenerator = () => {
                     if (result.website.js) setJs(result.website.js);
                 }
 
+                // Build the merged pages dict ONCE — captured to targetPage,
+                // not the live currentPageRef. Reused below for state, version
+                // history and project autosave so they all agree on the slot.
+                const latestPgs = pagesRef.current;
+                const mergedPages = isMultipage
+                    ? { ...latestPgs, [targetPage]: { html: newHtml, css: newCss } }
+                    : null;
+
                 // Update multi-page state — always use targetPage, not currentPage
                 if (isMultipage) {
-                    setPages(prev => ({ ...prev, [targetPage]: { html: newHtml, css: newCss } }));
+                    setPages(mergedPages);
                 }
 
-                const latestPgs = pagesRef.current;
-                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: isMultipage ? { ...latestPgs, [targetPage]: { html: newHtml, css: newCss } } : {} };
-                setVersions(prev => { const u = [...prev.slice(0, currentVersion + 1), newVersion]; setCurrentVersion(u.length - 1); return u; });
+                const newVersion = { html: newHtml, css: newCss, js: newJs, prompt: `[Element: ${selectedElement.path}] ${elementPrompt}`, isMultipage, pages: mergedPages || {} };
+                setVersions(prev => {
+                    const u = [...prev.slice(0, currentVersion + 1), newVersion];
+                    const capped = u.length > MAX_HISTORY_VERSIONS ? u.slice(-MAX_HISTORY_VERSIONS) : u;
+                    setCurrentVersion(capped.length - 1);
+                    return capped;
+                });
 
                 // Sync to backend Redis session — use targetPage
                 if (sessionId) syncSession(sessionId, newHtml, newCss, newJs, targetPage)
@@ -2189,8 +2465,10 @@ const WebsiteGenerator = () => {
                 if (elementAttachment?.preview) URL.revokeObjectURL(elementAttachment.preview);
                 setSelectedElement(null); setElementPrompt(''); setEditMode(false); setElementAttachment(null);
                 addToast('Section updated', 'success');
-                // Auto-save to project
-                if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs });
+                // Auto-save to project — pass the merged pages dict so the
+                // save targets the captured page slot, even if the user
+                // switched tabs while the edit was in flight.
+                if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs, pages: mergedPages || undefined });
             } else {
                 setError('Failed to edit element');
             }
@@ -2231,11 +2509,16 @@ const WebsiteGenerator = () => {
         const name = overrideData?.name || projectName || messages.find(m => m.role === 'user')?.text?.substring(0, 50) || 'Untitled Project';
         if (!h) return;
         setSaveStatus('saving');
-        // For multipage: save all pages (with current page's live html/css) in metadata
-        // Use refs for latest pages/currentPage to avoid stale closure
+        // For multipage: save all pages in metadata.
+        // Prefer an explicit `pages` dict from the caller (edit handlers compute
+        // this with the captured targetPage so the right slot is updated even
+        // if the user switched tabs while the edit was in flight). Only fall
+        // back to the live currentPageRef when no explicit dict is given.
         const latestPages = pagesRef.current;
         const latestCurrentPage = currentPageRef.current;
-        const allPages = isMultipage ? { ...latestPages, [latestCurrentPage]: { html: h, css: c } } : {};
+        const allPages = isMultipage
+            ? (overrideData?.pages || { ...latestPages, [latestCurrentPage]: { html: h, css: c } })
+            : {};
         const metadata = JSON.stringify({
             isMultipage,
             currentPage: latestCurrentPage,
@@ -2267,9 +2550,9 @@ const WebsiteGenerator = () => {
     };
 
     // Auto-save after generation
-    const autoSave = useCallback((newHtml, newCss, newJs, name) => {
+    const autoSave = useCallback((newHtml, newCss, newJs, name, pages = undefined) => {
         setTimeout(() => {
-            handleSaveProject({ html: newHtml, css: newCss, js: newJs, name });
+            handleSaveProject({ html: newHtml, css: newCss, js: newJs, name, pages });
         }, 500);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId, projectName]);
@@ -2510,6 +2793,9 @@ const WebsiteGenerator = () => {
     // ── Inter-page navigation from iframe links ─────────────────────────
     useEffect(() => {
         const handlePageNavigate = (e) => {
+            // SECURITY: same-origin only — see handleCmsMessage above for the
+            // full reasoning. Drop any cross-origin postMessage.
+            if (e.origin && e.origin !== window.location.origin) return;
             if (e.data?.type === 'page-navigate' && e.data.slug && isMultipage) {
                 handlePageSwitch(e.data.slug);
             }
@@ -2518,53 +2804,35 @@ const WebsiteGenerator = () => {
         return () => window.removeEventListener('message', handlePageNavigate);
     }, [isMultipage, handlePageSwitch]);
 
-    // ── Keep pages[currentPage] in sync with live html/css after any edit ──
-    // CRITICAL: Skip during page switches. When switching pages, setHtml(newPageHtml)
-    // and setCurrentPage(newSlug) are batched by React. This effect can fire when
-    // html has changed but currentPage hasn't yet — writing the NEW page's html into
-    // the OLD page's slot, corrupting it. The switchingPageRef guard prevents this.
+    // ── REMOVED: racy auto-sync useEffect ────────────────────────────────
+    //
+    // There used to be a useEffect here that wrote `pages[currentPage] = html`
+    // whenever `html` changed. It was the source of the recurring multipage
+    // corruption bug ("I edit Home, switch to Contact, now Contact has Home's
+    // content"). The effect had no awareness of which page the current `html`
+    // value actually belonged to — when a delayed edit response called
+    // setHtml() after the user had switched tabs, the effect blindly wrote
+    // the wrong page's HTML into the now-current slot.
+    //
+    // The defensive heuristics (size ratio, first-200-chars match,
+    // switchingPageRef 100ms timeout) were band-aids that caught some races
+    // but not all. The 100ms timeout in particular cleared too early for
+    // late-arriving LLM responses.
+    //
+    // The fix: rely on EXPLICIT setPages calls in every edit handler, with
+    // the target page captured AT SEND TIME (not at completion time).
+    // Every multipage code path that calls setHtml is paired with a setPages
+    // call that uses the captured slot. Verified call sites:
+    //   - handleElementEdit       → setPages(mergedPages) with captured targetPage
+    //   - handleGenerate onComplete → setPages(merged) with captured editTargetPage
+    //   - CMS inline edit          → setPages(cmsMergedPages)
+    //   - handleSectionUpdate      → setPages(sectionMergedPages)
+    //   - handlePageSwitch         → setPages(updated) before setHtml
+    //   - version restore          → setPages(v.pages)
+    //
+    // switchingPageRef is kept as a no-op ref so existing call sites still
+    // compile; their writes are harmless. Can be cleaned up in a follow-up.
     const switchingPageRef = useRef(false);
-    const lastSyncedPageRef = useRef(null);
-    useEffect(() => {
-        if (!isMultipage || !currentPage || !html) return;
-        // Skip if we're in the middle of a page switch or undo/redo
-        if (switchingPageRef.current) return;
-        setPages(prev => {
-            const cur = prev[currentPage];
-            // Only update if html or css actually changed
-            if (cur && cur.html === html && cur.css === css) return prev;
-            // Safety: if the page already has content and this html matches a DIFFERENT page,
-            // skip the sync (likely a stale update from undo/redo or page switch)
-            if (cur && cur.html && Object.keys(prev).length > 1) {
-                for (const [slug, pg] of Object.entries(prev)) {
-                    if (slug !== currentPage && pg.html === html) {
-                        return prev;
-                    }
-                }
-                // Additional safety: check if the html contains page-specific markers
-                // that don't match the current page (e.g., index hero on a contact page)
-                // If this page had a very different structure before (>50% size difference),
-                // it might be stale data from another page
-                if (cur.html.length > 500 && html.length > 500) {
-                    const sizeRatio = html.length / cur.html.length;
-                    // If the new html is drastically different size AND this page is not index
-                    // AND the html looks like it might be the index page, skip
-                    if (currentPage !== 'index' && (sizeRatio > 3 || sizeRatio < 0.33)) {
-                        const indexPage = prev['index'];
-                        if (indexPage && indexPage.html) {
-                            // Check first 200 chars similarity with index
-                            const indexStart = indexPage.html.substring(0, 200);
-                            const htmlStart = html.substring(0, 200);
-                            if (indexStart === htmlStart) {
-                                return prev; // This looks like index HTML being written to non-index page
-                            }
-                        }
-                    }
-                }
-            }
-            return { ...prev, [currentPage]: { html, css } };
-        });
-    }, [html, css, isMultipage, currentPage]);
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
@@ -2575,16 +2843,26 @@ const WebsiteGenerator = () => {
     const handleSectionUpdate = (newHtml, newCss, newJs, actionLabel) => {
         setHtml(newHtml); setCss(newCss); if (newJs !== undefined) setJs(newJs);
         // Update multi-page state
+        // Build the merged pages dict ONCE so state, version history and
+        // project autosave all agree on the targeted page slot.
+        const sectionTargetPage = currentPage;
+        const sectionMergedPages = isMultipage
+            ? { ...pagesRef.current, [sectionTargetPage]: { html: newHtml, css: newCss } }
+            : null;
+
         if (isMultipage) {
-            setPages(prev => ({ ...prev, [currentPage]: { html: newHtml, css: newCss } }));
+            setPages(sectionMergedPages);
         }
         // Refresh sections for the current page
-        if (sessionId) getSections(sessionId, currentPage).then(d => setSections(d.sections || [])).catch(() => { });
+        if (sessionId) getSections(sessionId, sectionTargetPage).then(d => setSections(d.sections || [])).catch(() => { });
         // Push version
         const label = actionLabel || 'Section edit';
-        const latestPgs = pagesRef.current;
-        const newVersion = { html: newHtml, css: newCss, js: newJs || js, prompt: `[${label}]`, isMultipage, pages: isMultipage ? { ...latestPgs, [currentPage]: { html: newHtml, css: newCss } } : {} };
-        const newVersions = [...versions.slice(0, currentVersion + 1), newVersion];
+        const newVersion = { html: newHtml, css: newCss, js: newJs || js, prompt: `[${label}]`, isMultipage, pages: sectionMergedPages || {} };
+        const trimmedSec = versions.slice(0, currentVersion + 1);
+        const merged = [...trimmedSec, newVersion];
+        const newVersions = merged.length > MAX_HISTORY_VERSIONS
+            ? merged.slice(-MAX_HISTORY_VERSIONS)
+            : merged;
         setVersions(newVersions);
         setCurrentVersion(newVersions.length - 1);
         // Add chat messages
@@ -2594,8 +2872,9 @@ const WebsiteGenerator = () => {
             { role: 'assistant', text: `Done! ${label}.`, timestamp: new Date().toLocaleTimeString(), versionIndex: newVersions.length - 1 },
         ]);
         addToast('Section updated', 'success');
-        // Auto-save to project
-        if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs || js });
+        // Auto-save to project — pass the merged pages dict so the targeted
+        // slot is preserved (avoids overwrite when user has switched tabs).
+        if (projectId) handleSaveProject({ html: newHtml, css: newCss, js: newJs || js, pages: sectionMergedPages || undefined });
     };
 
     const handleCardClick = (item) => {
@@ -2821,17 +3100,27 @@ const WebsiteGenerator = () => {
 
                     {/* Wizard step UI */}
                     {wizardActive && !isLoading && (
-                        <WizardQuestionUI
-                            step={wizardStep}
-                            data={wizardData}
-                            onAnswer={handleWizardAnswer}
-                            onSkip={handleWizardSkip}
-                            onBack={handleWizardBack}
-                            onGenerate={handleWizardGenerate}
-                            onBrowseTemplates={handleBrowseTemplates}
-                            onFileUpload={handleFileUpload}
-                            uploadedFileCount={uploadedFiles.images.length + (uploadedFiles.text ? 1 : 0)}
-                        />
+                        <>
+                            {selectedDomain && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', margin: '0 0 12px', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 10, fontSize: 13, color: '#a7f3d0' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    <span>Building for <strong style={{ color: '#34d399' }}>{selectedDomain}</strong> — we'll connect this domain after deploy.</span>
+                                </div>
+                            )}
+                            <WizardQuestionUI
+                                step={wizardStep}
+                                data={wizardData}
+                                onAnswer={handleWizardAnswer}
+                                onSkip={handleWizardSkip}
+                                onBack={handleWizardBack}
+                                onGenerate={handleWizardGenerate}
+                                onBrowseTemplates={handleBrowseTemplates}
+                                onFileUpload={handleFileUpload}
+                                uploadedFileCount={uploadedFiles.images.length + (uploadedFiles.text ? 1 : 0)}
+                                hasSelectedDomain={!!selectedDomain}
+                                onRequestBuyDomain={(suggestion) => setWizardBuyTarget(suggestion)}
+                            />
+                        </>
                     )}
 
                     <div ref={chatEndRef} />
@@ -3289,6 +3578,61 @@ const WebsiteGenerator = () => {
             )}
 
             <DeployModal isOpen={showDeployModal} onClose={() => setShowDeployModal(false)} sessionId={sessionId} html={html} css={css} js={js} existingSiteId={deployedSiteId} onDeployed={(id) => { setDeployedSiteId(id); if (projectId) handleSaveProject(); }} />
+
+            {/* Inline wizard domain-buy confirmation */}
+            {wizardBuyTarget && (
+                <div
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}
+                    onClick={() => { if (!wizardBuyState.purchasing) { setWizardBuyTarget(null); setWizardBuyState({ purchasing: false, error: null }); } }}
+                    onKeyDown={(e) => { if (e.key === 'Escape' && !wizardBuyState.purchasing) { setWizardBuyTarget(null); setWizardBuyState({ purchasing: false, error: null }); } }}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        onKeyDown={e => e.stopPropagation()}
+                        role="presentation"
+                        style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 14, padding: '28px 26px', maxWidth: 420, width: 'calc(100% - 32px)', color: '#e5e7eb' }}
+                    >
+                        <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: '#f3f4f6' }}>Secure your domain</h3>
+                        <p style={{ margin: '0 0 18px', fontSize: 13, color: '#94a3b8' }}>Register this domain for 1 year. We'll auto-connect it after you deploy.</p>
+
+                        <div style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                <span style={{ fontSize: 12, color: '#94a3b8' }}>Domain</span>
+                                <span style={{ fontSize: 16, fontWeight: 700 }}>{wizardBuyTarget.sld}.{wizardBuyTarget.tld}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 12, color: '#94a3b8' }}>Total (1 year)</span>
+                                <span style={{ fontSize: 16, fontWeight: 700, color: '#34d399' }}>${wizardBuyTarget.price.amount}</span>
+                            </div>
+                        </div>
+
+                        {wizardBuyState.error && (
+                            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '10px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>
+                                {wizardBuyState.error}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button
+                                onClick={() => { setWizardBuyTarget(null); setWizardBuyState({ purchasing: false, error: null }); }}
+                                disabled={wizardBuyState.purchasing}
+                                style={{ flex: 1, background: 'transparent', border: '1px solid #334155', color: '#cbd5e1', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: wizardBuyState.purchasing ? 'wait' : 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmWizardDomainBuy}
+                                disabled={wizardBuyState.purchasing}
+                                style={{ flex: 1, background: '#3b82f6', border: 'none', color: '#fff', padding: '12px 16px', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: wizardBuyState.purchasing ? 'wait' : 'pointer' }}
+                            >
+                                {wizardBuyState.purchasing ? 'Registering…' : 'Confirm purchase'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Site Settings (SEO, WhatsApp, Contact) */}
             <SeoEditor
