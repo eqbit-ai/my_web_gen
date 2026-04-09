@@ -556,63 +556,145 @@ const faqData = [
     { q: 'Is my website mobile-responsive?', a: 'Every generated website is fully responsive out of the box. It looks great on desktops, tablets, and smartphones without any extra configuration.' },
 ];
 
+// AI Agent FAQ — gradient orb with cards that "speak" via typewriter answers.
+// Replaces the legacy static accordion. Spec lives in
+// memory/todo-ai-agent-faq.md. All classes are namespaced .aif-* so they
+// can't collide with the legacy .faq-* CSS still used elsewhere.
 const FAQSection = () => {
     const ref = useRef(null);
     const [openIndex, setOpenIndex] = useState(null);
-    const answerRefs = useRef([]);
+    const [typed, setTyped] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimerRef = useRef(null);
+    const startDelayRef = useRef(null);
 
-    const toggle = useCallback((i) => {
-        if (openIndex === i) {
-            gsap.to(answerRefs.current[i], { height: 0, opacity: 0, duration: 0.4, ease: 'power3.inOut' });
-            setOpenIndex(null);
-        } else {
-            if (openIndex !== null && answerRefs.current[openIndex]) {
-                gsap.to(answerRefs.current[openIndex], { height: 0, opacity: 0, duration: 0.3, ease: 'power3.inOut' });
-            }
-            const el = answerRefs.current[i];
-            gsap.set(el, { height: 'auto', opacity: 1 });
-            const h = el.offsetHeight;
-            gsap.fromTo(el, { height: 0, opacity: 0 }, { height: h, opacity: 1, duration: 0.4, ease: 'power3.out' });
-            setOpenIndex(i);
+    // Typewriter effect — runs every time the open card changes.
+    // Pre-typing pause (450ms) simulates "thinking", then chars reveal at
+    // 25ms each. Cancellable via cleanup so rapid card switches don't pile
+    // up overlapping timers.
+    useEffect(() => {
+        if (typingTimerRef.current) { clearTimeout(typingTimerRef.current); typingTimerRef.current = null; }
+        if (startDelayRef.current) { clearTimeout(startDelayRef.current); startDelayRef.current = null; }
+
+        if (openIndex === null) {
+            setTyped('');
+            setIsTyping(false);
+            return;
         }
+
+        const fullAnswer = faqData[openIndex].a;
+        setTyped('');
+        setIsTyping(true);
+
+        startDelayRef.current = setTimeout(() => {
+            let i = 0;
+            const tick = () => {
+                if (i < fullAnswer.length) {
+                    i += 1;
+                    setTyped(fullAnswer.slice(0, i));
+                    typingTimerRef.current = setTimeout(tick, 25);
+                } else {
+                    setIsTyping(false);
+                }
+            };
+            tick();
+        }, 450);
+
+        return () => {
+            if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+            if (startDelayRef.current) clearTimeout(startDelayRef.current);
+        };
     }, [openIndex]);
 
+    // Scroll-stagger reveal — orb header + cards fade in as the section
+    // enters the viewport. Uses GSAP context so it cleans up correctly.
     useEffect(() => {
         const ctx = gsap.context(() => {
-            gsap.fromTo('.faq-heading > *', { y: 40, opacity: 0 }, {
-                y: 0, opacity: 1, stagger: 0.1, duration: 0.8, ease: 'power3.out',
-                scrollTrigger: { trigger: ref.current, start: 'top 80%' }
+            gsap.fromTo('.aif-orb-wrap > *', { y: 24, opacity: 0 }, {
+                y: 0, opacity: 1, stagger: 0.12, duration: 0.9, ease: 'power3.out',
+                scrollTrigger: { trigger: ref.current, start: 'top 80%' },
             });
-            gsap.fromTo('.faq-item', { y: 30, opacity: 0 }, {
-                y: 0, opacity: 1, stagger: 0.08, duration: 0.6, ease: 'power3.out',
-                scrollTrigger: { trigger: ref.current, start: 'top 75%' }
+            gsap.fromTo('.aif-card', { y: 28, opacity: 0 }, {
+                y: 0, opacity: 1, stagger: 0.06, duration: 0.7, ease: 'power3.out',
+                scrollTrigger: { trigger: ref.current, start: 'top 75%' },
             });
         }, ref);
         return () => ctx.revert();
     }, []);
 
+    const handleCardClick = useCallback((i) => {
+        setOpenIndex(prev => (prev === i ? null : i));
+    }, []);
+
+    const subtitle = openIndex === null
+        ? 'Tap a question to hear the answer.'
+        : (isTyping ? 'Web AI is answering…' : 'Tap another question, or tap again to dismiss.');
+
     return (
-        <section className="faq-section" ref={ref}>
-            <div className="faq-inner">
-                <div className="faq-heading">
-                    <span className="section-tag">FAQ</span>
-                    <h2>Got <span className="text-accent">Questions?</span></h2>
-                    <p>Everything you need to know about the platform.</p>
-                </div>
-                <div className="faq-list">
-                    {faqData.map((item, i) => (
-                        <div className={`faq-item glow-card ${openIndex === i ? 'open' : ''}`} key={i} onClick={() => toggle(i)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggle(i); }} role="button" tabIndex={0}>
-                            <div className="faq-question">
-                                <span>{item.q}</span>
-                                <div className={`faq-icon ${openIndex === i ? 'open' : ''}`}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                                </div>
-                            </div>
-                            <div className="faq-answer" ref={el => answerRefs.current[i] = el} style={{ height: 0, opacity: 0, overflow: 'hidden' }}>
-                                <p>{item.a}</p>
-                            </div>
+        <section className="faq-section ai-agent-faq" ref={ref}>
+            <div className="faq-inner aif-inner">
+                {/* Orb header */}
+                <div className="aif-orb-wrap">
+                    <div className={`aif-orb ${openIndex !== null ? 'aif-orb-active' : ''}`} aria-hidden="true">
+                        <div className="aif-orb-glow" />
+                        <div className="aif-orb-core" />
+                        <div className="aif-orb-highlight" />
+                        <div className="aif-orb-particles">
+                            {[0, 1, 2, 3, 4, 5].map(i => (
+                                <span key={i} className={`aif-particle aif-p${i}`} />
+                            ))}
                         </div>
-                    ))}
+                    </div>
+                    <span className="section-tag">FAQ</span>
+                    <h2>Ask <span className="text-accent">Web AI</span></h2>
+                    <p className="aif-subtitle">{subtitle}</p>
+                </div>
+
+                {/* Card grid */}
+                <div className="aif-grid">
+                    {faqData.map((item, i) => {
+                        const isOpen = openIndex === i;
+                        const isDimmed = openIndex !== null && !isOpen;
+                        return (
+                            <div
+                                key={i}
+                                className={`aif-card ${isOpen ? 'aif-card-open' : ''} ${isDimmed ? 'aif-card-dimmed' : ''}`}
+                                onClick={() => handleCardClick(i)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleCardClick(i);
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-expanded={isOpen}
+                            >
+                                <div className="aif-card-q">
+                                    <span>{item.q}</span>
+                                    <div className={`aif-card-icon ${isOpen ? 'aif-card-icon-open' : ''}`}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                            <path d="M12 5v14" />
+                                            <path d="M5 12h14" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                {isOpen && (
+                                    <div className="aif-card-a">
+                                        <p>
+                                            {typed}
+                                            {isTyping && <span className="aif-cursor">|</span>}
+                                            {!isTyping && typed === '' && (
+                                                <span className="aif-thinking">
+                                                    <span /><span /><span />
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </section>

@@ -3400,6 +3400,371 @@ html {
 }
 
 /* ============================================
+   AI AGENT FAQ — APPLE-LEVEL GRADIENT ORB
+   ============================================
+   Replaces the legacy static accordion. All classes namespaced .aif-*.
+   Design philosophy: refined, subtle, premium. No flashy gimmicks.
+   - Multi-layered radial gradient core (iridescent depth, like Apple
+     visionOS orbs)
+   - Soft outer glow that breathes (3.5s idle, 1.2s when active)
+   - Inner highlight (top-left) simulates a glass sphere
+   - 6 small particles slowly orbiting (subtle ambient life)
+   - Slow Y-axis float for the whole orb (6s)
+   - On active: glow pulse rate accelerates, particles speed up
+*/
+.ai-agent-faq.faq-section {
+    padding: 140px 40px 120px;
+}
+.aif-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+/* ─── Orb header ─── */
+.aif-orb-wrap {
+    text-align: center;
+    margin-bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+.aif-orb-wrap .section-tag {
+    margin-top: 8px;
+}
+.aif-orb-wrap h2 {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: clamp(32px, 4.2vw, 50px);
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+.aif-subtitle {
+    font-size: 16px;
+    color: var(--gray-400);
+    line-height: 1.6;
+    min-height: 1.6em;
+    margin: 0;
+    transition: color 0.4s ease;
+}
+
+/* ─── The orb ─── */
+.aif-orb {
+    position: relative;
+    width: 152px;
+    height: 152px;
+    margin-bottom: 12px;
+    animation: aif-orb-float 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    transform-style: preserve-3d;
+}
+
+/* Outer breathing glow — sits behind everything */
+.aif-orb-glow {
+    position: absolute;
+    inset: -36px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(94, 209, 173, 0.32) 0%,
+        rgba(48, 155, 177, 0.18) 30%,
+        rgba(48, 155, 177, 0.08) 55%,
+        transparent 75%
+    );
+    filter: blur(20px);
+    animation: aif-orb-breathe 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* The gradient sphere — multi-stop radial for iridescent depth */
+.aif-orb-core {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 32%),
+        radial-gradient(circle at 70% 75%, #5ED1AD 0%, #309BB1 45%, #1a4f5a 80%, #08292E 100%);
+    /* Layered shadows: ambient + close + ring + inner highlight */
+    box-shadow:
+        0 12px 40px rgba(48, 155, 177, 0.4),
+        0 24px 80px rgba(94, 209, 173, 0.22),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 -6px 18px rgba(255, 255, 255, 0.18) inset,
+        0 6px 24px rgba(8, 41, 46, 0.35) inset;
+    /* Slow rotation makes the gradient feel alive without being distracting */
+    animation: aif-orb-rotate 24s linear infinite;
+    z-index: 2;
+}
+
+/* Specular highlight — small bright spot upper-left, like a glass sphere */
+.aif-orb-highlight {
+    position: absolute;
+    top: 14%;
+    left: 22%;
+    width: 38%;
+    height: 30%;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 60%);
+    border-radius: 50%;
+    filter: blur(2px);
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Orbiting particles — 6 dots circling the orb at different speeds & angles */
+.aif-orb-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+.aif-particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #5ED1AD;
+    box-shadow: 0 0 10px rgba(94, 209, 173, 0.9), 0 0 20px rgba(94, 209, 173, 0.4);
+    transform-origin: center;
+    margin-top: -2.5px;
+    margin-left: -2.5px;
+    opacity: 0;
+    animation: aif-particle-orbit 14s linear infinite;
+}
+.aif-particle.aif-p0 { animation-duration: 13s; animation-delay: -0s;  --orbit-radius: 100px; --orbit-tilt: 12deg; }
+.aif-particle.aif-p1 { animation-duration: 16s; animation-delay: -2.5s; --orbit-radius: 110px; --orbit-tilt: -8deg; }
+.aif-particle.aif-p2 { animation-duration: 11s; animation-delay: -5s;   --orbit-radius: 95px;  --orbit-tilt: 20deg; }
+.aif-particle.aif-p3 { animation-duration: 18s; animation-delay: -7.5s; --orbit-radius: 115px; --orbit-tilt: -16deg; }
+.aif-particle.aif-p4 { animation-duration: 14s; animation-delay: -10s;  --orbit-radius: 105px; --orbit-tilt: 4deg; }
+.aif-particle.aif-p5 { animation-duration: 12s; animation-delay: -12s;  --orbit-radius: 98px;  --orbit-tilt: -22deg; }
+
+/* Active state — orb is "answering" */
+.aif-orb-active .aif-orb-glow {
+    animation: aif-orb-breathe 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.aif-orb-active .aif-orb-core {
+    animation: aif-orb-rotate 10s linear infinite;
+    box-shadow:
+        0 16px 48px rgba(48, 155, 177, 0.55),
+        0 32px 96px rgba(94, 209, 173, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+        0 -6px 18px rgba(255, 255, 255, 0.22) inset,
+        0 6px 24px rgba(8, 41, 46, 0.35) inset;
+}
+.aif-orb-active .aif-particle {
+    animation-duration: 6s !important;
+}
+
+/* ─── Animations ─── */
+@keyframes aif-orb-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+@keyframes aif-orb-breathe {
+    0%, 100% { transform: scale(0.95); opacity: 0.55; }
+    50%      { transform: scale(1.18); opacity: 1; }
+}
+@keyframes aif-orb-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+}
+@keyframes aif-particle-orbit {
+    0% {
+        opacity: 0;
+        transform: rotate(calc(var(--orbit-tilt, 0deg))) translateX(var(--orbit-radius, 100px)) scale(0.8);
+    }
+    10%, 90% { opacity: 0.8; }
+    100% {
+        opacity: 0;
+        transform: rotate(calc(var(--orbit-tilt, 0deg) + 360deg)) translateX(var(--orbit-radius, 100px)) scale(0.8);
+    }
+}
+
+/* ─── Card grid ─── */
+.aif-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+@media (max-width: 768px) {
+    .aif-grid { grid-template-columns: 1fr; }
+}
+
+.aif-card {
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: 18px;
+    padding: 22px 26px;
+    cursor: pointer;
+    position: relative;
+    transition:
+        border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.4s ease;
+    outline: none;
+}
+.aif-card:hover {
+    border-color: var(--gray-200);
+    box-shadow: 0 8px 28px rgba(8, 41, 46, 0.06);
+    transform: translateY(-2px);
+}
+.aif-card:focus-visible {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(94, 209, 173, 0.25);
+}
+.aif-card-open {
+    border-color: rgba(94, 209, 173, 0.7);
+    box-shadow:
+        0 0 0 1px rgba(94, 209, 173, 0.5),
+        0 16px 48px rgba(94, 209, 173, 0.18),
+        0 6px 20px rgba(48, 155, 177, 0.12);
+    transform: translateY(-2px);
+}
+.aif-card-dimmed {
+    opacity: 0.42;
+}
+.aif-card-dimmed:hover {
+    opacity: 0.72;
+}
+
+.aif-card-q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.aif-card-q span {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    line-height: 1.45;
+    flex: 1;
+}
+.aif-card-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: var(--gray-50);
+    color: var(--gray-400);
+    flex-shrink: 0;
+    transition:
+        background 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.aif-card-icon-open {
+    background: linear-gradient(135deg, #5ED1AD, #309BB1);
+    color: white;
+    transform: rotate(135deg);
+    box-shadow: 0 6px 16px rgba(94, 209, 173, 0.45);
+}
+
+/* Answer panel + typewriter */
+.aif-card-a {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(94, 209, 173, 0.18);
+    animation: aif-answer-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.aif-card-a p {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--gray-500);
+    margin: 0;
+    min-height: 1.75em;
+}
+.aif-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: var(--teal);
+    color: transparent;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: aif-cursor-blink 0.85s steps(2) infinite;
+    border-radius: 1px;
+}
+
+/* Three-dot "thinking" indicator before the typewriter starts */
+.aif-thinking {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    height: 1.2em;
+    vertical-align: middle;
+}
+.aif-thinking span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    opacity: 0.3;
+    animation: aif-think-bounce 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.aif-thinking span:nth-child(2) { animation-delay: 0.15s; }
+.aif-thinking span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes aif-answer-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes aif-cursor-blink {
+    0%, 50%       { opacity: 1; }
+    50.01%, 100%  { opacity: 0; }
+}
+@keyframes aif-think-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+    30%           { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+    .ai-agent-faq.faq-section {
+        padding: 80px 20px 80px;
+    }
+    .aif-orb {
+        width: 124px;
+        height: 124px;
+    }
+    .aif-orb-wrap {
+        margin-bottom: 56px;
+    }
+    .aif-card {
+        padding: 18px 20px;
+        border-radius: 16px;
+    }
+    .aif-card-q span {
+        font-size: 14px;
+    }
+}
+
+/* Reduced motion: respect user preference */
+@media (prefers-reduced-motion: reduce) {
+    .aif-orb,
+    .aif-orb-core,
+    .aif-orb-glow,
+    .aif-particle {
+        animation: none !important;
+    }
+    .aif-card-a,
+    .aif-card-icon {
+        animation: none !important;
+        transition: none !important;
+    }
+    .aif-cursor,
+    .aif-thinking span {
+        animation: none !important;
+    }
+}
+
+/* ============================================
    RESPONSIVE — NEW SECTIONS
    ============================================ */
 @media (max-width: 992px) {
