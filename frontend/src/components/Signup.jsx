@@ -1,13 +1,13 @@
 // src/components/Signup.jsx
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resendVerification } from '../services/api';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
         companyName: '',
-        licenseNumber: '',
         mobile: '',
         fullName: '',
         email: '',
@@ -18,8 +18,9 @@ const Signup = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [agreed, setAgreed] = useState(false);
+    const [submittedEmail, setSubmittedEmail] = useState('');
+    const [resendState, setResendState] = useState({ loading: false, message: '' });
     const { signup } = useAuth();
-    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -38,25 +39,71 @@ const Signup = () => {
         }
         setIsLoading(true);
         try {
-            const data = await signup({
+            await signup({
                 email: formData.email,
                 password: formData.password,
                 full_name: formData.fullName,
                 company_name: formData.companyName || undefined,
-                license_number: formData.licenseNumber || undefined,
                 mobile: formData.mobile || undefined,
             });
-            if (data.user && data.user.is_approved === false) {
-                navigate('/pending-approval');
-            } else {
-                navigate('/dashboard');
-            }
+            setSubmittedEmail(formData.email);
         } catch (err) {
             setError(err.message);
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleResend = async () => {
+        if (!submittedEmail) return;
+        setResendState({ loading: true, message: '' });
+        try {
+            const res = await resendVerification(submittedEmail);
+            setResendState({ loading: false, message: res.message || 'Confirmation link resent.' });
+        } catch (err) {
+            setResendState({ loading: false, message: err.message });
+        }
+    };
+
+    if (submittedEmail) {
+        return (
+            <div className="auth-page">
+                <div className="auth-bg"><div className="auth-gradient" /></div>
+                <div className="auth-container">
+                    <div className="auth-card">
+                        <div className="auth-header">
+                            <Link to="/" className="auth-logo">
+                                <img src="/mfz-logo.webp" alt="Web AI" style={{ height: 56, maxWidth: 180, objectFit: 'contain', display: 'block' }} />
+                            </Link>
+                            <h1>Confirm Your Email</h1>
+                            <p>We've sent a confirmation link to <strong>{submittedEmail}</strong></p>
+                        </div>
+                        <div style={{ padding: '8px 4px 24px', color: '#475569', fontSize: 14, lineHeight: 1.6 }}>
+                            <p>Click the link in that email to confirm your address. Once confirmed, an admin will review your account. You'll receive another email when it's approved and you can sign in.</p>
+                            <p style={{ marginTop: 16, fontSize: 13, color: '#64748b' }}>Didn't get the email? Check your spam folder, or request a new link below.</p>
+                        </div>
+                        {resendState.message && (
+                            <div className="auth-error" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}>
+                                {resendState.message}
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            className="btn-primary full"
+                            onClick={handleResend}
+                            disabled={resendState.loading}
+                            style={{ marginTop: 8 }}
+                        >
+                            {resendState.loading ? <span className="spinner" /> : 'Resend confirmation link'}
+                        </button>
+                        <div className="auth-footer" style={{ marginTop: 20 }}>
+                            <p>Already confirmed? <Link to="/login">Sign in</Link></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="auth-page">
@@ -82,31 +129,30 @@ const Signup = () => {
                         <div className="form-section">
                             <h3 className="form-section-title">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-                                    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                                 </svg>
-                                Company Information
+                                Your Details
                             </h3>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="companyName">Company Name</label>
-                                    <div className="input-wrapper">
-                                        <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-                                        </svg>
-                                        <input id="companyName" name="companyName" type="text" value={formData.companyName} onChange={handleChange} placeholder="Your company name (optional)" />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="licenseNumber">License Number</label>
-                                    <div className="input-wrapper">
-                                        <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-                                        </svg>
-                                        <input id="licenseNumber" name="licenseNumber" type="text" value={formData.licenseNumber} onChange={handleChange} placeholder="e.g. 12345 (optional)" />
-                                    </div>
+
+                            {/* 1. Full Name */}
+                            <div className="form-group">
+                                <label htmlFor="fullName">Full Name <span className="required">*</span></label>
+                                <div className="input-wrapper">
+                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <input id="fullName" name="fullName" type="text" value={formData.fullName} onChange={handleChange} placeholder="Your full name" required />
                                 </div>
                             </div>
+
+                            {/* 2. Email */}
+                            <div className="form-group">
+                                <label htmlFor="signup-email">Email Address <span className="required">*</span></label>
+                                <div className="input-wrapper">
+                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                                    <input id="signup-email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@company.com" required />
+                                </div>
+                            </div>
+
+                            {/* 3. Mobile (optional) */}
                             <div className="form-group">
                                 <label htmlFor="mobile">Mobile Number</label>
                                 <div className="input-wrapper">
@@ -116,29 +162,19 @@ const Signup = () => {
                                     <input id="mobile" name="mobile" type="tel" value={formData.mobile} onChange={handleChange} placeholder="+971 50 123 4567 (optional)" />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="form-section">
-                            <h3 className="form-section-title">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                                </svg>
-                                Account Details
-                            </h3>
+                            {/* 4. Company Name (optional) */}
                             <div className="form-group">
-                                <label htmlFor="fullName">Full Name <span className="required">*</span></label>
+                                <label htmlFor="companyName">Company Name</label>
                                 <div className="input-wrapper">
-                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <input id="fullName" name="fullName" type="text" value={formData.fullName} onChange={handleChange} placeholder="Your full name" required />
+                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+                                    </svg>
+                                    <input id="companyName" name="companyName" type="text" value={formData.companyName} onChange={handleChange} placeholder="Your company name (optional)" />
                                 </div>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="signup-email">Email Address <span className="required">*</span></label>
-                                <div className="input-wrapper">
-                                    <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                    <input id="signup-email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@company.com" required />
-                                </div>
-                            </div>
+
+                            {/* 5. Password + Confirm Password */}
                             <div className="form-row">
                                 <div className="form-group">
                                     <label htmlFor="signup-password">Password <span className="required">*</span></label>

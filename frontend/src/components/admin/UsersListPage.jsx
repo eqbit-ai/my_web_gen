@@ -140,7 +140,8 @@ export default function UsersListPage() {
                         <option value="approve">Approve</option>
                         <option value="disable">Disable</option>
                         <option value="enable">Enable</option>
-                        <option value="verify_licence">Verify Licence</option>
+                        {/* Verify Licence option hidden — license_number was removed
+                            from the signup flow on the user's request. */}
                     </select>
                     <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={handleBulkAction} disabled={!bulkAction || bulkLoading}>
                         {bulkLoading ? 'Applying...' : 'Apply'}

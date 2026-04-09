@@ -153,9 +153,15 @@ export default function UserDetailPage() {
                     >
                         <ShieldCheck size={12} /> {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                     </button>
-                    <button className="admin-btn" onClick={() => handleAction('verify-licence')} disabled={actionLoading}>
-                        <Check size={12} /> Verify Licence
-                    </button>
+                    {/* Verify Licence button hidden — license_number was removed
+                        from the signup flow on the user's request. Backend
+                        endpoint and DB columns are kept intact in case the
+                        feature is re-enabled later. */}
+                    {false && (
+                        <button className="admin-btn" onClick={() => handleAction('verify-licence')} disabled={actionLoading}>
+                            <Check size={12} /> Verify Licence
+                        </button>
+                    )}
                     <button className="admin-btn" onClick={() => handleAction('reset-password')} disabled={actionLoading}>
                         <Key size={12} /> Reset Password
                     </button>

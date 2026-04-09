@@ -595,7 +595,8 @@ function UsersPage() {
                         <option value="">Bulk action...</option>
                         <option value="disable">Disable</option>
                         <option value="enable">Enable</option>
-                        <option value="verify_licence">Verify Licence</option>
+                        {/* Verify Licence option hidden — license_number was removed
+                            from the signup flow on the user's request. */}
                     </select>
                     <button style={btnStyle} onClick={handleBulkAction} disabled={!bulkAction || actionLoading}>Apply</button>
                 </div>
@@ -620,7 +621,11 @@ function UsersPage() {
                                 <button style={userDetail.is_active ? btnDanger : { ...btnStyle, background: T.success }} onClick={() => handleAction(userDetail.is_active ? 'disable' : 'enable', selectedUser)} disabled={actionLoading}>
                                     {userDetail.is_active ? <><Ban size={12} /> Disable</> : <><Check size={12} /> Enable</>}
                                 </button>
-                                <button style={btnGhost} onClick={() => handleAction('verify-licence', selectedUser)} disabled={actionLoading}><Check size={12} /> Verify Licence</button>
+                                {/* Verify Licence button hidden — license_number was removed
+                                    from the signup flow. Backend endpoint kept intact. */}
+                                {false && (
+                                    <button style={btnGhost} onClick={() => handleAction('verify-licence', selectedUser)} disabled={actionLoading}><Check size={12} /> Verify Licence</button>
+                                )}
                                 <button style={btnGhost} onClick={() => handleAction('reset-password', selectedUser)} disabled={actionLoading}><Key size={12} /> Reset Password</button>
                                 <button style={btnGhost} onClick={() => handleAction('impersonate', selectedUser)} disabled={actionLoading}><Eye size={12} /> Impersonate</button>
                                 <div style={{ display: 'flex', gap: 4 }}>
