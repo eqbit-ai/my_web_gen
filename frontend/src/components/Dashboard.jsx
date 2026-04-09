@@ -473,7 +473,9 @@ const Dashboard = () => {
     const [purchaseConfirm, setPurchaseConfirm] = useState(null); // { sld, tld, siteId, price }
 
     // ── Entry-flow modal: "Buy Domain or Build Website" gate ─────────────
-    // stage: null | 'choice' | 'domainSearch' | 'domainConfirm' | 'purchasing' | 'domainSuccess'
+    // stage: null | 'domainSearch' | 'domainConfirm' | 'purchasing' | 'domainSuccess'
+    // (legacy 'choice' and 'pickOwned' stages were removed — the dashboard
+    // home tab CTAs now navigate directly to the right entry point)
     const [entryStage, setEntryStage] = useState(null);
     const [entrySearchInput, setEntrySearchInput] = useState('');
     const [entrySearchResults, setEntrySearchResults] = useState(null);
@@ -485,18 +487,19 @@ const Dashboard = () => {
     // modal so a typed prompt still flows through to the generator.
     const [pendingPrompt, setPendingPrompt] = useState('');
 
+    // Opens the entry-flow modal at the domainSearch stage. Used by the
+    // "Buy Domain" CTA on the home tab and the equivalent CTAs in the
+    // Domains tab. The legacy 'choice' stage was removed — there's nothing
+    // for the user to choose at this point because the home-tab buttons
+    // already disambiguated the intent.
     const openEntryFlow = useCallback(() => {
-        setEntryStage('choice');
+        setEntryStage('domainSearch');
         setEntrySearchInput('');
         setEntrySearchResults(null);
         setEntrySearchError(null);
         setEntryPurchaseTarget(null);
         setEntryPurchasedDomain(null);
-        // Lazy-load owned domains so we can show a "Use my domain" option
-        // alongside Buy / Build. Only refetch if we don't have data yet.
-        if (myDomains.length === 0) loadMyDomains();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [myDomains.length]);
+    }, []);
 
     const closeEntryFlow = useCallback(() => {
         setEntryStage(null);
@@ -527,23 +530,6 @@ const Dashboard = () => {
             },
         });
     };
-
-    const handleEntryChoiceBuild = useCallback(() => {
-        // "Build website" → if the user already typed a prompt in the home
-        // chat input, skip the templates modal and go straight to the
-        // generator with the prompt prefilled. Otherwise open the existing
-        // templates / "Start from scratch" modal.
-        const carry = pendingPrompt;
-        setEntryStage(null);
-        setPendingPrompt('');
-        if (carry) {
-            navigate('/generator', { state: { newSession: true, wizardPrefill: carry } });
-            return;
-        }
-        setNewDesignModal(true);
-        if (templates.length === 0) loadTemplates();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [templates.length, pendingPrompt, navigate]);
 
     const handleEntryDomainSearch = async (e) => {
         if (e?.preventDefault) e.preventDefault();
@@ -994,7 +980,7 @@ const Dashboard = () => {
 
                     <button
                         className="dash-new-chat"
-                        onClick={openEntryFlow}
+                        onClick={() => navigate('/generator', { state: { newSession: true } })}
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -1260,7 +1246,7 @@ const Dashboard = () => {
                                     {/* Buy Domain */}
                                     <button
                                         type="button"
-                                        onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                                        onClick={() => { openEntryFlow(); }}
                                         style={{
                                             flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
                                             background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
@@ -1437,7 +1423,7 @@ const Dashboard = () => {
                     <div className="dash-domain-container">
                         <div className="dash-domain-header">
                             <h1 className="dash-domain-title">My Projects</h1>
-                            <button className="dash-domain-add-btn" onClick={openEntryFlow}>
+                            <button className="dash-domain-add-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
@@ -1456,7 +1442,7 @@ const Dashboard = () => {
                                 </svg>
                                 <h3>No projects yet</h3>
                                 <p>Generate a website and save it to see it here</p>
-                                <button className="dash-domain-add-btn" onClick={openEntryFlow}>
+                                <button className="dash-domain-add-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
                                     Create Your First Website
                                 </button>
                             </div>
@@ -1674,7 +1660,7 @@ const Dashboard = () => {
                             </div>
                             <button
                                 className="dash-domain-add-btn"
-                                onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                                onClick={() => { openEntryFlow(); }}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -1695,7 +1681,7 @@ const Dashboard = () => {
                                     <p style={{ margin: '0 0 12px', fontSize: 13, color: '#9ca3af' }}>You don't own any domains yet.</p>
                                     <button
                                         className="dsite-cta-btn"
-                                        onClick={() => { openEntryFlow(); setEntryStage('domainSearch'); }}
+                                        onClick={() => { openEntryFlow(); }}
                                         style={{ display: 'inline-flex' }}
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -1749,7 +1735,7 @@ const Dashboard = () => {
                                 </div>
                                 <h3>Nothing deployed yet</h3>
                                 <p>Buy a domain or build a website to get started.</p>
-                                <button className="dsite-cta-btn" onClick={openEntryFlow}>
+                                <button className="dsite-cta-btn" onClick={() => navigate('/generator', { state: { newSession: true } })}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                                     Get started
                                 </button>
@@ -2616,121 +2602,12 @@ const Dashboard = () => {
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                             </button>
 
-                            {/* Stage 1: choice between Buy Domain and Build Website */}
-                            {entryStage === 'choice' && (
-                                <div style={{ padding: '32px 28px 28px' }}>
-                                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                                        <h2 style={{ margin: '0 0 6px', fontSize: 22, color: '#f3f4f6', fontWeight: 700 }}>How would you like to start?</h2>
-                                        <p style={{ margin: 0, fontSize: 14, color: '#9ca3af' }}>Pick a path — you can always do the other one later.</p>
-                                    </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: myDomains.length > 0 ? '1fr 1fr 1fr' : '1fr 1fr', gap: 14 }}>
-                                        {/* Buy Domain card */}
-                                        <button
-                                            onClick={() => setEntryStage('domainSearch')}
-                                            style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid #334155', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
-                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#3b82f6'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#334155'; }}
-                                        >
-                                            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa' }}>
-                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                                            </div>
-                                            <div>
-                                                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Buy a Domain</h3>
-                                                <p style={{ margin: 0, fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}> Register your domain.</p>
-                                            </div>
-                                            <div style={{ marginTop: 'auto', fontSize: 12, color: '#60a5fa', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                Search domains
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                                            </div>
-                                        </button>
-
-                                        {/* Build Website card */}
-                                        <button
-                                            onClick={handleEntryChoiceBuild}
-                                            style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '1px solid #4338ca', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
-                                            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#818cf8'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#4338ca'; }}
-                                        >
-                                            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(129,140,248,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc' }}>
-                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /></svg>
-                                            </div>
-                                            <div>
-                                                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Build Website</h3>
-                                                <p style={{ margin: 0, fontSize: 12, color: '#a5b4fc', lineHeight: 1.5 }}>Generate your site with AI now, associate with a domain later.</p>
-                                            </div>
-                                            <div style={{ marginTop: 'auto', fontSize: 12, color: '#a5b4fc', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                Start building
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                                            </div>
-                                        </button>
-
-                                        {/* Use my domain — only shown if the user already owns at least one */}
-                                        {myDomains.length > 0 && (
-                                            <button
-                                                onClick={() => setEntryStage('pickOwned')}
-                                                style={{ background: 'linear-gradient(135deg, #064e3b, #022c22)', border: '1px solid #047857', borderRadius: 14, padding: '24px 18px', textAlign: 'left', cursor: 'pointer', color: '#e5e7eb', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform 0.15s, border-color 0.15s' }}
-                                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = '#34d399'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#047857'; }}
-                                            >
-                                                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(52,211,153,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399' }}>
-                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                                </div>
-                                                <div>
-                                                    <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#f3f4f6' }}>Use my domain</h3>
-                                                    <p style={{ margin: 0, fontSize: 12, color: '#a7f3d0', lineHeight: 1.5 }}>You own {myDomains.length} domain{myDomains.length !== 1 ? 's' : ''}. Pick one and build your site on it.</p>
-                                                </div>
-                                                <div style={{ marginTop: 'auto', fontSize: 12, color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                    Pick a domain
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                                                </div>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Stage 1b: pick from owned domains */}
-                            {entryStage === 'pickOwned' && (
-                                <div style={{ padding: '28px 28px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                                        <button
-                                            onClick={() => setEntryStage('choice')}
-                                            style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                                            Back
-                                        </button>
-                                    </div>
-                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>Pick a domain</h2>
-                                    <p style={{ margin: '0 0 18px', fontSize: 13, color: '#9ca3af' }}>We'll start a new website using this domain as your brand.</p>
-
-                                    <div style={{ maxHeight: 360, overflowY: 'auto', borderRadius: 10, border: '1px solid #1f2937' }}>
-                                        {myDomains.map((d, i) => (
-                                            <button
-                                                key={d.id}
-                                                onClick={() => handleEntryUseOwnedDomain(d.domain_name)}
-                                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < myDomains.length - 1 ? '1px solid #1f2937' : 'none', background: i % 2 === 0 ? '#0b1220' : '#0f172a', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                            >
-                                                <div>
-                                                    <div style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6' }}>{d.domain_name}</div>
-                                                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
-                                                        {d.site_id ? `Connected to ${d.site_name || 'a site'}` : 'Not connected — perfect for a new site'}
-                                                    </div>
-                                                </div>
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Stage 2: domain search + results */}
                             {entryStage === 'domainSearch' && (
                                 <div style={{ padding: '28px 28px 24px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
                                         <button
-                                            onClick={() => { setEntryStage('choice'); setEntrySearchResults(null); setEntrySearchError(null); }}
+                                            onClick={() => { closeEntryFlow(); setEntrySearchResults(null); setEntrySearchError(null); }}
                                             style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>

@@ -1211,8 +1211,24 @@ const WebsiteGenerator = () => {
             setHtml(restoreHtml); setCss(restoreCss);
             // Restore deployedSiteId so redeploys update the same site
             if (meta.deployedSiteId) setDeployedSiteId(meta.deployedSiteId);
-            const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: restoredPages };
-            setVersions([v]); setCurrentVersion(0);
+            // Restore the FULL version history if it was persisted in metadata.
+            // Without this, every project re-open (close/reopen, login/logout)
+            // wiped the React `versions` array down to one entry, which broke
+            // every "Restore this version" button in the restored chat history
+            // (those buttons reference versionIndex N but the array only had
+            // [0]). Fall back to the legacy single-version behaviour for old
+            // projects whose metadata predates the versions persistence.
+            if (Array.isArray(meta.versions) && meta.versions.length > 0) {
+                setVersions(meta.versions);
+                const restoredCv = typeof meta.currentVersion === 'number'
+                    ? Math.max(0, Math.min(meta.versions.length - 1, meta.currentVersion))
+                    : meta.versions.length - 1;
+                setCurrentVersion(restoredCv);
+            } else {
+                const v = { html: restoreHtml, css: restoreCss, js: pd.js || '', prompt: pd.isTemplate ? 'Loaded from template' : 'Loaded from project', isMultipage: meta.isMultipage || false, pages: restoredPages };
+                setVersions([v]);
+                setCurrentVersion(0);
+            }
             // Restore chat history from metadata if available, otherwise show default message
             if (!pd.isTemplate && meta.messages && meta.messages.length > 0) {
                 setMessages([...meta.messages, { role: 'assistant', text: 'Session restored. What would you like to change?', timestamp: new Date().toLocaleTimeString() }]);
@@ -2310,13 +2326,11 @@ const WebsiteGenerator = () => {
             text: `Rolled back to version ${versionIndex + 1}`,
             timestamp: new Date().toLocaleTimeString(),
         }]);
-        // Sync backend session with the correct page
-        const syncPage = (vIsMultipage && vPages) ? 'index' : (currentPageRef.current || 'index');
-        const syncHtml = (vIsMultipage && vPages?.['index']?.html) || v.html;
-        const syncCss = (vIsMultipage && vPages?.['index']?.css) || v.css;
-        if (sessionId) syncSession(sessionId, syncHtml, syncCss, v.js, syncPage)
-            .then(d => { if (d.sections) setSections(d.sections); })
-            .catch(() => { });
+        // CRITICAL: sync EVERY page to the backend, not just the visible one.
+        // See syncRolledBackVersionToBackend for the full reasoning. Without
+        // this fix, settings save (which reads from the Redis session) would
+        // silently clobber the restored React state with stale backend state.
+        syncRolledBackVersionToBackend(v, v.html, v.css);
     };
 
     // ── Undo / Redo ─────────────────────────────────────────────────────
@@ -2324,6 +2338,32 @@ const WebsiteGenerator = () => {
     // Skip light versions (no html data) — can only undo to versions with full content
     const canUndo = currentVersion > 0 && versions.slice(0, currentVersion).some(v => v.html);
     const canRedo = currentVersion < versions.length - 1 && versions.slice(currentVersion + 1).some(v => v.html);
+
+    // Sync EVERY page in a multipage version back to the Redis session in
+    // parallel. Used by handleRollback / handleUndo / handleRedo so the
+    // backend session never lags behind the React state. See the comment
+    // in handleRollback for the full reasoning — TL;DR: leaving other pages
+    // stale on the backend caused settings save to clobber restored state.
+    const syncRolledBackVersionToBackend = useCallback((v, fallbackHtml, fallbackCss) => {
+        if (!sessionId) return;
+        const visiblePage = currentPageRef.current || 'index';
+        if (v.isMultipage && v.pages && Object.keys(v.pages).length > 0) {
+            Promise.all(
+                Object.entries(v.pages).map(([slug, pg]) =>
+                    syncSession(sessionId, pg.html || '', pg.css || '', v.js, slug)
+                        .catch(err => console.warn(`[VersionSync] Failed page ${slug}:`, err))
+                )
+            ).then(() => {
+                const visible = v.pages[visiblePage];
+                return syncSession(sessionId, visible?.html || fallbackHtml, visible?.css || fallbackCss, v.js, visiblePage)
+                    .then(d => { if (d.sections) setSections(d.sections); });
+            }).catch(() => {});
+        } else {
+            syncSession(sessionId, fallbackHtml, fallbackCss, v.js, visiblePage)
+                .then(d => { if (d.sections) setSections(d.sections); })
+                .catch(() => { });
+        }
+    }, [sessionId]);
 
     const handleUndo = useCallback(() => {
         if (currentVersion <= 0) return;
@@ -2360,10 +2400,9 @@ const WebsiteGenerator = () => {
         }
         setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(prev);
-        if (sessionId) syncSession(sessionId, restoreHtml, restoreCss, v.js, curPage)
-            .then(d => { if (d.sections) setSections(d.sections); })
-            .catch(() => { });
-    }, [currentVersion, versions, sessionId]);
+        // Sync ALL multipage pages — see syncRolledBackVersionToBackend.
+        syncRolledBackVersionToBackend(v, restoreHtml, restoreCss);
+    }, [currentVersion, versions, syncRolledBackVersionToBackend]);
 
     const handleRedo = useCallback(() => {
         if (currentVersion >= versions.length - 1) return;
@@ -2397,10 +2436,9 @@ const WebsiteGenerator = () => {
         }
         setHtml(restoreHtml); setCss(restoreCss); setJs(v.js);
         setCurrentVersion(next);
-        if (sessionId) syncSession(sessionId, restoreHtml, restoreCss, v.js, curPage)
-            .then(d => { if (d.sections) setSections(d.sections); })
-            .catch(() => { });
-    }, [currentVersion, versions, sessionId]);
+        // Sync ALL multipage pages — see syncRolledBackVersionToBackend.
+        syncRolledBackVersionToBackend(v, restoreHtml, restoreCss);
+    }, [currentVersion, versions, syncRolledBackVersionToBackend]);
 
     // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo
     useEffect(() => {
@@ -2653,11 +2691,28 @@ const WebsiteGenerator = () => {
         const allPages = isMultipage
             ? (overrideData?.pages || { ...latestPages, [latestCurrentPage]: { html: h, css: c } })
             : {};
+        // Persist version history in metadata so close/reopen + login/logout
+        // restore the full undo/redo stack — not just the current snapshot.
+        // Without this, the chat-message "Restore this version" buttons stop
+        // working after reload because they reference versionIndex N but the
+        // React `versions` array only has 1 entry on cold load.
+        //
+        // Cap at MAX_HISTORY_VERSIONS to bound metadata size. For multipage
+        // projects each version stores ~30-100KB; 50 versions ≈ 5MB max.
+        // Acceptable for PostgreSQL TEXT but worth watching if it grows.
+        const trimmedVersions = versions.slice(-MAX_HISTORY_VERSIONS);
+        // currentVersion is an index into the FULL versions array; if we
+        // trimmed entries off the front, shift the index by the trim count.
+        const trimOffset = versions.length - trimmedVersions.length;
+        const persistedCurrentVersion = Math.max(0, currentVersion - trimOffset);
+
         const metadata = JSON.stringify({
             isMultipage,
             currentPage: latestCurrentPage,
             pages: allPages,
             messages: messages.slice(-50),
+            versions: trimmedVersions,
+            currentVersion: persistedCurrentVersion,
             deployedSiteId: deployedSiteId || undefined,
         });
         try {
