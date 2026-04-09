@@ -540,6 +540,87 @@ def _convert_hallucinated_urls_to_placeholders(html: str) -> str:
     return html
 
 
+async def _resolve_google_maps_links(text: str) -> str:
+    """Resolve any Google Maps share/short links in ``text`` to embeddable
+    iframe URLs with real coordinates.
+
+    Background: ``maps.app.goo.gl/...`` and ``goo.gl/maps/...`` short URLs
+    are HTTP redirects, NOT embeddable. Pasting one as an iframe ``src``
+    produces a broken map. The actual map URL (with @lat,lng coordinates)
+    is hidden behind the redirect.
+
+    This helper:
+      1. Finds any maps share or direct URL in the text
+      2. Follows the redirect via httpx to get the real URL
+      3. Extracts coordinates (multiple patterns: @lat,lng, ?q=lat,lng,
+         !3d/!4d) or place name
+      4. Replaces the share URL in the text with a working
+         ``https://www.google.com/maps?q=lat,lng&output=embed&z=16`` URL
+      5. Annotates with the place name if available
+
+    Returns the text with maps URLs replaced. If resolution fails (network
+    error, no coordinates found), returns the text unchanged so the LLM
+    can fall back to using the address as the query.
+
+    Used by both the generation pipeline and the edit-element endpoint
+    so wizard-collected map links and chat-driven map edits both resolve
+    correctly. Without this, the LLM can't actually embed share links —
+    it can only use the address as a query string fallback, which often
+    points at the wrong location.
+    """
+    if not text:
+        return text
+
+    maps_share_re = re.compile(r'https?://(?:maps\.app\.goo\.gl|goo\.gl/maps)/[\w-]+')
+    maps_direct_re = re.compile(r'https?://(?:www\.)?google\.com/maps/[^\s"\'<>]+')
+    maps_match = maps_share_re.search(text) or maps_direct_re.search(text)
+    if not maps_match:
+        return text
+
+    share_url = maps_match.group(0)
+    try:
+        import httpx
+        final_url = share_url
+        # Follow redirects with GET (HEAD often fails on goo.gl)
+        if 'goo.gl' in share_url:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
+                resp = await client.get(share_url)
+                final_url = str(resp.url)
+
+        # Extract coordinates — most reliable. Try multiple URL patterns:
+        coord_match = re.search(r'@([-\d.]+),([-\d.]+)', final_url)
+        if not coord_match:
+            coord_match = re.search(r'[?&]q=([-\d.]+),([-\d.]+)', final_url)
+        if not coord_match:
+            lat_match = re.search(r'!3d([-\d.]+)', final_url)
+            lng_match = re.search(r'!4d([-\d.]+)', final_url)
+            if lat_match and lng_match:
+                lat, lng = lat_match.group(1), lng_match.group(1)
+                embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=16"
+                logger.info(f"🗺️ Resolved Maps link → {lat},{lng} (from !3d/!4d)")
+                return text.replace(share_url, embed_url)
+
+        if coord_match:
+            lat, lng = coord_match.group(1), coord_match.group(2)
+            embed_url = f"https://www.google.com/maps?q={lat},{lng}&output=embed&z=16"
+            place_match = re.search(r'/place/([^/@]+)', final_url)
+            place_name = place_match.group(1).replace('+', ' ') if place_match else f"{lat},{lng}"
+            logger.info(f"🗺️ Resolved Maps link → {lat},{lng} ({place_name})")
+            return text.replace(share_url, f'{embed_url} (location: {place_name})')
+
+        # No coordinates — fall back to place name search query
+        place_match = re.search(r'/place/([^/@]+)', final_url)
+        if place_match:
+            place_name = place_match.group(1).replace('+', ' ')
+            embed_url = f"https://www.google.com/maps?q={place_match.group(1)}&output=embed&z=16"
+            logger.info(f"🗺️ Resolved Maps link → {place_name} (no coords)")
+            return text.replace(share_url, f'{embed_url} (location: {place_name})')
+    except Exception as e:
+        logger.warning(f"🗺️ Failed to resolve Maps link: {e}")
+
+    return text
+
+
 def _apply_contact_widgets_to_session(session_data: dict, contact_config: dict | None) -> None:
     """Apply contact widget injection (WhatsApp + social FAB) to every page
     in a session_data dict, in place.
@@ -3969,6 +4050,15 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
     logger.info(f"[MODERATION] {'SAFE' if moderation['safe'] else 'BLOCKED: ' + moderation.get('reason', '')}")
     if not moderation["safe"]:
         raise HTTPException(status_code=400, detail=moderation["reason"])
+
+    # ── Resolve Google Maps share/short links to embeddable URLs ─────
+    # Wizard collects a Google Maps link in the contact step. If the user
+    # pastes a maps.app.goo.gl/... share URL, it's a redirect — not
+    # embeddable. Resolve it here so the LLM gets the real coordinates and
+    # can generate a working <iframe>. Without this the LLM falls back to
+    # using the typed address as the iframe query, which often points at
+    # the wrong location.
+    req.prompt = await _resolve_google_maps_links(req.prompt)
 
     # ── Check token budget ──────────────────────────────────────────
     budget = await check_budget(user["user_id"])

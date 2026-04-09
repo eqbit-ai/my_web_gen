@@ -541,18 +541,24 @@ const composeWizardPrompt = (data) => {
         if (ci.address) prompt += ` Address: ${ci.address}.`;
     }
     if (ci.mapLink) {
-        // Tell the LLM exactly what to do with the map link. The string is
-        // pasted verbatim so the LLM doesn't have to guess at intent. The
-        // generation prompt elsewhere already knows how to convert
-        // share-link formats into embed URLs (see GOOGLE MAPS RULES in
-        // backend prompts), but the explicit instruction here ensures the
-        // map ACTUALLY gets embedded in the contact section instead of
-        // dropped or used as a plain text link.
+        // Pass the link verbatim. The BACKEND resolves any maps.app.goo.gl
+        // / goo.gl/maps short URLs to embeddable lat,lng URLs BEFORE the
+        // prompt reaches the LLM (see _resolve_google_maps_links in
+        // generator.py). By the time the LLM sees this, the URL is either
+        // already an embed-ready URL like
+        // https://www.google.com/maps?q=lat,lng&output=embed&z=16
+        // OR (if resolution failed) the original share URL.
+        //
+        // We tell the LLM to use the URL DIRECTLY as the iframe src.
+        // Previously this prompt instructed the LLM to fall back to using
+        // the address as the query when it saw a share URL, which produced
+        // a map of the wrong location whenever the user's typed address
+        // differed from the actual map pin.
         prompt += `\nGoogle Maps location: ${ci.mapLink}`;
         prompt += '\nMUST embed this Google Map as an <iframe> inside the contact section. ';
-        prompt += 'If the link is a share URL (maps.app.goo.gl, goo.gl/maps), use the address above as the iframe query: ';
-        prompt += '<iframe src="https://www.google.com/maps?q=ENCODED_ADDRESS&output=embed&z=15" width="100%" height="400" style="border:0;border-radius:12px" allowfullscreen loading="lazy"></iframe>. ';
-        prompt += 'If the link is already an embed URL or contains "/embed", use it directly as the iframe src.';
+        prompt += 'Use the URL above DIRECTLY as the iframe src: ';
+        prompt += '<iframe src="<URL_ABOVE>" width="100%" height="400" style="border:0;border-radius:12px" allowfullscreen loading="lazy"></iframe>. ';
+        prompt += 'Do NOT replace it with a search query of the address — the URL has already been resolved to the correct location with coordinates.';
     }
     return prompt;
 };
