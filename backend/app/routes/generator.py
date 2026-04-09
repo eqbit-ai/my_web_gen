@@ -640,7 +640,20 @@ def _apply_contact_widgets_to_session(session_data: dict, contact_config: dict |
     """
     from app.utils.contact_widgets import inject_contact_widgets
 
-    if not contact_config:
+    # Always log so we can diagnose "the FAB didn't appear" reports without
+    # needing browser DevTools. If contact_config is None we never even
+    # reach the inject path, so the absence of this log is a strong signal
+    # the frontend isn't sending the field.
+    if contact_config:
+        social = (contact_config or {}).get("social") or {}
+        filled_social = [k for k, v in social.items() if v]
+        logger.info(
+            "[CONTACT_WIDGETS] contact_config received: whatsapp=%s social=%s",
+            "yes" if (contact_config or {}).get("whatsapp") else "no",
+            filled_social or "none",
+        )
+    else:
+        logger.info("[CONTACT_WIDGETS] contact_config is None — skipping widget injection")
         return
 
     session_data["contact_config"] = contact_config
@@ -6317,11 +6330,24 @@ async def get_session_endpoint(session_id: str, user: dict = Depends(require_aut
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     _verify_session_ownership(session, user)
+    # Defensive .get() — the session may be in its early placeholder state
+    # ({prompt, status: "generating"}) saved at the very start of
+    # generate_website_stream BEFORE the LLM stages have populated html/css/js.
+    # The frontend's stream-recovery poller (api.js pollForRecovery) hits
+    # this endpoint to check generation progress when the SSE stream drops
+    # mid-flight, and it specifically checks `session.status === 'generating'`
+    # to know it should keep polling. The previous implementation crashed
+    # with KeyError before returning the status, leaving the recovery poller
+    # to fail with a 500 every 5 seconds and surface "network error" to the
+    # user even though generation was still proceeding fine in the background.
     return {
         "sessionId": session_id,
-        "html": session["html"],
-        "css": session["css"],
+        "html": session.get("html", ""),
+        "css": session.get("css", ""),
         "js": session.get("js", ""),
+        "status": session.get("status", "ready"),
+        "multipage": bool(session.get("multipage")),
+        "pages": session.get("pages") or None,
         "prompts": session.get("prompts", []),
         "current_version": session.get("current_version", 1),
         "total_versions": len(session.get("versions", [])) + 1,
@@ -6335,11 +6361,12 @@ async def get_session_versions(session_id: str, user: dict = Depends(require_aut
         raise HTTPException(status_code=404, detail="Session not found")
     _verify_session_ownership(session, user)
     versions = session.get("versions", [])
+    # Same defensive .get() as get_session_endpoint above — see comment there.
     all_versions = versions + [
         {
             "version": session.get("current_version", len(versions) + 1),
-            "html": session["html"],
-            "css": session["css"],
+            "html": session.get("html", ""),
+            "css": session.get("css", ""),
             "js": session.get("js", ""),
             "prompt": session.get("prompts", [""])[-1] if session.get("prompts") else "",
         }
