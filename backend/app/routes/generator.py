@@ -625,13 +625,20 @@ def _apply_contact_widgets_to_session(session_data: dict, contact_config: dict |
     """Apply contact widget injection (WhatsApp + social FAB) to every page
     in a session_data dict, in place.
 
-    Reads ``contact_config`` (the wizard-collected blob), saves it to
-    ``session_data["contact_config"]``, and runs ``inject_contact_widgets``
-    over the single-page html OR every page in a multipage `pages` dict.
+    Merges the incoming ``contact_config`` with whatever is already stored
+    in ``session_data["contact_config"]``, preferring NON-EMPTY values from
+    the incoming side. Then runs ``inject_contact_widgets`` over the
+    single-page html OR every page in a multipage `pages` dict.
 
-    Idempotent — safe to call multiple times. If ``contact_config`` is empty
-    or has no widget fields, this is essentially a no-op (the helper strips
-    any old widgets and inserts nothing new).
+    The merge is critical for chat edits: when a user adds a social link
+    via the settings modal (which goes through update-contact, NOT the
+    generate pipeline), the FRONTEND's wizardData state is NOT updated.
+    On the next chat edit, handleGenerate passes wizardData.contactInfo —
+    which still has empty social fields — as `contactConfig`. Without the
+    merge, this stale empty value would clobber the settings-saved
+    contact_config and the FAB would disappear from the page on every
+    subsequent chat edit. The merge ensures the empty incoming values
+    don't overwrite non-empty existing values.
 
     Called from both the streaming and non-streaming generation pipelines
     right before redis_save_session, so the wizard data lands in the
@@ -640,22 +647,45 @@ def _apply_contact_widgets_to_session(session_data: dict, contact_config: dict |
     """
     from app.utils.contact_widgets import inject_contact_widgets
 
-    # Always log so we can diagnose "the FAB didn't appear" reports without
-    # needing browser DevTools. If contact_config is None we never even
-    # reach the inject path, so the absence of this log is a strong signal
-    # the frontend isn't sending the field.
-    if contact_config:
-        social = (contact_config or {}).get("social") or {}
-        filled_social = [k for k, v in social.items() if v]
-        logger.info(
-            "[CONTACT_WIDGETS] contact_config received: whatsapp=%s social=%s",
-            "yes" if (contact_config or {}).get("whatsapp") else "no",
-            filled_social or "none",
-        )
-    else:
-        logger.info("[CONTACT_WIDGETS] contact_config is None — skipping widget injection")
+    # ── Merge incoming with existing session config ──
+    # Empty/missing values in `contact_config` do NOT overwrite non-empty
+    # values in the existing session. This is the fix for "I added a social
+    # link via settings, then made a chat edit and the FAB disappeared".
+    existing_cfg = session_data.get("contact_config") or {}
+    incoming_cfg = contact_config or {}
+
+    merged_cfg: dict = {**existing_cfg}
+    for k, v in incoming_cfg.items():
+        if k == "social" and isinstance(v, dict):
+            merged_social = {**(merged_cfg.get("social") or {})}
+            for plat, url in v.items():
+                if url:  # Only overwrite if non-empty
+                    merged_social[plat] = url
+            merged_cfg["social"] = merged_social
+        elif v:  # Non-empty top-level field
+            merged_cfg[k] = v
+
+    # If both sides were empty/None, there's nothing to inject and nothing
+    # to strip. Skip to avoid running inject_contact_widgets on the html
+    # which would (correctly) strip any pre-existing MEYDAN_* widgets that
+    # somehow ended up there from a different code path.
+    if not merged_cfg:
+        logger.info("[CONTACT_WIDGETS] no contact_config (incoming or existing) — skipping")
         return
 
+    # Log what we're actually using so the source of any future "FAB didn't
+    # appear" reports is obvious.
+    social = (merged_cfg or {}).get("social") or {}
+    filled_social = [k for k, v in social.items() if v]
+    logger.info(
+        "[CONTACT_WIDGETS] merged config: whatsapp=%s social=%s (incoming had %d keys, existing had %d keys)",
+        "yes" if merged_cfg.get("whatsapp") else "no",
+        filled_social or "none",
+        len(incoming_cfg),
+        len(existing_cfg),
+    )
+
+    contact_config = merged_cfg  # local rebind so the rest of the function uses the merged version
     session_data["contact_config"] = contact_config
     # Mirror recipient_email to the legacy session key the deploy path reads
     if contact_config.get("recipientEmail"):
@@ -4982,6 +5012,29 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
             # slot gets the widgets, not just session["html"].
             _apply_contact_widgets_to_session(session_data, getattr(req, "contactConfig", None))
 
+            # CRITICAL: propagate the injected HTML back into `code` and
+            # `pages_dict`. The complete_payload (the SSE response the
+            # frontend uses to render the editor preview) is built from
+            # `code["html"]` and `pages_dict`, NOT from `session_data`. If
+            # we don't sync them here, the user sees the LLM's raw output
+            # in the editor (no widgets) while Redis stores the injected
+            # version — leaving the social FAB and WhatsApp button
+            # invisible until the next reload. This is the bug users hit
+            # as "I added my LinkedIn link but no FAB appeared".
+            if getattr(req, "contactConfig", None):
+                if session_data.get("multipage") and session_data.get("pages"):
+                    # Multipage: sync each page's HTML from session_data → pages_dict
+                    if pages_dict:
+                        for _slug, _pg in session_data["pages"].items():
+                            if _slug in pages_dict and isinstance(_pg, dict) and _pg.get("html"):
+                                pages_dict[_slug]["html"] = _pg["html"]
+                    # And sync code["html"] to the index page (the visible one)
+                    _index = session_data["pages"].get("index")
+                    if _index and _index.get("html"):
+                        code["html"] = _index["html"]
+                elif session_data.get("html"):
+                    code["html"] = session_data["html"]
+
             await redis_save_session(session_id, session_data)
 
             # Extract SEO metadata from plan
@@ -5418,6 +5471,19 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
 
         # Inject contact widgets (see streaming pipeline for full reasoning)
         _apply_contact_widgets_to_session(session_data, getattr(req, "contactConfig", None))
+        # Propagate injected HTML back to code/pages_dict (see streaming
+        # pipeline for full reasoning — same bug class).
+        if getattr(req, "contactConfig", None):
+            if session_data.get("multipage") and session_data.get("pages"):
+                if pages_dict:
+                    for _slug2, _pg2 in session_data["pages"].items():
+                        if _slug2 in pages_dict and isinstance(_pg2, dict) and _pg2.get("html"):
+                            pages_dict[_slug2]["html"] = _pg2["html"]
+                _index2 = session_data["pages"].get("index")
+                if _index2 and _index2.get("html"):
+                    code["html"] = _index2["html"]
+            elif session_data.get("html"):
+                code["html"] = session_data["html"]
 
         await redis_save_session(session_id, session_data)
 
