@@ -1221,6 +1221,38 @@ const Dashboard = () => {
                             const parkedDomains = (myDomains || []).filter(d => !d.site_id);
                             const hasParked = parkedDomains.length > 0;
                             return (
+                                <>
+                                {/* Keyframes for the "Create Website" pulsing glow.
+                                    Inlined here (instead of in App.css) so the
+                                    animation lives next to the only consumer and
+                                    can't get out of sync if the file is split. */}
+                                <style>{`
+                                    @keyframes meydanCreateGlow {
+                                        0%, 100% {
+                                            border-color: rgba(129, 140, 248, 0.55);
+                                            box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.25),
+                                                        0 0 18px rgba(99, 102, 241, 0.28),
+                                                        0 0 36px rgba(99, 102, 241, 0.12);
+                                        }
+                                        50% {
+                                            border-color: rgba(165, 180, 252, 0.85);
+                                            box-shadow: 0 0 0 1px rgba(165, 180, 252, 0.45),
+                                                        0 0 28px rgba(99, 102, 241, 0.5),
+                                                        0 0 60px rgba(99, 102, 241, 0.22);
+                                        }
+                                    }
+                                    .meydan-create-website-btn {
+                                        border: 1.5px solid rgba(129, 140, 248, 0.55) !important;
+                                        animation: meydanCreateGlow 2.4s ease-in-out infinite;
+                                    }
+                                    .meydan-create-website-btn:hover {
+                                        animation-play-state: paused;
+                                        border-color: rgba(165, 180, 252, 1) !important;
+                                        box-shadow: 0 0 0 1px rgba(165, 180, 252, 0.6),
+                                                    0 0 32px rgba(99, 102, 241, 0.55),
+                                                    0 0 70px rgba(99, 102, 241, 0.28) !important;
+                                    }
+                                `}</style>
                                 <div className="dash-action-buttons" style={{
                                     marginTop: 36, display: 'flex', gap: 16, flexWrap: 'wrap',
                                     justifyContent: 'center', maxWidth: 880, marginLeft: 'auto', marginRight: 'auto',
@@ -1258,21 +1290,26 @@ const Dashboard = () => {
                                         </span>
                                     </button>
 
-                                    {/* Create Website */}
+                                    {/* Create Website — visually highlighted as the
+                                        "default" CTA via a pulsing glow border defined
+                                        in the <style> block above. The button itself
+                                        is NOT actually default in any keyboard sense
+                                        (Enter doesn't fire it, no autoFocus); the glow
+                                        is purely visual. */}
                                     <button
                                         type="button"
+                                        className="meydan-create-website-btn"
                                         onClick={() => navigate('/generator', { state: { newSession: true } })}
                                         style={{
                                             flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
-                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02))',
-                                            border: '1px solid rgba(99,102,241,0.25)',
+                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))',
                                             borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
                                             display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
                                             gap: 10, textAlign: 'left',
-                                            transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                            transition: 'transform 0.2s, background 0.2s',
                                         }}
-                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'; }}
-                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'; }}
+                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
                                             <div style={{
@@ -1389,6 +1426,7 @@ const Dashboard = () => {
                                         </div>
                                     )}
                                 </div>
+                                </>
                             );
                         })()}
                     </div>
