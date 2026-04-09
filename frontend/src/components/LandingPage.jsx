@@ -556,33 +556,35 @@ const faqData = [
     { q: 'Is my website mobile-responsive?', a: 'Every generated website is fully responsive out of the box. It looks great on desktops, tablets, and smartphones without any extra configuration.' },
 ];
 
-// AI Agent FAQ — gradient orb with cards that "speak" via typewriter answers.
-// Replaces the legacy static accordion. Spec lives in
-// memory/todo-ai-agent-faq.md. All classes are namespaced .aif-* so they
-// can't collide with the legacy .faq-* CSS still used elsewhere.
+// AI Agent FAQ — orb-only interaction. Click the orb → a popup appears
+// below with a question + typed answer. Click ‹ / › to navigate through
+// questions, or click ✕ / outside to dismiss. The cards are gone — the
+// orb is the only thing the user interacts with. Spec lives in
+// memory/todo-ai-agent-faq.md.
 const FAQSection = () => {
     const ref = useRef(null);
-    const [openIndex, setOpenIndex] = useState(null);
+    const popupRef = useRef(null);
+    const orbWrapRef = useRef(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [typed, setTyped] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const typingTimerRef = useRef(null);
     const startDelayRef = useRef(null);
 
-    // Typewriter effect — runs every time the open card changes.
-    // Pre-typing pause (450ms) simulates "thinking", then chars reveal at
-    // 25ms each. Cancellable via cleanup so rapid card switches don't pile
-    // up overlapping timers.
+    // Typewriter — runs every time currentIndex changes (or on first open).
+    // 450ms "thinking" pause then 25ms/char reveal. Cancellable.
     useEffect(() => {
         if (typingTimerRef.current) { clearTimeout(typingTimerRef.current); typingTimerRef.current = null; }
         if (startDelayRef.current) { clearTimeout(startDelayRef.current); startDelayRef.current = null; }
 
-        if (openIndex === null) {
+        if (!isOpen) {
             setTyped('');
             setIsTyping(false);
             return;
         }
 
-        const fullAnswer = faqData[openIndex].a;
+        const fullAnswer = faqData[currentIndex].a;
         setTyped('');
         setIsTyping(true);
 
@@ -604,98 +606,168 @@ const FAQSection = () => {
             if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
             if (startDelayRef.current) clearTimeout(startDelayRef.current);
         };
-    }, [openIndex]);
+    }, [isOpen, currentIndex]);
 
-    // Scroll-stagger reveal — orb header + cards fade in as the section
-    // enters the viewport. Uses GSAP context so it cleans up correctly.
+    // Click outside the popup OR the orb closes the dialog. Listens on
+    // document, scoped to when the popup is open.
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const handleClickOutside = (e) => {
+            if (popupRef.current && popupRef.current.contains(e.target)) return;
+            if (orbWrapRef.current && orbWrapRef.current.contains(e.target)) return;
+            setIsOpen(false);
+        };
+        // Defer attach so the click that opened the popup doesn't immediately close it
+        const t = setTimeout(() => document.addEventListener('mousedown', handleClickOutside), 0);
+        return () => {
+            clearTimeout(t);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
+    // Escape key closes the popup
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const onKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [isOpen]);
+
+    // Scroll-stagger reveal — orb header fades in as the section enters.
     useEffect(() => {
         const ctx = gsap.context(() => {
             gsap.fromTo('.aif-orb-wrap > *', { y: 24, opacity: 0 }, {
                 y: 0, opacity: 1, stagger: 0.12, duration: 0.9, ease: 'power3.out',
                 scrollTrigger: { trigger: ref.current, start: 'top 80%' },
             });
-            gsap.fromTo('.aif-card', { y: 28, opacity: 0 }, {
-                y: 0, opacity: 1, stagger: 0.06, duration: 0.7, ease: 'power3.out',
-                scrollTrigger: { trigger: ref.current, start: 'top 75%' },
-            });
         }, ref);
         return () => ctx.revert();
     }, []);
 
-    const handleCardClick = useCallback((i) => {
-        setOpenIndex(prev => (prev === i ? null : i));
+    const handleOrbClick = useCallback(() => {
+        // First click opens at question 0; subsequent clicks (when already
+        // open) advance to the next question, cycling at the end.
+        setIsOpen(prev => {
+            if (!prev) {
+                setCurrentIndex(0);
+                return true;
+            }
+            setCurrentIndex(i => (i + 1) % faqData.length);
+            return true;
+        });
     }, []);
 
-    const subtitle = openIndex === null
-        ? 'Tap a question to hear the answer.'
-        : (isTyping ? 'Web AI is answering…' : 'Tap another question, or tap again to dismiss.');
+    const handlePrev = useCallback((e) => {
+        e.stopPropagation();
+        setCurrentIndex(i => (i - 1 + faqData.length) % faqData.length);
+    }, []);
+
+    const handleNext = useCallback((e) => {
+        e.stopPropagation();
+        setCurrentIndex(i => (i + 1) % faqData.length);
+    }, []);
+
+    const handleClose = useCallback((e) => {
+        e.stopPropagation();
+        setIsOpen(false);
+    }, []);
+
+    const subtitle = isOpen
+        ? (isTyping ? 'Web AI is answering…' : 'Tap the orb again for the next question.')
+        : 'Tap the orb to ask Web AI anything.';
 
     return (
         <section className="faq-section ai-agent-faq" ref={ref}>
             <div className="faq-inner aif-inner">
-                {/* Orb header */}
-                <div className="aif-orb-wrap">
-                    <div className={`aif-orb ${openIndex !== null ? 'aif-orb-active' : ''}`} aria-hidden="true">
-                        <div className="aif-orb-glow" />
-                        <div className="aif-orb-core" />
-                        <div className="aif-orb-highlight" />
-                        <div className="aif-orb-particles">
+                <div className="aif-orb-wrap" ref={orbWrapRef}>
+                    <button
+                        type="button"
+                        className={`aif-orb ${isOpen ? 'aif-orb-active' : ''}`}
+                        onClick={handleOrbClick}
+                        aria-label={isOpen ? 'Next question' : 'Open Web AI FAQ'}
+                        aria-expanded={isOpen}
+                    >
+                        <span className="aif-orb-glow" aria-hidden="true" />
+                        <span className="aif-orb-core" aria-hidden="true" />
+                        <span className="aif-orb-highlight" aria-hidden="true" />
+                        <span className="aif-orb-particles" aria-hidden="true">
                             {[0, 1, 2, 3, 4, 5].map(i => (
                                 <span key={i} className={`aif-particle aif-p${i}`} />
                             ))}
-                        </div>
-                    </div>
+                        </span>
+                    </button>
                     <span className="section-tag">FAQ</span>
                     <h2>Ask <span className="text-accent">Web AI</span></h2>
                     <p className="aif-subtitle">{subtitle}</p>
                 </div>
 
-                {/* Card grid */}
-                <div className="aif-grid">
-                    {faqData.map((item, i) => {
-                        const isOpen = openIndex === i;
-                        const isDimmed = openIndex !== null && !isOpen;
-                        return (
-                            <div
-                                key={i}
-                                className={`aif-card ${isOpen ? 'aif-card-open' : ''} ${isDimmed ? 'aif-card-dimmed' : ''}`}
-                                onClick={() => handleCardClick(i)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        handleCardClick(i);
-                                    }
-                                }}
-                                role="button"
-                                tabIndex={0}
-                                aria-expanded={isOpen}
+                {/* Popup — only rendered when open. Positioned below the orb. */}
+                {isOpen && (
+                    <div className="aif-popup-anchor">
+                        <div
+                            className="aif-popup"
+                            ref={popupRef}
+                            role="dialog"
+                            aria-labelledby="aif-popup-q"
+                            aria-modal="false"
+                        >
+                            <button
+                                type="button"
+                                className="aif-popup-close"
+                                onClick={handleClose}
+                                aria-label="Close"
                             >
-                                <div className="aif-card-q">
-                                    <span>{item.q}</span>
-                                    <div className={`aif-card-icon ${isOpen ? 'aif-card-icon-open' : ''}`}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                            <path d="M12 5v14" />
-                                            <path d="M5 12h14" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                {isOpen && (
-                                    <div className="aif-card-a">
-                                        <p>
-                                            {typed}
-                                            {isTyping && <span className="aif-cursor">|</span>}
-                                            {!isTyping && typed === '' && (
-                                                <span className="aif-thinking">
-                                                    <span /><span /><span />
-                                                </span>
-                                            )}
-                                        </p>
-                                    </div>
-                                )}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                    <path d="M18 6 6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+
+                            <div className="aif-popup-q" id="aif-popup-q">
+                                <span className="aif-popup-q-label">Question</span>
+                                <span className="aif-popup-q-text">{faqData[currentIndex].q}</span>
                             </div>
-                        );
-                    })}
-                </div>
+
+                            <div className="aif-popup-a">
+                                <span className="aif-popup-a-label">Web AI</span>
+                                <p className="aif-popup-a-text">
+                                    {typed && typed}
+                                    {isTyping && <span className="aif-cursor">|</span>}
+                                    {!typed && (
+                                        <span className="aif-thinking">
+                                            <span /><span /><span />
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="aif-popup-nav">
+                                <button
+                                    type="button"
+                                    className="aif-popup-nav-btn"
+                                    onClick={handlePrev}
+                                    aria-label="Previous question"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                        <path d="m15 18-6-6 6-6" />
+                                    </svg>
+                                </button>
+                                <span className="aif-popup-counter">
+                                    {currentIndex + 1} <span className="aif-popup-counter-sep">of</span> {faqData.length}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="aif-popup-nav-btn"
+                                    onClick={handleNext}
+                                    aria-label="Next question"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                        <path d="m9 18 6-6-6-6" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </section>
     );
