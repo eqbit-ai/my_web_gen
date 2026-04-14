@@ -692,11 +692,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var tSel = '.nav-toggle,.hamburger,.mobile-toggle,.menu-toggle,.navbar-toggle,button[aria-label="Menu"],button[aria-label="Toggle menu"],.mobile-menu-btn,.burger,[class*="-menu-toggle"],[class*="-mobile-toggle"],[class*="nav-hamburger"],[class*="__hamburger"],[class*="__menu-toggle"]';
     var mSel = '.nav-links,.nav-menu,.mobile-menu,.navbar-menu,.navbar-links,.menu-items,.mobile-nav,[class*="-nav-links"],[class*="-menu-items"],[class*="-nav-menu"],[class*="__nav-links"],[class*="__menu-items"]';
 
+    // Capture phase + stopImmediatePropagation — defeats LLM-generated
+    // duplicate handlers that would re-toggle the class and cancel ours.
     document.addEventListener('click', function(e) {
       var btn = e.target.closest(tSel);
       if (btn) {
         e.preventDefault();
         e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
         var m = document.querySelector(mSel);
         if (m) {
           m.classList.toggle('active');
@@ -732,7 +735,7 @@ document.addEventListener('DOMContentLoaded', function() {
         t2.setAttribute('aria-expanded', 'false');
         t2.innerHTML = '<i class="fa-solid fa-bars"></i>';
       }
-    });
+    }, true);
   })();
 
   /* ------------------------------------------------------------------
@@ -873,36 +876,33 @@ document.addEventListener('DOMContentLoaded', function() {
   })();
 
   /* ------------------------------------------------------------------
-     Hero Text Stagger (split words, animate sequentially)
+     Hero Text Stagger — DISABLED.
+     The original implementation called el.innerHTML = '' and rebuilt the
+     element as a flat list of word spans, which destroyed the hero's HTML
+     structure (h1, subtitle, buttons, background) whenever the class was
+     applied to a <section> wrapper instead of a single heading. LLMs apply
+     it inconsistently and the destructive behaviour wiped the entire hero.
+     The deploy pipeline now also strips the class from class="" attributes
+     as a belt-and-braces measure.
      ------------------------------------------------------------------ */
-  (function() {
-    var heroEls = document.querySelectorAll('.hero-stagger');
-    heroEls.forEach(function(el) {
-      var text = el.textContent.trim();
-      if (!text) return;
-      var words = text.split(/\\s+/);
-      el.innerHTML = '';
-      words.forEach(function(word, i) {
-        var span = document.createElement('span');
-        span.textContent = word;
-        span.style.animationDelay = (0.15 + i * 0.08) + 's';
-        el.appendChild(span);
-        // Add a space between words
-        if (i < words.length - 1) {
-          el.appendChild(document.createTextNode(' '));
-        }
-      });
-    });
-  })();
 
   /* ------------------------------------------------------------------
      Back-to-Top with Scroll Progress Ring
      ------------------------------------------------------------------ */
   (function() {
-    var btn = document.querySelector('.back-to-top');
+    // Match both .back-to-top (animation library convention) and #back-to-top
+    // (what the generator prompt tells the LLM to emit). Either one works.
+    var btn = document.querySelector('.back-to-top, #back-to-top');
     if (!btn) return;
 
     var ring = btn.querySelector('.progress-ring circle');
+
+    // LLM often emits inline opacity:0 / pointer-events:none on #back-to-top,
+    // which would keep the button invisible even after we add the .visible
+    // class. Clear those inline props so the scroll handler can actually
+    // reveal the button.
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
 
     function update() {
       var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -911,8 +911,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (scrollTop > 400) {
         btn.classList.add('visible');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
       } else {
         btn.classList.remove('visible');
+        btn.style.opacity = '0';
+        btn.style.pointerEvents = 'none';
       }
 
       if (ring) {
@@ -1219,7 +1223,7 @@ SCROLL PROGRESS: <div id="scroll-progress"></div> as first body child
 BACK TO TOP: <button class="back-to-top"> with progress ring SVG
 FLOAT INPUT: .float-input wrapper with input + label for floating labels
 TOAST: showToast("message", "success|error|info") in JS
-WHATSAPP: .whatsapp-float (fixed bottom-left, pulse animation)
+WHATSAPP: (handled automatically — do NOT add a whatsapp float button; the platform injects it post-generation based on user settings)
 GLASS: backdrop-filter: blur(10px); background: rgba(255,255,255,0.05)
 GRADIENT TEXT: background: linear-gradient(...); -webkit-background-clip: text; -webkit-text-fill-color: transparent
 

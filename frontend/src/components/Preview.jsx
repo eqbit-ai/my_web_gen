@@ -892,12 +892,16 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
         btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
       }
 
-      // Event delegation on document — works even if elements are added later
+      // Capture-phase delegation so we run BEFORE user-injected direct
+      // listeners on the same button (LLM-generated code often also binds
+      // .nav-toggle). stopImmediatePropagation prevents those duplicates
+      // from re-toggling the class and cancelling our toggle.
       document.addEventListener('click', function(e) {
         var btn = e.target.closest(tSel);
         if (btn) {
           e.preventDefault();
           e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
           var menu = findMenu();
           if (menu) toggleMenu(btn, menu);
           return;
@@ -918,7 +922,7 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
             closeMenu(toggle2, menu3);
           }
         }
-      });
+      }, true);
     })();
 
     // Universal testimonial slider fallback
