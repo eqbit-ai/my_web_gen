@@ -433,16 +433,19 @@ body:has(.gn-layout) {
 }
 .dm-step-pending .dm-step-icon { background: rgba(17, 24, 39, 0.06) !important; color: #6B7280 !important; }
 
-/* Toast container hardening — reported behaviour: a large overlay appears
-   when a toast shows up and disappears when it closes. Defensive fix
-   pins the container to its content and stops any accidental full-width
-   ancestor from inheriting pointer-events. */
+/* Toast — on light bg the original 30% black shadow renders as a visible
+   grey halo around the pill. Pin container size + soften shadow. */
 .gn-layout .toast-container,
 .toast-container {
   width: auto !important;
   height: auto !important;
   max-width: 380px !important;
   pointer-events: none !important;
+  background: transparent !important;
 }
 .gn-layout .toast-container > *,
 .toast-container > * { pointer-events: auto !important; }
+.gn-layout .toast-item,
+.toast-item {
+  box-shadow: 0 6px 16px -4px rgba(17, 24, 39, 0.18) !important;
+}
