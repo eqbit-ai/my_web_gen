@@ -447,5 +447,5 @@ body:has(.gn-layout) {
 .toast-container > * { pointer-events: auto !important; }
 .gn-layout .toast-item,
 .toast-item {
-  box-shadow: 0 6px 16px -4px rgba(17, 24, 39, 0.18) !important;
+  box-shadow: 0 2px 6px rgba(17, 24, 39, 0.1) !important;
 }

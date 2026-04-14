@@ -1208,11 +1208,11 @@ const Dashboard = () => {
                             const hasParked = parkedDomains.length > 0;
                             return (
                                 <>
-                                {/* Keyframes for the "Create Website" pulsing glow.
+                                    {/* Keyframes for the "Create Website" pulsing glow.
                                     Inlined here (instead of in App.css) so the
                                     animation lives next to the only consumer and
                                     can't get out of sync if the file is split. */}
-                                <style>{`
+                                    <style>{`
                                     @keyframes meydanCreateGlow {
                                         0%, 100% {
                                             border-color: rgba(129, 140, 248, 0.55);
@@ -1239,179 +1239,179 @@ const Dashboard = () => {
                                                     0 0 70px rgba(99, 102, 241, 0.28) !important;
                                     }
                                 `}</style>
-                                <div className="dash-action-buttons" style={{
-                                    marginTop: 36, display: 'flex', gap: 16, flexWrap: 'wrap',
-                                    justifyContent: 'center', maxWidth: 880, marginLeft: 'auto', marginRight: 'auto',
-                                }}>
-                                    {/* Buy Domain */}
-                                    <button
-                                        type="button"
-                                        onClick={() => { openEntryFlow(); }}
-                                        style={{
-                                            flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
-                                            background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
-                                            border: '1px solid rgba(52,211,153,0.25)',
-                                            borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                                            gap: 10, textAlign: 'left',
-                                            transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
-                                        }}
-                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)'; }}
-                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.25)'; }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                                            <div style={{
-                                                width: 44, height: 44, borderRadius: 10,
-                                                background: 'rgba(52,211,153,0.15)', display: 'flex',
-                                                alignItems: 'center', justifyContent: 'center',
-                                            }}>
-                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                                                </svg>
+                                    <div className="dash-action-buttons" style={{
+                                        marginTop: 36, display: 'flex', gap: 16, flexWrap: 'wrap',
+                                        justifyContent: 'center', maxWidth: 880, marginLeft: 'auto', marginRight: 'auto',
+                                    }}>
+                                        {/* Buy Domain */}
+                                        <button
+                                            type="button"
+                                            onClick={() => { openEntryFlow(); }}
+                                            style={{
+                                                flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
+                                                background: 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02))',
+                                                border: '1px solid rgba(52,211,153,0.25)',
+                                                borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                                gap: 10, textAlign: 'left',
+                                                transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                            }}
+                                            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)'; }}
+                                            onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.25)'; }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                                <div style={{
+                                                    width: 44, height: 44, borderRadius: 10,
+                                                    background: 'rgba(52,211,153,0.15)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                                    </svg>
+                                                </div>
+                                                <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Buy Domain</strong>
                                             </div>
-                                            <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Buy Domain</strong>
-                                        </div>
-                                        <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
-                                            Register your domain.
-                                        </span>
-                                    </button>
+                                            <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                                Register your domain.
+                                            </span>
+                                        </button>
 
-                                    {/* Create Website — visually highlighted as the
+                                        {/* Create Website — visually highlighted as the
                                         "default" CTA via a pulsing glow border defined
                                         in the <style> block above. The button itself
                                         is NOT actually default in any keyboard sense
                                         (Enter doesn't fire it, no autoFocus); the glow
                                         is purely visual. */}
-                                    <button
-                                        type="button"
-                                        className="meydan-create-website-btn"
-                                        onClick={() => navigate('/generator', { state: { newSession: true } })}
-                                        style={{
-                                            flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
-                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))',
-                                            borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                                            gap: 10, textAlign: 'left',
-                                            transition: 'transform 0.2s, background 0.2s',
-                                        }}
-                                        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                                        onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                                            <div style={{
-                                                width: 44, height: 44, borderRadius: 10,
-                                                background: 'rgba(99,102,241,0.15)', display: 'flex',
-                                                alignItems: 'center', justifyContent: 'center',
-                                            }}>
-                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-                                                </svg>
-                                            </div>
-                                            <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Create Website</strong>
-                                        </div>
-                                        <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
-                                            Generate your website with AI now, Associate the domain later.
-                                        </span>
-                                    </button>
-
-                                    {/* Use Existing Domain — only if user has parked domains */}
-                                    {hasParked && (
-                                        <div style={{ flex: '1 1 240px', minHeight: 140, position: 'relative' }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => setExistingDomainPickerOpen(v => !v)}
-                                                style={{
-                                                    width: '100%', minHeight: 140, padding: '24px 20px',
-                                                    background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02))',
-                                                    border: '1px solid rgba(251,191,36,0.25)',
-                                                    borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
-                                                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                                                    gap: 10, textAlign: 'left',
-                                                    transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
-                                                }}
-                                                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.5)'; }}
-                                                onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.25)'; }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                                                    <div style={{
-                                                        width: 44, height: 44, borderRadius: 10,
-                                                        background: 'rgba(251,191,36,0.15)', display: 'flex',
-                                                        alignItems: 'center', justifyContent: 'center',
-                                                    }}>
-                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-                                                        </svg>
-                                                    </div>
-                                                    <strong style={{ fontSize: 17, color: '#f3f4f6' }}>
-                                                        Use Existing Domain
-                                                        <span style={{ marginLeft: 8, fontSize: 12, color: '#fbbf24', fontWeight: 500 }}>
-                                                            ({parkedDomains.length})
-                                                        </span>
-                                                    </strong>
+                                        <button
+                                            type="button"
+                                            className="meydan-create-website-btn"
+                                            onClick={() => navigate('/generator', { state: { newSession: true } })}
+                                            style={{
+                                                flex: '1 1 240px', minHeight: 140, padding: '24px 20px',
+                                                background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))',
+                                                borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                                gap: 10, textAlign: 'left',
+                                                transition: 'transform 0.2s, background 0.2s',
+                                            }}
+                                            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                            onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                                <div style={{
+                                                    width: 44, height: 44, borderRadius: 10,
+                                                    background: 'rgba(99,102,241,0.15)', display: 'flex',
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+                                                    </svg>
                                                 </div>
-                                                <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
-                                                    Build a new website using one of your parked domains. Auto-connects after deploy.
-                                                </span>
-                                            </button>
+                                                <strong style={{ fontSize: 17, color: '#f3f4f6' }}>Create Website</strong>
+                                            </div>
+                                            <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                                Generate your website with AI now, Associate the domain later.
+                                            </span>
+                                        </button>
 
-                                            {/* Parked-domain popover — opens below the button on click */}
-                                            {existingDomainPickerOpen && (
-                                                <>
-                                                    {/* Click-outside catcher */}
-                                                    <button
-                                                        type="button"
-                                                        aria-label="Close domain picker"
-                                                        onClick={() => setExistingDomainPickerOpen(false)}
-                                                        style={{
-                                                            position: 'fixed', inset: 0, background: 'transparent',
-                                                            border: 'none', cursor: 'default', zIndex: 998,
-                                                        }}
-                                                    />
-                                                    <div style={{
-                                                        position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
-                                                        background: '#18181b', border: '1px solid #27272a',
-                                                        borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                                                        zIndex: 999, maxHeight: 320, overflowY: 'auto', padding: 8,
-                                                    }}>
+                                        {/* Use Existing Domain — only if user has parked domains */}
+                                        {hasParked && (
+                                            <div style={{ flex: '1 1 240px', minHeight: 140, position: 'relative' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setExistingDomainPickerOpen(v => !v)}
+                                                    style={{
+                                                        width: '100%', minHeight: 140, padding: '24px 20px',
+                                                        background: 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02))',
+                                                        border: '1px solid rgba(251,191,36,0.25)',
+                                                        borderRadius: 14, color: '#e5e7eb', cursor: 'pointer',
+                                                        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                                                        gap: 10, textAlign: 'left',
+                                                        transition: 'transform 0.2s, border-color 0.2s, background 0.2s',
+                                                    }}
+                                                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.5)'; }}
+                                                    onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(251,191,36,0.25)'; }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
                                                         <div style={{
-                                                            fontSize: 11, fontWeight: 600, color: '#71717a',
-                                                            textTransform: 'uppercase', letterSpacing: 0.5,
-                                                            padding: '8px 10px 6px',
+                                                            width: 44, height: 44, borderRadius: 10,
+                                                            background: 'rgba(251,191,36,0.15)', display: 'flex',
+                                                            alignItems: 'center', justifyContent: 'center',
                                                         }}>
-                                                            Parked domains — pick one
+                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+                                                            </svg>
                                                         </div>
-                                                        {parkedDomains.map(d => (
-                                                            <button
-                                                                key={d.id || d.domain_name}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setExistingDomainPickerOpen(false);
-                                                                    handleEntryUseOwnedDomain(d.domain_name);
-                                                                }}
-                                                                style={{
-                                                                    display: 'block', width: '100%', textAlign: 'left',
-                                                                    padding: '10px 12px', background: 'transparent',
-                                                                    border: 'none', color: '#e5e7eb', cursor: 'pointer',
-                                                                    borderRadius: 6, fontSize: 14,
-                                                                    transition: 'background 0.15s',
-                                                                }}
-                                                                onMouseOver={e => { e.currentTarget.style.background = '#27272a'; }}
-                                                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
-                                                            >
-                                                                <strong>{d.domain_name}</strong>
-                                                                {d.status && d.status !== 'active' && (
-                                                                    <span style={{ marginLeft: 8, fontSize: 11, color: '#fbbf24' }}>
-                                                                        {d.status}
-                                                                    </span>
-                                                                )}
-                                                            </button>
-                                                        ))}
+                                                        <strong style={{ fontSize: 17, color: '#f3f4f6' }}>
+                                                            Use Existing Domain
+                                                            <span style={{ marginLeft: 8, fontSize: 12, color: '#fbbf24', fontWeight: 500 }}>
+                                                                ({parkedDomains.length})
+                                                            </span>
+                                                        </strong>
                                                     </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                                    <span style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>
+                                                        Build a new website using one of your parked domains. Auto-connects after deploy.
+                                                    </span>
+                                                </button>
+
+                                                {/* Parked-domain popover — opens below the button on click */}
+                                                {existingDomainPickerOpen && (
+                                                    <>
+                                                        {/* Click-outside catcher */}
+                                                        <button
+                                                            type="button"
+                                                            aria-label="Close domain picker"
+                                                            onClick={() => setExistingDomainPickerOpen(false)}
+                                                            style={{
+                                                                position: 'fixed', inset: 0, background: 'transparent',
+                                                                border: 'none', cursor: 'default', zIndex: 998,
+                                                            }}
+                                                        />
+                                                        <div style={{
+                                                            position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
+                                                            background: '#18181b', border: '1px solid #27272a',
+                                                            borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                                            zIndex: 999, maxHeight: 320, overflowY: 'auto', padding: 8,
+                                                        }}>
+                                                            <div style={{
+                                                                fontSize: 11, fontWeight: 600, color: '#71717a',
+                                                                textTransform: 'uppercase', letterSpacing: 0.5,
+                                                                padding: '8px 10px 6px',
+                                                            }}>
+                                                                Parked domains — pick one
+                                                            </div>
+                                                            {parkedDomains.map(d => (
+                                                                <button
+                                                                    key={d.id || d.domain_name}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setExistingDomainPickerOpen(false);
+                                                                        handleEntryUseOwnedDomain(d.domain_name);
+                                                                    }}
+                                                                    style={{
+                                                                        display: 'block', width: '100%', textAlign: 'left',
+                                                                        padding: '10px 12px', background: 'transparent',
+                                                                        border: 'none', color: '#e5e7eb', cursor: 'pointer',
+                                                                        borderRadius: 6, fontSize: 14,
+                                                                        transition: 'background 0.15s',
+                                                                    }}
+                                                                    onMouseOver={e => { e.currentTarget.style.background = '#27272a'; }}
+                                                                    onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
+                                                                >
+                                                                    <strong>{d.domain_name}</strong>
+                                                                    {d.status && d.status !== 'active' && (
+                                                                        <span style={{ marginLeft: 8, fontSize: 11, color: '#fbbf24' }}>
+                                                                            {d.status}
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </>
                             );
                         })()}
@@ -1575,11 +1575,11 @@ const Dashboard = () => {
                                             </button>
                                             <div style={{ padding: '18px 20px 20px' }}>
                                                 <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: '#f3f4f6' }}>{template.name}</h3>
-                                                <p style={{ margin: '0 0 16px', fontSize: 13, color: '#a1a1aa', lineHeight: 1.5, minHeight: 38 }}>{template.description}</p>
+                                                <p style={{ margin: '0 0 16px', fontSize: 13, color: '#4B5563', lineHeight: 1.5, minHeight: 38 }}>{template.description}</p>
                                                 <div style={{ display: 'flex', gap: 8 }}>
                                                     <button
                                                         onClick={() => setPreviewModal(template.id)}
-                                                        style={{ flex: 1, background: 'transparent', border: '1px solid #3f3f46', color: '#e4e4e7', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                                        style={{ flex: 1, background: '#FFFFFF', border: '1px solid rgba(17,24,39,0.12)', color: '#0A0A0A', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                                     >
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                                                         Preview
@@ -1617,13 +1617,13 @@ const Dashboard = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                         <button
                                             onClick={() => setPreviewModal(null)}
-                                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                            style={{ background: '#FFFFFF', border: '1px solid rgba(17,24,39,0.12)', color: '#0A0A0A', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                                             Back
                                         </button>
-                                        <div style={{ color: '#f3f4f6', fontSize: 16, fontWeight: 700 }}>{templates.find(t => t.id === previewModal)?.name}</div>
-                                        <span style={{ fontSize: 11, color: '#a1a1aa', background: 'rgba(255,255,255,0.06)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{templates.find(t => t.id === previewModal)?.category}</span>
+                                        <div style={{ color: '#0A0A0A', fontSize: 16, fontWeight: 700 }}>{templates.find(t => t.id === previewModal)?.name}</div>
+                                        <span style={{ fontSize: 11, color: '#4B5563', background: 'rgba(17,24,39,0.06)', padding: '3px 10px', borderRadius: 999, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{templates.find(t => t.id === previewModal)?.category}</span>
                                     </div>
                                     <button
                                         onClick={() => { setPreviewModal(null); handleUseTemplate(previewModal); }}
@@ -2614,7 +2614,7 @@ const Dashboard = () => {
                                             Back
                                         </button>
                                     </div>
-                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#f3f4f6', fontWeight: 700 }}>Find your perfect domain</h2>
+                                    <h2 style={{ margin: '0 0 6px', fontSize: 20, color: '#030303', fontWeight: 700 }}>Find your perfect domain</h2>
                                     <p style={{ margin: '0 0 18px', fontSize: 13, color: '#9ca3af' }}>Type your business name to see available extensions.</p>
 
                                     <form onSubmit={handleEntryDomainSearch} style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
