@@ -757,11 +757,44 @@ body:has(.generator-layout) .dashboard { background: initial !important; }
 /* --------------------------------------------------------------------------
    Dashboard modals — shell + overlay (dash-domain-modal / entry-flow stages)
    The class itself hardcodes #1a1a24 bg so CSS var overrides won't reach it.
+   Force-center and use a transparent scrim (requested: no grey backdrop).
    -------------------------------------------------------------------------- */
 .dash-domain-modal-overlay {
-  background: rgba(17, 24, 39, 0.18) !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 1000 !important;
+  padding: 24px !important;
+}
+
+/* Close (X) button inside entry-flow modals — make clearly visible */
+.dash-domain-modal > button[aria-label="Close"] {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--lui-border) !important;
+  background: var(--lui-bg-elev) !important;
+  color: var(--lui-text-2) !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  transition: background 0.15s, color 0.15s, border-color 0.15s !important;
+}
+.dash-domain-modal > button[aria-label="Close"]:hover {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text) !important;
+  border-color: var(--lui-border-hov) !important;
 }
 
 .dash-domain-modal {
