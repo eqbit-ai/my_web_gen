@@ -41,7 +41,7 @@ Rules:
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(..., min_length=2, max_length=500)
+    question: str = Field(..., max_length=500)
 
 
 class ChatResponse(BaseModel):
@@ -65,8 +65,8 @@ async def _ask_claude(question: str) -> str:
 @router.post("/chat", response_model=ChatResponse)
 async def landing_chat(body: ChatRequest) -> ChatResponse:
     question = body.question.strip()
-    if not question:
-        raise HTTPException(status_code=400, detail="Question is required.")
+    if len(question) < 2:
+        raise HTTPException(status_code=400, detail="Please ask a slightly longer question so I can help.")
 
     try:
         answer = await _ask_claude(question)

@@ -604,9 +604,16 @@ const FAQSection = () => {
             if (res.status === 429) {
                 throw new Error("You're asking too fast. Please wait a moment and try again.");
             }
+            if (res.status === 422) {
+                throw new Error('Please ask a slightly longer question so I can help.');
+            }
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || 'Something went wrong. Please try again.');
+                const detail = err?.detail;
+                let msg = 'Something went wrong. Please try again.';
+                if (typeof detail === 'string') msg = detail;
+                else if (Array.isArray(detail) && detail[0]?.msg) msg = detail[0].msg;
+                throw new Error(msg);
             }
             const data = await res.json();
             setTurns(prev => prev.map((t, i) => (
