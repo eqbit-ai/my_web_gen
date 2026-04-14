@@ -24,8 +24,13 @@ const IFRAME_CLICK_TRAP = `
 })();
 `;
 
-const buildSrcDoc = (css, html, withScripts = false) =>
+const buildSrcDoc = (css, html) =>
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}<script>${IFRAME_CLICK_TRAP}<\/script></body></html>`;
+
+// For sandboxed thumbnails (no allow-scripts): strip <script> tags from the
+// embedded HTML so the browser doesn't log a "Blocked script execution" noise
+// for every template card.
+const stripScripts = (html) => (html || '').replace(/<script[\s\S]*?<\/script>/gi, '');
 
 
 const Dashboard = () => {
@@ -1552,7 +1557,7 @@ const Dashboard = () => {
                                                 {preview ? (
                                                     <iframe
                                                         title={template.name}
-                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1400,initial-scale=1"><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${preview.html || ''}</body></html>`}
+                                                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1400,initial-scale=1"><style>body{margin:0;overflow:hidden;pointer-events:none}${preview.css || ''}</style></head><body>${stripScripts(preview.html)}</body></html>`}
                                                         sandbox="allow-same-origin"
                                                         scrolling="no"
                                                         style={{

@@ -10,6 +10,21 @@ const getAuthHeaders = () => {
     };
 };
 
+// FastAPI returns `detail` as either a string (HTTPException) OR an array of
+// validation-error objects (Pydantic). Stringifying an array with template
+// literals yields "[object Object],[object Object]" — extract the first msg.
+const formatDetail = (detail, fallback = 'Request failed') => {
+    if (!detail) return fallback;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+        const first = detail.find(d => d && (d.msg || d.message));
+        if (first) return first.msg || first.message;
+        return fallback;
+    }
+    if (typeof detail === 'object' && detail.msg) return detail.msg;
+    return fallback;
+};
+
 // ── File Upload ─────────────────────────────────────────────────────────
 
 export const uploadFiles = async (files) => {
@@ -23,7 +38,7 @@ export const uploadFiles = async (files) => {
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Upload failed');
+        throw new Error(formatDetail(err.detail, 'Upload failed'));
     }
     return res.json();
 };
@@ -38,7 +53,7 @@ export const generateWebsite = async (prompt, sessionId = null, niche = null) =>
             body: JSON.stringify({ prompt, sessionId, niche }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to generate website');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to generate website'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -199,7 +214,7 @@ export const getSession = async (sessionId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get session');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get session'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -213,7 +228,7 @@ export const getSessionVersions = async (sessionId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get versions');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get versions'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -228,7 +243,7 @@ export const rollbackSession = async (sessionId, version) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to rollback');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to rollback'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -243,7 +258,7 @@ export const clearSession = async (sessionId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to clear session');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to clear session'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -274,7 +289,7 @@ export const editElement = async (sessionId, elementData, prompt, currentCode, c
             }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to edit element');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to edit element'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -288,7 +303,7 @@ export const getTemplates = async () => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get templates');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get templates'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -302,7 +317,7 @@ export const getNiches = async () => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get niches');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get niches'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -318,7 +333,7 @@ export const listProjects = async () => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to list projects');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to list projects'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -332,7 +347,7 @@ export const getProject = async (projectId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get project');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get project'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -362,7 +377,7 @@ export const getProjectVersions = async (projectId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get versions');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get versions'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -378,7 +393,7 @@ export const rollbackProject = async (projectId, versionNumber) => {
             body: JSON.stringify({ version_number: versionNumber }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to rollback');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to rollback'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -393,7 +408,7 @@ export const deleteProject = async (projectId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to delete project');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to delete project'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -410,7 +425,7 @@ export const searchImages = async (query, count = 10) => {
             { headers: getAuthHeaders() }
         );
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to search images');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to search images'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -424,7 +439,7 @@ export const getComponents = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/components/`, { headers: getAuthHeaders() });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get components');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get components'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -436,7 +451,7 @@ export const generateComponent = async (sessionId, componentType, variantKey, co
             body: JSON.stringify({ sessionId, componentType, variantKey, content }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to generate component');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to generate component'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -448,7 +463,7 @@ export const swapComponent = async (sessionId, sectionId, componentType, variant
             body: JSON.stringify({ sessionId, sectionId, componentType, variantKey }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to swap component');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to swap component'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -462,7 +477,7 @@ export const getSections = async (sessionId, pageSlug = 'index') => {
             : `${API_BASE_URL}/sections/${sessionId}`;
         const response = await fetch(url, { headers: getAuthHeaders() });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get sections');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get sections'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -474,7 +489,7 @@ export const reorderSections = async (sessionId, newOrder, pageSlug = 'index') =
             body: JSON.stringify({ sessionId, newOrder, pageSlug }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to reorder');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to reorder'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -486,7 +501,7 @@ export const deleteSection = async (sessionId, sectionId, pageSlug = 'index') =>
             body: JSON.stringify({ sessionId, sectionId, pageSlug }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to delete section');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to delete section'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -498,7 +513,7 @@ export const duplicateSection = async (sessionId, sectionId, pageSlug = 'index')
             body: JSON.stringify({ sessionId, sectionId, pageSlug }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to duplicate section');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to duplicate section'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -510,7 +525,7 @@ export const regenerateSection = async (sessionId, sectionId, prompt, variantKey
             body: JSON.stringify({ sessionId, sectionId, prompt, variantKey, pageSlug }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to regenerate section');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to regenerate section'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -524,7 +539,7 @@ export const updateDesignSystem = async (sessionId, designSystem) => {
             body: JSON.stringify({ sessionId, designSystem }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to update design system');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to update design system'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -536,7 +551,7 @@ export const generateDesignSystem = async (prompt, niche = null) => {
             body: JSON.stringify({ prompt, niche }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to generate design system');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to generate design system'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -550,7 +565,7 @@ export const submitJob = async (prompt, niche = null, designSystem = null) => {
             body: JSON.stringify({ prompt, niche, designSystem }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to submit job');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to submit job'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -559,7 +574,7 @@ export const getJobStatus = async (jobId) => {
     try {
         const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, { headers: getAuthHeaders() });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get job status');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get job status'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -568,7 +583,7 @@ export const listJobs = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/jobs/`, { headers: getAuthHeaders() });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to list jobs');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to list jobs'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -579,7 +594,7 @@ export const cancelJob = async (jobId) => {
             method: 'DELETE', headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to cancel job');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to cancel job'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -592,7 +607,7 @@ export const listTemplateCatalog = async () => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to list templates');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to list templates'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -603,7 +618,7 @@ export const getTemplateFull = async (templateId) => {
             headers: getAuthHeaders(),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to get template');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to get template'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
@@ -651,7 +666,7 @@ export const restoreSession = async (html, css, js = '', projectId = null, { isM
             body: JSON.stringify(body),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to restore session');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to restore session'));
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -666,7 +681,7 @@ export const syncSession = async (sessionId, html, css, js = '', currentPage = '
             body: JSON.stringify({ sessionId, html, css, js, currentPage }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || data.detail || 'Failed to sync session');
+        if (!response.ok) throw new Error(data.error || formatDetail(data.detail, 'Failed to sync session'));
         return data;
     } catch (error) { console.error('API Error:', error); throw error; }
 };
