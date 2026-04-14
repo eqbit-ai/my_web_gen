@@ -773,12 +773,12 @@ const WizardQuestionUI = ({ step, data, onAnswer, onSkip, onBack, onGenerate, on
                     <div className="wizard-contact-fields">
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#888', marginBottom: '0.25rem' }}>CONTACT DETAILS</div>
                         <input type="text" placeholder="Phone (e.g. +971 50 123 4567)" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
-                        <input type="text" placeholder="WhatsApp number with country code (e.g. +971501234567) — adds floating button" value={contactWhatsapp} onChange={e => setContactWhatsapp(e.target.value)} />
-                        <input type="email" placeholder="Email — also used as form recipient (e.g. info@company.com)" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
-                        <input type="text" placeholder="Address (optional) — appears on the contact page" value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
+                        <input type="text" placeholder="WhatsApp number  (e.g. +971501234567)" value={contactWhatsapp} onChange={e => setContactWhatsapp(e.target.value)} />
+                        <input type="email" placeholder="info@company.com" value={contactEmail} onChange={e => setContactEmail(e.target.value)} />
+                        <input type="text" placeholder="Address (optional) " value={contactAddress} onChange={e => setContactAddress(e.target.value)} />
                         <input
                             type="text"
-                            placeholder="Google Maps link (optional) — embeds an interactive map on the contact page"
+                            placeholder="Google Maps link (optional)"
                             value={contactMapLink}
                             onChange={e => setContactMapLink(e.target.value)}
                         />
@@ -1392,7 +1392,7 @@ const WebsiteGenerator = () => {
             });
         }, 3000);
         return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [html, css, js, projectId]);
 
     // Scroll chat to bottom
@@ -1949,8 +1949,8 @@ const WebsiteGenerator = () => {
         if (_ecomKeywords.some(kw => _lower.includes(kw))) {
             setPrompt('');
             setMessages(prev => [...prev,
-                { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
-                { role: 'assistant', text: 'E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce.', timestamp: new Date().toLocaleTimeString(), isError: true },
+            { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
+            { role: 'assistant', text: 'E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce.', timestamp: new Date().toLocaleTimeString(), isError: true },
             ]);
             // Restart wizard if no website generated yet
             if (versions.length === 0) {
@@ -1968,8 +1968,8 @@ const WebsiteGenerator = () => {
             if (genCount >= maxGen) {
                 setPrompt('');
                 setMessages(prev => [...prev,
-                    { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
-                    { role: 'assistant', text: `You've used all ${maxGen} website generations. Request more from the dashboard.`, timestamp: new Date().toLocaleTimeString(), isError: true },
+                { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
+                { role: 'assistant', text: `You've used all ${maxGen} website generations. Request more from the dashboard.`, timestamp: new Date().toLocaleTimeString(), isError: true },
                 ]);
                 localStorage.removeItem(ONBOARDING_KEY);
                 onboardingShown.current = false;
@@ -2363,7 +2363,7 @@ const WebsiteGenerator = () => {
                 const visible = v.pages[visiblePage];
                 return syncSession(sessionId, visible?.html || fallbackHtml, visible?.css || fallbackCss, v.js, visiblePage)
                     .then(d => { if (d.sections) setSections(d.sections); });
-            }).catch(() => {});
+            }).catch(() => { });
         } else {
             syncSession(sessionId, fallbackHtml, fallbackCss, v.js, visiblePage)
                 .then(d => { if (d.sections) setSections(d.sections); })
@@ -2531,7 +2531,7 @@ const WebsiteGenerator = () => {
             // Sync to backend Redis session so AI edits work on updated HTML
             if (st.sessionId) syncSession(st.sessionId, newHtml, st.css, st.js, cmsTargetPage)
                 .then(d => { if (d.sections) setSections(d.sections); })
-                .catch(() => {});
+                .catch(() => { });
 
             // Auto-save to project if project exists — pass the merged pages
             // dict so the captured page slot is preserved.
@@ -2544,7 +2544,7 @@ const WebsiteGenerator = () => {
 
         window.addEventListener('message', handleCmsMessage);
         return () => window.removeEventListener('message', handleCmsMessage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [addToast]); // stable deps only — state accessed via ref
 
     // ── Element Editing ─────────────────────────────────────────────────
@@ -2634,7 +2634,7 @@ const WebsiteGenerator = () => {
                 // Sync to backend Redis session — use targetPage
                 if (sessionId) syncSession(sessionId, newHtml, newCss, newJs, targetPage)
                     .then(d => { if (d.sections) setSections(d.sections); })
-                    .catch(() => {});
+                    .catch(() => { });
 
                 setMessages(prev => [...prev,
                 { role: 'user', text: `Edit ${selectedElement.tagName}: ${elementPrompt}`, timestamp: new Date().toLocaleTimeString() },
@@ -2893,6 +2893,7 @@ const WebsiteGenerator = () => {
         setEditMode(false); setCmsMode(false); setSelectedElement(null); setElementPrompt('');
         setProjectId(null); setSaveStatus(null);
         setIsMultipage(false); setPages({}); setCurrentPage('index');
+        setWizardStep(-1); // also exit the onboarding wizard
         setOnboardingStep(-1); // don't re-show tour
         hasAutoGenerated.current = false;
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -2927,11 +2928,13 @@ const WebsiteGenerator = () => {
                 targetSlug = match;
             } else {
                 // Try common CTA mappings
-                const ctaMap = { 'book': 'booking', 'book-now': 'booking', 'booknow': 'booking',
+                const ctaMap = {
+                    'book': 'booking', 'book-now': 'booking', 'booknow': 'booking',
                     'reserve': 'booking', 'reservation': 'booking', 'appointment': 'booking', 'schedule': 'booking',
                     'contact-us': 'contact', 'contactus': 'contact', 'get-in-touch': 'contact', 'reach-us': 'contact',
                     'get-started': 'contact', 'getstarted': 'contact', 'our-services': 'services',
-                    'about-us': 'about', 'our-menu': 'menu', 'our-rooms': 'rooms' };
+                    'about-us': 'about', 'our-menu': 'menu', 'our-rooms': 'rooms'
+                };
                 const mapped = ctaMap[targetSlug];
                 if (mapped && curPages[mapped]) {
                     targetSlug = mapped;
@@ -2979,9 +2982,9 @@ const WebsiteGenerator = () => {
             syncSession(curSessionId, target.html, target.css || curCss, jsRef.current || '', slug)
                 .then(() => {
                     // 5. Refresh sections list for the new page
-                    getSections(curSessionId, slug).then(d => setSections(d.sections || [])).catch(() => {});
+                    getSections(curSessionId, slug).then(d => setSections(d.sections || [])).catch(() => { });
                 })
-                .catch(() => {});
+                .catch(() => { });
         }
     }, []);
 
@@ -3073,7 +3076,10 @@ const WebsiteGenerator = () => {
     };
 
     const handleCardClick = (item) => {
-        // Load template directly — no regeneration
+        // Load template directly — no regeneration. Exits the wizard so the
+        // questionnaire doesn't keep rendering alongside the loaded template.
+        setWizardStep(-1);
+        setIsNewDesign(false);
         const preview = templatePreviews[item.id];
         if (preview && preview.html) {
             const tHtml = preview.html;
@@ -3082,13 +3088,10 @@ const WebsiteGenerator = () => {
             setHtml(tHtml);
             setCss(tCss);
             setJs(tJs);
-            // niche is read-only state, skip setting
             setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
-            // Save as first version
             setVersions([{ html: tHtml, css: tCss, js: tJs, prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
             setCurrentVersion(0);
-            // Sync session
-            syncSession({ html: tHtml, css: tCss, js: tJs }).catch(() => {});
+            syncSession({ html: tHtml, css: tCss, js: tJs }).catch(() => { });
         } else {
             // Fallback: fetch full template then load
             getTemplateFull(item.id).then(data => {
@@ -3096,11 +3099,10 @@ const WebsiteGenerator = () => {
                     setHtml(data.html);
                     setCss(data.css || '');
                     setJs(data.js || '');
-                    // niche is read-only state, skip setting
                     setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
                     setVersions([{ html: data.html, css: data.css || '', js: data.js || '', prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
                     setCurrentVersion(0);
-                    syncSession({ html: data.html, css: data.css || '', js: data.js || '' }).catch(() => {});
+                    syncSession({ html: data.html, css: data.css || '', js: data.js || '' }).catch(() => { });
                 }
             }).catch(() => {
                 setMessages(prev => [...prev, { role: 'assistant', text: 'Failed to load template. Please try again.', timestamp: new Date().toLocaleTimeString(), isError: true }]);
@@ -3323,72 +3325,72 @@ const WebsiteGenerator = () => {
 
                 {/* Chat input — hidden during wizard (wizard provides its own inputs) */}
                 {!wizardActive && (
-                <div className="gn-chat-input-area">
-                    {!html && !isLoading && (
-                        <div className="gn-project-name-row">
-                            <input
-                                type="text"
-                                className="gn-project-name-input"
-                                placeholder="Project name (e.g. My Business Site)"
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                                maxLength={60}
-                            />
-                        </div>
-                    )}
-                    {/* Uploaded images preview */}
-                    {uploadedFiles.images.length > 0 && !html && (
-                        <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap' }}>
-                            {uploadedFiles.images.map((img, i) => (
-                                <div key={i} style={{ position: 'relative', width: 40, height: 40, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <img src={img.url} alt={img.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button onClick={() => setUploadedFiles(prev => ({ ...prev, images: prev.images.filter((_, j) => j !== i) }))} style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={8} /></button>
-                                </div>
-                            ))}
-                            <span style={{ fontSize: 11, color: '#6b7280', alignSelf: 'center' }}>{uploadedFiles.images.length} image{uploadedFiles.images.length > 1 ? 's' : ''}</span>
-                        </div>
-                    )}
-                    <div className="gn-chat-input-wrap">
-                        {!html && (
-                            <>
+                    <div className="gn-chat-input-area">
+                        {!html && !isLoading && (
+                            <div className="gn-project-name-row">
                                 <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    multiple
-                                    accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip"
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handleFileUpload(e.target.files)}
+                                    type="text"
+                                    className="gn-project-name-input"
+                                    placeholder="Project name (e.g. My Business Site)"
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                    maxLength={60}
                                 />
-                                <button
-                                    className="gn-send-btn"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isLoading || uploadingFiles}
-                                    title="Upload files (PDF, text, images)"
-                                    style={{ opacity: 0.6 }}
-                                >
-                                    {uploadingFiles ? <span className="gn-spinner" /> : <Paperclip size={16} />}
-                                </button>
-                            </>
+                            </div>
                         )}
-                        <textarea
-                            ref={textareaRef}
-                            className="gn-chat-input"
-                            placeholder={html ? 'Describe changes...' : 'Describe your website...'}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            disabled={isLoading}
-                            rows={1}
-                        />
-                        <button
-                            className="gn-send-btn"
-                            onClick={() => handleGenerate()}
-                            disabled={!prompt.trim() || isLoading}
-                        >
-                            {isLoading ? <span className="gn-spinner" /> : <Send size={18} />}
-                        </button>
+                        {/* Uploaded images preview */}
+                        {uploadedFiles.images.length > 0 && !html && (
+                            <div style={{ display: 'flex', gap: 6, padding: '6px 12px', flexWrap: 'wrap' }}>
+                                {uploadedFiles.images.map((img, i) => (
+                                    <div key={i} style={{ position: 'relative', width: 40, height: 40, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <img src={img.url} alt={img.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button onClick={() => setUploadedFiles(prev => ({ ...prev, images: prev.images.filter((_, j) => j !== i) }))} style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={8} /></button>
+                                    </div>
+                                ))}
+                                <span style={{ fontSize: 11, color: '#6b7280', alignSelf: 'center' }}>{uploadedFiles.images.length} image{uploadedFiles.images.length > 1 ? 's' : ''}</span>
+                            </div>
+                        )}
+                        <div className="gn-chat-input-wrap">
+                            {!html && (
+                                <>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.txt,.doc,.docx,.md,.rtf,.csv,.jpg,.jpeg,.png,.webp,.gif,.svg,.zip"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleFileUpload(e.target.files)}
+                                    />
+                                    <button
+                                        className="gn-send-btn"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isLoading || uploadingFiles}
+                                        title="Upload files (PDF, text, images)"
+                                        style={{ opacity: 0.6 }}
+                                    >
+                                        {uploadingFiles ? <span className="gn-spinner" /> : <Paperclip size={16} />}
+                                    </button>
+                                </>
+                            )}
+                            <textarea
+                                ref={textareaRef}
+                                className="gn-chat-input"
+                                placeholder={html ? 'Describe changes...' : 'Describe your website...'}
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isLoading}
+                                rows={1}
+                            />
+                            <button
+                                className="gn-send-btn"
+                                onClick={() => handleGenerate()}
+                                disabled={!prompt.trim() || isLoading}
+                            >
+                                {isLoading ? <span className="gn-spinner" /> : <Send size={18} />}
+                            </button>
+                        </div>
                     </div>
-                </div>
                 )}
             </aside>
 
@@ -3767,7 +3769,7 @@ const WebsiteGenerator = () => {
                                 {isEditingElement ? <span className="gn-spinner" /> : <Send size={18} />}
                             </button>
                         </div>
-                        <input type="file" ref={elementFileInputRef} accept="image/*" style={{display:'none'}} onChange={handleElementAttach} />
+                        <input type="file" ref={elementFileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleElementAttach} />
                     </div>
                 </>
             )}
