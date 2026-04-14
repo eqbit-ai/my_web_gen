@@ -53,6 +53,13 @@ RATE_LIMIT_RULES = [
         "by_ip": True,
     },
     {
+        "prefixes": ["/api/landing/"],
+        "limit": 10,
+        "window": 60,
+        "key_prefix": "rl:landing",
+        "by_ip": True,
+    },
+    {
         "prefixes": ["/api/"],
         "limit": 1000,
         "window": 60,

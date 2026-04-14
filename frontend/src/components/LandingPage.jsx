@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import config from '../config';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -556,84 +557,22 @@ const faqData = [
     { q: 'Is my website mobile-responsive?', a: 'Every generated website is fully responsive out of the box. It looks great on desktops, tablets, and smartphones without any extra configuration.' },
 ];
 
-// AI Agent FAQ — orb-only interaction. Click the orb → a popup appears
-// below with a question + typed answer. Click ‹ / › to navigate through
-// questions, or click ✕ / outside to dismiss. The cards are gone — the
-// orb is the only thing the user interacts with. Spec lives in
-// memory/todo-ai-agent-faq.md.
+// AI Agent FAQ — chatbox. User types any question about the product;
+// we POST to /api/landing/chat which calls Claude Haiku with a scoped
+// system prompt and streams back an answer. The orb is decoration +
+// thinking indicator. Rate-limited server-side to 10 msgs/min per IP.
+const SUGGESTION_CHIPS = faqData.slice(0, 4).map(f => f.q);
+
 const FAQSection = () => {
     const ref = useRef(null);
-    const popupRef = useRef(null);
     const orbWrapRef = useRef(null);
-    const [isOpen, setIsOpen] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [typed, setTyped] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
-    const typingTimerRef = useRef(null);
-    const startDelayRef = useRef(null);
+    const inputRef = useRef(null);
+    const transcriptRef = useRef(null);
+    const [draft, setDraft] = useState('');
+    const [turns, setTurns] = useState([]); // [{ q, a, error? }]
+    const [loading, setLoading] = useState(false);
 
-    // Typewriter — runs every time currentIndex changes (or on first open).
-    // 450ms "thinking" pause then 25ms/char reveal. Cancellable.
-    useEffect(() => {
-        if (typingTimerRef.current) { clearTimeout(typingTimerRef.current); typingTimerRef.current = null; }
-        if (startDelayRef.current) { clearTimeout(startDelayRef.current); startDelayRef.current = null; }
-
-        if (!isOpen) {
-            setTyped('');
-            setIsTyping(false);
-            return;
-        }
-
-        const fullAnswer = faqData[currentIndex].a;
-        setTyped('');
-        setIsTyping(true);
-
-        startDelayRef.current = setTimeout(() => {
-            let i = 0;
-            const tick = () => {
-                if (i < fullAnswer.length) {
-                    i += 1;
-                    setTyped(fullAnswer.slice(0, i));
-                    typingTimerRef.current = setTimeout(tick, 25);
-                } else {
-                    setIsTyping(false);
-                }
-            };
-            tick();
-        }, 450);
-
-        return () => {
-            if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-            if (startDelayRef.current) clearTimeout(startDelayRef.current);
-        };
-    }, [isOpen, currentIndex]);
-
-    // Click outside the popup OR the orb closes the dialog. Listens on
-    // document, scoped to when the popup is open.
-    useEffect(() => {
-        if (!isOpen) return undefined;
-        const handleClickOutside = (e) => {
-            if (popupRef.current && popupRef.current.contains(e.target)) return;
-            if (orbWrapRef.current && orbWrapRef.current.contains(e.target)) return;
-            setIsOpen(false);
-        };
-        // Defer attach so the click that opened the popup doesn't immediately close it
-        const t = setTimeout(() => document.addEventListener('mousedown', handleClickOutside), 0);
-        return () => {
-            clearTimeout(t);
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    // Escape key closes the popup
-    useEffect(() => {
-        if (!isOpen) return undefined;
-        const onKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [isOpen]);
-
-    // Scroll-stagger reveal — orb header fades in as the section enters.
+    // Scroll-stagger reveal — header fades in as the section enters.
     useEffect(() => {
         const ctx = gsap.context(() => {
             gsap.fromTo('.aif-orb-wrap > *', { y: 24, opacity: 0 }, {
@@ -644,130 +583,150 @@ const FAQSection = () => {
         return () => ctx.revert();
     }, []);
 
-    const handleOrbClick = useCallback(() => {
-        // First click opens at question 0; subsequent clicks (when already
-        // open) advance to the next question, cycling at the end.
-        setIsOpen(prev => {
-            if (!prev) {
-                setCurrentIndex(0);
-                return true;
+    // Auto-scroll transcript to latest answer
+    useEffect(() => {
+        if (!transcriptRef.current) return;
+        transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }, [turns, loading]);
+
+    const askQuestion = useCallback(async (questionText) => {
+        const question = (questionText || '').trim();
+        if (!question || loading) return;
+        setDraft('');
+        setTurns(prev => [...prev, { q: question, a: '', pending: true }]);
+        setLoading(true);
+        try {
+            const res = await fetch(`${config.apiUrl}/api/landing/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question }),
+            });
+            if (res.status === 429) {
+                throw new Error("You're asking too fast. Please wait a moment and try again.");
             }
-            setCurrentIndex(i => (i + 1) % faqData.length);
-            return true;
-        });
-    }, []);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Something went wrong. Please try again.');
+            }
+            const data = await res.json();
+            setTurns(prev => prev.map((t, i) => (
+                i === prev.length - 1 ? { ...t, a: data.answer, pending: false } : t
+            )));
+        } catch (e) {
+            setTurns(prev => prev.map((t, i) => (
+                i === prev.length - 1 ? { ...t, a: e.message || 'Network error. Please try again.', pending: false, error: true } : t
+            )));
+        } finally {
+            setLoading(false);
+            // Refocus input for rapid follow-ups
+            requestAnimationFrame(() => { if (inputRef.current) inputRef.current.focus(); });
+        }
+    }, [loading]);
 
-    const handlePrev = useCallback((e) => {
-        e.stopPropagation();
-        setCurrentIndex(i => (i - 1 + faqData.length) % faqData.length);
-    }, []);
+    const handleSubmit = useCallback((e) => {
+        e.preventDefault();
+        askQuestion(draft);
+    }, [askQuestion, draft]);
 
-    const handleNext = useCallback((e) => {
-        e.stopPropagation();
-        setCurrentIndex(i => (i + 1) % faqData.length);
-    }, []);
+    const handleChipClick = useCallback((text) => {
+        askQuestion(text);
+    }, [askQuestion]);
 
-    const handleClose = useCallback((e) => {
-        e.stopPropagation();
-        setIsOpen(false);
-    }, []);
-
-    const subtitle = isOpen
-        ? (isTyping ? 'Web AI is answering…' : 'Tap the orb again for the next question.')
-        : 'Tap the orb to ask Web AI anything.';
+    const hasConversation = turns.length > 0;
 
     return (
         <section className="faq-section ai-agent-faq" ref={ref}>
             <div className="faq-inner aif-inner">
                 <div className="aif-orb-wrap" ref={orbWrapRef}>
-                    <button
-                        type="button"
-                        className={`aif-orb ${isOpen ? 'aif-orb-active' : ''}`}
-                        onClick={handleOrbClick}
-                        aria-label={isOpen ? 'Next question' : 'Open Web AI FAQ'}
-                        aria-expanded={isOpen}
+                    <div
+                        className={`aif-orb ${loading ? 'aif-orb-active' : ''}`}
+                        aria-hidden="true"
                     >
-                        <span className="aif-orb-glow" aria-hidden="true" />
-                        <span className="aif-orb-core" aria-hidden="true" />
-                        <span className="aif-orb-highlight" aria-hidden="true" />
-                        <span className="aif-orb-particles" aria-hidden="true">
+                        <span className="aif-orb-glow" />
+                        <span className="aif-orb-core" />
+                        <span className="aif-orb-highlight" />
+                        <span className="aif-orb-particles">
                             {[0, 1, 2, 3, 4, 5].map(i => (
                                 <span key={i} className={`aif-particle aif-p${i}`} />
                             ))}
                         </span>
-                    </button>
+                    </div>
                     <span className="section-tag">FAQ</span>
                     <h2>Ask <span className="text-accent">Web AI</span></h2>
-                    <p className="aif-subtitle">{subtitle}</p>
+                    <p className="aif-subtitle">
+                        {loading ? 'Web AI is thinking…' : 'Type a question about Web AI and get an instant answer.'}
+                    </p>
                 </div>
 
-                {/* Popup — only rendered when open. Positioned below the orb. */}
-                {isOpen && (
-                    <div className="aif-popup-anchor">
-                        <div
-                            className="aif-popup"
-                            ref={popupRef}
-                            role="dialog"
-                            aria-labelledby="aif-popup-q"
-                            aria-modal="false"
+                <div className="aif-chat">
+                    {hasConversation && (
+                        <div className="aif-chat-transcript" ref={transcriptRef} aria-live="polite">
+                            {turns.map((t, i) => (
+                                <div key={i} className="aif-chat-turn">
+                                    <div className="aif-chat-bubble aif-chat-bubble-q">
+                                        <span className="aif-chat-label">You</span>
+                                        <p>{t.q}</p>
+                                    </div>
+                                    <div className={`aif-chat-bubble aif-chat-bubble-a ${t.error ? 'aif-chat-bubble-error' : ''}`}>
+                                        <span className="aif-chat-label">Web AI</span>
+                                        {t.pending ? (
+                                            <span className="aif-thinking"><span /><span /><span /></span>
+                                        ) : (
+                                            <p>{t.a}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <form className="aif-chat-form" onSubmit={handleSubmit}>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            className="aif-chat-input"
+                            placeholder="Ask anything about Web AI..."
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            disabled={loading}
+                            maxLength={500}
+                            aria-label="Your question"
+                        />
+                        <button
+                            type="submit"
+                            className="aif-chat-send"
+                            disabled={loading || !draft.trim()}
+                            aria-label="Send question"
                         >
-                            <button
-                                type="button"
-                                className="aif-popup-close"
-                                onClick={handleClose}
-                                aria-label="Close"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                    <path d="M18 6 6 18M6 6l12 12" />
+                            {loading ? (
+                                <span className="aif-spinner" />
+                            ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14M13 5l7 7-7 7" />
                                 </svg>
-                            </button>
+                            )}
+                        </button>
+                    </form>
 
-                            <div className="aif-popup-q" id="aif-popup-q">
-                                <span className="aif-popup-q-label">Question</span>
-                                <span className="aif-popup-q-text">{faqData[currentIndex].q}</span>
-                            </div>
-
-                            <div className="aif-popup-a">
-                                <span className="aif-popup-a-label">Web AI</span>
-                                <p className="aif-popup-a-text">
-                                    {typed && typed}
-                                    {isTyping && <span className="aif-cursor">|</span>}
-                                    {!typed && (
-                                        <span className="aif-thinking">
-                                            <span /><span /><span />
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-
-                            <div className="aif-popup-nav">
-                                <button
-                                    type="button"
-                                    className="aif-popup-nav-btn"
-                                    onClick={handlePrev}
-                                    aria-label="Previous question"
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                        <path d="m15 18-6-6 6-6" />
-                                    </svg>
-                                </button>
-                                <span className="aif-popup-counter">
-                                    {currentIndex + 1} <span className="aif-popup-counter-sep">of</span> {faqData.length}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="aif-popup-nav-btn"
-                                    onClick={handleNext}
-                                    aria-label="Next question"
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                        <path d="m9 18 6-6-6-6" />
-                                    </svg>
-                                </button>
+                    {!hasConversation && (
+                        <div className="aif-chat-suggestions">
+                            <span className="aif-chat-suggest-label">Try asking</span>
+                            <div className="aif-chat-chips">
+                                {SUGGESTION_CHIPS.map((text) => (
+                                    <button
+                                        key={text}
+                                        type="button"
+                                        className="aif-chat-chip"
+                                        onClick={() => handleChipClick(text)}
+                                        disabled={loading}
+                                    >
+                                        {text}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </section>
     );

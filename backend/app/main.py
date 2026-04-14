@@ -45,6 +45,7 @@ from app.routes import generator as generator_routes
 from app.routes import health, metrics_route
 from app.routes import images as image_routes
 from app.routes import jobs as job_routes
+from app.routes import landing_chat as landing_chat_routes
 from app.routes import projects as project_routes
 from app.routes import sections as section_routes
 from app.routes import templates as template_routes
@@ -130,6 +131,13 @@ async def lifespan(app: FastAPI):
             await db.execute(text("UPDATE users SET generation_count = 0 WHERE generation_count > max_generations"))
             # Site recipient email column
             await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS recipient_email VARCHAR"))
+            # Email verification columns (signup → confirm email → admin approval)
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT false"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR"))
+            await db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMPTZ"))
+            await db.execute(text("CREATE INDEX IF NOT EXISTS ix_users_email_verification_token ON users (email_verification_token)"))
+            # Grandfather existing approved users so they aren't locked out by the new check
+            await db.execute(text("UPDATE users SET email_verified = true WHERE is_approved = true AND email_verified = false"))
             # Soft-delete column
             await db.execute(text("ALTER TABLE sites ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ"))
             # Add deleted_at to all tenant project tables
@@ -306,6 +314,7 @@ app.include_router(form_routes.router, prefix="/api/forms", tags=["Forms"])
 app.include_router(site_feature_routes.router, prefix="/api/sites", tags=["Site Features"])
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(metrics_route.router, prefix="/api/metrics", tags=["Metrics"])
+app.include_router(landing_chat_routes.router, prefix="/api/landing", tags=["Landing"])
 
 # Static file serving for uploads
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"

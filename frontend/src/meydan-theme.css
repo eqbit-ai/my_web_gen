@@ -3413,7 +3413,7 @@ html {
    - On active: glow pulse rate accelerates, particles speed up
 */
 .ai-agent-faq.faq-section {
-    padding: 140px 40px 120px;
+    padding: 80px 40px 100px;  /* reduced top so orb stays above fold */
 }
 .aif-inner {
     max-width: 1080px;
@@ -3423,11 +3423,11 @@ html {
 /* ─── Orb header ─── */
 .aif-orb-wrap {
     text-align: center;
-    margin-bottom: 80px;
+    margin-bottom: 28px;  /* tight so popup sits close to orb — no scroll up */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 .aif-orb-wrap .section-tag {
     margin-top: 8px;
@@ -3449,14 +3449,16 @@ html {
     transition: color 0.4s ease;
 }
 
-/* ─── The orb (now a button) ─── */
+/* ─── The orb — translucent iridescent blue bubble (CTA-button blue) ───
+   Redesigned to match image 11 — a soft, hollow, glass-like sphere with
+   a gradient rim instead of a solid surface. Palette is locked to the
+   landing-page primary blue (#0171E4) so the orb visually echoes the
+   "Get Started" CTA. */
 .aif-orb {
     position: relative;
-    width: 152px;
-    height: 152px;
-    margin-bottom: 12px;
+    width: 168px;
+    height: 168px;
     animation: aif-orb-float 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    transform-style: preserve-3d;
     /* Reset button defaults */
     background: transparent;
     border: none;
@@ -3469,67 +3471,85 @@ html {
     transform: scale(1.04);
 }
 .aif-orb:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 .aif-orb:focus-visible {
-    outline: 2px solid var(--teal);
-    outline-offset: 12px;
+    outline: 2px solid #0171E4;
+    outline-offset: 14px;
     border-radius: 50%;
 }
 
-/* Outer breathing glow — sits behind everything */
+/* Outer breathing glow — large soft halo behind the bubble */
 .aif-orb-glow {
     position: absolute;
-    inset: -36px;
+    inset: -48px;
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        rgba(94, 209, 173, 0.32) 0%,
-        rgba(48, 155, 177, 0.18) 30%,
-        rgba(48, 155, 177, 0.08) 55%,
-        transparent 75%
+        rgba(1, 113, 228, 0.38) 0%,
+        rgba(59, 142, 245, 0.22) 28%,
+        rgba(96, 165, 250, 0.10) 55%,
+        transparent 78%
     );
-    filter: blur(20px);
+    filter: blur(26px);
     animation: aif-orb-breathe 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     pointer-events: none;
     z-index: 0;
 }
 
-/* The gradient sphere — multi-stop radial for iridescent depth */
+/* The bubble itself — translucent with a luminous gradient rim.
+   Built with:
+     • a near-transparent interior (radial center → deeper blue edge)
+     • a thin white border for the glassy highlight line
+     • a strong blue glow ring via box-shadow (outer + inset)
+   The result is the hollow, iridescent look from the reference image. */
 .aif-orb-core {
     position: absolute;
     inset: 0;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 32%),
-        radial-gradient(circle at 70% 75%, #5ED1AD 0%, #309BB1 45%, #1a4f5a 80%, #08292E 100%);
-    /* Layered shadows: ambient + close + ring + inner highlight */
+        /* bright inner highlight at upper-left */
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 28%),
+        /* translucent body — mostly transparent with subtle blue tint */
+        radial-gradient(circle at 50% 55%,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(96, 165, 250, 0.14) 40%,
+            rgba(59, 142, 245, 0.32) 72%,
+            rgba(1, 113, 228, 0.55) 92%,
+            rgba(0, 91, 181, 0.70) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    /* Iridescent rim glow — inner + outer */
     box-shadow:
-        0 12px 40px rgba(48, 155, 177, 0.4),
-        0 24px 80px rgba(94, 209, 173, 0.22),
-        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-        0 -6px 18px rgba(255, 255, 255, 0.18) inset,
-        0 6px 24px rgba(8, 41, 46, 0.35) inset;
-    /* Slow rotation makes the gradient feel alive without being distracting */
-    animation: aif-orb-rotate 24s linear infinite;
+        /* outer glow fades out — gives the "luminous" rim */
+        0 0 40px rgba(1, 113, 228, 0.45),
+        0 0 90px rgba(59, 142, 245, 0.30),
+        0 20px 60px rgba(1, 113, 228, 0.25),
+        /* inner highlights — make the interior feel hollow */
+        0 0 0 1px rgba(255, 255, 255, 0.25) inset,
+        0 -10px 30px rgba(255, 255, 255, 0.22) inset,
+        0 10px 40px rgba(1, 113, 228, 0.18) inset;
+    /* Very slow rotation of the gradient, so it feels alive */
+    animation: aif-orb-rotate 32s linear infinite;
     z-index: 2;
 }
 
-/* Specular highlight — small bright spot upper-left, like a glass sphere */
+/* Soft specular highlight — small bright spot top-left */
 .aif-orb-highlight {
     position: absolute;
-    top: 14%;
-    left: 22%;
-    width: 38%;
-    height: 30%;
-    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 60%);
+    top: 16%;
+    left: 24%;
+    width: 34%;
+    height: 26%;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 65%);
     border-radius: 50%;
-    filter: blur(2px);
+    filter: blur(3px);
     pointer-events: none;
     z-index: 3;
 }
 
-/* Orbiting particles — 6 dots circling the orb at different speeds & angles */
+/* Orbiting particles — 6 blue dots drifting around the bubble */
 .aif-orb-particles {
     position: absolute;
     inset: 0;
@@ -3543,33 +3563,34 @@ html {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #5ED1AD;
-    box-shadow: 0 0 10px rgba(94, 209, 173, 0.9), 0 0 20px rgba(94, 209, 173, 0.4);
+    background: #0171E4;
+    box-shadow: 0 0 10px rgba(1, 113, 228, 0.95), 0 0 22px rgba(59, 142, 245, 0.55);
     transform-origin: center;
     margin-top: -2.5px;
     margin-left: -2.5px;
     opacity: 0;
     animation: aif-particle-orbit 14s linear infinite;
 }
-.aif-particle.aif-p0 { animation-duration: 13s; animation-delay: -0s;  --orbit-radius: 100px; --orbit-tilt: 12deg; }
-.aif-particle.aif-p1 { animation-duration: 16s; animation-delay: -2.5s; --orbit-radius: 110px; --orbit-tilt: -8deg; }
-.aif-particle.aif-p2 { animation-duration: 11s; animation-delay: -5s;   --orbit-radius: 95px;  --orbit-tilt: 20deg; }
-.aif-particle.aif-p3 { animation-duration: 18s; animation-delay: -7.5s; --orbit-radius: 115px; --orbit-tilt: -16deg; }
-.aif-particle.aif-p4 { animation-duration: 14s; animation-delay: -10s;  --orbit-radius: 105px; --orbit-tilt: 4deg; }
-.aif-particle.aif-p5 { animation-duration: 12s; animation-delay: -12s;  --orbit-radius: 98px;  --orbit-tilt: -22deg; }
+.aif-particle.aif-p0 { animation-duration: 13s; animation-delay: -0s;  --orbit-radius: 108px; --orbit-tilt: 12deg; }
+.aif-particle.aif-p1 { animation-duration: 16s; animation-delay: -2.5s; --orbit-radius: 118px; --orbit-tilt: -8deg; }
+.aif-particle.aif-p2 { animation-duration: 11s; animation-delay: -5s;   --orbit-radius: 102px; --orbit-tilt: 20deg; }
+.aif-particle.aif-p3 { animation-duration: 18s; animation-delay: -7.5s; --orbit-radius: 122px; --orbit-tilt: -16deg; }
+.aif-particle.aif-p4 { animation-duration: 14s; animation-delay: -10s;  --orbit-radius: 112px; --orbit-tilt: 4deg; }
+.aif-particle.aif-p5 { animation-duration: 12s; animation-delay: -12s;  --orbit-radius: 105px; --orbit-tilt: -22deg; }
 
-/* Active state — orb is "answering" */
+/* Active state — orb is "answering", breathes faster and rim glows brighter */
 .aif-orb-active .aif-orb-glow {
     animation: aif-orb-breathe 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 .aif-orb-active .aif-orb-core {
-    animation: aif-orb-rotate 10s linear infinite;
+    animation: aif-orb-rotate 14s linear infinite;
     box-shadow:
-        0 16px 48px rgba(48, 155, 177, 0.55),
-        0 32px 96px rgba(94, 209, 173, 0.35),
-        0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-        0 -6px 18px rgba(255, 255, 255, 0.22) inset,
-        0 6px 24px rgba(8, 41, 46, 0.35) inset;
+        0 0 56px rgba(1, 113, 228, 0.60),
+        0 0 120px rgba(59, 142, 245, 0.38),
+        0 24px 70px rgba(1, 113, 228, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.35) inset,
+        0 -10px 30px rgba(255, 255, 255, 0.28) inset,
+        0 10px 40px rgba(1, 113, 228, 0.22) inset;
 }
 .aif-orb-active .aif-particle {
     animation-duration: 6s !important;
@@ -3608,7 +3629,7 @@ html {
 .aif-popup-anchor {
     display: flex;
     justify-content: center;
-    margin-top: -32px;  /* pull up so the popup is closer to the orb */
+    margin-top: 16px;  /* small gap so the speech-bubble pointer sits below the orb */
     perspective: 1200px;
 }
 .aif-popup {
@@ -3620,9 +3641,9 @@ html {
     width: 100%;
     max-width: 640px;
     box-shadow:
-        0 0 0 1px rgba(94, 209, 173, 0.25),
-        0 20px 60px rgba(8, 41, 46, 0.08),
-        0 40px 100px rgba(94, 209, 173, 0.12);
+        0 0 0 1px rgba(1, 113, 228, 0.22),
+        0 20px 60px rgba(10, 22, 42, 0.10),
+        0 40px 100px rgba(1, 113, 228, 0.14);
     animation: aif-popup-in 0.55s cubic-bezier(0.22, 1, 0.36, 1);
     transform-origin: top center;
 }
@@ -3636,8 +3657,8 @@ html {
     width: 18px;
     height: 18px;
     background: var(--white);
-    border-top: 1px solid rgba(94, 209, 173, 0.25);
-    border-left: 1px solid rgba(94, 209, 173, 0.25);
+    border-top: 1px solid rgba(1, 113, 228, 0.22);
+    border-left: 1px solid rgba(1, 113, 228, 0.22);
     z-index: 1;
 }
 
@@ -3673,7 +3694,7 @@ html {
     gap: 6px;
     margin-bottom: 22px;
     padding-bottom: 22px;
-    border-bottom: 1px dashed rgba(94, 209, 173, 0.3);
+    border-bottom: 1px dashed rgba(1, 113, 228, 0.28);
     animation: aif-q-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .aif-popup-q-label {
@@ -3681,7 +3702,7 @@ html {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: var(--teal-dark);
+    color: #0171E4;
 }
 .aif-popup-q-text {
     font-family: 'Chakra Petch', sans-serif;
@@ -3704,7 +3725,7 @@ html {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: var(--teal);
+    color: #0171E4;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -3714,8 +3735,8 @@ html {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #5ED1AD, #309BB1);
-    box-shadow: 0 0 8px rgba(94, 209, 173, 0.6);
+    background: linear-gradient(135deg, #0171E4, #3B8EF5);
+    box-shadow: 0 0 8px rgba(1, 113, 228, 0.65);
     animation: aif-pulse-dot 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 .aif-popup-a-text {
@@ -3753,11 +3774,11 @@ html {
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .aif-popup-nav-btn:hover {
-    background: linear-gradient(135deg, #5ED1AD, #309BB1);
+    background: linear-gradient(135deg, #0171E4, #3B8EF5);
     color: white;
     border-color: transparent;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(94, 209, 173, 0.35);
+    box-shadow: 0 4px 12px rgba(1, 113, 228, 0.38);
 }
 .aif-popup-counter {
     font-family: 'Chakra Petch', sans-serif;
@@ -3995,4 +4016,202 @@ html {
     .footer-inner {
         gap: 28px;
     }
+}
+
+/* ============================================
+   FAQ CHATBOX (replaces orb-cycle popup)
+   ============================================ */
+.aif-chat {
+    max-width: 640px;
+    margin: 36px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.aif-chat-transcript {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: 20px;
+    box-shadow:
+        0 0 0 1px rgba(1, 113, 228, 0.08),
+        0 12px 40px rgba(10, 22, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    scroll-behavior: smooth;
+}
+.aif-chat-transcript::-webkit-scrollbar { width: 6px; }
+.aif-chat-transcript::-webkit-scrollbar-thumb { background: rgba(17, 24, 39, 0.15); border-radius: 3px; }
+
+.aif-chat-turn {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.aif-chat-bubble {
+    padding: 14px 18px;
+    border-radius: 16px;
+    max-width: 92%;
+    animation: aif-chat-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.aif-chat-bubble p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--black);
+    white-space: pre-wrap;
+}
+.aif-chat-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.55;
+}
+.aif-chat-bubble-q {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #0171E4 0%, #3B8EF5 100%);
+    border-bottom-right-radius: 6px;
+}
+.aif-chat-bubble-q p,
+.aif-chat-bubble-q .aif-chat-label {
+    color: #fff;
+    opacity: 1;
+}
+.aif-chat-bubble-q .aif-chat-label { opacity: 0.75; }
+.aif-chat-bubble-a {
+    align-self: flex-start;
+    background: var(--gray-50, #F1F3F9);
+    border-bottom-left-radius: 6px;
+}
+.aif-chat-bubble-error {
+    background: rgba(239, 68, 68, 0.08);
+}
+.aif-chat-bubble-error p { color: #991B1B; }
+
+@keyframes aif-chat-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Input + send button */
+.aif-chat-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 6px 6px 18px;
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: 999px;
+    box-shadow:
+        0 0 0 1px rgba(1, 113, 228, 0.06),
+        0 8px 28px rgba(10, 22, 42, 0.05);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.aif-chat-form:focus-within {
+    border-color: rgba(1, 113, 228, 0.5);
+    box-shadow:
+        0 0 0 3px rgba(1, 113, 228, 0.12),
+        0 8px 28px rgba(10, 22, 42, 0.08);
+}
+.aif-chat-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--black);
+    padding: 12px 0;
+    font-family: inherit;
+}
+.aif-chat-input::placeholder { color: var(--gray-400, #9CA3AF); }
+.aif-chat-input:disabled { opacity: 0.6; }
+
+.aif-chat-send {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #0171E4 0%, #3B8EF5 100%);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    box-shadow: 0 4px 14px rgba(1, 113, 228, 0.3);
+}
+.aif-chat-send:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(1, 113, 228, 0.4);
+}
+.aif-chat-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.aif-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: aif-spin 0.8s linear infinite;
+}
+@keyframes aif-spin { to { transform: rotate(360deg); } }
+
+/* Suggestion chips (only when no conversation yet) */
+.aif-chat-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+.aif-chat-suggest-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gray-500, #6B7280);
+}
+.aif-chat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+.aif-chat-chip {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--gray-100);
+    background: var(--white);
+    color: var(--black);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+.aif-chat-chip:hover:not(:disabled) {
+    border-color: rgba(1, 113, 228, 0.4);
+    background: rgba(1, 113, 228, 0.04);
+    color: #0171E4;
+}
+.aif-chat-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+    .aif-chat { margin-top: 24px; padding: 0 16px; }
+    .aif-chat-transcript { max-height: 300px; padding: 14px; }
+    .aif-chat-bubble { max-width: 100%; padding: 12px 14px; }
+    .aif-chat-form { padding: 4px 4px 4px 14px; }
+    .aif-chat-send { width: 40px; height: 40px; }
 }
