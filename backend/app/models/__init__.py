@@ -3,6 +3,7 @@ from app.models.form_submission import FormSubmission  # noqa: F401
 from app.models.page_view import PageView  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.domain import Domain  # noqa: F401
+from app.models.edit_log import EditFeedback, EditLog  # noqa: F401
 from app.models.generation_log import GenerationLog  # noqa: F401
 from app.models.login_event import LoginEvent  # noqa: F401
 from app.models.media import Media  # noqa: F401

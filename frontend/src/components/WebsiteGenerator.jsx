@@ -109,6 +109,62 @@ const ToastContainer = ({ toasts, onDismiss }) => {
     );
 };
 
+// Thumbs up/down on each AI reply. Posts to /api/edit-feedback (uses
+// session_id fallback to find the latest edit_log row server-side, so we
+// don't need to plumb edit_log_id through the websocket/stream payload).
+const FeedbackThumbs = ({ msgKey, sessionId, addToast }) => {
+    const [picked, setPicked] = React.useState(null); // 'up' | 'down' | null
+    const [busy, setBusy] = React.useState(false);
+    const send = async (rating) => {
+        if (busy || picked) return;
+        setBusy(true);
+        try {
+            const { submitEditFeedback } = await import('../services/api');
+            await submitEditFeedback({ sessionId, rating });
+            setPicked(rating);
+            if (addToast) addToast(rating === 'up' ? 'Thanks for the feedback!' : 'Got it — we\'ll improve this.', 'info', 2500);
+        } catch (e) {
+            if (addToast) addToast(e.message || 'Failed to send feedback', 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+    return (
+        <div className="gn-feedback-row" style={{ display: 'inline-flex', gap: 4, marginTop: 6 }}>
+            <button
+                type="button"
+                className={`gn-feedback-btn ${picked === 'up' ? 'is-picked' : ''}`}
+                onClick={() => send('up')}
+                disabled={busy || !!picked}
+                aria-label="Helpful"
+                title="Helpful"
+                style={{
+                    background: picked === 'up' ? 'rgba(134,239,203,0.18)' : 'transparent',
+                    border: '1px solid rgba(17,24,39,0.12)', borderRadius: 6,
+                    padding: '3px 8px', cursor: picked || busy ? 'default' : 'pointer',
+                    color: picked === 'up' ? '#065F46' : '#4B5563',
+                    fontSize: 12, lineHeight: 1, transition: 'all 0.15s',
+                }}
+            >👍</button>
+            <button
+                type="button"
+                className={`gn-feedback-btn ${picked === 'down' ? 'is-picked' : ''}`}
+                onClick={() => send('down')}
+                disabled={busy || !!picked}
+                aria-label="Not helpful"
+                title="Not helpful"
+                style={{
+                    background: picked === 'down' ? 'rgba(239,68,68,0.10)' : 'transparent',
+                    border: '1px solid rgba(17,24,39,0.12)', borderRadius: 6,
+                    padding: '3px 8px', cursor: picked || busy ? 'default' : 'pointer',
+                    color: picked === 'down' ? '#991B1B' : '#4B5563',
+                    fontSize: 12, lineHeight: 1, transition: 'all 0.15s',
+                }}
+            >👎</button>
+        </div>
+    );
+};
+
 const ToastItem = ({ toast, onDismiss }) => {
     const [dismissing, setDismissing] = useState(false);
     const iconMap = {
@@ -3279,6 +3335,14 @@ const WebsiteGenerator = () => {
                                         )}
                                         {msg.role === 'assistant' && msg.versionIndex !== undefined && msg.versionIndex === currentVersion && (
                                             <span className="gn-version-tag">Current version</span>
+                                        )}
+                                        {/* Thumbs feedback — only on AI replies that resulted in a version (a real edit) */}
+                                        {msg.role === 'assistant' && msg.versionIndex !== undefined && (
+                                            <FeedbackThumbs
+                                                msgKey={`${msg.versionIndex}-${msg.timestamp}`}
+                                                sessionId={sessionId}
+                                                addToast={addToast}
+                                            />
                                         )}
                                     </div>
                                 </>

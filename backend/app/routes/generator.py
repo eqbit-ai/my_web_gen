@@ -2953,6 +2953,12 @@ async def _execute_component_edit(prompt: str, session: dict, targets: list[str]
     # Strip stray HTML comments
     updated_html = _strip_html_comments(updated_html)
 
+    # Always fix url() quotes — LLM frequently re-emits hero backgrounds as
+    # url("https://...") inside a double-quoted style attr, which breaks the
+    # attribute at parse time. _resolve_images_safe only runs when {{IMG:}}
+    # is present, so we run the quote fixer unconditionally here.
+    updated_html = _fix_url_quotes(updated_html)
+
     return {"html": updated_html, "css": css, "js": js}
 
 
@@ -5526,11 +5532,31 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
                 is_multipage=is_multipage_gen,
                 page_count=_page_count,
             )
+        else:
+            # Chat-driven edit — capture for prompt-pattern analysis.
+            from app.utils.edit_logger import log_edit_bg
+            _prev_html_len = len(existing.get("html", "")) if existing else 0
+            log_edit_bg(
+                user_id=user["user_id"], session_id=session_id,
+                prompt=req.prompt, edit_kind="iterate",
+                target_page=req.currentPage or "index",
+                sections_edited=session.get("last_edited_targets") or None,
+                full_rewrite=bool(session.get("last_full_rewrite")),
+                success=True, duration_ms=int(generation_ms),
+                output_chars_delta=len(code["html"]) - _prev_html_len,
+            )
 
         return result
 
     except HTTPException:
         metrics_increment("generation_errors")
+        if not is_new:
+            from app.utils.edit_logger import log_edit_bg
+            log_edit_bg(user_id=user["user_id"], session_id=session_id,
+                        prompt=req.prompt, edit_kind="iterate",
+                        target_page=req.currentPage or "index",
+                        success=False, error_kind="HTTPException",
+                        duration_ms=int((time.time() - generation_start) * 1000))
         raise
     except CircuitOpenError as e:
         metrics_increment("generation_errors")
@@ -5542,6 +5568,13 @@ async def generate_website(req: GenerateRequest, user: dict = Depends(require_au
             duration_ms=int((time.time() - generation_start) * 1000),
             error_message="AI service temporarily unavailable (circuit open)",
         )
+        if not is_new:
+            from app.utils.edit_logger import log_edit_bg
+            log_edit_bg(user_id=user["user_id"], session_id=session_id,
+                        prompt=req.prompt, edit_kind="iterate",
+                        target_page=req.currentPage or "index",
+                        success=False, error_kind="CircuitOpenError",
+                        duration_ms=int((time.time() - generation_start) * 1000))
         raise HTTPException(
             status_code=503,
             detail="AI service is temporarily unavailable. Please try again in a few minutes.",
@@ -5959,6 +5992,9 @@ def _find_element_in_html(full_html: str, element_html: str, occurrence: int = 0
 
 @router.post("/edit-element")
 async def edit_element(req: EditElementRequest, user: dict = Depends(require_auth)):
+    from app.utils.edit_logger import Stopwatch, log_edit_bg
+    _edit_sw = Stopwatch().__enter__()
+    _orig_html_len = len(req.currentHtml or "")
     logger.info(
         f'🖱️ [ELEMENT EDIT] path="{sanitize_log(req.elementPath)}" prompt="{sanitize_log(req.prompt[:80])}" '
         f'element={len(req.elementHtml):,}chars section={sanitize_log(req.sectionType or "?")} page={sanitize_log(req.currentPage)}'
@@ -6338,6 +6374,11 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         # Strip stray HTML comments (LLM artifacts that leak as visible text)
         result_html = _strip_html_comments(result_html)
 
+        # Always fix url() quotes — element edits that rewrite a section
+        # often re-emit the hero background as url("https://...") inside a
+        # double-quoted style attr, which breaks the attribute.
+        result_html = _fix_url_quotes(result_html)
+
         # ── Save to session ──────────────────────────────────────
         s = await redis_get_session(req.sessionId) if req.sessionId else None
         if s:
@@ -6371,16 +6412,36 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
         logger.info(f"🖱️ [ELEMENT EDIT] ✅ Done → html={len(result_html):,}, css={len(result_css):,}")
         from app.utils.usage_limits import increment_usage
         await increment_usage(user["user_id"], "edit")
+        log_edit_bg(
+            user_id=user["user_id"], session_id=req.sessionId,
+            prompt=req.prompt, edit_kind="element-edit",
+            target_page=req.currentPage,
+            sections_edited=[req.sectionType] if req.sectionType else None,
+            success=True, duration_ms=_edit_sw.ms,
+            output_chars_delta=len(result_html) - _orig_html_len,
+        )
         return {"success": True, "website": {"html": result_html, "css": result_css}, "manualReplace": False}
 
     except HTTPException:
+        log_edit_bg(user_id=user["user_id"], session_id=req.sessionId,
+                    prompt=req.prompt, edit_kind="element-edit",
+                    target_page=req.currentPage, success=False,
+                    error_kind="HTTPException", duration_ms=_edit_sw.ms)
         raise
     except CircuitOpenError as e:
+        log_edit_bg(user_id=user["user_id"], session_id=req.sessionId,
+                    prompt=req.prompt, edit_kind="element-edit",
+                    target_page=req.currentPage, success=False,
+                    error_kind="CircuitOpenError", duration_ms=_edit_sw.ms)
         raise HTTPException(
             status_code=503,
             detail="AI service is temporarily unavailable. Please try again in a few minutes.",
         ) from e
     except Exception as e:
+        log_edit_bg(user_id=user["user_id"], session_id=req.sessionId,
+                    prompt=req.prompt, edit_kind="element-edit",
+                    target_page=req.currentPage, success=False,
+                    error_kind=type(e).__name__, duration_ms=_edit_sw.ms)
         logger.error(f"🖱️ [ELEMENT EDIT] Exception: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 

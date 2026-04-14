@@ -859,6 +859,21 @@ USER REQUEST: {req.prompt}"""
         f"✅ Section Regenerate Complete → {section_type} ({req.sectionId}) in {duration}ms ({len(existing_section):,} → {len(result['html']):,} chars)"
     )
 
+    # Capture for prompt-pattern analysis
+    try:
+        from app.utils.edit_logger import log_edit_bg
+        log_edit_bg(
+            user_id=user["user_id"], session_id=req.sessionId,
+            prompt=req.prompt or f"[regenerate {section_type}]",
+            edit_kind="section-edit",
+            target_page=req.pageSlug,
+            sections_edited=[section_type] if section_type else None,
+            success=True, duration_ms=duration,
+            output_chars_delta=len(result["html"]) - len(existing_section),
+        )
+    except Exception:
+        pass
+
     return {
         "success": True,
         "html": new_html,

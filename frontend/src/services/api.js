@@ -1434,6 +1434,16 @@ export const getMyTokenRequests = async () => {
     return data;
 };
 
+export const submitEditFeedback = async ({ sessionId, editLogId = null, rating, comment = null }) => {
+    const response = await fetch(`${API_BASE_URL}/edit-feedback`, {
+        method: 'POST', headers: getAuthHeaders(),
+        body: JSON.stringify({ session_id: sessionId, edit_log_id: editLogId, rating, comment }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(formatDetail(data.detail, 'Failed to submit feedback'));
+    return data;
+};
+
 const api = {
     generateWebsite, getSession, getSessionVersions, rollbackSession, clearSession,
     editElement, getNiches, getTemplates,

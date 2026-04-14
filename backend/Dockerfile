@@ -49,5 +49,9 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
+# Entrypoint runs `alembic upgrade head` then exec's CMD. Set
+# SKIP_MIGRATIONS=1 to bypass (worker container shares the same image).
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Default: run API server with gunicorn
 CMD ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]

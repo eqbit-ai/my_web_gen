@@ -10,6 +10,7 @@ from fastapi import APIRouter
 
 from .analytics import router as analytics_router
 from .domains import router as domains_router
+from .edit_logs import router as edit_logs_router
 from .generations import router as generations_router
 from .operations import router as operations_router
 from .sites import router as sites_router
@@ -28,3 +29,4 @@ router.include_router(domains_router)
 router.include_router(tokens_router)
 router.include_router(operations_router)
 router.include_router(analytics_router)
+router.include_router(edit_logs_router)

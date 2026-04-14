@@ -45,6 +45,7 @@ from app.routes import generator as generator_routes
 from app.routes import health, metrics_route
 from app.routes import images as image_routes
 from app.routes import jobs as job_routes
+from app.routes import edit_feedback as edit_feedback_routes
 from app.routes import landing_chat as landing_chat_routes
 from app.routes import projects as project_routes
 from app.routes import sections as section_routes
@@ -315,6 +316,7 @@ app.include_router(site_feature_routes.router, prefix="/api/sites", tags=["Site 
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(metrics_route.router, prefix="/api/metrics", tags=["Metrics"])
 app.include_router(landing_chat_routes.router, prefix="/api/landing", tags=["Landing"])
+app.include_router(edit_feedback_routes.router, prefix="/api", tags=["EditFeedback"])
 
 # Static file serving for uploads
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
