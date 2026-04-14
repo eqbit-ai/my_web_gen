@@ -676,6 +676,22 @@ const FAQSection = () => {
 
                 <div className="aif-chat">
                     {hasConversation && (
+                        <div className="aif-chat-toolbar">
+                            <button
+                                type="button"
+                                className="aif-chat-reset"
+                                onClick={() => { setTurns([]); setDraft(''); requestAnimationFrame(() => { if (inputRef.current) inputRef.current.focus(); }); }}
+                                disabled={loading}
+                                aria-label="Start a new conversation"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                                New chat
+                            </button>
+                        </div>
+                    )}
+                    {hasConversation && (
                         <div className="aif-chat-transcript" ref={transcriptRef} aria-live="polite" data-lenis-prevent>
                             {turns.map((t, i) => (
                                 <div key={i} className="aif-chat-turn">
