@@ -298,3 +298,20 @@ body:has(.gn-layout) {
 }
 .gn-layout .gen-stage-icon .gen-stage-dot { background: rgba(17, 24, 39, 0.25) !important; }
 .gn-layout .gen-progress-bar { background: rgba(17, 24, 39, 0.08) !important; }
+
+/* Sections panel (SectionEditor) — teal type label + muted label/icons were
+   too faded on light bg. Darken everything for contrast. */
+.se-panel { background: #FFFFFF !important; border-left: 1px solid rgba(17, 24, 39, 0.08) !important; }
+.se-card {
+  background: #F1F3F9 !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+}
+.se-card-type { color: #065F46 !important; }           /* dark teal, still branded */
+.se-card-label { color: #4B5563 !important; }          /* readable grey */
+.se-drag-handle { color: rgba(17, 24, 39, 0.45) !important; }
+.se-card-actions button { color: #4B5563 !important; }
+.se-card-actions button:hover {
+  background: rgba(17, 24, 39, 0.06) !important;
+  color: #0A0A0A !important;
+}
+.se-card-actions button:disabled { opacity: 0.35 !important; }
