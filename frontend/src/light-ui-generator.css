@@ -317,12 +317,18 @@ body:has(.gn-layout) {
 .se-card-actions button:disabled { opacity: 0.35 !important; }
 
 /* ── Shared modal overlays (SeoEditor / NavEditor / FooterEditor) ───────
-   .ne-overlay / .fe-overlay / .seo-overlay use rgba(0,0,0,0.7) scrim + dark
-   --bg-card panel. Flip overlay to soft blur and panel to white. */
+   Force-center, transparent scrim, light panel. */
 .ne-overlay, .fe-overlay, .seo-overlay {
-  background: rgba(17, 24, 39, 0.18) !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 10000 !important;
+  padding: 24px !important;
 }
 .ne-modal, .fe-modal, .seo-modal {
   background: #FFFFFF !important;
@@ -376,13 +382,18 @@ body:has(.gn-layout) {
   color: #065F46 !important;
 }
 
-/* ── Deploy modal (.dm-*) — soften overlay scrim + panel shadow ─────────
-   .dm-overlay hardcodes rgba(0,0,0,0.65); panel uses var(--bg-secondary)
-   which Phase 1 flips to white but the scrim + heavy shadow stay dark. */
+/* ── Deploy modal (.dm-*) — force-center, transparent scrim, light panel */
 .dm-overlay {
-  background: rgba(17, 24, 39, 0.18) !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 10000 !important;
+  padding: 24px !important;
 }
 .dm-container {
   background: #FFFFFF !important;
