@@ -1,0 +1,279 @@
+/* ==========================================================================
+   LIGHT UI OVERLAY — GENERATOR  (experimental, scoped to .gn-layout)
+   --------------------------------------------------------------------------
+   Phase 1: shell + background. Flips the core CSS variables inside the
+   generator scope so every descendant that uses var(--bg-*)/var(--text-*)/
+   var(--border) inherits the light palette used on the dashboard.
+
+   Accent stays teal (#86EFCB) — brand color.
+   Wave background is injected by LightUI.jsx into .gn-wave-host.
+
+   Remove the [LIGHT-UI-GEN] line in App.js to roll back.
+   ========================================================================== */
+
+.gn-layout {
+  /* Core palette — light */
+  --bg-primary:    #F7F8FB;
+  --bg-secondary:  #FFFFFF;
+  --bg-tertiary:   #F1F3F9;
+  --bg-card:       #FFFFFF;
+
+  --text-primary:   #0A0A0A;
+  --text-secondary: #4B5563;
+  --text-muted:     #9CA3AF;
+
+  --border: rgba(17, 24, 39, 0.08);
+
+  /* Dashboard-matching blue accent helpers (used by waves + focus rings) */
+  --lui-accent:   #0171E4;
+  --lui-accent-2: #3B8EF5;
+  --lui-accent-3: #60A5FA;
+
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Body bg behind the generator (prevents dark flash on scroll bounce) */
+body:has(.gn-layout) {
+  background: #F7F8FB;
+}
+
+/* Chat sidebar + preview surfaces */
+.gn-layout .gn-chat-sidebar {
+  background: var(--bg-secondary) !important;
+  border-right: 1px solid var(--border) !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+
+/* Resize handle: blue on hover instead of undefined --primary */
+.gn-layout .gn-resize-handle:hover { background: var(--lui-accent) !important; }
+
+/* ─── Wave background host ────────────────────────────────────────────
+   A sibling positioned absolutely behind the chat + content. Injected
+   by LightUI.jsx (mirrors the dashboard wave treatment). */
+.gn-wave-host {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 95%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 95%);
+}
+.gn-wave-host::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(1, 113, 228, 0.20), transparent 48%),
+    radial-gradient(ellipse at 82% 22%, rgba(59, 142, 245, 0.15), transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(0, 91, 181, 0.12), transparent 60%);
+  filter: blur(2px);
+}
+.gn-wave-host svg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  transform: translateX(-50%);
+}
+.gn-wave-host .lui-wave-path   { animation: luiWaveSlideGen 28s linear infinite; }
+.gn-wave-host .lui-wave-path-2 { animation: luiWaveSlideGen 40s linear infinite reverse; }
+@keyframes luiWaveSlideGen {
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-25%, 0, 0); }
+}
+
+/* Keep direct children above the wave layer */
+.gn-layout > *:not(.gn-wave-host) { position: relative; z-index: 1; }
+
+/* Content surface gets the waves showing through — make it transparent
+   so the host is visible behind the marketplace / welcome states. */
+.gn-layout .gn-content { background: transparent !important; }
+
+/* Marketplace hero: strong text on light bg */
+.gn-layout .gn-market-hero h1 {
+  color: var(--text-primary) !important;
+  background: linear-gradient(180deg, #0A0A0A 0%, #4B5563 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gn-layout .gn-market-hero p { color: var(--text-secondary) !important; }
+
+/* Search bar — white surface instead of the dark var */
+.gn-layout .gn-search-bar {
+  background: #FFFFFF !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+.gn-layout .gn-search-input { color: var(--text-primary) !important; }
+.gn-layout .gn-search-input::placeholder { color: var(--text-muted) !important; }
+
+/* Icon buttons + chat header border in light shell */
+.gn-layout .gn-icon-btn {
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+.gn-layout .gn-icon-btn:hover {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Scrollbars — subtle on light bg */
+.gn-layout ::-webkit-scrollbar-thumb {
+  background: rgba(17, 24, 39, 0.15);
+}
+.gn-layout ::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 24, 39, 0.25);
+}
+
+/* ==========================================================================
+   PHASE 2 — Chat, toolbars, panels
+   Fix hardcoded colors that bypass the CSS vars and look wrong on light bg.
+   ========================================================================== */
+
+/* Toolbar shell + preview area */
+.gn-layout .gn-toolbar {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03);
+}
+.gn-layout .gn-preview-wrap { background: var(--bg-tertiary) !important; }
+.gn-layout .gn-preview-wrap.mobile-view { background: var(--bg-primary) !important; }
+
+/* Mobile device frame — softer shadow on light bg */
+.gn-layout .gn-device-frame.mobile {
+  border: 3px solid var(--border) !important;
+  box-shadow: 0 8px 28px rgba(17, 24, 39, 0.12) !important;
+}
+
+/* Page tabs — fix invisible hover + undefined --primary active state */
+.gn-layout .gn-page-tab:hover {
+  background: rgba(17, 24, 39, 0.05) !important;
+  color: var(--text-primary) !important;
+}
+.gn-layout .gn-page-tab.active {
+  background: var(--accent) !important;
+  color: #08292E !important;
+  box-shadow: 0 1px 3px rgba(134, 239, 203, 0.4) !important;
+}
+
+/* View/device toggle active state — subtle shadow instead of dark one */
+.gn-layout .gn-vt-btn.active,
+.gn-layout .gn-dt-btn.active {
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.08) !important;
+}
+
+/* Toolbar button hover — use light-bg hover instead of var(--border) fill */
+.gn-layout .gn-tb-btn:hover {
+  background: rgba(17, 24, 39, 0.05) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Spinners — light-bg friendly */
+.gn-layout .gn-spinner {
+  border: 2px solid rgba(17, 24, 39, 0.12) !important;
+  border-top-color: #08292E !important;
+}
+.gn-layout .gen-spinner {
+  border: 3px solid rgba(17, 24, 39, 0.08) !important;
+  border-top-color: var(--accent) !important;
+}
+
+/* Card hover shadow — subtle */
+.gn-layout .gn-card {
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+.gn-layout .gn-card:hover {
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.08) !important;
+}
+.gn-layout .gn-card-font { color: rgba(17, 24, 39, 0.5) !important; }
+
+/* Element edit modal — light surface */
+.gn-layout .gn-element-panel,
+.gn-element-panel {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  box-shadow: 0 25px 50px rgba(17, 24, 39, 0.18) !important;
+}
+.gn-layout .gn-ep-attach-btn:hover:not(:disabled) {
+  background: rgba(17, 24, 39, 0.05) !important;
+}
+
+/* Chat message system pill, version tag — readable on light */
+.gn-layout .gn-msg-system {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+}
+.gn-layout .gn-version-tag {
+  background: rgba(134, 239, 203, 0.2) !important;
+  color: #065f46 !important;
+}
+.gn-layout .gn-rollback-btn:hover {
+  background: rgba(134, 239, 203, 0.18) !important;
+  color: #065f46 !important;
+}
+
+/* Plan pills — teal text too faint on light, darken */
+.gn-layout .gn-plan-pill { color: #065f46 !important; }
+.gn-layout .gn-niche-pill { color: #065f46 !important; }
+
+/* ── Wizard: hardcoded #fff text on teal accent → dark teal ────────────── */
+.gn-layout .wizard-msg .gn-avatar,
+.gn-layout .wizard-text-input button[type="submit"],
+.gn-layout .wizard-card-tag,
+.gn-layout .wizard-page-chip.selected,
+.gn-layout .wizard-page-chip.locked,
+.gn-layout .wizard-confirm-btn {
+  color: #08292E !important;
+}
+
+/* Wizard palette/summary color-swatch borders — light-bg friendly */
+.gn-layout .wizard-palette-colors span,
+.gn-layout .wizard-summary-colors span {
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+}
+
+/* Wizard options hover — use teal tint with readable alpha */
+.gn-layout .wizard-option:hover {
+  background: rgba(134, 239, 203, 0.15) !important;
+}
+
+/* Mobile tab bar + tools panel surfaces */
+.gn-layout .gn-mobile-tabs,
+.gn-layout .gn-mobile-tools {
+  background: #FFFFFF !important;
+  border-top: 1px solid var(--border);
+}
+.gn-layout .gn-mobile-tool-btn {
+  background: #FFFFFF !important;
+  border: 1px solid var(--border) !important;
+}
+.gn-layout .gn-mobile-tool-btn:hover { background: var(--bg-tertiary) !important; }
+
+/* Toolbar dividers — softer line */
+.gn-layout .gn-tb-divider { background: rgba(17, 24, 39, 0.1) !important; }
+
+/* Tab count pill — better contrast */
+.gn-layout .gn-tab-count {
+  background: rgba(17, 24, 39, 0.08) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Job progress bar track */
+.gn-layout .gn-job-progress-bar {
+  background: rgba(17, 24, 39, 0.08) !important;
+}
+
+/* Enhanced-prompt preview <pre> — light surface */
+.gn-layout .gn-enhanced-prompt pre {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border) !important;
+}

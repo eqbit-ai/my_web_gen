@@ -6,6 +6,9 @@ import Navbar from './components/Navbar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './meydan-theme.css';
 import './App.css';
+import './light-ui.css'; // [LIGHT-UI] remove this line to roll back
+import './light-ui-generator.css'; // [LIGHT-UI-GEN] remove this line to roll back
+import LightUI from './components/LightUI'; // [LIGHT-UI]
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -76,6 +79,7 @@ const WebsiteGenerator = lazyRetry(() => import('./components/WebsiteGenerator')
 const Dashboard = lazyRetry(() => import('./components/Dashboard'));
 const ForgotPassword = lazyRetry(() => import('./components/ForgotPassword'));
 const ResetPassword = lazyRetry(() => import('./components/ResetPassword'));
+const VerifyEmail = lazyRetry(() => import('./components/VerifyEmail'));
 const ForceResetPassword = lazyRetry(() => import('./components/ForceResetPassword'));
 const PendingApproval = lazyRetry(() => import('./components/PendingApproval'));
 
@@ -141,6 +145,7 @@ function AppLayout() {
 
   return (
     <div className="app">
+      <LightUI /> {/* [LIGHT-UI] remove this line to roll back */}
       {!hideNavbar && <Navbar />}
       <Suspense fallback={
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa' }}>
@@ -154,6 +159,7 @@ function AppLayout() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/force-reset-password" element={<ProtectedRoute allowForceReset><ForceResetPassword /></ProtectedRoute>} />
           <Route path="/pending-approval" element={<ProtectedRoute allowPending><PendingApproval /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
