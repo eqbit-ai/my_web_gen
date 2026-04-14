@@ -3080,29 +3080,32 @@ const WebsiteGenerator = () => {
         // questionnaire doesn't keep rendering alongside the loaded template.
         setWizardStep(-1);
         setIsNewDesign(false);
-        const preview = templatePreviews[item.id];
-        if (preview && preview.html) {
-            const tHtml = preview.html;
-            const tCss = preview.css || '';
-            const tJs = preview.js || '';
+
+        const loadInto = (tHtml, tCss, tJs) => {
             setHtml(tHtml);
             setCss(tCss);
             setJs(tJs);
             setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
             setVersions([{ html: tHtml, css: tCss, js: tJs, prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
             setCurrentVersion(0);
-            syncSession({ html: tHtml, css: tCss, js: tJs }).catch(() => { });
+            // Hydrate a fresh backend session so chat/element-edit/sections work.
+            // (Previously called syncSession with an object as first arg, which
+            // is typed as `sessionId: str` → 422 'Input should be a valid string'.)
+            restoreSession(tHtml, tCss, tJs, null)
+                .then(data => {
+                    if (data?.sessionId) setSessionId(data.sessionId);
+                    if (data?.sections) setSections(data.sections);
+                })
+                .catch(() => { /* non-fatal */ });
+        };
+
+        const preview = templatePreviews[item.id];
+        if (preview && preview.html) {
+            loadInto(preview.html, preview.css || '', preview.js || '');
         } else {
-            // Fallback: fetch full template then load
             getTemplateFull(item.id).then(data => {
                 if (data && data.html) {
-                    setHtml(data.html);
-                    setCss(data.css || '');
-                    setJs(data.js || '');
-                    setMessages([{ role: 'assistant', text: `Template "${item.name}" loaded. Describe the changes you'd like to make.`, timestamp: new Date().toLocaleTimeString() }]);
-                    setVersions([{ html: data.html, css: data.css || '', js: data.js || '', prompt: `Template: ${item.name}`, timestamp: new Date().toISOString() }]);
-                    setCurrentVersion(0);
-                    syncSession({ html: data.html, css: data.css || '', js: data.js || '' }).catch(() => { });
+                    loadInto(data.html, data.css || '', data.js || '');
                 }
             }).catch(() => {
                 setMessages(prev => [...prev, { role: 'assistant', text: 'Failed to load template. Please try again.', timestamp: new Date().toLocaleTimeString(), isError: true }]);
