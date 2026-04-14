@@ -315,3 +315,123 @@ body:has(.gn-layout) {
   color: #0A0A0A !important;
 }
 .se-card-actions button:disabled { opacity: 0.35 !important; }
+
+/* ── Shared modal overlays (SeoEditor / NavEditor / FooterEditor) ───────
+   .ne-overlay / .fe-overlay / .seo-overlay use rgba(0,0,0,0.7) scrim + dark
+   --bg-card panel. Flip overlay to soft blur and panel to white. */
+.ne-overlay, .fe-overlay, .seo-overlay {
+  background: rgba(17, 24, 39, 0.18) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+.ne-modal, .fe-modal, .seo-modal {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  box-shadow: 0 24px 48px -16px rgba(17, 24, 39, 0.2) !important;
+  color: #0A0A0A !important;
+}
+.ne-header h3, .fe-header h3, .seo-header h3 { color: #0A0A0A !important; font-weight: 700 !important; }
+.ne-header, .fe-header, .seo-header { border-bottom: 1px solid rgba(17, 24, 39, 0.08) !important; }
+.ne-footer, .fe-footer, .seo-footer { border-top: 1px solid rgba(17, 24, 39, 0.08) !important; }
+
+/* Tabs (SEO & Meta / Contact Form / WhatsApp / Social Links) — darken */
+.seo-tabs { border-bottom: 1px solid rgba(17, 24, 39, 0.08) !important; }
+.seo-tabs button { color: #4B5563 !important; font-weight: 600 !important; }
+.seo-tabs button.active { color: #065F46 !important; border-bottom-color: #065F46 !important; }
+
+/* Field labels + inputs — readable on white */
+.seo-field label { color: #0A0A0A !important; font-weight: 600 !important; }
+.seo-field input, .seo-field textarea {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  color: #0A0A0A !important;
+}
+.seo-field input:focus, .seo-field textarea:focus { border-color: #065F46 !important; }
+.seo-field input::placeholder, .seo-field textarea::placeholder { color: #9CA3AF !important; }
+.seo-char-count, .seo-hint { color: #6B7280 !important; }
+
+/* Favicon/upload control */
+.seo-favicon-preview { border: 1px solid rgba(17, 24, 39, 0.12) !important; }
+.seo-upload-btn {
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  color: #4B5563 !important;
+  background: #FFFFFF !important;
+}
+.seo-upload-btn:hover { border-color: #065F46 !important; color: #065F46 !important; }
+
+/* Save button — brand teal + dark text */
+.ne-save, .fe-save, .seo-save { color: #08292E !important; }
+.ne-cancel, .fe-cancel {
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  color: #4B5563 !important;
+}
+
+/* Success/error banners — light-bg friendly */
+.seo-error, .ne-error, .fe-error {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #991B1B !important;
+}
+.seo-success {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #065F46 !important;
+}
+
+/* ── Deploy modal (.dm-*) — soften overlay scrim + panel shadow ─────────
+   .dm-overlay hardcodes rgba(0,0,0,0.65); panel uses var(--bg-secondary)
+   which Phase 1 flips to white but the scrim + heavy shadow stay dark. */
+.dm-overlay {
+  background: rgba(17, 24, 39, 0.18) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+.dm-container {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  box-shadow: 0 24px 48px -16px rgba(17, 24, 39, 0.2) !important;
+}
+.dm-header h2, .dm-domain-hero h2, .dm-success-hero h2, .dm-step-label,
+.dm-domain-name, .dm-price-amount, .dm-owned-name {
+  color: #0A0A0A !important;
+}
+.dm-header p, .dm-header-success + *, .dm-domain-hero p, .dm-hint,
+.dm-feature, .dm-meta, .dm-price-period, .dm-domain-ext,
+.dm-result-price, .dm-featured-perks span, .dm-tld-option,
+.dm-step-detail, .dm-owned-header span, .dm-upgrade-left span,
+.dm-connect-status, .dm-live-label, .dm-cname-label, .dm-cname-hint {
+  color: #4B5563 !important;
+}
+.dm-field label { color: #0A0A0A !important; }
+.dm-close {
+  background: rgba(17, 24, 39, 0.05) !important;
+  color: #4B5563 !important;
+}
+.dm-close:hover { background: rgba(17, 24, 39, 0.08) !important; color: #0A0A0A !important; }
+
+/* Tabs underline darker */
+.dm-tabs { border-bottom: 1px solid rgba(17, 24, 39, 0.08) !important; }
+.dm-tab { color: #4B5563 !important; }
+.dm-tab.active { color: #065F46 !important; border-bottom-color: #065F46 !important; }
+
+/* Pipeline + result surfaces */
+.dm-progress-pipeline, .dm-live-url-card, .dm-cname-card,
+.dm-result-row, .dm-owned-row, .dm-search-input-wrap, .dm-tld-picker,
+.dm-field input, .dm-cname-value {
+  background: #F1F3F9 !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  color: #0A0A0A !important;
+}
+.dm-step-pending .dm-step-icon { background: rgba(17, 24, 39, 0.06) !important; color: #6B7280 !important; }
+
+/* Toast container hardening — reported behaviour: a large overlay appears
+   when a toast shows up and disappears when it closes. Defensive fix
+   pins the container to its content and stops any accidental full-width
+   ancestor from inheriting pointer-events. */
+.gn-layout .toast-container,
+.toast-container {
+  width: auto !important;
+  height: auto !important;
+  max-width: 380px !important;
+  pointer-events: none !important;
+}
+.gn-layout .toast-container > *,
+.toast-container > * { pointer-events: auto !important; }
