@@ -78,6 +78,7 @@ class UserResponse(BaseModel):
     tokens_used: int = 0
     is_admin: bool = False
     is_approved: bool = False
+    email_verified: bool = False
     generation_count: int = 0
     max_generations: int = 2
     edit_count: int = 0
@@ -88,6 +89,20 @@ class AuthResponse(BaseModel):
     token: str
     user: UserResponse
     force_password_reset: bool = False
+
+
+class SignupResponse(BaseModel):
+    message: str
+    email: str
+    email_verified: bool = False
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -107,8 +122,10 @@ class ChangePasswordRequest(BaseModel):
 # --- Routes ---
 
 
-@router.post("/signup", response_model=AuthResponse)
+@router.post("/signup", response_model=SignupResponse)
 async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    import uuid
+
     # Validate license number format (only if provided)
     if data.license_number:
         try:
@@ -139,6 +156,8 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
     # Create isolated tenant schema (tied to email)
     schema_name = await create_tenant_schema(data.email)
 
+    verification_token = uuid.uuid4().hex
+
     user = User(
         email=data.email,
         hashed_password=hash_password(data.password),
@@ -149,12 +168,13 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         db_schema=schema_name,
         is_approved=False,
         token_balance=0,
+        email_verified=False,
+        email_verification_token=verification_token,
+        email_verification_sent_at=datetime.now(UTC),
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
-
-    token = create_access_token(user.id, user.license_number, user.db_schema)
 
     # Audit log (fire-and-forget)
     log_event_bg(
@@ -166,35 +186,107 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
         ip_address=request.client.host if request.client else None,
     )
 
-    # Send welcome email + admin notification (fire-and-forget)
+    # Send verification email (fire-and-forget). Admin notification is deferred
+    # until the user actually confirms their email address.
     try:
-        from app.utils.email import send_welcome, send_admin_new_signup
+        from app.utils.email import send_email_verification
+        send_email_verification(user.email, verification_token, user.full_name)
+    except Exception as e:
+        logger.warning(f"[AUTH] Failed to send verification email: {e}")
+
+    return SignupResponse(
+        message="Account created. Please check your email to confirm your address before signing in.",
+        email=user.email,
+        email_verified=False,
+    )
+
+
+@router.post("/verify-email")
+async def verify_email(data: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
+    """Confirm a user's email address using the token sent at signup.
+
+    On success, marks the user as email-verified and notifies the admin so the
+    account becomes visible in the admin approval queue.
+    """
+    if not data.token:
+        raise HTTPException(status_code=400, detail="Missing verification token")
+
+    result = await db.execute(
+        select(User).where(User.email_verification_token == data.token)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    if getattr(user, "email_verified", False):
+        # Idempotent — link already used
+        return {"message": "Email already verified. You can sign in.", "email": user.email}
+
+    # Keep the token on the row so a second click on the same link is
+    # idempotent (returns the "already verified" message above) instead of
+    # surfacing an "invalid link" error to the user.
+    await db.execute(
+        update(User)
+        .where(User.id == user.id)
+        .values(email_verified=True)
+    )
+    await db.commit()
+
+    log_event_bg(
+        user_id=str(user.id),
+        action="verify_email",
+        resource_type="user",
+        resource_id=str(user.id),
+        details={"email": user.email},
+    )
+
+    # Now that the email is confirmed, send the welcome email and notify admin
+    # so the user shows up in the approval queue.
+    try:
+        from app.utils.email import send_admin_new_signup, send_welcome
         send_welcome(user.email, user.full_name)
         admin_email = os.getenv("ADMIN_EMAIL", "meydan.ai.center@gmail.com")
         send_admin_new_signup(admin_email, user.email, user.full_name, user.company_name)
     except Exception as e:
-        logger.warning(f"[AUTH] Failed to send signup emails: {e}")
+        logger.warning(f"[AUTH] Failed to send post-verification emails: {e}")
 
-    return AuthResponse(
-        token=token,
-        user=UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            company_name=user.company_name,
-            license_number=user.license_number,
-            mobile=getattr(user, 'mobile', None),
-            db_schema=user.db_schema,
-            token_balance=getattr(user, 'token_balance', 0),
-            tokens_used=getattr(user, 'tokens_used', 0),
-            is_admin=getattr(user, 'is_admin', False),
-            is_approved=getattr(user, 'is_approved', False),
-            generation_count=getattr(user, 'generation_count', 0),
-            max_generations=getattr(user, 'max_generations', 2),
-            edit_count=getattr(user, 'edit_count', 0),
-            max_edits=getattr(user, 'max_edits', 30),
-        ),
+    return {
+        "message": "Email confirmed. Your account is now pending admin approval.",
+        "email": user.email,
+    }
+
+
+@router.post("/resend-verification")
+async def resend_verification(data: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
+    """Resend the email verification link. Always returns success to prevent enumeration."""
+    import uuid
+
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+
+    generic = {"message": "If an unverified account exists for that email, a new confirmation link has been sent."}
+
+    if not user or getattr(user, "email_verified", False):
+        return generic
+
+    new_token = uuid.uuid4().hex
+    await db.execute(
+        update(User)
+        .where(User.id == user.id)
+        .values(
+            email_verification_token=new_token,
+            email_verification_sent_at=datetime.now(UTC),
+        )
     )
+    await db.commit()
+
+    try:
+        from app.utils.email import send_email_verification
+        send_email_verification(user.email, new_token, user.full_name)
+    except Exception as e:
+        logger.warning(f"[AUTH] Failed to resend verification email: {e}")
+
+    return generic
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -219,6 +311,14 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
         if isinstance(exc, HTTPException):
             raise
         pass  # Column may not exist yet
+
+    # Block login until the user has confirmed their email address.
+    # Admins are exempt so they can never be locked out by this check.
+    if not getattr(user, "is_admin", False) and not getattr(user, "email_verified", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please confirm your email address before signing in. Check your inbox for the confirmation link.",
+        )
 
     # Include is_admin flag in token if the user is an admin
     is_admin = getattr(user, "is_admin", False) or False
@@ -266,6 +366,7 @@ async def login(data: LoginRequest, request: Request, db: AsyncSession = Depends
             tokens_used=getattr(user, 'tokens_used', 0),
             is_admin=getattr(user, 'is_admin', False),
             is_approved=getattr(user, 'is_approved', False),
+            email_verified=getattr(user, 'email_verified', False),
             generation_count=getattr(user, 'generation_count', 0),
             max_generations=getattr(user, 'max_generations', 2),
             edit_count=getattr(user, 'edit_count', 0),
@@ -329,13 +430,17 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
     if not user:
         return {"message": "If an account with that email exists, a reset link has been generated."}
 
-    # Generate reset token
+    # Generate reset token — store only the SHA-256 hash in the DB so a
+    # backup leak or read-only DB compromise can't be used to reset passwords.
+    # The plaintext token goes only to the user's email.
+    import hashlib
     reset_token = uuid.uuid4().hex
+    token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
     expires = datetime.now(UTC) + timedelta(hours=1)
 
     token_record = PasswordResetToken(
         user_id=user.id,
-        token=reset_token,
+        token=token_hash,
         expires_at=expires,
     )
     db.add(token_record)
@@ -363,11 +468,15 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
 @router.post("/reset-password")
 async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     """Reset password using a valid reset token."""
+    import hashlib
+
     from app.models.password_reset import PasswordResetToken
 
+    # Compare on the hashed form — the plaintext token is never in the DB.
+    token_hash = hashlib.sha256(data.token.encode()).hexdigest()
     result = await db.execute(
         select(PasswordResetToken).where(
-            PasswordResetToken.token == data.token,
+            PasswordResetToken.token == token_hash,
             PasswordResetToken.used.is_(False),
         )
     )

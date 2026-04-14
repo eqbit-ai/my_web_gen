@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../services/api';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
-    const token = searchParams.get('token') || '';
+    // Capture the token into state ONCE, then scrub it from the URL so it
+    // doesn't sit in browser history, Referer headers (if any 3rd-party is
+    // ever added to this page), or casual screenshots.
+    const tokenRef = useRef(searchParams.get('token') || '');
+    const token = tokenRef.current;
+    useEffect(() => {
+        if (window.location.search.includes('token=')) {
+            window.history.replaceState(null, '', '/reset-password');
+        }
+    }, []);
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [showPassword, setShowPassword] = useState(false);
