@@ -277,3 +277,24 @@ body:has(.gn-layout) {
   background: var(--bg-tertiary) !important;
   border: 1px solid var(--border) !important;
 }
+
+/* Generation-progress overlay — stages were invisible on light bg */
+.gn-layout .gen-progress-title { color: #0A0A0A !important; font-weight: 700 !important; }
+.gn-layout .gen-progress-stage {
+  color: #0A0A0A !important;
+  font-weight: 600 !important;
+}
+.gn-layout .gen-progress-stage.active {
+  color: #065F46 !important; /* dark teal — readable + on-brand */
+  font-weight: 700 !important;
+}
+.gn-layout .gen-progress-stage.done {
+  color: #4B5563 !important;
+  font-weight: 500 !important;
+}
+.gn-layout .gen-progress-time {
+  color: #4B5563 !important;
+  font-weight: 500 !important;
+}
+.gn-layout .gen-stage-icon .gen-stage-dot { background: rgba(17, 24, 39, 0.25) !important; }
+.gn-layout .gen-progress-bar { background: rgba(17, 24, 39, 0.08) !important; }

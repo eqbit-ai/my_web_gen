@@ -1,0 +1,854 @@
+/* ==========================================================================
+   LIGHT UI OVERLAY  (experimental — scoped to dashboard + admin)
+   --------------------------------------------------------------------------
+   This file is an additive override. It does NOT modify any existing CSS.
+   Remove the two [LIGHT-UI] lines in src/App.js to fully roll back.
+   ========================================================================== */
+
+:root {
+  --lui-bg:          #F7F8FB;
+  --lui-bg-elev:     #FFFFFF;
+  --lui-bg-soft:     #F1F3F9;
+  --lui-border:      rgba(17, 24, 39, 0.08);
+  --lui-border-hov:  rgba(17, 24, 39, 0.14);
+  --lui-text:        #0A0A0A;
+  --lui-text-2:      #4B5563;
+  --lui-text-3:      #9CA3AF;
+  --lui-accent:      #0171E4;  /* landing-page button blue */
+  --lui-accent-2:    #3B8EF5;
+  --lui-accent-3:    #005BB5;
+  --lui-success:     #10B981;
+  --lui-warn:        #F59E0B;
+  --lui-danger:      #EF4444;
+  --lui-shadow-sm:   0 1px 2px rgba(17, 24, 39, 0.04);
+  --lui-shadow:      0 1px 2px rgba(17, 24, 39, 0.04), 0 8px 24px -12px rgba(17, 24, 39, 0.08);
+  --lui-shadow-lg:   0 4px 12px rgba(17, 24, 39, 0.06), 0 24px 48px -16px rgba(17, 24, 39, 0.12);
+  --lui-grad:        linear-gradient(135deg, #0171E4 0%, #3B8EF5 50%, #60A5FA 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Shell
+   -------------------------------------------------------------------------- */
+.dashboard {
+  background: var(--lui-bg) !important;
+  color: var(--lui-text) !important;
+}
+
+.dash-sidebar {
+  background: var(--lui-bg-elev) !important;
+  border-right: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-sm);
+}
+
+.dash-logo-text { color: var(--lui-text) !important; }
+
+.dash-sidebar-toggle { color: var(--lui-text-3) !important; }
+.dash-sidebar-toggle:hover {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text) !important;
+}
+
+.dash-new-chat {
+  background: var(--lui-bg-soft) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s !important;
+}
+.dash-new-chat:hover {
+  background: #E9ECF3 !important;
+  border-color: var(--lui-border-hov) !important;
+}
+
+.dash-nav-item {
+  color: var(--lui-text-2) !important;
+  border-radius: 8px !important;
+}
+.dash-nav-item:hover {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text) !important;
+}
+.dash-nav-item.active {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--lui-accent) !important;
+  font-weight: 600 !important;
+}
+.dash-nav-item.active svg { color: var(--lui-accent) !important; }
+
+.dash-user-profile { color: var(--lui-text) !important; }
+.dash-user-profile:hover { background: var(--lui-bg-soft) !important; }
+.dash-user-name { color: var(--lui-text) !important; }
+.dash-user-company { color: var(--lui-text-3) !important; }
+
+.dash-user-menu {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-lg) !important;
+}
+.dash-user-menu-name { color: var(--lui-text) !important; }
+.dash-user-menu-email { color: var(--lui-text-3) !important; }
+.dash-user-menu-divider { background: var(--lui-border) !important; }
+.dash-user-menu-item { color: var(--lui-text-2) !important; }
+.dash-user-menu-item:hover { background: var(--lui-bg-soft) !important; color: var(--lui-text) !important; }
+.dash-user-menu-item.danger { color: var(--lui-danger) !important; }
+
+.dash-avatar {
+  background: var(--lui-grad) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Main content area (home tab is the "hero" with wave background)
+   -------------------------------------------------------------------------- */
+.dash-main { background: var(--lui-bg) !important; }
+
+.dash-main-gradient {
+  background: var(--lui-bg) !important;
+  background-color: var(--lui-bg) !important;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Wave background container — injected by LightUI.jsx */
+.lui-waves {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 95%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 95%);
+}
+.lui-waves::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(1, 113, 228, 0.20), transparent 48%),
+    radial-gradient(ellipse at 82% 22%, rgba(59, 142, 245, 0.15), transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(0, 91, 181, 0.12), transparent 60%);
+  filter: blur(2px);
+}
+.lui-waves svg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  transform: translateX(-50%);
+}
+.lui-waves .lui-wave-path { animation: luiWaveSlide 28s linear infinite; }
+.lui-waves .lui-wave-path-2 { animation: luiWaveSlide 40s linear infinite reverse; }
+@keyframes luiWaveSlide {
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-25%, 0, 0); }
+}
+
+.dash-main-gradient > *:not(.lui-waves) {
+  position: relative;
+  z-index: 1;
+}
+
+.dash-main-gradient .dash-greeting-text {
+  background: linear-gradient(180deg, #0A0A0A 0%, #4B5563 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+.dash-main-gradient .dash-greeting-sub { color: var(--lui-text-2) !important; }
+
+/* Remaining-websites pill (was inline-dark) — retint */
+.dash-greeting > div:last-child {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-sm);
+}
+.dash-greeting > div:last-child > span:first-child { color: var(--lui-accent) !important; }
+.dash-greeting > div:last-child > span:nth-child(2) { color: var(--lui-text-2) !important; }
+
+/* --------------------------------------------------------------------------
+   Hero action cards (Buy Domain / Create Website) — target inline styles
+   -------------------------------------------------------------------------- */
+.dash-action-buttons > button {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+  box-shadow: var(--lui-shadow) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+.dash-action-buttons > button:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--lui-shadow-lg) !important;
+  border-color: var(--lui-border-hov) !important;
+}
+.dash-action-buttons > button strong { color: var(--lui-text) !important; }
+.dash-action-buttons > button span { color: var(--lui-text-2) !important; }
+
+/* Create Website — gradient border + accent glow (replaces the dark glow) */
+.dash-action-buttons > button.meydan-create-website-btn {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--lui-grad) border-box !important;
+  animation: luiCreatePulse 2.8s ease-in-out infinite !important;
+}
+@keyframes luiCreatePulse {
+  0%, 100% {
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 8px 24px -12px rgba(99, 102, 241, 0.25),
+      0 0 0 0 rgba(99, 102, 241, 0.0);
+  }
+  50% {
+    box-shadow:
+      0 1px 2px rgba(17, 24, 39, 0.04),
+      0 12px 32px -12px rgba(99, 102, 241, 0.45),
+      0 0 0 4px rgba(99, 102, 241, 0.08);
+  }
+}
+.dash-action-buttons > button.meydan-create-website-btn:hover {
+  animation-play-state: paused !important;
+  transform: translateY(-3px) !important;
+}
+
+/* Rebuild the tinted icon squares inside the cards */
+.dash-action-buttons > button > div:first-child > div:first-child {
+  background: rgba(99, 102, 241, 0.10) !important;
+}
+.dash-action-buttons > button:first-child > div:first-child > div:first-child {
+  background: rgba(16, 185, 129, 0.10) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Input area (chat textarea — the one on the Home tab)
+   -------------------------------------------------------------------------- */
+.dash-main-gradient .dash-input-wrapper {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow) !important;
+  backdrop-filter: none !important;
+}
+.dash-main-gradient .dash-input-wrapper:focus-within {
+  border-color: var(--lui-accent) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), var(--lui-shadow) !important;
+}
+.dash-main-gradient .dash-textarea { color: var(--lui-text) !important; }
+.dash-main-gradient .dash-textarea::placeholder { color: var(--lui-text-3) !important; }
+
+.dash-input-hint { color: var(--lui-text-3) !important; }
+
+.dash-send-btn {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text-3) !important;
+}
+.dash-send-btn.active {
+  background: var(--lui-grad) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+.dash-send-btn.active:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   Projects / Domains / Templates pages
+   -------------------------------------------------------------------------- */
+.dash-domain-container { background: transparent !important; }
+.dash-domain-title { color: var(--lui-text) !important; }
+.dash-domain-subtitle { color: var(--lui-text-2) !important; }
+
+.dash-domain-add-btn {
+  background: var(--lui-grad) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
+  transition: transform 0.15s, box-shadow 0.15s !important;
+}
+.dash-domain-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35) !important;
+}
+
+.dash-project-card,
+.dsite-card {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-sm) !important;
+  transition: transform 0.15s, box-shadow 0.2s, border-color 0.15s !important;
+}
+.dash-project-card:hover,
+.dsite-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--lui-border-hov) !important;
+  box-shadow: var(--lui-shadow) !important;
+}
+.dash-project-name,
+.dsite-name { color: var(--lui-text) !important; }
+.dash-project-meta,
+.dsite-url { color: var(--lui-text-2) !important; }
+
+.dash-project-thumb { background: var(--lui-bg-soft) !important; }
+
+.dash-project-open,
+.dsite-action-btn {
+  background: var(--lui-bg-soft) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text-2) !important;
+}
+.dash-project-open:hover,
+.dsite-action-btn:hover {
+  background: #E9ECF3 !important;
+  color: var(--lui-text) !important;
+  border-color: var(--lui-border-hov) !important;
+}
+.dsite-action-btn.dsite-action-primary {
+  background: rgba(99, 102, 241, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.25) !important;
+  color: var(--lui-accent) !important;
+}
+.dsite-action-btn.dsite-action-primary:hover {
+  background: rgba(99, 102, 241, 0.14) !important;
+}
+
+.dsite-icon-wrap {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--lui-accent) !important;
+}
+
+.dsite-stats-row {
+  border-top: 1px solid var(--lui-border) !important;
+  border-bottom: 1px solid var(--lui-border) !important;
+}
+.dsite-stat { border-right: 1px solid var(--lui-border) !important; }
+.dsite-stat-label { color: var(--lui-text-3) !important; }
+.dsite-stat-value { color: var(--lui-text) !important; }
+
+.dsite-panel { border-top: 1px solid var(--lui-border) !important; }
+.dsite-panel-header h4 { color: var(--lui-text) !important; }
+.dsite-panel-hint { color: var(--lui-text-2) !important; }
+.dsite-ns-item {
+  background: var(--lui-bg-soft) !important;
+  border: 1px solid var(--lui-border) !important;
+}
+.dsite-ns-item code { color: var(--lui-text) !important; }
+
+.dsite-empty-icon {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text-3) !important;
+}
+.dsite-empty h3 { color: var(--lui-text) !important; }
+.dsite-empty p { color: var(--lui-text-2) !important; }
+
+.dsite-cta-btn {
+  background: var(--lui-grad) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+.dsite-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+}
+
+/* Modals on dashboard (delete confirm, etc.) */
+.dash-domain-modal-overlay {
+  background: rgba(17, 24, 39, 0.4) !important;
+  backdrop-filter: blur(4px);
+}
+.dash-domain-modal {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+  box-shadow: var(--lui-shadow-lg) !important;
+}
+.dash-domain-modal-cancel {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text) !important;
+  border: 1px solid var(--lui-border) !important;
+}
+
+/* Projects empty state */
+.dash-projects-empty {
+  color: var(--lui-text-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Skeleton loaders (drop-in for any list view)
+   -------------------------------------------------------------------------- */
+.lui-skeleton {
+  background: linear-gradient(90deg, #EEF0F5 0%, #F7F8FB 50%, #EEF0F5 100%);
+  background-size: 200% 100%;
+  animation: luiShimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes luiShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Command Palette (Cmd+K)
+   -------------------------------------------------------------------------- */
+.lui-cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(17, 24, 39, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+  animation: luiFadeIn 0.12s ease-out;
+}
+@keyframes luiFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.lui-cmdk {
+  width: 100%;
+  max-width: 620px;
+  background: var(--lui-bg-elev);
+  border: 1px solid var(--lui-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -16px rgba(17, 24, 39, 0.3);
+  overflow: hidden;
+  animation: luiPopIn 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes luiPopIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.lui-cmdk-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--lui-border);
+}
+.lui-cmdk-input-wrap svg { color: var(--lui-text-3); flex-shrink: 0; }
+.lui-cmdk-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--lui-text);
+  font-size: 1rem;
+  font-family: inherit;
+}
+.lui-cmdk-input::placeholder { color: var(--lui-text-3); }
+.lui-cmdk-kbd {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lui-text-3);
+  background: var(--lui-bg-soft);
+  border: 1px solid var(--lui-border);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-family: 'SF Mono', ui-monospace, monospace;
+}
+
+.lui-cmdk-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+.lui-cmdk-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lui-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 12px 6px;
+}
+.lui-cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--lui-text);
+  font-size: 0.9375rem;
+}
+.lui-cmdk-item svg { color: var(--lui-text-2); flex-shrink: 0; }
+.lui-cmdk-item.active {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--lui-accent);
+}
+.lui-cmdk-item.active svg { color: var(--lui-accent); }
+.lui-cmdk-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--lui-text-3);
+  font-size: 0.9rem;
+}
+.lui-cmdk-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--lui-border);
+  font-size: 11px;
+  color: var(--lui-text-3);
+}
+.lui-cmdk-footer > span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* --------------------------------------------------------------------------
+   Toast stack (bottom-right)
+   -------------------------------------------------------------------------- */
+.lui-toast-stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.lui-toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 380px;
+  padding: 12px 16px;
+  background: var(--lui-bg-elev);
+  border: 1px solid var(--lui-border);
+  border-left: 3px solid var(--lui-accent);
+  border-radius: 10px;
+  box-shadow: var(--lui-shadow-lg);
+  color: var(--lui-text);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: luiToastIn 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.lui-toast.success { border-left-color: var(--lui-success); }
+.lui-toast.error   { border-left-color: var(--lui-danger); }
+.lui-toast.warn    { border-left-color: var(--lui-warn); }
+@keyframes luiToastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Route transition (applied to .dash-main on tab change via React state)
+   -------------------------------------------------------------------------- */
+.dash-main .dash-content,
+.dash-main .dash-domain-container {
+  animation: luiRouteIn 0.22s ease-out;
+}
+@keyframes luiRouteIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbars — thin and subtle
+   -------------------------------------------------------------------------- */
+.dash-main::-webkit-scrollbar,
+.dash-sidebar::-webkit-scrollbar,
+.lui-cmdk-list::-webkit-scrollbar { width: 8px; height: 8px; }
+.dash-main::-webkit-scrollbar-thumb,
+.dash-sidebar::-webkit-scrollbar-thumb,
+.lui-cmdk-list::-webkit-scrollbar-thumb {
+  background: rgba(17, 24, 39, 0.12);
+  border-radius: 4px;
+}
+.dash-main::-webkit-scrollbar-thumb:hover,
+.dash-sidebar::-webkit-scrollbar-thumb:hover,
+.lui-cmdk-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 24, 39, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   Misc text on dashboard — ensure nothing is invisible on white
+   -------------------------------------------------------------------------- */
+.dashboard h1, .dashboard h2, .dashboard h3, .dashboard h4 { color: var(--lui-text); }
+.dashboard p { color: var(--lui-text-2); }
+
+/* Keep the generator (/generator route) DARK — do NOT override it */
+body:has(.generator-layout) .dashboard { background: initial !important; }
+
+/* ==========================================================================
+   DARK-REMNANT KILLER — targets inline-styled dark boxes in:
+     - domains tab (CNAME panel, DNS records panel, nameservers panel)
+     - inbox tab (submission cards, expanded details)
+     - gallery tab (image cards)
+     - projects tab (project thumb)
+     - templates tab (preview boxes)
+
+   IMPORTANT: Chrome/Safari normalize hex → rgb() when serializing inline
+   style attributes, so `[style*="#18181b"]` DOES NOT match at runtime.
+   Must match the rgb() form. Hex → rgb map for reference:
+     #18181b → rgb(24, 24, 27)      #1a1a2e → rgb(26, 26, 46)
+     #0f0f1a → rgb(15, 15, 26)      #0f172a → rgb(15, 23, 42)
+     #111114 → rgb(17, 17, 20)      #111    → rgb(17, 17, 17)
+     #27272a → rgb(39, 39, 42)      #374151 → rgb(55, 65, 81)
+     #1f2937 → rgb(31, 41, 55)      #374191 → rgb(55, 65, 145)
+     #18181b+#27272a (card)  #1a1a2e+#374191 (unread card)
+     #3b82f6 → rgb(59, 130, 246)    #3b82f6 = unread dot
+     #d1d5db → rgb(209, 213, 219)   #e5e7eb → rgb(229, 231, 235)
+     #f3f4f6 → rgb(243, 244, 246)   #9ca3af → rgb(156, 163, 175)
+     #6b7280 → rgb(107, 114, 128)   #4b5563 → rgb(75, 85, 99)
+     #818cf8 → rgb(129, 140, 248)   #34d399 → rgb(52, 211, 153)
+   ========================================================================== */
+
+/* CNAME/Domain Active callout box inside each site card
+   (Dashboard.jsx inline style uses #1a1a2e bg + #374151 border, and the
+   inner mono-font row uses #0f0f1a) */
+.dsite-card div[style*="rgb(26, 26, 46)"],
+.dsite-card div[style*="rgb(15, 15, 26)"] {
+  background: var(--lui-bg-soft) !important;
+  border-color: var(--lui-border) !important;
+  color: var(--lui-text) !important;
+}
+.dsite-card div[style*="rgb(15, 15, 26)"] span[style*="rgb(129, 140, 248)"] { color: var(--lui-accent) !important; }
+.dsite-card div[style*="rgb(15, 15, 26)"] span[style*="rgb(107, 114, 128)"] { color: var(--lui-text-3) !important; }
+.dsite-card div[style*="rgb(15, 15, 26)"] span[style*="rgb(52, 211, 153)"] { color: var(--lui-success) !important; }
+.dsite-card div[style*="rgb(15, 15, 26)"] button {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text-2) !important;
+}
+
+/* DNS records sub-list inside CNAME callout (border uses #374151 rgb(55,65,81)) */
+.dsite-card div[style*="rgb(55, 65, 81)"] { border-color: var(--lui-border) !important; }
+
+/* ALL gray text variants inside a dsite-card CNAME callout — retint to dark */
+.dsite-card [style*="rgb(209, 213, 219)"],
+.dsite-card [style*="rgb(229, 231, 235)"],
+.dsite-card [style*="rgb(243, 244, 246)"] { color: var(--lui-text) !important; }
+.dsite-card [style*="rgb(156, 163, 175)"] { color: var(--lui-text-2) !important; }
+.dsite-card [style*="rgb(107, 114, 128)"] { color: var(--lui-text-3) !important; }
+.dsite-card [style*="rgb(75, 85, 99)"]    { color: var(--lui-text-3) !important; }
+.dsite-card [style*="rgb(129, 140, 248)"] { color: var(--lui-accent) !important; }
+
+/* Catch-all: any direct child of .dsite-card carrying a dark rgb background */
+.dsite-card > div[style*="rgb(10,"],
+.dsite-card > div[style*="rgb(15,"],
+.dsite-card > div[style*="rgb(17,"],
+.dsite-card > div[style*="rgb(24,"],
+.dsite-card > div[style*="rgb(26,"] {
+  background: var(--lui-bg-elev) !important;
+  color: var(--lui-text) !important;
+}
+
+/* Panels expanded under site cards (DNS table, nameservers, contact) */
+.dsite-panel { background: var(--lui-bg-soft) !important; }
+.dsite-panel-header h4 { color: var(--lui-text) !important; }
+.dsite-panel-hint { color: var(--lui-text-2) !important; }
+.dsite-panel-empty { color: var(--lui-text-3) !important; }
+.dsite-panel-btn {
+  background: rgba(1, 113, 228, 0.08) !important;
+  border: 1px solid rgba(1, 113, 228, 0.25) !important;
+  color: var(--lui-accent) !important;
+}
+.dsite-panel-btn:hover { background: rgba(1, 113, 228, 0.14) !important; }
+
+/* DNS records table inside dsite-panel — targets any inline-styled table rows */
+.dsite-panel table { background: transparent !important; color: var(--lui-text) !important; }
+.dsite-panel table th { color: var(--lui-text-3) !important; border-bottom: 1px solid var(--lui-border) !important; }
+.dsite-panel table td { color: var(--lui-text) !important; border-bottom: 1px solid var(--lui-border) !important; }
+
+/* Notice banner under site card (yellow on dark → yellow on tinted light) */
+.dsite-notice {
+  background: rgba(245, 158, 11, 0.08) !important;
+  border-top: 1px solid rgba(245, 158, 11, 0.25) !important;
+  color: #B45309 !important;
+}
+
+/* Sidebar badges */
+.dash-inbox-badge { background: var(--lui-danger) !important; color: #fff !important; }
+
+/* --------------------------------------------------------------------------
+   Inbox tab — submission cards and expanded detail panels
+   (#18181b=rgb(24,24,27), #1a1a2e=rgb(26,26,46), #111114=rgb(17,17,20),
+    #27272a=rgb(39,39,42), #374191=rgb(55,65,145))
+   -------------------------------------------------------------------------- */
+.dash-domain-container div[style*="rgb(24, 24, 27)"],
+.dash-domain-container div[style*="rgb(26, 26, 46)"] {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-sm) !important;
+}
+.dash-domain-container div[style*="rgb(17, 17, 20)"],
+.dash-domain-container div[style*="rgb(17, 17, 17)"] {
+  background: var(--lui-bg-soft) !important;
+  border-top-color: var(--lui-border) !important;
+}
+
+/* Borders/separators */
+.dash-domain-container [style*="rgb(39, 39, 42)"] { border-color: var(--lui-border) !important; }
+.dash-domain-container [style*="rgb(55, 65, 81)"] { border-color: var(--lui-border) !important; }
+.dash-domain-container [style*="rgb(55, 65, 145)"] { border-color: var(--lui-border) !important; }
+
+/* Text colors — retint all near-white text to dark */
+.dash-domain-container [style*="rgb(243, 244, 246)"],
+.dash-domain-container [style*="rgb(229, 231, 235)"],
+.dash-domain-container [style*="rgb(209, 213, 219)"] { color: var(--lui-text) !important; }
+.dash-domain-container [style*="rgb(156, 163, 175)"] { color: var(--lui-text-2) !important; }
+.dash-domain-container [style*="rgb(107, 114, 128)"] { color: var(--lui-text-3) !important; }
+.dash-domain-container [style*="rgb(75, 85, 99)"]    { color: var(--lui-text-3) !important; }
+
+/* Site-name tag pill in inbox submission rows (dark gray #27272a pill) */
+.dash-domain-container span[style*="rgb(39, 39, 42)"] {
+  background: var(--lui-bg-soft) !important;
+  color: var(--lui-text-2) !important;
+  border: 1px solid var(--lui-border) !important;
+}
+
+/* Inbox filter inputs (#1f2937=rgb(31,41,55)) */
+.dash-domain-container select[style*="rgb(31, 41, 55)"],
+.dash-domain-container input[style*="rgb(31, 41, 55)"],
+.dash-domain-container button[style*="rgb(31, 41, 55)"] {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+}
+
+/* Unread blue dot (#3b82f6=rgb(59,130,246)) */
+.dash-domain-container div[style*="rgb(59, 130, 246)"] { background: var(--lui-accent) !important; }
+
+/* --------------------------------------------------------------------------
+   Projects tab — thumbnail background behind iframe preview
+   (#0f0f1a=rgb(15,15,26))
+   -------------------------------------------------------------------------- */
+.dash-project-card button[style*="rgb(15, 15, 26)"],
+.dash-project-card div[style*="rgb(15, 15, 26)"],
+.dash-domain-container button[style*="rgb(15, 15, 26)"] {
+  background: var(--lui-bg-soft) !important;
+}
+.dash-project-iframe { background: #fff !important; }
+
+/* --------------------------------------------------------------------------
+   Templates tab — preview header row + CTA surface (#0f172a=rgb(15,23,42))
+   -------------------------------------------------------------------------- */
+.dash-domain-container div[style*="rgb(15, 23, 42)"] {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+}
+
+/* --------------------------------------------------------------------------
+   LAST-RESORT SAFETY NET
+   Any descendant of .dashboard with a near-black inline background → light.
+   Broad rgb() ranges cover anything we haven't explicitly enumerated above.
+   -------------------------------------------------------------------------- */
+.dashboard [style*="rgb(10,"],
+.dashboard [style*="rgb(11,"],
+.dashboard [style*="rgb(12,"],
+.dashboard [style*="rgb(14,"],
+.dashboard [style*="rgb(15,"],
+.dashboard [style*="rgb(16,"],
+.dashboard [style*="rgb(17,"],
+.dashboard [style*="rgb(18,"],
+.dashboard [style*="rgb(20,"],
+.dashboard [style*="rgb(24,"],
+.dashboard [style*="rgb(26,"],
+.dashboard [style*="rgb(28,"] {
+  background-color: var(--lui-bg-elev) !important;
+}
+
+/* Admin impersonation banner (yellow) — keep yellow, darken text only */
+.dashboard.impersonating [style*="rgb(245, 158, 11)"] { color: #0A0A0A !important; }
+
+/* --------------------------------------------------------------------------
+   Dashboard modals — shell + overlay (dash-domain-modal / entry-flow stages)
+   The class itself hardcodes #1a1a24 bg so CSS var overrides won't reach it.
+   -------------------------------------------------------------------------- */
+.dash-domain-modal-overlay {
+  background: rgba(17, 24, 39, 0.18) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.dash-domain-modal {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  box-shadow: var(--lui-shadow-lg) !important;
+  color: var(--lui-text) !important;
+}
+.dash-domain-modal h1,
+.dash-domain-modal h2,
+.dash-domain-modal h3,
+.dash-domain-modal h4,
+.dash-domain-modal strong { color: var(--lui-text) !important; }
+.dash-domain-modal p,
+.dash-domain-modal label,
+.dash-domain-modal span:not([style]),
+.dash-domain-modal li { color: var(--lui-text-2); }
+
+/* Form controls inside modal: inline #0f172a / #334155 / #1f2937 / #1a2332 */
+.dash-domain-modal input[style],
+.dash-domain-modal select[style],
+.dash-domain-modal textarea[style] {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text) !important;
+}
+.dash-domain-modal input[style]::placeholder,
+.dash-domain-modal textarea[style]::placeholder { color: var(--lui-text-3) !important; }
+.dash-domain-modal input[style]:focus,
+.dash-domain-modal select[style]:focus,
+.dash-domain-modal textarea[style]:focus { border-color: var(--lui-accent) !important; }
+
+/* Result rows / info cards inside modal — dark inline surfaces → light */
+.dash-domain-modal div[style*="rgb(15, 23, 42)"],
+.dash-domain-modal div[style*="rgb(11, 18, 32)"],
+.dash-domain-modal div[style*="rgb(26, 35, 50)"],
+.dash-domain-modal div[style*="rgb(31, 41, 55)"],
+.dash-domain-modal div[style*="rgb(26, 26, 46)"] {
+  background: var(--lui-bg-soft) !important;
+  border-color: var(--lui-border) !important;
+  color: var(--lui-text) !important;
+}
+
+/* Divider lines (#374151 = rgb(55,65,81)) inside modal */
+.dash-domain-modal [style*="rgb(55, 65, 81)"] { border-color: var(--lui-border) !important; background: var(--lui-border) !important; }
+
+/* Near-white text inside modal → dark */
+.dash-domain-modal [style*="rgb(243, 244, 246)"],
+.dash-domain-modal [style*="rgb(229, 231, 235)"],
+.dash-domain-modal [style*="rgb(209, 213, 219)"],
+.dash-domain-modal [style*="rgb(203, 213, 225)"] { color: var(--lui-text) !important; }
+.dash-domain-modal [style*="rgb(156, 163, 175)"],
+.dash-domain-modal [style*="rgb(148, 163, 184)"] { color: var(--lui-text-2) !important; }
+.dash-domain-modal [style*="rgb(107, 114, 128)"],
+.dash-domain-modal [style*="rgb(100, 116, 139)"] { color: var(--lui-text-3) !important; }
+
+/* Blue accent text (#60a5fa / #3b82f6 / #2563eb) → brand blue */
+.dash-domain-modal [style*="rgb(96, 165, 250)"],
+.dash-domain-modal [style*="rgb(59, 130, 246)"] { color: var(--lui-accent) !important; }
+.dash-domain-modal button[style*="rgb(59, 130, 246)"],
+.dash-domain-modal button[style*="rgb(37, 99, 235)"] {
+  background: var(--lui-accent) !important;
+  color: #fff !important;
+}
+
+/* Cancel / ghost buttons inside modal (#4b5563 border) */
+.dash-domain-modal button[style*="rgb(75, 85, 99)"] {
+  border-color: var(--lui-border) !important;
+  color: var(--lui-text-2) !important;
+  background: var(--lui-bg-elev) !important;
+}
+
+/* Modal action buttons defined by class (dash-domain-modal-cancel / -confirm) */
+.dash-domain-modal-cancel {
+  background: var(--lui-bg-elev) !important;
+  border: 1px solid var(--lui-border) !important;
+  color: var(--lui-text-2) !important;
+}
+.dash-domain-modal-cancel:hover { background: var(--lui-bg-soft) !important; color: var(--lui-text) !important; }
+.dash-domain-modal-confirm {
+  background: var(--lui-accent) !important;
+  color: #fff !important;
+  border: none !important;
+}
+.dash-domain-modal-confirm:hover { background: var(--lui-accent-3) !important; }
+
+/* Close X button (top-right) — readable on light */
+.dash-domain-modal > button[aria-label="Close"],
+.dash-domain-modal > button[style*="position: absolute"] { color: var(--lui-text-3) !important; }
+
