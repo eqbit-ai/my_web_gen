@@ -667,7 +667,7 @@ const FAQSection = () => {
 
                 <div className="aif-chat">
                     {hasConversation && (
-                        <div className="aif-chat-transcript" ref={transcriptRef} aria-live="polite">
+                        <div className="aif-chat-transcript" ref={transcriptRef} aria-live="polite" data-lenis-prevent>
                             {turns.map((t, i) => (
                                 <div key={i} className="aif-chat-turn">
                                     <div className="aif-chat-bubble aif-chat-bubble-q">
