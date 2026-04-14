@@ -443,12 +443,21 @@ body:has(.gn-layout) {
 .dm-step-pending .dm-step-icon { background: rgba(17, 24, 39, 0.06) !important; color: #6B7280 !important; }
 
 /* Toast — on light bg the original 30% black shadow renders as a visible
-   grey halo around the pill. Pin container size + soften shadow. */
+   grey halo around the pill. Pin container size + soften shadow.
+   position:fixed + !important overrides the `.gn-layout > *` relative rule
+   I added in Phase 1, which was forcing the container into the flex column
+   and stretching it to 100vh. */
 .gn-layout .toast-container,
 .toast-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  top: auto !important;
+  left: auto !important;
   width: auto !important;
   height: auto !important;
   max-width: 380px !important;
+  align-self: flex-end !important;
   pointer-events: none !important;
   background: transparent !important;
 }
