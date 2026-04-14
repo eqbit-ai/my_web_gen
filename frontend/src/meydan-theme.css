@@ -3456,8 +3456,8 @@ html {
    "Get Started" CTA. */
 .aif-orb {
     position: relative;
-    width: 168px;
-    height: 168px;
+    width: 104px;
+    height: 104px;
     animation: aif-orb-float 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     /* Reset button defaults */
     background: transparent;
@@ -3870,8 +3870,8 @@ html {
         padding: 80px 20px 80px;
     }
     .aif-orb {
-        width: 124px;
-        height: 124px;
+        width: 80px;
+        height: 80px;
     }
     .aif-orb-wrap {
         margin-bottom: 40px;
