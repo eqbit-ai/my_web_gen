@@ -196,9 +196,18 @@ body:has(.gn-layout) {
 }
 .gn-layout .gn-card-font { color: rgba(17, 24, 39, 0.5) !important; }
 
-/* Element edit modal — light surface */
+/* Element edit modal — force-center, transparent backdrop (no grey scrim) */
+.gn-backdrop {
+  background: transparent !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
 .gn-layout .gn-element-panel,
 .gn-element-panel {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
   background: #FFFFFF !important;
   border: 1px solid rgba(17, 24, 39, 0.08) !important;
   box-shadow: 0 25px 50px rgba(17, 24, 39, 0.18) !important;
