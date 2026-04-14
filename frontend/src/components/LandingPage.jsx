@@ -593,13 +593,22 @@ const FAQSection = () => {
         const question = (questionText || '').trim();
         if (!question || loading) return;
         setDraft('');
+        // Build conversation history (all completed turns + the new question)
+        // Backend trims to 16 messages server-side as a safety net.
+        const history = turns
+            .filter(t => !t.pending && t.q && t.a && !t.error)
+            .flatMap(t => [
+                { role: 'user', content: t.q },
+                { role: 'assistant', content: t.a },
+            ]);
+        const messages = [...history, { role: 'user', content: question }];
         setTurns(prev => [...prev, { q: question, a: '', pending: true }]);
         setLoading(true);
         try {
             const res = await fetch(`${config.apiUrl}/api/landing/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question }),
+                body: JSON.stringify({ messages }),
             });
             if (res.status === 429) {
                 throw new Error("You're asking too fast. Please wait a moment and try again.");
@@ -628,7 +637,7 @@ const FAQSection = () => {
             // Refocus input for rapid follow-ups
             requestAnimationFrame(() => { if (inputRef.current) inputRef.current.focus(); });
         }
-    }, [loading]);
+    }, [loading, turns]);
 
     const handleSubmit = useCallback((e) => {
         e.preventDefault();
