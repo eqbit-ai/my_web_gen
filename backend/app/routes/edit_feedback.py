@@ -4,15 +4,24 @@ completed AI edit. Writes to edit_feedback table joined to edit_logs.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.edit_log import EditFeedback, EditLog
-from app.utils.auth import require_auth
+from app.utils.auth import decode_access_token
 
 router = APIRouter()
+security = HTTPBearer()
+
+
+def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    token_data = decode_access_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return token_data
 
 
 class FeedbackRequest(BaseModel):
@@ -46,13 +55,21 @@ async def submit_feedback(
             edit_log_id = str(row)
 
     if not edit_log_id:
-        raise HTTPException(status_code=400, detail="No edit_log_id and no recent edit found for this session.")
+        # Most common case: the user thumbs-reacted to the "generation complete"
+        # message, which is NOT an edit and has no EditLog row. Treat this as
+        # a silent no-op so the UI still shows "thanks for feedback" rather
+        # than an error toast. Actual edits always have edit_log_id populated.
+        return {"ok": True, "recorded": False, "reason": "no_edit_to_rate"}
 
+    try:
+        uid = int(user["user_id"]) if user.get("user_id") is not None else None
+    except (ValueError, TypeError):
+        uid = None
     db.add(EditFeedback(
         edit_log_id=edit_log_id,
-        user_id=user["user_id"],
+        user_id=uid,
         rating=body.rating,
         comment=(body.comment or None),
     ))
     await db.commit()
-    return {"ok": True}
+    return {"ok": True, "recorded": True}

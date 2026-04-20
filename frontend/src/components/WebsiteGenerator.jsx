@@ -605,16 +605,21 @@ const composeWizardPrompt = (data) => {
         // https://www.google.com/maps?q=lat,lng&output=embed&z=16
         // OR (if resolution failed) the original share URL.
         //
-        // We tell the LLM to use the URL DIRECTLY as the iframe src.
-        // Previously this prompt instructed the LLM to fall back to using
-        // the address as the query when it saw a share URL, which produced
-        // a map of the wrong location whenever the user's typed address
-        // differed from the actual map pin.
-        prompt += `\nGoogle Maps location: ${ci.mapLink}`;
-        prompt += '\nMUST embed this Google Map as an <iframe> inside the contact section. ';
-        prompt += 'Use the URL above DIRECTLY as the iframe src: ';
-        prompt += '<iframe src="<URL_ABOVE>" width="100%" height="400" style="border:0;border-radius:12px" allowfullscreen loading="lazy"></iframe>. ';
-        prompt += 'Do NOT replace it with a search query of the address — the URL has already been resolved to the correct location with coordinates.';
+        // Hard-requirement framing: we pre-compose the exact iframe with
+        // the URL already substituted so the LLM can paste it verbatim —
+        // no template-variable substitution step for it to skip. Multiple
+        // reinforcements (HARD REQUIREMENT, exact markup, don't-modify
+        // warning, invalid-if-missing) because earlier generations silently
+        // dropped the iframe.
+        const iframeMarkup = `<iframe src="${ci.mapLink}" width="100%" height="400" style="border:0;border-radius:12px" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+        prompt += '\n\n=== HARD REQUIREMENT: GOOGLE MAP EMBED ===';
+        prompt += '\nYou MUST include a Google Maps iframe inside the contact section of the page.';
+        prompt += '\nPaste this EXACT markup verbatim (do not modify the src, do not substitute a different URL, do not wrap it in conditional logic):';
+        prompt += `\n${iframeMarkup}`;
+        prompt += '\nPlace it inside the contact section, typically beside or below the contact form / contact details block.';
+        prompt += '\nThe src URL has already been resolved to the correct coordinates — do NOT replace it with a search query, an address, a static image, or a placeholder.';
+        prompt += '\nOmitting this iframe makes the output invalid. Every generated page that has a contact section MUST contain this exact iframe element.';
+        prompt += '\n=== END HARD REQUIREMENT ===';
     }
     return prompt;
 };

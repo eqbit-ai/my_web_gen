@@ -834,7 +834,7 @@ PRESERVE FROM REFERENCE (recreate in <style> block):
 
 ADD THESE ELEMENTS:
 - Do NOT add SEO meta tags or favicon — these are injected automatically by the system
-- WhatsApp float button (fixed bottom-right, green background #25D366)
+- Do NOT add a WhatsApp floating button — the system injects it (alongside other social icons) after generation.
 - Back-to-top button (fixed, hidden by default, shows on scroll)
 - CONTACT FORM: MUST include a contact section with a working <form> (name, email, phone, message fields). All CTA buttons ("Book Now", "Enquire Now", "Get Started", "Reserve") MUST link to href="#contact".
 - FORM LIMIT: Include ONLY ONE <form> element per page — in the contact section. Do NOT add forms in the footer, newsletter, CTA, or any other section. Newsletter subscribe sections should use a simple CTA button linking to #contact, NOT a separate form.
@@ -1210,7 +1210,7 @@ FOOTER (MANDATORY):
 - DO NOT skip the footer. DO NOT end the page without a footer.
 
 WHATSAPP BUTTON:
-- ALWAYS include a fixed WhatsApp float button at bottom-right of the page.
+- Do NOT generate any WhatsApp floating button or fixed-position chat widget. The system injects these (with other social icons) after generation.
 
 BRAND CONSISTENCY (keep the same brand, allow page-level creativity):
 - Use the EXACT SAME :root color variables and font-family as the homepage.

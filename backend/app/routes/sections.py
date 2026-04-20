@@ -1217,52 +1217,21 @@ async def update_meta(req: UpdateMetaRequest, user: dict = Depends(require_auth)
         else:
             html = favicon_block + "\n" + html
 
-    # WhatsApp float button
-    if site_meta.get("whatsappNumber"):
-        number = site_meta["whatsappNumber"].replace("+", "").replace(" ", "").replace("-", "")
-        wa_block = (
-            "<!-- WHATSAPP_FLOAT -->\n"
-            f'<a href="https://wa.me/{number}" target="_blank" rel="noopener noreferrer" '
-            'class="whatsapp-float" '
-            'style="position:fixed;bottom:32px;left:32px;z-index:9990;width:56px;height:56px;'
-            "background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;"
-            'box-shadow:0 4px 12px rgba(0,0,0,0.15);text-decoration:none;" aria-label="Chat on WhatsApp">'
-            '<svg width="28" height="28" viewBox="0 0 24 24" fill="white">'
-            '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>'
-            '<path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.553 4.103 1.519 5.832L0 24l6.335-1.652A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-1.875 0-3.615-.525-5.107-1.434l-.366-.217-3.795.99 1.013-3.7-.238-.378A9.71 9.71 0 012.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75z"/>'
-            "</svg></a>\n"
-            "<!-- END_WHATSAPP_FLOAT -->"
-        )
-        # Remove any AI-generated WhatsApp buttons first (without our markers)
-        # Match <a> tags with wa.me links that are NOT inside our markers
-        ai_wa_pattern = re.compile(
-            r'<a\s[^>]*href=["\']https?://wa\.me/[^"\']*["\'][^>]*>.*?</a>',
-            re.DOTALL | re.IGNORECASE,
-        )
-        # Remove AI-generated WhatsApp buttons (those outside our markers)
-        wa_marker_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->", re.DOTALL)
-        marker_match = wa_marker_pattern.search(html)
-        if marker_match:
-            # Replace existing marked block
-            html = wa_marker_pattern.sub(wa_block, html)
-            # Also remove any AI-generated duplicates outside the block
-            before = html[:html.index("<!-- WHATSAPP_FLOAT -->")]
-            after_end = html.index("<!-- END_WHATSAPP_FLOAT -->") + len("<!-- END_WHATSAPP_FLOAT -->")
-            after = html[after_end:]
-            before = ai_wa_pattern.sub("", before)
-            after = ai_wa_pattern.sub("", after)
-            html = before + html[html.index("<!-- WHATSAPP_FLOAT -->"):after_end] + after
-        else:
-            # Remove any AI-generated WhatsApp buttons, then inject ours
-            html = ai_wa_pattern.sub("", html)
-            if "</body>" in html:
-                html = html.replace("</body>", wa_block + "\n</body>")
-            else:
-                html = html + "\n" + wa_block
-    else:
-        # No WhatsApp number — remove any existing WhatsApp buttons
-        wa_marker_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->\n?", re.DOTALL)
-        html = wa_marker_pattern.sub("", html)
+    # WhatsApp icon — route through contact_config so it joins the social
+    # FAB + footer row. The legacy inline floater injection was removed;
+    # any stale <!-- WHATSAPP_FLOAT --> blocks (left-side fixed button)
+    # are stripped here so existing sessions heal on next save.
+    from app.utils.contact_widgets import inject_contact_widgets
+
+    legacy_pattern = re.compile(r"<!-- WHATSAPP_FLOAT -->.*?<!-- END_WHATSAPP_FLOAT -->\n?", re.DOTALL)
+    html = legacy_pattern.sub("", html)
+
+    cfg = dict(session.get("contact_config") or {})
+    if site_meta.get("whatsappNumber") is not None:
+        cfg["whatsapp"] = site_meta["whatsappNumber"]
+    session["contact_config"] = cfg
+
+    html = inject_contact_widgets(html, cfg)
 
     _set_page_html(session, html, req.pageSlug)
     await redis_save_session(req.sessionId, session)

@@ -123,6 +123,21 @@ def _strip_existing_widgets(html: str) -> str:
         html,
         flags=re.IGNORECASE,
     )
+    # Defensive: any anchor with an href to wa.me AND position:fixed in its
+    # inline style is a floating WhatsApp button regardless of class name.
+    # Catches LLM variations ("whatsapp-btn", "chat-float", etc.) that slip
+    # past the class-based pattern above. Skips our injected widgets because
+    # the FAB icons are rendered with data-platform + the "meydan-social-icon"
+    # class (no href to wa.me from a fixed-positioned anchor outside the FAB).
+    html = re.sub(
+        r'<a\b(?=[^>]*\bhref\s*=\s*["\']https?://(?:wa\.me|(?:api\.)?whatsapp\.com)[^"\']*["\'])'
+        r'(?=[^>]*\bstyle\s*=\s*["\'][^"\']*position\s*:\s*fixed)'
+        r'(?![^>]*\bclass\s*=\s*["\'][^"\']*meydan-)'
+        r'[^>]*>[\s\S]*?</a>',
+        "",
+        html,
+        flags=re.IGNORECASE,
+    )
     return html
 
 
