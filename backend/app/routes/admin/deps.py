@@ -52,6 +52,8 @@ def _user_to_dict(user) -> dict:
         "is_admin": _safe_getattr(user, "is_admin", False),
         "is_approved": _safe_getattr(user, "is_approved", False),
         "approved_at": _serialize_datetime(_safe_getattr(user, "approved_at")),
+        "email_verified": _safe_getattr(user, "email_verified", False),
+        "email_verification_sent_at": _serialize_datetime(_safe_getattr(user, "email_verification_sent_at")),
         "token_balance": _safe_getattr(user, "token_balance", 0),
         "tokens_used": _safe_getattr(user, "tokens_used", 0),
     }

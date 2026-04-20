@@ -134,7 +134,13 @@ async def check_domain_availability(domain_name: str, extensions: list[str] | No
         status: "free" (available), "active" (taken), or "error"
     """
     if extensions is None:
-        extensions = ["com", "ae", "net", "org", "io", "co"]
+        # 15 popular TLDs across business / regional / modern categories so the
+        # search popup feels rich (was 6 before).
+        extensions = [
+            "com", "ae", "net", "org", "io",
+            "co", "app", "shop", "online", "store",
+            "site", "tech", "dev", "me", "xyz",
+        ]
 
     # Build domains array for batch check
     domains = [{"name": domain_name, "extension": ext} for ext in extensions]

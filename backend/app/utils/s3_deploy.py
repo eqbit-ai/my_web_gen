@@ -101,6 +101,32 @@ def _strip_html_comments_for_deploy(html: str) -> str:
     return html
 
 
+def _strip_cms_artifacts(html: str) -> str:
+    """Strip CMS inline-editing artifacts before deploy.
+
+    `contenteditable="true"` is a plain HTML attribute — if it leaks into
+    saved/deployed HTML, the browser makes that element editable in any
+    viewer (live site, admin preview) without needing any script. Heals
+    existing polluted sessions on next deploy.
+    """
+    if not html:
+        return html
+    html = re.sub(r'\s+contenteditable\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
+    html = re.sub(r"\s+contenteditable\s*=\s*'[^']*'", '', html, flags=re.IGNORECASE)
+    html = re.sub(r'\s+contenteditable(?=[\s/>])', '', html, flags=re.IGNORECASE)
+    html = re.sub(r'\s+class\s*=\s*"([^"]*)"', lambda m: _scrub_cms_classes(m, '"'), html, flags=re.IGNORECASE)
+    html = re.sub(r"\s+class\s*=\s*'([^']*)'", lambda m: _scrub_cms_classes(m, "'"), html, flags=re.IGNORECASE)
+    return html
+
+
+def _scrub_cms_classes(match, quote: str) -> str:
+    classes = match.group(1).split()
+    kept = [c for c in classes if c not in {"cms-hover-outline", "cms-editing", "cms-img-outline"}]
+    if not kept:
+        return ""
+    return f' class={quote}{" ".join(kept)}{quote}'
+
+
 def _sanitize_project_name(name: str) -> str:
     """Convert a site name to a valid S3 key prefix (lowercase, hyphens, max 58 chars)."""
     slug = re.sub(r"[^a-z0-9-]", "-", name.lower().strip())
@@ -828,6 +854,7 @@ async def deploy_site(
             # the in-app strip pass missed an unclosed `<!--` and the live
             # site renders blank.
             page_html = _strip_html_comments_for_deploy(page_html)
+            page_html = _strip_cms_artifacts(page_html)
             full_html = _inline_css_js(page_html, page_css, js)
             # Convert absolute links to relative for S3 prefix hosting
             full_html = _make_links_relative(full_html)
@@ -847,6 +874,7 @@ async def deploy_site(
     else:
         # Single-page deploy — apply the same comment-strip safety net.
         html = _strip_html_comments_for_deploy(html)
+        html = _strip_cms_artifacts(html)
         full_html = _inline_css_js(html, css, js)
         full_html = _upload_local_images(full_html, project_name, s3, bucket)
         # Inject form submission endpoint

@@ -1,0 +1,546 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary: #b8678c;
+  --secondary: #d49ab0;
+  --accent: #a8743d;
+  --bg: #fdf6f3;
+  --bg-surface: #ffffff;
+  --text: #1a0f12;
+  --text-muted: #6b5560;
+  --font-heading: 'DM Serif Display', serif;
+  --font-body: 'Outfit', sans-serif;
+  --radius: 20px;
+  --radius-btn: 999px;
+  --shadow: 0 6px 24px 0 color-mix(in srgb, #b8678c 9%, transparent);
+  --shadow-hover: 0 24px 60px rgba(0,0,0,0.18);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); line-height: 1.6; padding-top: 80px; overflow-x: hidden; min-height: 100vh; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 700; line-height: 1.18; color: var(--text); }
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; }
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* ─── Layout ─── */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+.container-wide { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+.container-narrow { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+.container-xs { max-width: 600px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ─── Grid ─── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+@media (max-width: 1024px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
+}
+.text-center { text-align: center; }
+
+/* ─── Sections ─── */
+section[data-section-type] { padding: 4.5rem 0; position: relative; }
+@media (min-width: 769px) {
+  section[data-section-type] { padding: 6rem 0; }
+}
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-title { font-size: clamp(1.85rem, 3vw, 2.6rem); margin-bottom: 0.75rem; letter-spacing: -0.02em; }
+.section-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 38rem; margin: 0 auto; line-height: 1.7; }
+.section-label { display: inline-flex; align-items: center; gap: 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.28em; font-weight: 600; color: var(--accent); margin-bottom: 1.25rem; }
+.label-line { width: 2.5rem; height: 2px; background: var(--accent); display: inline-block; }
+
+section[data-section-type="card_grid"],
+section[data-section-type="feature_cards"],
+section[data-section-type="feature_steps"],
+section[data-section-type="stats_row"] { background: var(--bg-surface); }
+section[data-section-type="testimonial_cards"],
+section[data-section-type="logo_cloud"] { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
+
+/* ─── Buttons ─── */
+.btn-primary { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 0.85rem 2rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 0.95rem; border: none; cursor: pointer; transition: var(--transition); text-align: center; letter-spacing: 0.01em; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px color-mix(in srgb, var(--primary) 32%, transparent); }
+.btn-secondary { display: inline-block; border: 2px solid var(--primary); color: var(--primary); padding: 0.78rem 1.85rem; border-radius: var(--radius-btn); font-weight: 600; font-family: inherit; font-size: 0.95rem; background: transparent; cursor: pointer; transition: var(--transition); text-align: center; }
+.btn-secondary:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+.btn-primary-light { display: inline-block; background: white; color: var(--primary); padding: 0.85rem 2rem; border-radius: var(--radius-btn); font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }
+.btn-primary-light:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0,0,0,0.22); }
+.btn-secondary-light { display: inline-block; border: 2px solid white; color: white; padding: 0.78rem 1.85rem; border-radius: var(--radius-btn); font-weight: 600; background: transparent; cursor: pointer; transition: var(--transition); }
+.btn-secondary-light:hover { background: white; color: var(--primary); }
+.btn-group { display: flex; flex-wrap: wrap; gap: 1rem; }
+.btn-group.center { justify-content: center; }
+
+/* ─── Cards ─── */
+.card { background: var(--bg-surface); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
+.card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0; transition: opacity 0.3s; }
+.card:hover::after { opacity: 1; }
+.card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.6rem; line-height: 1.3; }
+.card-text { color: var(--text-muted); line-height: 1.7; font-size: 0.95rem; }
+.card-body { padding: 1.5rem; }
+.card-image { width: 100%; height: 220px; object-fit: cover; display: block; }
+.icon-box { width: 3.5rem; height: 3.5rem; border-radius: 0.85rem; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: white; margin-bottom: 1.25rem; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+.card-link { color: var(--primary); font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: gap 0.3s; }
+.card-link:hover { gap: 0.75rem; }
+
+/* ─── Images ─── */
+.img-cover { width: 100%; height: auto; border-radius: var(--radius); object-fit: cover; transition: transform 0.5s ease; }
+.img-cover:hover { transform: scale(1.02); }
+.img-wrapper { overflow: hidden; border-radius: var(--radius); }
+
+/* ─── Navbar ─── */
+.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(14px); transition: var(--transition); padding: 1rem 0; }
+.navbar-light { background: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.navbar-dark { background: rgba(10,10,15,0.55); border-bottom: 1px solid rgba(255,255,255,0.08); }
+.navbar-dark .nav-brand, .navbar-dark .nav-links a { color: white; }
+.navbar-dark .nav-toggle { color: white; }
+nav.nav-scrolled { background: var(--bg) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.navbar-inner { display: flex; justify-content: space-between; align-items: center; }
+.nav-brand { display: flex; align-items: center; gap: 0.7rem; font-weight: 700; font-size: 1.15rem; color: var(--text); font-family: var(--font-heading); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { font-weight: 500; color: var(--text); transition: color 0.3s; position: relative; }
+.nav-links a::after { content: ""; position: absolute; bottom: -6px; left: 0; width: 0; height: 2px; background: var(--primary); transition: width 0.3s ease; }
+.nav-links a:hover { color: var(--primary); }
+.nav-links a:hover::after { width: 100%; }
+.nav-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); padding: 0.5rem; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.nav-cta { display: inline-block; }
+.mobile-cta { display: none; }
+@media (max-width: 768px) {
+  .nav-links { display: none !important; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; padding: 1.5rem 2rem; gap: 1.25rem; z-index: 999; }
+  .nav-links.active { display: flex !important; background: var(--bg); backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .nav-toggle { display: flex !important; }
+  .nav-cta { display: none !important; }
+  .mobile-cta { display: block !important; }
+}
+.logo-mark { width: 2.4rem; height: 2.4rem; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+
+/* ─── Hero base ─── */
+.hero-section { position: relative; overflow: hidden; }
+.hero-heading { font-size: clamp(2.4rem, 5.4vw, 4.2rem); font-weight: 800; line-height: 1.05; margin-bottom: 1.5rem; letter-spacing: -0.025em; }
+.hero-subtitle { font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.75; margin-bottom: 2rem; max-width: 36rem; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; }
+.trust-line { font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem; }
+
+/* hero_split */
+.hero-split { padding: 9rem 0 5rem; min-height: 80vh; display: flex; align-items: center; }
+.hero-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.hero-split-asymmetric { grid-template-columns: 55% 45%; }
+@media (max-width: 768px) {
+  .hero-split { min-height: auto; padding-top: 7rem; }
+  .hero-split-grid { grid-template-columns: 1fr; }
+}
+.hero-image-stack { position: relative; }
+.hero-image-stack img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: var(--radius); display: block; }
+.floating-card { position: absolute; bottom: -1.25rem; left: -1.25rem; background: var(--bg-surface); border-radius: var(--radius); padding: 1.1rem 1.4rem; box-shadow: var(--shadow-hover); display: flex; align-items: center; gap: 0.75rem; z-index: 10; border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+@media (max-width: 768px) { .floating-card { display: none; } }
+.hero-accent-border { position: absolute; top: 1rem; right: 1rem; width: 100px; height: 100px; border: 2px solid color-mix(in srgb, var(--primary) 35%, transparent); border-radius: var(--radius); z-index: 1; }
+@media (max-width: 768px) { .hero-accent-border { display: none; } }
+
+/* hero_full_image */
+.hero-fullbg { margin-top: -80px; min-height: 100vh; display: flex; align-items: center; padding: 9rem 0 5rem; background-size: cover; background-position: center; position: relative; }
+.hero-fullbg::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.3) 100%); z-index: 1; }
+.hero-fullbg > .container, .hero-fullbg > .container-wide { position: relative; z-index: 2; max-width: 1100px; }
+.hero-fullbg .hero-heading, .hero-fullbg .section-label, .hero-fullbg .hero-subtitle, .hero-fullbg .trust-line { color: white; }
+.hero-fullbg .hero-subtitle { color: rgba(255,255,255,0.88); }
+.hero-fullbg .section-label { color: rgba(255,255,255,0.92); }
+.hero-fullbg .label-line { background: rgba(255,255,255,0.7); }
+.hero-fullbg .trust-line { color: rgba(255,255,255,0.78); }
+.hero-fullbg-content { max-width: 36rem; }
+
+/* hero_center */
+.hero-center { padding: 11rem 0 6rem; text-align: center; }
+.hero-center .hero-heading { font-size: clamp(2.8rem, 7vw, 5rem); margin-left: auto; margin-right: auto; max-width: 22ch; }
+.hero-center .hero-subtitle { margin-left: auto; margin-right: auto; max-width: 38rem; }
+.hero-center .hero-ctas { justify-content: center; }
+.hero-center .section-label { display: inline-flex; }
+
+/* hero_asymmetric — same as split but with reversed proportions (60/40 image left) */
+.hero-asym { padding: 9rem 0 5rem; }
+.hero-asym-grid { display: grid; grid-template-columns: 5fr 4fr; gap: 4rem; align-items: center; }
+@media (max-width: 768px) { .hero-asym-grid { grid-template-columns: 1fr; } .hero-asym { padding-top: 7rem; } }
+.hero-asym-image { position: relative; }
+.hero-asym-image img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: var(--radius); }
+
+/* ─── Stats Row ─── */
+.stat-item { display: flex; flex-direction: column; gap: 0.6rem; }
+.stat-icon { width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--accent); }
+.stat-number { font-size: clamp(2.5rem, 4.5vw, 3.5rem); font-weight: 800; line-height: 1; color: var(--primary); }
+.stat-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.22em; font-weight: 600; color: var(--text-muted); }
+.stat-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.5; }
+
+/* ─── Steps ─── */
+.step-item { display: flex; gap: 2rem; padding: 2rem 0; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+.step-item:first-child { border-top: none; }
+.step-num { font-family: var(--font-heading); font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 700; color: var(--primary); min-width: 4rem; line-height: 1; }
+.step-body { flex: 1; }
+.step-body h3 { font-size: 1.4rem; margin-bottom: 0.6rem; }
+.step-body p { color: var(--text-muted); line-height: 1.75; }
+@media (max-width: 640px) { .step-item { flex-direction: column; gap: 0.5rem; } .step-num { font-size: 2rem; } }
+
+/* ─── Image Card (services_image_cards / gallery_4col) ─── */
+.image-card { background: var(--bg-surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: var(--transition); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); }
+.image-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
+.image-card-img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.image-card-body { padding: 1.5rem 1.5rem 1.75rem; }
+.image-card-body h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.image-card-body p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.65; }
+
+/* ─── Gallery ─── */
+.gallery-item { overflow: hidden; border-radius: var(--radius); cursor: pointer; }
+.gallery-image { width: 100%; height: 16rem; object-fit: cover; transition: transform 0.55s ease; }
+.gallery-item:hover .gallery-image { transform: scale(1.08); }
+.gallery-grid-3 .gallery-image { height: 17rem; }
+.gallery-grid-4 .gallery-image { height: 13rem; }
+
+/* ─── Logo Cloud ─── */
+.logo-cloud { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem 3rem; align-items: center; }
+@media (max-width: 768px) { .logo-cloud { grid-template-columns: repeat(2, 1fr); } }
+.logo-item { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; text-align: center; opacity: 0.5; transition: opacity 0.3s; letter-spacing: -0.01em; color: var(--text); }
+.logo-item:hover { opacity: 1; }
+
+/* ─── Testimonials ─── */
+.stars { color: #f59e0b; margin-bottom: 0.75rem; }
+.testimonial-quote { color: var(--text-muted); line-height: 1.75; font-style: italic; margin-bottom: 1.25rem; }
+.testimonial-author { display: flex; align-items: center; gap: 0.75rem; }
+.testimonial-card { background: var(--bg-surface); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); position: relative; overflow: hidden; }
+.testimonial-card::before { content: '"'; position: absolute; top: 1rem; left: 1.5rem; font-size: 3rem; color: var(--primary); opacity: 0.18; font-family: var(--font-heading); line-height: 1; }
+
+/* ─── Footer ─── */
+footer { margin-top: 4rem; position: relative; z-index: 1; }
+.footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+@media (max-width: 1024px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; } }
+.footer-description { font-size: 0.9rem; color: rgba(255,255,255,0.62); line-height: 1.65; max-width: 280px; }
+.footer-heading { font-weight: 700; color: white; margin-bottom: 1rem; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 0.5rem; }
+.footer-links a { color: rgba(255,255,255,0.7); transition: color 0.3s; font-size: 0.9rem; }
+.footer-links a:hover { color: white; }
+.social-links { display: flex; gap: 0.75rem; margin-top: 1rem; }
+.social-link { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: white; border: 1px solid rgba(255,255,255,0.1); transition: var(--transition); }
+.social-link:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-2px); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 2.5rem; padding-top: 1.5rem; text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.5); }
+
+/* ─── Contact form ─── */
+.contact-form { display: flex; flex-direction: column; gap: 1rem; }
+.contact-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .contact-form .form-row { grid-template-columns: 1fr; } }
+.form-input { width: 100%; padding: 1rem; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); background: var(--bg-surface); color: var(--text); font-family: inherit; font-size: 1rem; transition: border-color 0.3s; box-sizing: border-box; }
+.form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+.form-input::placeholder { color: var(--text-muted); }
+.form-textarea { resize: vertical; min-height: 120px; }
+.contact-info-card { background: var(--bg-surface); border-radius: var(--radius); padding: 2rem; border: 1px solid color-mix(in srgb, var(--text) 6%, transparent); box-shadow: var(--shadow); }
+.contact-item { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+.contact-icon { color: var(--accent); width: 1.25rem; margin-top: 0.25rem; flex-shrink: 0; }
+
+/* ─── Misc ─── */
+.relative { position: relative; }
+.gradient-text { background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+/* ─── Per-template overrides ─── */
+.hero-heading{font-family:var(--font-heading);font-weight:400;font-size:clamp(2.8rem,6vw,4.5rem);}
+        .section-title{font-family:var(--font-heading);font-weight:400;}
+        .image-card{border-radius:24px;}
+        .image-card-img{border-radius:24px 24px 0 0;}
+        .card{border-radius:24px;}
+
+</style>
+
+<nav data-section-id="section-0" class="navbar navbar-light">
+  <div class="container navbar-inner">
+    <a href="#hero" class="nav-brand">
+      <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">S</span>
+      <span>Saskia & Co.</span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu"><i class="fa-solid fa-bars"></i></button>
+    <ul class="nav-links">
+      <li><a href="#hero">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#testimonials">Reviews</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li class="mobile-cta"><a href="#contact" class="btn-primary">Get in Touch</a></li>
+    </ul>
+    <a href="#contact" class="nav-cta btn-primary">Get in Touch</a>
+  </div>
+</nav>
+
+<section data-section-id="hero" data-section-type="hero_asymmetric" id="hero" class="hero-section hero-asym">
+  <div class="container-wide">
+    <div class="hero-asym-grid">
+      <div class="hero-asym-image">
+        <img src="https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=1200&h=1500&fit=crop" alt="Saskia & Co." loading="eager" decoding="async">
+        <div class="floating-card">
+          <div class="icon-box" style="width: 2.5rem; height: 2.5rem; margin-bottom: 0;">
+            <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.875rem; color: var(--text);">5-star service</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">800+ regulars</div>
+          </div>
+        </div>
+        <div class="hero-accent-border"></div>
+      </div>
+      <div>
+        <span class="section-label"><span class="label-line"></span>HAIR · SKIN · NAILS · WELLNESS</span>
+        <h1 class="hero-heading">An hour for you, and only you.</h1>
+        <p class="hero-subtitle">Saskia & Co. is a private beauty atelier in Jumeirah. Six rooms, six specialists, no rushing. The kind of beauty appointment you actually want to look forward to.</p>
+        <div class="hero-ctas">
+          <a href="#contact" class="btn-primary">Book a session</a>
+          <a href="#services" class="btn-secondary">View the menu</a>
+        </div>
+        <p class="trust-line">✦ 5★ on Google · 800+ regulars · Founded 2018 · Discreet, private, never rushed</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="services" data-section-type="feature_cards" id="services">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-label"><span class="label-line"></span>THE MENU</span>
+      <h2 class="section-title">What we do</h2>
+      <p class="section-subtitle">A short, considered menu of treatments. Each booking is a private room, your specialist, and never less than an hour.</p>
+    </div>
+    <div class="grid-3">
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&h=700&fit=crop" alt="Hair Atelier" class="image-card-img" loading="lazy" decoding="async">
+        <div class="image-card-body">
+          <h3>Hair Atelier</h3>
+          <p>Cuts, colour, balayage, and treatments by senior stylists. Olaplex and Davines only — no bargain-bin chemicals.</p>
+        </div>
+      </div>
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=900&h=700&fit=crop" alt="Skin & Facials" class="image-card-img" loading="lazy" decoding="async">
+        <div class="image-card-body">
+          <h3>Skin & Facials</h3>
+          <p>Bespoke facials, dermaplaning, and hydration treatments. Every regimen designed around your skin, not a leaflet.</p>
+        </div>
+      </div>
+      <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?w=900&h=700&fit=crop" alt="Nails & Wellness" class="image-card-img" loading="lazy" decoding="async">
+        <div class="image-card-body">
+          <h3>Nails & Wellness</h3>
+          <p>Gel and dip manicures, spa pedicures, and add-on hand massages. Private rooms, no shared tables.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section data-section-id="about" data-section-type="feature_split" id="about">
+  <div class="container">
+    <div class="grid-2">
+      <div>
+        <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1000&h=800&fit=crop" alt="Saskia & Co. story" class="img-cover" loading="lazy" decoding="async" style="aspect-ratio: 5/4; object-fit: cover;">
+      </div>
+      <div>
+        <span class="section-label"><span class="label-line"></span>OUR PHILOSOPHY</span>
+        <h2 class="section-title">Beauty without the rush</h2>
+        <p style="color:var(--text-muted);line-height:1.8;margin-bottom:1.5rem;font-size:1rem;">Saskia opened the atelier in 2018 because she couldn't find a salon that didn't feel like a conveyor belt. Every appointment here is private, every product is hand-picked, and your specialist sees one client at a time — the way it used to be done.</p>
+        <ul style="list-style:none;padding:0;margin:0 0 2rem;">
+        <li style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.85rem;color:var(--text-muted);"><i class="fa-solid fa-check" style="color:var(--accent);margin-top:0.4rem;"></i><span>Six private treatment rooms — no shared spaces</span></li>
+        <li style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.85rem;color:var(--text-muted);"><i class="fa-solid fa-check" style="color:var(--accent);margin-top:0.4rem;"></i><span>Senior specialists only — average 8 years experience</span></li>
+        <li style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.85rem;color:var(--text-muted);"><i class="fa-solid fa-check" style="color:var(--accent);margin-top:0.4rem;"></i><span>Davines, Olaplex, Biologique Recherche, Augustinus Bader</span></li>
+        <li style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.85rem;color:var(--text-muted);"><i class="fa-solid fa-check" style="color:var(--accent);margin-top:0.4rem;"></i><span>Walk-in coffee bar with herbal blends and matcha</span></li>
+        </ul>
+        <a href="#contact" class="btn-primary">Book a session</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="gallery" data-section-type="gallery_grid" id="gallery" class="gallery-grid-3">
+  <div class="container-wide">
+    <div class="section-header">
+      <span class="section-label"><span class="label-line"></span>THE ATELIER</span>
+      <h2 class="section-title">Inside the rooms</h2>
+    </div>
+    <div class="grid-3">
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&h=700&fit=crop" alt="Gallery 1" class="gallery-image" loading="lazy" decoding="async"></div>
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=900&h=700&fit=crop" alt="Gallery 2" class="gallery-image" loading="lazy" decoding="async"></div>
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1559599101-f09722fb4948?w=900&h=700&fit=crop" alt="Gallery 3" class="gallery-image" loading="lazy" decoding="async"></div>
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=900&h=700&fit=crop" alt="Gallery 4" class="gallery-image" loading="lazy" decoding="async"></div>
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1571646034647-52e6ea84b28c?w=900&h=700&fit=crop" alt="Gallery 5" class="gallery-image" loading="lazy" decoding="async"></div>
+      <div class="gallery-item"><img src="https://images.unsplash.com/photo-1519415943484-9fa1873496d4?w=900&h=700&fit=crop" alt="Gallery 6" class="gallery-image" loading="lazy" decoding="async"></div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="testimonials" data-section-type="testimonial_cards" id="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label"><span class="label-line"></span>REGULAR LOVE</span>
+      <h2 class="section-title">From our regulars</h2>
+    </div>
+    <div class="grid-3">
+      <div class="testimonial-card">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+        <p class="testimonial-quote">"Best balayage I've ever had — and I've had a lot. The room felt like a holiday, not a salon."</p>
+        <div class="testimonial-author">
+          <div style="width:2.75rem;height:2.75rem;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;">L</div>
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:var(--text);">Lila Hadid</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">Regular since 2022</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+        <p class="testimonial-quote">"My facials at Saskia have completely changed my skin. I won't go anywhere else."</p>
+        <div class="testimonial-author">
+          <div style="width:2.75rem;height:2.75rem;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;">I</div>
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:var(--text);">Ines Marchetti</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">Regular since 2021</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+        <p class="testimonial-quote">"It's the only place where I leave actually relaxed. No conveyor belt energy."</p>
+        <div class="testimonial-author">
+          <div style="width:2.75rem;height:2.75rem;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;">M</div>
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:var(--text);">Maya Brennan</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">Bride, 2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="cta" data-section-type="cta_centered" id="cta" style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;">
+  <div class="container-narrow text-center">
+    <h2 class="section-title" style="color:white;">Book a private appointment</h2>
+    <p class="section-subtitle" style="color:rgba(255,255,255,0.86);max-width:42rem;">Saturdays book up two weeks ahead — weekday slots are usually open within 48 hours.</p>
+    <div class="btn-group center" style="margin-top:2rem;">
+      <a href="#contact" class="btn-primary-light">Book a session</a>
+    </div>
+  </div>
+</section>
+
+<section data-section-id="contact" data-section-type="contact" id="contact">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label"><span class="label-line"></span>GET IN TOUCH</span>
+      <h2 class="section-title">Let's Talk</h2>
+      <p class="section-subtitle">Reach out and we'll get back to you within one business day.</p>
+    </div>
+    <div class="grid-2">
+      <div class="contact-info-card">
+        <h3 style="margin-bottom:1.5rem;font-size:1.25rem;">Visit / Call</h3>
+        <div class="contact-item">
+          <i class="fa-solid fa-phone contact-icon"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Phone</div>
+            <div style="color:var(--text-muted);">+971 4 344 7700</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <i class="fa-solid fa-envelope contact-icon"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Email</div>
+            <div style="color:var(--text-muted);">hello@saskia-co.ae</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <i class="fa-solid fa-location-dot contact-icon"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Address</div>
+            <div style="color:var(--text-muted);">Jumeirah Beach Road 248, Jumeirah 1, Dubai</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <i class="fa-solid fa-clock contact-icon"></i>
+          <div>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Hours</div>
+            <div style="color:var(--text-muted);">Tue–Sun · 10:00am – 8:00pm · Closed Mondays</div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-info-card">
+        <h3 style="margin-bottom:1.5rem;font-size:1.25rem;">Send a Message</h3>
+        <form class="contact-form">
+          <div class="form-row">
+            <input type="text" class="form-input" placeholder="Your Name" required>
+            <input type="email" class="form-input" placeholder="Your Email" required>
+          </div>
+          <input type="tel" class="form-input" placeholder="Phone Number">
+          <textarea class="form-input form-textarea" placeholder="How can we help you?" rows="4"></textarea>
+          <button type="submit" class="btn-primary" style="width:100%;">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer data-section-type="footer" style="background:#1a0f12;padding:4rem 0 2rem;">
+  <div class="container footer-grid">
+    <div>
+      <a href="#" class="nav-brand" style="color:white;margin-bottom:1rem;display:inline-flex;">
+        <span class="logo-mark" style="background: linear-gradient(135deg, var(--primary), var(--secondary))">S</span>
+        <span>Saskia & Co.</span>
+      </a>
+      <p class="footer-description">A private beauty atelier in Jumeirah. Six rooms, six specialists, never rushed.</p>
+      <div class="social-links">
+        <a href="#" class="social-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="social-link" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" class="social-link" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+        <a href="#" class="social-link" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+      </div>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">Treatments</h4>
+      <ul class="footer-links">
+        <li><a href="#">Hair Atelier</a></li>
+        <li><a href="#">Facials</a></li>
+        <li><a href="#">Nails</a></li>
+        <li><a href="#">Wellness</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">Atelier</h4>
+      <ul class="footer-links">
+        <li><a href="#">About</a></li>
+        <li><a href="#">Our Team</a></li>
+        <li><a href="#">Press</a></li>
+        <li><a href="#">Gift Cards</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="footer-heading">Visit</h4>
+      <ul class="footer-links">
+        <li><a href="#">Book</a></li>
+        <li><a href="#">Location</a></li>
+        <li><a href="#">Newsletter</a></li>
+        <li><a href="#">Instagram</a></li>
+      </ul>
+    </div>
+
+  </div>
+  <div class="container">
+    <div class="footer-bottom">© 2026 Saskia & Co.. All rights reserved.</div>
+  </div>
+</footer>

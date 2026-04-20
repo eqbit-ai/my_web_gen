@@ -450,32 +450,20 @@ async def cleanup_old_distribution_for_domain(domain: str) -> str | None:
 
     logger.info("Found old distribution %s holding alias for %s (status=%s, enabled=%s)", dist_id, domain, status, enabled)
 
+    # FAST PATH: just steal the alias from the old distribution. AWS only
+    # forbids two distributions from claiming the same alias — it does NOT
+    # require the old distribution to be fully deleted before a new one can
+    # use the alias. Removing the alias via UpdateDistribution returns in
+    # seconds, vs. waiting up to 10 minutes for the disable→Deployed→Delete
+    # dance. The disconnect handler's background task is already responsible
+    # for the actual disable+delete on its own schedule, so we don't need to
+    # do that work synchronously inside the connect request.
     try:
-        # Disable if still enabled
-        if enabled:
-            await disable_distribution(dist_id)
-
-        # Wait for Deployed status (up to 10 min for quick reconnect scenarios)
-        for _ in range(20):
-            await asyncio.sleep(30)
-            try:
-                st = await get_distribution_status(dist_id)
-                if st.get("status") == "Deployed":
-                    break
-            except Exception:
-                break
-
-        # Delete it
-        await delete_distribution(dist_id)
-        logger.info("Old distribution %s cleaned up for domain %s", dist_id, domain)
+        await _remove_alias_from_distribution(dist_id, domain)
+        logger.info("Released alias %s from old distribution %s (fast path)", domain, dist_id)
         return dist_id
     except Exception as e:
-        logger.error("Failed to cleanup old distribution %s for %s: %s", dist_id, domain, e)
-        # Try to remove the alias from the old distribution instead
-        try:
-            await _remove_alias_from_distribution(dist_id, domain)
-        except Exception:
-            pass
+        logger.error("Failed to release alias %s from old distribution %s: %s", domain, dist_id, e)
         return None
 
 

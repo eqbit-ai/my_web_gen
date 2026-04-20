@@ -424,6 +424,7 @@ class UpdateContactRequest(BaseModel):
     # Floating contact widgets — all optional. Empty/missing values cause the
     # corresponding widget to be removed from the page on next inject.
     whatsappNumber: str | None = None
+    mapLink: str | None = None
     socialFacebook: str | None = None
     socialInstagram: str | None = None
     socialTiktok: str | None = None
@@ -1304,6 +1305,8 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
     # Floating widgets — WhatsApp and social media URLs.
     if req.whatsappNumber is not None:
         cfg["whatsapp"] = req.whatsappNumber
+    if req.mapLink is not None:
+        cfg["mapLink"] = req.mapLink
     # Social: only update keys that were actually sent (not None).
     social = dict(cfg.get("social") or {})
     if req.socialFacebook is not None:

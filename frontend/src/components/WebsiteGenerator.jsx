@@ -2297,6 +2297,7 @@ const WebsiteGenerator = () => {
                 wizardData?.contactInfo ? {
                     recipientEmail: wizardData.contactInfo.email || '',
                     whatsapp: wizardData.contactInfo.whatsapp || '',
+                    mapLink: wizardData.contactInfo.mapLink || '',
                     social: wizardData.contactInfo.social || {},
                 } : null,
             );
@@ -2545,11 +2546,13 @@ const WebsiteGenerator = () => {
                 return;
             }
 
-            // Clean up any CMS UI artifacts before extracting
-            cmsRoot.querySelectorAll('.cms-hover-outline').forEach(el => el.classList.remove('cms-hover-outline'));
-            cmsRoot.querySelectorAll('.cms-editing').forEach(el => {
-                el.classList.remove('cms-editing');
-                el.removeAttribute('contenteditable');
+            // Clean up any CMS UI artifacts before extracting.
+            // Strip contenteditable unconditionally — if it leaks into saved
+            // HTML, browsers make the element editable on the deployed site
+            // and in admin previews without needing any script.
+            cmsRoot.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+            cmsRoot.querySelectorAll('.cms-hover-outline, .cms-editing, .cms-img-outline').forEach(el => {
+                el.classList.remove('cms-hover-outline', 'cms-editing', 'cms-img-outline');
             });
 
             const newHtml = cmsRoot.innerHTML;

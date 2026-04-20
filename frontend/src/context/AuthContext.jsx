@@ -55,10 +55,9 @@ export function AuthProvider({ children }) {
     };
 
     const signup = async (formData) => {
+        // Signup no longer auto-logs the user in. The backend now requires the
+        // user to confirm their email before they can sign in.
         const data = await apiSignup(formData);
-        storeToken(data.token);
-        setToken(data.token);
-        setUser(data.user);
         return data;
     };
 

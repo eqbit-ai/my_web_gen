@@ -1,24 +1,19 @@
 """
-Contact widgets injection: WhatsApp float + Social FAB.
+Contact widgets injection: Social FAB (floating) + footer social-links row.
 
-Builds and injects two floating buttons into generated HTML based on a
-``contact_config`` dict. The buttons are positioned to avoid collision
-with each other AND with any existing back-to-top button:
+Builds two sets of social/contact icons from a ``contact_config`` dict:
 
-    Right edge of viewport, vertical stack:
-        bottom: 1.5rem  → back-to-top (already exists in animation library)
-        bottom: 6rem    → WhatsApp float
-        bottom: 10.5rem → Social FAB
+    1. **Social FAB** — a floating ring button at the right edge of the
+       viewport that fans out to reveal every configured icon (brand
+       socials + WhatsApp + map). Click the FAB to toggle.
 
-The Social FAB, when clicked, reveals a horizontal row of icons fanning
-out to the LEFT of the FAB so they don't collide with the WhatsApp button
-above. Only platforms with a non-empty URL in ``contact_config["social"]``
-are rendered — empty platforms are skipped entirely.
+    2. **Footer social row** — the LLM generates a placeholder
+       ``<div class="social-links">`` in the footer with empty hrefs.
+       We find every such div and replace its contents with real
+       anchors wired to the user-provided URLs.
 
-Both widgets are idempotent: if they're already present in the HTML,
-the inject helper removes the old copy first and inserts the fresh one.
-This lets the settings page update widgets on existing projects without
-duplicating them.
+Both are idempotent: sentinel comments and a full replacement pass
+ensure re-running the inject produces a single up-to-date copy.
 
 Usage::
 
@@ -26,6 +21,7 @@ Usage::
 
     html = inject_contact_widgets(html, contact_config={
         "whatsapp": "971501234567",
+        "mapLink": "https://maps.google.com/?q=...",
         "social": {
             "facebook": "https://facebook.com/foo",
             "instagram": "https://instagram.com/foo",
@@ -44,6 +40,8 @@ WHATSAPP_FLOAT_START = "<!-- MEYDAN_WHATSAPP_FLOAT -->"
 WHATSAPP_FLOAT_END = "<!-- /MEYDAN_WHATSAPP_FLOAT -->"
 SOCIAL_FAB_START = "<!-- MEYDAN_SOCIAL_FAB -->"
 SOCIAL_FAB_END = "<!-- /MEYDAN_SOCIAL_FAB -->"
+FOOTER_SOCIAL_START = "<!-- MEYDAN_FOOTER_SOCIAL -->"
+FOOTER_SOCIAL_END = "<!-- /MEYDAN_FOOTER_SOCIAL -->"
 
 # Map of supported social platforms → (font-awesome icon class, brand color).
 # Order is the visual reveal order in the FAB fan (left-to-right of the FAB).
@@ -55,6 +53,11 @@ SOCIAL_PLATFORMS = [
     ("youtube", "fa-brands fa-youtube", "#FF0000"),
 ]
 
+# WhatsApp + map are treated as social icons too — they share the same
+# container (FAB + footer) as the brand platforms.
+WHATSAPP_META = ("whatsapp", "fa-brands fa-whatsapp", "#25D366", "WhatsApp")
+MAP_META = ("map", "fa-solid fa-location-dot", "#EA4335", "Location")
+
 
 def _normalize_whatsapp(num: str) -> str:
     """Strip everything except digits. wa.me URLs accept digits only."""
@@ -63,77 +66,77 @@ def _normalize_whatsapp(num: str) -> str:
     return re.sub(r"\D+", "", num)
 
 
-def _strip_existing_widgets(html: str) -> str:
-    """Remove any previously-injected MEYDAN_WHATSAPP_FLOAT / MEYDAN_SOCIAL_FAB
-    blocks so the inject is idempotent.
-
-    Uses sentinel comments rather than class-name regex so we never accidentally
-    strip a user-edited or LLM-generated whatsapp button that doesn't carry our
-    sentinel.
+def _collect_icons(config: dict) -> list[tuple[str, str, str, str, str]]:
+    """Return the ordered list of (key, icon_class, color, url, label) for
+    every non-empty icon in the config. Used by both the FAB and the
+    footer row so they stay in sync.
     """
-    # WhatsApp float
+    social = (config or {}).get("social") or {}
+    icons: list[tuple[str, str, str, str, str]] = []
+
+    for key, icon_cls, color in SOCIAL_PLATFORMS:
+        url = (social.get(key) or "").strip()
+        if url:
+            icons.append((key, icon_cls, color, url, key.title()))
+
+    wa_num = _normalize_whatsapp(config.get("whatsapp") or "")
+    if wa_num:
+        key, icon_cls, color, label = WHATSAPP_META
+        icons.append((key, icon_cls, color, f"https://wa.me/{wa_num}", label))
+
+    map_link = (config.get("mapLink") or "").strip()
+    if map_link:
+        key, icon_cls, color, label = MAP_META
+        icons.append((key, icon_cls, color, map_link, label))
+
+    return icons
+
+
+def _strip_existing_widgets(html: str) -> str:
+    """Remove any previously-injected MEYDAN_* widget blocks so the inject
+    is idempotent. Also strips:
+      - LLM-hardcoded ``.whatsapp-float`` anchors (the cheatsheet still
+        mentions this class; stripping avoids a duplicate fixed-position
+        button alongside the FAB).
+      - The legacy MEYDAN_WHATSAPP_FLOAT block: we no longer inject the
+        fixed floater, so existing sessions heal on re-injection.
+    """
+    # Legacy fixed-position WhatsApp float (we removed this widget)
     html = re.sub(
         re.escape(WHATSAPP_FLOAT_START) + r"[\s\S]*?" + re.escape(WHATSAPP_FLOAT_END),
         "",
         html,
     )
-    # Social FAB
+    # Social FAB (sentinel-wrapped)
     html = re.sub(
         re.escape(SOCIAL_FAB_START) + r"[\s\S]*?" + re.escape(SOCIAL_FAB_END),
         "",
         html,
     )
+    # LLM-hardcoded whatsapp float anchors with class "whatsapp-float" (NOT our
+    # "meydan-whatsapp-float" — negative lookahead on "meydan-" so we only
+    # strip the LLM copy and never our own injected button).
+    html = re.sub(
+        r'<a\b(?=[^>]*\bclass\s*=\s*["\'][^"\']*(?<!meydan-)whatsapp-float)[^>]*>'
+        r'[\s\S]*?</a>',
+        "",
+        html,
+        flags=re.IGNORECASE,
+    )
     return html
 
 
-def _build_whatsapp_html(number: str) -> str:
-    """Build the WhatsApp floating button HTML, positioned at bottom: 6rem
-    so it stacks above the back-to-top button.
+def _build_social_fab_html(icons: list[tuple[str, str, str, str, str]]) -> str:
+    """Build the floating FAB widget from the unified icon list. Returns
+    empty string if no icons — no point rendering an empty button.
     """
-    safe_num = _normalize_whatsapp(number)
-    return (
-        f"\n{WHATSAPP_FLOAT_START}\n"
-        f'<a href="https://wa.me/{safe_num}" target="_blank" rel="noopener" '
-        f'class="meydan-whatsapp-float" '
-        f'style="position:fixed;bottom:6rem;right:1.5rem;width:3.5rem;height:3.5rem;'
-        f'background:#25D366;border-radius:50%;display:flex;align-items:center;'
-        f'justify-content:center;color:white;font-size:1.6rem;'
-        f'box-shadow:0 4px 12px rgba(0,0,0,0.18);z-index:51;'
-        f'transition:transform 0.25s ease,box-shadow 0.25s ease;'
-        f'text-decoration:none;" '
-        f'aria-label="Chat on WhatsApp" '
-        f"onmouseover=\"this.style.transform='scale(1.08)'\" "
-        f"onmouseout=\"this.style.transform='scale(1)'\">"
-        f'<i class="fa-brands fa-whatsapp"></i></a>\n'
-        f"{WHATSAPP_FLOAT_END}\n"
-    )
-
-
-def _build_social_fab_html(social: dict[str, str]) -> str:
-    """Build the social-media FAB widget. Renders only platforms whose URL
-    is non-empty in ``social``. Returns an empty string if no platforms
-    are filled (so we don't inject an empty button).
-    """
-    # Filter to only filled platforms, preserving SOCIAL_PLATFORMS order.
-    items = []
-    for key, icon_cls, color in SOCIAL_PLATFORMS:
-        url = (social or {}).get(key, "").strip()
-        if url:
-            items.append((key, icon_cls, color, url))
-
-    if not items:
+    if not icons:
         return ""
 
-    # Build the icon list. Each icon is an <a> with brand background color.
-    # The icons are absolutely-positioned children of the FAB container,
-    # initially hidden via opacity:0 + translateX(20px). On .open they
-    # animate in with a stagger.
     icons_html = ""
-    for i, (key, icon_cls, color, url) in enumerate(items):
-        # Each icon shifts further left (60px gap) and uses a stagger delay
-        # so they fan out smoothly when the FAB is clicked.
-        right_offset = 4.5 + i * 3.5  # rem — first icon at right:4.5rem, then 8, 11.5...
-        delay = 50 + i * 40  # ms
+    for i, (key, icon_cls, color, url, label) in enumerate(icons):
+        right_offset = 4.5 + i * 3.5  # rem — first icon at right:4.5rem
+        delay = 50 + i * 40  # ms — stagger the fan-out animation
         icons_html += (
             f'<a href="{url}" target="_blank" rel="noopener" '
             f'class="meydan-social-icon" '
@@ -146,13 +149,11 @@ def _build_social_fab_html(social: dict[str, str]) -> str:
             f"opacity:0;transform:translateX(20px) scale(0.7);pointer-events:none;"
             f"transition:opacity 0.3s ease {delay}ms,transform 0.3s ease {delay}ms;"
             f'z-index:51;" '
-            f'aria-label="{key.title()}">'
+            f'aria-label="{label}">'
             f'<i class="{icon_cls}"></i></a>'
         )
 
-    # Inline <script> for the toggle. Uses event delegation off document so
-    # it survives any DOM rewrite the user does after page load.
-    fab_html = (
+    return (
         f"\n{SOCIAL_FAB_START}\n"
         f"<style>"
         f".meydan-social-fab.open .meydan-social-icon{{"
@@ -192,56 +193,93 @@ def _build_social_fab_html(social: dict[str, str]) -> str:
         f"}})();</script>"
         f"\n{SOCIAL_FAB_END}\n"
     )
-    return fab_html
 
 
-def inject_contact_widgets(html: str, contact_config: dict | None) -> str:
-    """Inject WhatsApp + Social FAB widgets into the given HTML based on
-    ``contact_config``. Idempotent — old MEYDAN_* sentinel blocks are
-    stripped before insertion, so calling this multiple times produces
-    a single up-to-date copy of each widget.
+def _build_footer_social_inner(icons: list[tuple[str, str, str, str, str]]) -> str:
+    """Build the anchor list that replaces the inner content of every
+    ``<div class="social-links">`` found in the HTML. Kept sentinel-wrapped
+    so subsequent injects can recognise and replace it cleanly.
+    """
+    if not icons:
+        return ""
+    parts = [FOOTER_SOCIAL_START]
+    for key, icon_cls, _color, url, label in icons:
+        parts.append(
+            f'<a class="social-link" href="{url}" target="_blank" rel="noopener" '
+            f'aria-label="{label}" data-platform="{key}">'
+            f'<i class="{icon_cls}"></i></a>'
+        )
+    parts.append(FOOTER_SOCIAL_END)
+    return "".join(parts)
 
-    ``contact_config`` shape::
 
-        {
-            "whatsapp": "971501234567",   # optional, digits only at inject time
-            "social": {                    # optional dict
-                "facebook": "https://...",
-                "instagram": "https://...",
-                "tiktok": "https://...",
-                "linkedin": "https://...",
-            },
-        }
+def _inject_footer_social_row(html: str, icons: list[tuple[str, str, str, str, str]]) -> str:
+    """Find every ``<div class="social-links">...</div>`` in ``html`` and
+    replace its inner content with real anchors wired to user URLs.
 
-    If ``whatsapp`` is missing or empty, no WhatsApp button is injected.
-    If ``social`` is missing or all four platforms are empty, no FAB is
-    injected. The function still strips any pre-existing sentinel blocks
-    in either case, so passing an empty config effectively REMOVES both
-    widgets — useful for the "clear all contact widgets" path in settings.
+    If no icons are configured, empty the container instead of removing
+    it — the LLM-generated layout may depend on the div existing for
+    spacing.
+
+    The regex assumes the ``.social-links`` div contains only inline
+    children (anchors, icons) — it does NOT handle nested ``<div>``. Our
+    prompt enforces this shape, and the LLM has been consistent about
+    honouring it.
     """
     if not html:
         return html
 
-    config = contact_config or {}
+    inner = _build_footer_social_inner(icons)
+    # Match the opening tag with "social-links" in its class (may have other
+    # classes too), non-greedy body, closing </div>.
+    pattern = re.compile(
+        r'(<div\b[^>]*\bclass\s*=\s*["\'][^"\']*\bsocial-links\b[^"\']*["\'][^>]*>)'
+        r'[\s\S]*?'
+        r'(</div>)',
+        flags=re.IGNORECASE,
+    )
+    return pattern.sub(lambda m: f"{m.group(1)}{inner}{m.group(2)}", html)
+
+
+def inject_contact_widgets(html: str, contact_config: dict | None) -> str:
+    """Inject the Social FAB + footer social row into ``html`` based on
+    ``contact_config``. Idempotent — old sentinel blocks are stripped
+    before insertion.
+
+    ``contact_config`` shape::
+
+        {
+            "whatsapp": "971501234567",    # optional
+            "mapLink": "https://...",        # optional
+            "social": {                      # optional dict
+                "facebook": "https://...",
+                "instagram": "https://...",
+                "tiktok": "https://...",
+                "linkedin": "https://...",
+                "youtube": "https://...",
+            },
+        }
+
+    Passing an empty/None config removes any previously-injected widgets
+    and clears the footer social row — useful for the "clear all" path
+    in settings.
+    """
+    if not html:
+        return html
 
     # Always strip first so the function is fully idempotent.
     html = _strip_existing_widgets(html)
 
-    pieces: list[str] = []
-    whatsapp_num = _normalize_whatsapp(config.get("whatsapp") or "")
-    if whatsapp_num:
-        pieces.append(_build_whatsapp_html(whatsapp_num))
+    icons = _collect_icons(contact_config or {})
 
-    social = config.get("social") or {}
-    fab_html = _build_social_fab_html(social)
-    if fab_html:
-        pieces.append(fab_html)
+    # Replace footer <div class="social-links"> contents with the real
+    # anchors (or empty it if no icons are configured).
+    html = _inject_footer_social_row(html, icons)
 
-    if not pieces:
+    # Append the FAB before </body> so it floats over everything.
+    fab_html = _build_social_fab_html(icons)
+    if not fab_html:
         return html
-
-    blob = "".join(pieces)
-    # Insert before </body> if possible, otherwise append.
     if "</body>" in html:
-        return html.replace("</body>", f"{blob}</body>", 1)
-    return html + blob
+        return html.replace("</body>", f"{fab_html}</body>", 1)
+    return html + fab_html

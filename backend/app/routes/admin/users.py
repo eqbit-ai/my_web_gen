@@ -480,9 +480,11 @@ async def bulk_user_action(
         return {"message": f"Enabled {len(req.user_ids)} users"}
 
     elif req.action == "approve":
+        # Only approve users who have already confirmed their email address
         await db.execute(
             update(User)
             .where(User.id.in_(req.user_ids))
+            .where(User.email_verified.is_(True))
             .values(
                 is_approved=True,
                 approved_at=datetime.now(UTC),
@@ -593,6 +595,12 @@ async def approve_user(
 
     if _safe_getattr(user, "is_approved", False):
         raise HTTPException(status_code=400, detail="User is already approved")
+
+    if not _safe_getattr(user, "email_verified", False):
+        raise HTTPException(
+            status_code=400,
+            detail="User has not confirmed their email address yet",
+        )
 
     try:
         await db.execute(

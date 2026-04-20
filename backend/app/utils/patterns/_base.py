@@ -217,6 +217,55 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .hero-section {{ padding: 10rem 0 4rem !important; position: relative; overflow: hidden; min-height: min(80vh, 700px); display: flex; align-items: center; }}
 @media (min-width: 769px) {{ .hero-section {{ padding: 10rem 0 5rem !important; }} }}
 .hero-section.hero-section-flush {{ margin-top: -80px; padding-top: 0 !important; min-height: 100vh; }}
+
+/* ── Multipage hero consistency normalization ──
+   Fixes three layout issues across multipage subpages where the LLM picks
+   different hero patterns per page and they end up with wildly different
+   spacing:
+     1. Flush heroes with non-standard inner wrappers leave the heading
+        hidden under the navbar (no padding-top fallback).
+     2. Centered heroes (no side image) end up with the heading floating
+        in the middle of a 700px tall flex container — huge whitespace.
+     3. Split-grid heroes with side images need the tall layout because
+        the image fills it; we don't want to shrink THOSE.
+   The rules below ONLY apply to non-split heroes, so home pages with
+   `hero_split` / `hero_asymmetric` are untouched.
+*/
+
+/* (1) Defensive flush-hero navbar clearance — applies to ALL direct
+   children of a flush hero, not just .hero-bg-cover / .hero-animated-bg.
+   When the LLM uses .container or .hero-content directly inside a flush
+   section without one of the recognised wrappers, the heading was being
+   hidden under the navbar. The 80px padding clears the fixed navbar; if
+   .hero-bg-cover already provides 80px (its own rule), this is a no-op
+   for that case. */
+.hero-section.hero-section-flush > * {{
+  padding-top: 80px;
+}}
+/* Cover the inner case where some patterns use .container DIRECTLY */
+.hero-section.hero-section-flush > .container,
+.hero-section.hero-section-flush > .container-wide,
+.hero-section.hero-section-flush > .container-narrow {{
+  padding-top: 100px;
+}}
+
+/* (2) Non-split, non-flush heroes (e.g. hero_center on Services / Contact /
+   Gallery subpages) — reduce min-height and top-align so the heading
+   doesn't float in the middle of an empty 700px container. The
+   :not(.hero-section-flush) excludes flush variants (which have their
+   own min-height: 100vh). The :not(:has(.hero-split-grid)) excludes
+   split-grid layouts on the home page where the side image needs the
+   full height. */
+.hero-section:not(.hero-section-flush):not(:has(.hero-split-grid)) {{
+  min-height: auto !important;
+  align-items: flex-start !important;
+  padding: 8rem 0 4rem !important;  /* 128px top: 80px navbar + 48px breathing — was 10rem (160px) */
+}}
+@media (min-width: 769px) {{
+  .hero-section:not(.hero-section-flush):not(:has(.hero-split-grid)) {{
+    padding: 8rem 0 5rem !important;
+  }}
+}}
 .hero-heading {{ font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.08; margin-bottom: 1.5rem; color: var(--text); letter-spacing: -0.02em; }}
 .hero-subtitle {{ font-size: clamp(1.05rem, 1.3vw, 1.2rem); color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem; max-width: 36rem; }}
 .hero-center-content .hero-subtitle {{ margin-left: auto; margin-right: auto; }}
@@ -229,7 +278,10 @@ nav.nav-scrolled {{ background: var(--bg) !important; box-shadow: 0 4px 20px rgb
 .hero-full-overlay .trust-line {{ text-align: left; }}
 .hero-split-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; min-height: 70vh; }}
 .hero-split-asymmetric {{ grid-template-columns: 55% 45%; }}
-@media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; min-height: auto; }} }}
+.hero-image-wrapper {{ position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: visible; }}
+.hero-image-wrapper > img,
+.hero-image-wrapper > .img-cover {{ width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); display: block; }}
+@media (max-width: 768px) {{ .hero-split-grid {{ grid-template-columns: 1fr; min-height: auto; }} .hero-image-wrapper {{ aspect-ratio: 16 / 10; }} }}
 .hero-center-content {{ text-align: center; max-width: 48rem; margin: 0 auto; width: 100%; }}
 .hero-bg-cover {{ position: relative; width: 100%; min-height: min(90vh, 800px); background-size: cover; background-position: center; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; padding-top: 80px; }}
 .hero-bg-cover > .container, .hero-bg-cover > .container-wide, .hero-bg-cover > .container-narrow {{ width: 100%; }}

@@ -18,14 +18,23 @@ const DeployModal = ({ isOpen, onClose, sessionId, html, css, js, existingSiteId
     const [purchasingDomain, setPurchasingDomain] = useState(null);
     const [domainPurchased, setDomainPurchased] = useState(null);
     const [domainError, setDomainError] = useState(null);
-    const [selectedTlds, setSelectedTlds] = useState(['com', 'ae', 'net', 'io', 'org', 'co']);
+    const [selectedTlds, setSelectedTlds] = useState([
+        'com', 'ae', 'net', 'org', 'io',
+        'co', 'app', 'shop', 'online', 'store',
+        'site', 'tech', 'dev', 'me', 'xyz',
+    ]);
     const [showTldPicker, setShowTldPicker] = useState(false);
     const [ownedDomains, setOwnedDomains] = useState([]);
     const [connectingDomain, setConnectingDomain] = useState(null);
     const [purchaseConfirm, setPurchaseConfirm] = useState(null); // { sld, tld, price }
     const searchInputRef = useRef(null);
 
-    const allTlds = ['com', 'ae', 'net', 'io', 'org', 'co', 'dev', 'app', 'me', 'info', 'biz', 'xyz'];
+    const allTlds = [
+        'com', 'ae', 'net', 'org', 'io',
+        'co', 'app', 'shop', 'online', 'store',
+        'site', 'tech', 'dev', 'me', 'xyz',
+        'info', 'biz',
+    ];
 
     useEffect(() => {
         if (deployed && activeTab === 'domain' && searchInputRef.current) {
