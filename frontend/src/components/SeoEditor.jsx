@@ -19,6 +19,9 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
     const [contact, setContact] = useState(initialContact || {
         recipientEmail: '',
     });
+    // Google Maps link — used for both the location iframe in the contact
+    // section AND the map icon in the social FAB/footer row.
+    const [mapLink, setMapLink] = useState(initialContact?.mapLink || '');
     // Social media URLs — only filled platforms appear in the floating FAB
     const [socialFb, setSocialFb] = useState(initialContact?.social?.facebook || '');
     const [socialIg, setSocialIg] = useState(initialContact?.social?.instagram || '');
@@ -94,7 +97,10 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
         setSaving(false);
     };
 
-    const handleSaveContact = () => _saveContactPatch({ recipientEmail: contact.recipientEmail || '' });
+    const handleSaveContact = () => _saveContactPatch({
+        recipientEmail: contact.recipientEmail || '',
+        mapLink: mapLink || '',
+    });
 
     // Save WhatsApp via the unified contact_config endpoint. The legacy
     // siteMeta.whatsappNumber path is left intact for backward compat with
@@ -177,6 +183,11 @@ const SeoEditor = ({ isOpen, onClose, sessionId, projectId, siteMeta: initialMet
                                 <label>Recipient Email</label>
                                 <input type="email" value={contact.recipientEmail} onChange={e => setContact(c => ({ ...c, recipientEmail: e.target.value }))} placeholder="you@example.com" />
                                 <span className="seo-hint">Contact form submissions will be sent to this email address.</span>
+                            </div>
+                            <div className="seo-field">
+                                <label>Google Maps Link</label>
+                                <input type="url" value={mapLink} onChange={e => setMapLink(e.target.value)} placeholder="https://maps.app.goo.gl/… or https://www.google.com/maps/place/…" />
+                                <span className="seo-hint">Paste the share link from Google Maps. Adds a map icon to the social button and embeds the location in the contact section. Clear to remove.</span>
                             </div>
                             <div className="seo-footer">
                                 <button className="seo-save" onClick={handleSaveContact} disabled={saving}>

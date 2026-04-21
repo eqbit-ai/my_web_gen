@@ -1293,6 +1293,32 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
 
     session["contact_config"] = cfg
 
+    # If the map link changed, rewrite the src of any Google Maps iframe
+    # already embedded in the contact section. The iframe is LLM-generated
+    # (not injected by us), so the user would otherwise see a stale map
+    # pinning the old location after updating the link in settings.
+    def _rewrite_map_iframe(html: str, new_src: str) -> str:
+        if not html:
+            return html
+        if new_src:
+            # Replace src on any iframe whose current src points at Google Maps.
+            return re.sub(
+                r'(<iframe\b[^>]*\bsrc\s*=\s*["\'])https?://(?:www\.)?(?:google\.[a-z.]+/maps|maps\.google\.[a-z.]+)[^"\']*(["\'])',
+                lambda m: f"{m.group(1)}{new_src}{m.group(2)}",
+                html,
+                flags=re.IGNORECASE,
+            )
+        # new_src is empty → user cleared the map link; strip any Google Maps iframe.
+        return re.sub(
+            r'<iframe\b[^>]*\bsrc\s*=\s*["\']https?://(?:www\.)?(?:google\.[a-z.]+/maps|maps\.google\.[a-z.]+)[^"\']*["\'][^>]*>\s*</iframe>',
+            "",
+            html,
+            flags=re.IGNORECASE,
+        )
+
+    map_changed = req.mapLink is not None
+    new_map_src = (cfg.get("mapLink") or "") if map_changed else None
+
     # Re-inject the floating widgets into every page so the change is
     # immediately visible in the editor preview. Idempotent — old widgets
     # are stripped first.
@@ -1302,11 +1328,15 @@ async def _update_contact_impl(req: UpdateContactRequest, user: dict):
         for slug in list(session["pages"].keys()):
             pg = session["pages"][slug]
             if isinstance(pg, dict) and pg.get("html"):
+                if map_changed:
+                    pg["html"] = _rewrite_map_iframe(pg["html"], new_map_src)
                 pg["html"] = inject_contact_widgets(pg["html"], cfg)
         # session["html"] always mirrors the index page in multipage mode
         if "index" in session["pages"]:
             session["html"] = session["pages"]["index"]["html"]
     elif session.get("html"):
+        if map_changed:
+            session["html"] = _rewrite_map_iframe(session["html"], new_map_src)
         session["html"] = inject_contact_widgets(session["html"], cfg)
 
     # Store recipient email in Redis session (deploy code reads it from here)
