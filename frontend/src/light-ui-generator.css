@@ -87,8 +87,10 @@ body:has(.gn-layout) {
   100% { transform: translate3d(-25%, 0, 0); }
 }
 
-/* Keep direct children above the wave layer */
-.gn-layout > *:not(.gn-wave-host) { position: relative; z-index: 1; }
+/* Keep direct children above the wave layer. Exclude overlays that MUST
+   stay position:fixed (onboarding, toasts, modals) — otherwise they become
+   flex siblings and squeeze .gn-main to a sliver. */
+.gn-layout > *:not(.gn-wave-host):not(.onboarding-overlay):not(.onboarding-highlight):not(.onboarding-tooltip):not(.toast-container):not(.gn-backdrop):not(.gn-element-panel):not(.se-panel):not(.dm-overlay):not(.error-banner) { position: relative; z-index: 1; }
 
 /* Content surface gets the waves showing through — make it transparent
    so the host is visible behind the marketplace / welcome states. */
@@ -460,6 +462,24 @@ body:has(.gn-layout) {
   align-self: flex-end !important;
   pointer-events: none !important;
   background: transparent !important;
+}
+
+/* Error banner — same class of bug as toast-container had. Without this,
+   the .gn-layout > * relative rule forces it into the flex column and it
+   takes layout space, shrinking the iframe preview and showing as a
+   white pill on the gn-layout gray background. Exclusion list above +
+   these overrides belt-and-braces pin it to fixed top-center. */
+.gn-layout .error-banner,
+.error-banner {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  height: auto !important;
+  align-self: auto !important;
 }
 .gn-layout .toast-container > *,
 .toast-container > * { pointer-events: auto !important; }
