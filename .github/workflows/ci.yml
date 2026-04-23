@@ -1,15 +1,10 @@
-name: CI/CD
+name: CI - Lint, Test, Security
 
 on:
   push:
     branches: [dev, main]
   pull_request:
-    branches: [main]
-
-env:
-  AWS_REGION: us-east-1
-  ECR_REGISTRY: 371170753756.dkr.ecr.us-east-1.amazonaws.com
-  ECS_CLUSTER: meydan-dev-cluster
+    branches: [dev, main]
 
 jobs:
   lint-and-test:
@@ -92,46 +87,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  deploy:
-    name: Deploy to AWS ECS
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: [lint-and-test, frontend-build]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push backend image
-        run: |
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/meydan-api:latest -f backend/Dockerfile backend/
-          docker push $ECR_REGISTRY/meydan-api:latest
-
-      - name: Build and push frontend image
-        run: |
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/meydan-frontend:latest -f frontend/Dockerfile frontend/
-          docker push $ECR_REGISTRY/meydan-frontend:latest
-
-      - name: Deploy API service
-        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-dev-api --force-new-deployment
-
-      - name: Deploy Worker service
-        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-dev-worker --force-new-deployment
-
-      - name: Deploy Frontend service
-        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-dev-frontend --force-new-deployment
-
-      - name: Wait for stable deployment
-        run: |
-          echo "Waiting for services to stabilize..."
-          aws ecs wait services-stable --cluster $ECS_CLUSTER --services meydan-dev-api meydan-dev-frontend
-          echo "All services stable!"

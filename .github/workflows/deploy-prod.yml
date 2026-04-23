@@ -1,0 +1,55 @@
+name: Deploy to Production (me-central-1 UAE)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: me-central-1
+  ECR_REGISTRY: 290172088819.dkr.ecr.me-central-1.amazonaws.com
+  ECS_CLUSTER: meydan-prod-cluster
+
+jobs:
+  deploy:
+    name: Build & Deploy to Prod ECS (UAE)
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        run: |
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/meydan-api:latest -f backend/Dockerfile backend/
+          docker push $ECR_REGISTRY/meydan-api:latest
+
+      - name: Build and push frontend image
+        run: |
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/meydan-frontend:latest -f frontend/Dockerfile frontend/
+          docker push $ECR_REGISTRY/meydan-frontend:latest
+
+      - name: Deploy API service
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-prod-api --force-new-deployment
+
+      - name: Deploy Worker service
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-prod-worker --force-new-deployment
+
+      - name: Deploy Frontend service
+        run: aws ecs update-service --cluster $ECS_CLUSTER --service meydan-prod-frontend --force-new-deployment
+
+      - name: Wait for stable deployment
+        run: |
+          echo "Waiting for prod services to stabilize..."
+          aws ecs wait services-stable --cluster $ECS_CLUSTER --services meydan-prod-api meydan-prod-frontend
+          echo "All prod services stable!"
