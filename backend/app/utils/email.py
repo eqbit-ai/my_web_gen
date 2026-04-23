@@ -1,5 +1,9 @@
 """
-Resend email service for transactional emails.
+Transactional email service.
+
+Provider is swappable via the EMAIL_PROVIDER env var:
+  - "resend" (default): uses https://resend.com HTTP API
+  - "ses": uses AWS SES in AWS_REGION (requires domain/sender verification + production access)
 
 Handles: password reset, signup welcome, form submission notifications,
 account approval notifications, and admin alerts.
@@ -17,17 +21,17 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-SENDER = os.getenv("RESEND_SENDER_EMAIL", "noreply@meydanfzai.com")
+SENDER = os.getenv("EMAIL_SENDER", os.getenv("RESEND_SENDER_EMAIL", "noreply@meydanfzai.com"))
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://meydanfzai.com")
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "resend").lower()
 
 _executor = ThreadPoolExecutor(max_workers=2)
 
 
-def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
-    """Send an email via Resend API (blocking — call from thread pool)."""
-    api_key = RESEND_API_KEY
-    if not api_key:
+def _send_via_resend(to: str, subject: str, html_body: str, text_body: str = ""):
+    """Send via Resend HTTP API."""
+    if not RESEND_API_KEY:
         logger.warning("[EMAIL] RESEND_API_KEY not set — skipping email to %s", to)
         return
 
@@ -35,7 +39,7 @@ def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
         resp = httpx.post(
             "https://api.resend.com/emails",
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {RESEND_API_KEY}",
                 "Content-Type": "application/json",
             },
             json={
@@ -49,9 +53,40 @@ def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
         if resp.status_code >= 400:
             logger.error(f"[EMAIL] Resend API error {resp.status_code}: {resp.text} (to={to})")
         else:
-            logger.info(f"[EMAIL] Sent '{subject}' to {to}")
+            logger.info(f"[EMAIL] Sent '{subject}' to {to} via resend")
     except Exception as e:
-        logger.error(f"[EMAIL] Failed to send '{subject}' to {to}: {e}")
+        logger.error(f"[EMAIL] Failed to send '{subject}' to {to} via resend: {e}")
+
+
+def _send_via_ses(to: str, subject: str, html_body: str, text_body: str = ""):
+    """Send via AWS SES in the current AWS_REGION."""
+    try:
+        import boto3
+
+        ses = boto3.client("ses", region_name=os.getenv("AWS_REGION", "me-central-1"))
+        body = {"Html": {"Data": html_body, "Charset": "UTF-8"}}
+        if text_body:
+            body["Text"] = {"Data": text_body, "Charset": "UTF-8"}
+
+        ses.send_email(
+            Source=f"Meydan Free Zone <{SENDER}>",
+            Destination={"ToAddresses": [to]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": body,
+            },
+        )
+        logger.info(f"[EMAIL] Sent '{subject}' to {to} via ses")
+    except Exception as e:
+        logger.error(f"[EMAIL] Failed to send '{subject}' to {to} via ses: {e}")
+
+
+def _send_raw(to: str, subject: str, html_body: str, text_body: str = ""):
+    """Dispatch to the configured email provider."""
+    if EMAIL_PROVIDER == "ses":
+        _send_via_ses(to, subject, html_body, text_body)
+    else:
+        _send_via_resend(to, subject, html_body, text_body)
 
 
 def send_email_bg(to: str, subject: str, html_body: str, text_body: str = ""):
@@ -111,11 +146,27 @@ def send_welcome(to: str, full_name: str = ""):
 <h3>Welcome to Meydan Free Zone!</h3>
 <p>Hi {name},</p>
 <p>Thank you for signing up for the Meydan Free Zone AI Website Generator. Your account has been created successfully.</p>
-<p>Your account is pending admin approval. Once approved, you'll receive 1,000,000 tokens to start building your website.</p>
-<p style="text-align:center"><a href="{FRONTEND_URL}/signin" class="btn">Sign In</a></p>
+<p>Your account is pending admin approval. Once approved, you can start building your website right away.</p>
+<p style="text-align:center"><a href="{FRONTEND_URL}/login" class="btn">Sign In</a></p>
 <p style="font-size:13px;color:#6b7280;">We'll notify you by email once your account is approved.</p>
 """)
     send_email_bg(to, "Welcome to Meydan Free Zone!", html)
+
+
+def send_email_verification(to: str, verification_token: str, full_name: str = ""):
+    """Send email verification link after signup. User must click before admin can approve."""
+    name = full_name or "there"
+    verify_url = f"{FRONTEND_URL}/verify-email?token={verification_token}"
+    html = _base_template(f"""
+<h3>Confirm Your Email</h3>
+<p>Hi {name},</p>
+<p>Thanks for signing up for the Meydan Free Zone AI Website Generator. Please confirm your email address by clicking the button below — this is required before your account can be reviewed for approval.</p>
+<p style="text-align:center"><a href="{verify_url}" class="btn">Confirm Email</a></p>
+<p style="font-size:13px;color:#6b7280;">After confirming, an admin will review your account and notify you once it's approved.</p>
+<p style="font-size:12px;color:#9ca3af;word-break:break-all;">Or copy this link into your browser: {verify_url}</p>
+<p style="font-size:13px;color:#6b7280;">If you didn't sign up, you can safely ignore this email.</p>
+""")
+    send_email_bg(to, "Confirm your email — Meydan Free Zone", html)
 
 
 def send_approval_notification(to: str, full_name: str = ""):
@@ -124,8 +175,8 @@ def send_approval_notification(to: str, full_name: str = ""):
     html = _base_template(f"""
 <h3>Account Approved!</h3>
 <p>Hi {name},</p>
-<p>Great news — your Meydan Free Zone account has been approved! You now have <strong>1,000,000 tokens</strong> to start building your website.</p>
-<p style="text-align:center"><a href="{FRONTEND_URL}/signin" class="btn">Start Building</a></p>
+<p>Great news — your Meydan Free Zone account has been approved! You can now start building your website.</p>
+<p style="text-align:center"><a href="{FRONTEND_URL}/login" class="btn">Start Building</a></p>
 <p style="font-size:13px;color:#6b7280;">Log in to your dashboard and use the AI website generator to create your business website in minutes.</p>
 """)
     send_email_bg(to, "Your Account is Approved — Meydan Free Zone", html)
