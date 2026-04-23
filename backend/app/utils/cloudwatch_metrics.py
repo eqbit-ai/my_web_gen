@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 FLUSH_INTERVAL = 60  # seconds
 NAMESPACE = f"Meydan/{os.getenv('ENVIRONMENT', 'dev')}"
-REGION = os.getenv("AWS_REGION", "us-east-1")
+REGION = os.getenv("AWS_REGION", "me-central-1")
 
 # Cache the previous counter values so we can emit deltas (rate per interval)
 _prev_counters: dict[str, int] = {}

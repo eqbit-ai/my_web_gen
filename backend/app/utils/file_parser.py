@@ -16,7 +16,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 logger = logging.getLogger(__name__)
 
 S3_BUCKET = os.getenv("S3_DEPLOYED_BUCKET", "meydan-dev-deployed-sites")
-S3_REGION = os.getenv("AWS_REGION", "us-east-1")
+S3_REGION = os.getenv("AWS_REGION", "me-central-1")
 UPLOAD_PREFIX = "uploads/user-images"
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
