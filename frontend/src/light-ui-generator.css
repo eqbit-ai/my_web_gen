@@ -90,7 +90,7 @@ body:has(.gn-layout) {
 /* Keep direct children above the wave layer. Exclude overlays that MUST
    stay position:fixed (onboarding, toasts, modals) — otherwise they become
    flex siblings and squeeze .gn-main to a sliver. */
-.gn-layout > *:not(.gn-wave-host):not(.onboarding-overlay):not(.onboarding-highlight):not(.onboarding-tooltip):not(.toast-container):not(.gn-backdrop):not(.gn-element-panel):not(.se-panel):not(.dm-overlay):not(.error-banner) { position: relative; z-index: 1; }
+.gn-layout > *:not(.gn-wave-host):not(.onboarding-overlay):not(.onboarding-highlight):not(.onboarding-tooltip):not(.toast-container):not(.gn-backdrop):not(.gn-element-panel):not(.se-panel):not(.dm-overlay):not(.error-banner):not(.shortcuts-overlay):not(.ds-panel-overlay):not(.cl-panel):not(.gp-panel) { position: relative; z-index: 1; }
 
 /* Content surface gets the waves showing through — make it transparent
    so the host is visible behind the marketplace / welcome states. */
