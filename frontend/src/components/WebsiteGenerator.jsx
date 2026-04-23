@@ -988,15 +988,10 @@ const WebsiteGenerator = () => {
     const [viewMode, setViewMode] = useState('preview');
     const [error, setError] = useState(null);
     const [showDeployModal, setShowDeployModal] = useState(false);
-    const [deployedSiteId, _setDeployedSiteId] = useState(() => {
-        // Restore from sessionStorage so redeploys after page refresh target the same site
-        return sessionStorage.getItem('deployedSiteId') || null;
-    });
-    const setDeployedSiteId = (id) => {
-        _setDeployedSiteId(id);
-        if (id) sessionStorage.setItem('deployedSiteId', id);
-        else sessionStorage.removeItem('deployedSiteId');
-    };
+    // Per-project state: restored from project metadata on load, not sessionStorage.
+    // sessionStorage is tab-wide and would leak Project A's site_id into Project B,
+    // causing a deploy without a name to overwrite A's S3 folder.
+    const [deployedSiteId, setDeployedSiteId] = useState(null);
 
     // Session
     const [sessionId, setSessionId] = useState(null);
@@ -1276,8 +1271,9 @@ const WebsiteGenerator = () => {
                 }
             }
             setHtml(restoreHtml); setCss(restoreCss);
-            // Restore deployedSiteId so redeploys update the same site
-            if (meta.deployedSiteId) setDeployedSiteId(meta.deployedSiteId);
+            // Restore deployedSiteId so redeploys update the same site.
+            // Always set (including to null) to avoid leaking a prior project's id.
+            setDeployedSiteId(meta.deployedSiteId || null);
             // Restore the FULL version history if it was persisted in metadata.
             // Without this, every project re-open (close/reopen, login/logout)
             // wiped the React `versions` array down to one entry, which broke
@@ -2944,6 +2940,7 @@ const WebsiteGenerator = () => {
         setMessages([]); setVersions([]); setCurrentVersion(-1);
         setEditMode(false); setCmsMode(false); setSelectedElement(null); setElementPrompt('');
         setProjectId(null); setSaveStatus(null);
+        setDeployedSiteId(null);
         setIsMultipage(false); setPages({}); setCurrentPage('index');
         setWizardStep(-1); // also exit the onboarding wizard
         setOnboardingStep(-1); // don't re-show tour
