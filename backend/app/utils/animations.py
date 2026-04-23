@@ -666,6 +666,18 @@ html {
 .stagger-reveal .stagger-child.visible {
   animation: none;
 }
+/* Generic fade/scale reveal fallback — without this, any element with
+   .fade-up / .fade-in / .scale-in stays invisible forever if the
+   IntersectionObserver never fires (JS error, iframe edge cases, or
+   element never scrolled into view). Iframe preview masks the bug by
+   force-applying opacity:1 to everything; deployed sites don't. */
+.fade-up, .fade-in, .scale-in {
+  animation: imgRevealFallback 0.7s ease forwards;
+  animation-delay: 1.5s;
+}
+.fade-up.visible, .fade-in.visible, .scale-in.visible {
+  animation: none;
+}
 @keyframes imgRevealFallback {
   to { opacity: 1; transform: none; filter: none; }
 }
