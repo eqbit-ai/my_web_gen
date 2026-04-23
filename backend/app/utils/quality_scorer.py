@@ -33,8 +33,12 @@ def score_generation(html: str, css: str, theme: str = "light") -> dict:
     else:
         hero_html = _extract_section(html, "hero")
         if hero_html:
-            # Check for background image
-            has_bg_image = bool(re.search(r'background.*url\(|background-image.*url\(|<img[^>]*hero|\{\{IMG:', hero_html + css, re.IGNORECASE))
+            # Check for any image in the hero — background-url, any <img> tag
+            # (split-grid layouts put the image inside a wrapper div, not as a
+            # background), or an {{IMG:...}} placeholder. Must be permissive:
+            # forcing a dark-gradient auto-fix onto a light-theme hero makes the
+            # hero text invisible.
+            has_bg_image = bool(re.search(r'background.*url\(|background-image.*url\(|<img\s|\{\{IMG:', hero_html + css, re.IGNORECASE))
             if not has_bg_image:
                 score -= 10
                 issues.append("Hero has no background image — looks flat")
