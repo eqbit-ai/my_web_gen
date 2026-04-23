@@ -3984,8 +3984,11 @@ async def restore_session(req: RestoreSessionRequest, user: dict = Depends(requi
     This is called when loading a project from the dashboard so that
     all features (chat iteration, sections, design system) work.
     """
-    # Validate input size to prevent abuse
-    MAX_RESTORE_SIZE = 500_000  # 500KB (multipage projects can be large)
+    # Validate input size to prevent abuse. Sonnet 4-6 outputs 2-3x more
+    # HTML/CSS than Sonnet 4, so multipage projects routinely exceed 500KB
+    # after regeneration. Raised to 2MB — still well inside FastAPI's default
+    # request body handling and abuse-prevention bounds.
+    MAX_RESTORE_SIZE = 2_000_000
     total_size = len(req.html) + len(req.css) + len(req.js)
     if req.pages:
         for pg in req.pages.values():
