@@ -39,8 +39,8 @@ COPY --from=builder /opt/venv /opt/venv
 # Copy application code
 COPY . .
 
-# Set ownership
-RUN chown -R appuser:appuser /app
+# Set ownership and ensure entrypoint is executable
+RUN chmod +x /app/entrypoint.sh && chown -R appuser:appuser /app
 
 USER appuser
 
