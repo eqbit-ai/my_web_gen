@@ -1486,13 +1486,26 @@ const WebsiteGenerator = () => {
     }, [html, isMobile]);
 
     // ── Onboarding check ──────────────────────────────────────────────
+    // Only show the tour if (a) the user has never completed/skipped it AND
+    // (b) they don't already have any content. A user who landed on the
+    // generator with a session loaded (via /generator?id=… or restored from
+    // localStorage) has obviously used the app before, so the tour is just
+    // noise. Auto-persist the key in that case so even a tab close doesn't
+    // re-trigger next visit.
     useEffect(() => {
         const done = localStorage.getItem(ONBOARDING_KEY);
-        if (!done && !onboardingShown.current) {
+        if (done || onboardingShown.current) return;
+        // Defer 1s so versions[] / session restore has a chance to populate.
+        const timer = setTimeout(() => {
+            if (versions.length > 0 || html) {
+                // User already has content — treat as returning user.
+                localStorage.setItem(ONBOARDING_KEY, 'true');
+                return;
+            }
             onboardingShown.current = true;
-            const timer = setTimeout(() => setOnboardingStep(0), 500);
-            return () => clearTimeout(timer);
-        }
+            setOnboardingStep(0);
+        }, 1000);
+        return () => clearTimeout(timer);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Connection health check ─────────────────────────────────────────
