@@ -1755,11 +1755,6 @@ const WebsiteGenerator = () => {
                     setIsLoading(false);
                     setLoadingMessage('');
                     isGeneratingRef.current = false;
-                    if (versions.length === 0) {
-                        localStorage.removeItem(ONBOARDING_KEY);
-                        onboardingShown.current = false;
-                        setTimeout(() => setOnboardingStep(0), 1500);
-                    }
                 }
             } catch (err) {
                 console.error('Poll error:', err);
@@ -2069,11 +2064,6 @@ const WebsiteGenerator = () => {
                 setError(err.message || 'Failed to submit job');
                 setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}`, timestamp: new Date().toLocaleTimeString(), isError: true }]);
                 setIsLoading(false); setLoadingMessage(''); isGeneratingRef.current = false;
-                if (versions.length === 0) {
-                    localStorage.removeItem(ONBOARDING_KEY);
-                    onboardingShown.current = false;
-                    setTimeout(() => setOnboardingStep(0), 1500);
-                }
                 return;
             }
         }
@@ -2277,12 +2267,6 @@ const WebsiteGenerator = () => {
                     setIsLoading(false); setLoadingMessage('');
                     setGenerationProgress({ stage: 0, total: 5, message: '' });
                     isGeneratingRef.current = false;
-                    // Restart wizard if no website generated yet
-                    if (versions.length === 0) {
-                        localStorage.removeItem(ONBOARDING_KEY);
-                        onboardingShown.current = false;
-                        setTimeout(() => setOnboardingStep(0), 1500);
-                    }
                 },
                 templateId,
                 currentPage,
