@@ -854,14 +854,23 @@ const Preview = ({ html, css, js, siteMeta = {}, editMode = false, cmsMode = fal
       var s = document.createElement('style');
       s.textContent = '[data-aos]{opacity:1!important;transform:none!important;transition:none!important}' +
         '.stagger-child{opacity:1!important;transform:none!important}' +
-        '.fade-in,.slide-up,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}' +
-        'section[data-section-type="hero"]>*{opacity:1!important;animation:none!important}' +
+        // Include .fade-up / .scale-in (missing before) — Sonnet 4-6 applies
+        // .fade-up heavily on hero content; without force-visible the iframe
+        // preview shows hero as all-black because text stays at opacity:0.
+        '.fade-up,.fade-in,.fade-down,.scale-in,.slide-up,.slide-down,.slide-in-left,.slide-in-right{opacity:1!important;transform:none!important}' +
+        // Hero descendants (not just direct children) — hero headings are
+        // frequently wrapped in .hero-content / .hero-split-grid / etc.
+        'section[data-section-type="hero"] *{animation:none!important}' +
+        'section[data-section-type="hero"] .fade-up,' +
+        'section[data-section-type="hero"] .fade-in,' +
+        'section[data-section-type="hero"] .scale-in,' +
         'section[data-section-type="hero"] [data-aos],' +
         'section[data-section-type="hero"] .stagger-child,' +
-        'section[data-section-type="hero"] .fade-in,' +
         'section[data-section-type="hero"] .slide-up,' +
         'section[data-section-type="hero"] .slide-in-left,' +
-        'section[data-section-type="hero"] .slide-in-right{transform:none!important}';
+        'section[data-section-type="hero"] .slide-in-right,' +
+        'section[data-section-type="hero"] .hero-stagger,' +
+        'section[data-section-type="hero"] .hero-stagger span{opacity:1!important;transform:none!important}';
       document.head.appendChild(s);
     }, 2000);
 
