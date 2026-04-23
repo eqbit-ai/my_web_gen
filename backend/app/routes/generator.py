@@ -1428,7 +1428,14 @@ def validate_js(js: str) -> str:
     # identifier 'document'" parse errors, all interactive JS dead.
     # The 50KB hard limit below stays as a sanity check; real minification
     # (if ever needed) belongs in a proper AST-based tool, not regex.
-    if len(js) > 50000:
+    # Previously 50_000 — that ceiling was a legacy sanity check from when
+    # Sonnet 4 output was ~7-15KB of JS. Sonnet 4-6 is more verbose and
+    # routinely emits 80-100KB for complex niches (education, ecommerce-
+    # adjacent, multi-section interactions). 200KB is still well inside
+    # browser tolerances (real apps ship 500KB+ bundles). If we start
+    # seeing >200KB we should investigate the pipeline for runaway output
+    # rather than keep raising the ceiling.
+    if len(js) > 200000:
         raise ValueError(f"JS too large ({len(js)} chars)")
 
     # Fix querySelector('#') crash — bare '#' is invalid CSS selector.

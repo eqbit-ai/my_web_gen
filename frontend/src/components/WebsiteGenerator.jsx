@@ -2013,12 +2013,6 @@ const WebsiteGenerator = () => {
             { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
             { role: 'assistant', text: 'E-commerce websites are not supported. Our platform generates informational and business websites only. For online stores, please use a dedicated e-commerce platform like Shopify or WooCommerce.', timestamp: new Date().toLocaleTimeString(), isError: true },
             ]);
-            // Restart wizard if no website generated yet
-            if (versions.length === 0) {
-                localStorage.removeItem(ONBOARDING_KEY);
-                onboardingShown.current = false;
-                setTimeout(() => setOnboardingStep(0), 1000);
-            }
             return;
         }
 
@@ -2032,9 +2026,6 @@ const WebsiteGenerator = () => {
                 { role: 'user', text: displayPrompt, timestamp: new Date().toLocaleTimeString() },
                 { role: 'assistant', text: `You've used all ${maxGen} website generations. Request more from the dashboard.`, timestamp: new Date().toLocaleTimeString(), isError: true },
                 ]);
-                localStorage.removeItem(ONBOARDING_KEY);
-                onboardingShown.current = false;
-                setTimeout(() => setOnboardingStep(0), 1000);
                 return;
             }
         }
