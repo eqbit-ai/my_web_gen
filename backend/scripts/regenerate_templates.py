@@ -104,7 +104,7 @@ async def generate_one_template(name: str, config: dict) -> bool:
         html_prompt = build_html_prompt(plan)
 
         response = await anthropic.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=16000,
             temperature=0.5,
             system=html_prompt,

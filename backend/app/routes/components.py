@@ -118,7 +118,7 @@ RULES:
 - Output ONLY the section HTML (no <html>, <head>, <body> wrappers)"""
 
     response = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4000,
         system=system_prompt,
         messages=[{"role": "user", "content": f"Generate a {req.variantKey} component"}],
@@ -185,7 +185,7 @@ RULES:
 - Output ONLY the section HTML (no wrappers)"""
 
     response = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4000,
         system=system_prompt,
         messages=[{"role": "user", "content": f"Swap to {req.variantKey} variant"}],
@@ -247,7 +247,7 @@ RULES:
 - Output ONLY the section HTML (no wrappers)"""
 
     response = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4000,
         system=system_prompt,
         messages=[{"role": "user", "content": f"Swap to {req.variantKey} variant"}],

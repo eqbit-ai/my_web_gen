@@ -1957,7 +1957,7 @@ Study this reference's design quality: variable naming, spacing values, shadow d
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         28000,
         system,
         "Generate the HTML markup for this website using the specified layout patterns. Return only the html code block.",
@@ -2004,7 +2004,7 @@ async def stage_2_html_from_template(
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         28000,
         system,
         "Customize this template for the business described in the plan. Return the complete HTML.",
@@ -2143,7 +2143,7 @@ async def stage_3_js(html: str, session_id: str = "") -> str:
     # as the (now-fixed) regex stripper bug. 8000 gives comfortable headroom.
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         8000,
         system,
         "Generate the JavaScript for this website. Return only the js code block.",
@@ -2245,7 +2245,7 @@ JS RULES:
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         28000,
         system,
         "Generate the complete HTML markup AND JavaScript. Return TWO code blocks: first ```html then ```js. Keep JS concise — only implement interactions for elements that exist in the HTML.",
@@ -2625,7 +2625,7 @@ Your hero MUST:
         client = get_anthropic_client()
         text, _usage = await _llm_stream(
             client,
-            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-6",
             28000,
             prompt,
             f"Generate the {title} page HTML. Use the same brand (colors, fonts, navbar, footer) but create a UNIQUE page layout distinct from the homepage.",
@@ -2822,7 +2822,7 @@ async def edit_single_component(section_html: str, section_type: str, css_vars: 
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         8000,
         system,
         f"Edit this section: {prompt}",
@@ -2856,7 +2856,7 @@ async def edit_style_block(css: str, section_types: str, prompt: str) -> str:
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         12000,
         system,
         f"Update the styles: {prompt}",
@@ -3554,7 +3554,7 @@ async def _add_new_page(prompt: str, session: dict, page_slug: str, page_title: 
     client = get_anthropic_client()
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         8000,
         system_prompt,
         f"Generate the {page_title} page HTML. Return only the html code block.",
@@ -3656,7 +3656,7 @@ async def _append_section(prompt: str, session: dict, section_type: str) -> dict
     try:
         raw, _usage = await _llm_stream(
             client,
-            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-6",
             4000,
             "",
             prompt_text,
@@ -3768,7 +3768,7 @@ async def _iterate_full_page(prompt: str, session: dict) -> dict[str, str]:
 
     text, _usage = await _llm_stream(
         client,
-        "claude-sonnet-4-20250514",
+        "claude-sonnet-4-6",
         max_tokens,
         system,
         f"Apply these changes: {prompt}",
@@ -6186,7 +6186,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 animation_ref=_anim_compact(),
             )
 
-            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 8000, system, req.prompt)
+            text, _ = await _llm_stream(client, "claude-sonnet-4-6", 8000, system, req.prompt)
             edited_section = parse_single_code_block(text, "html")
             if not edited_section:
                 logger.error("🖱️ [ELEMENT EDIT] FAILED — no HTML parsed from section edit")
@@ -6229,7 +6229,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
             # an unparseable result and a silent 500. 8000 (~30KB) gives
             # comfortable headroom and matches the structural-edit cap.
             text, _ = await _llm_stream(
-                client, "claude-sonnet-4-20250514", 8000, system,
+                client, "claude-sonnet-4-6", 8000, system,
                 f"Edit this element: {req.prompt}"
             )
             edited_element = parse_single_code_block(text, "html")
@@ -6332,7 +6332,7 @@ async def edit_element(req: EditElementRequest, user: dict = Depends(require_aut
                 animation_ref=_anim_fallback(),
             )
             # max_tokens=8000 — see note on the precise edit call above.
-            text, _ = await _llm_stream(client, "claude-sonnet-4-20250514", 8000, system,
+            text, _ = await _llm_stream(client, "claude-sonnet-4-6", 8000, system,
                                         f"Edit this element: {req.prompt}")
             edited_element = parse_single_code_block(text, "html")
             if not edited_element:
