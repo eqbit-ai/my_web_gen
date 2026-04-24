@@ -1,7 +1,15 @@
 # Handover — Meydan AI Website Generator
 **Package**: `Handover_Meydan_2026-04`
-**Delivered**: April 2026
+**Delivered**: April 2026 (last reviewed 2026-04-24)
 **Audience**: A developer who has not seen the product before.
+
+## Snapshot at handover
+
+- **Current branch with live users**: `dev` — deployed to AWS us-east-1, served at `https://meydanfzai.com` (and `https://dev.meydanfzai.com`).
+- **Prod branch**: `main` — wired to `deploy-prod.yml` targeting UAE me-central-1, but the prod cluster is **not yet provisioned**. The migration is paused (see `10_known_issues_and_support.md`).
+- **Live health checks**: `GET /api/health` returns `{"status":"ok"}` on both URLs at time of writing.
+- **Outstanding end-user bugs**: 1 (carousels in generated sites — `10_known_issues_and_support.md` item 1).
+- **Outstanding security/config items**: apex DNS not Cloudflare-proxied (C1), SonarCloud token missing (C2), CI wait-for-stable occasionally noisy (C3). Full list in `10_known_issues_and_support.md`.
 
 ## How to read this folder
 

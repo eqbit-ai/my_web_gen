@@ -1,6 +1,33 @@
 # 7. Deployment Runbook
 
-Take a clean AWS account to a running production environment.
+Two paths covered:
+- **Day-to-day deploys** — `git push` triggers the right GitHub Actions workflow. You will use this 99 % of the time.
+- **First-time provisioning** — taking a clean AWS account to a running environment. You do this once per environment.
+
+## Branches and environments
+
+| Branch | Triggers workflow | AWS account | Region | Public URL |
+|---|---|---|---|---|
+| `dev` | `.github/workflows/deploy-dev.yml` | `371170753756` (dev) | `us-east-1` | `https://meydanfzai.com` (apex) **and** `https://dev.meydanfzai.com` (Cloudflare-proxied CNAME to the dev ALB). Both currently serve the same dev environment. |
+| `main` | `.github/workflows/deploy-prod.yml` | `290172088819` (prod) | `me-central-1` (UAE) | Not yet provisioned. The prod ECS cluster `meydan-prod-cluster` does not exist at time of handover — prod migration is paused pending client sign-off. |
+
+> Legacy branches `production` and `staging` exist in the remote but are not wired to any workflow. They are stale initial commits. Safe to delete after handover.
+
+**Every push** to `dev` or `main` also runs `ci.yml` (lint + test + security scan + frontend build + SonarCloud scan).
+
+## Day-to-day deploy — what actually happens on `git push`
+
+1. You push to `dev`.
+2. `ci.yml` runs in parallel: Python lint + pytest, Frontend build (with `CI=true` so ESLint warnings fail the job), Security scan (Trivy or equivalent), SonarCloud analysis. Any red job surfaces in the PR/commit.
+3. `deploy-dev.yml` runs in parallel to `ci.yml`:
+   - Builds `meydan-api` + `meydan-frontend` images with `--platform linux/amd64` and pushes to ECR `371170753756.dkr.ecr.us-east-1.amazonaws.com`.
+   - `aws ecs update-service --force-new-deployment` on each of `meydan-dev-api`, `meydan-dev-worker`, `meydan-dev-frontend`.
+   - `aws ecs wait services-stable` waits up to ~10 minutes for the new task set to reach steady state.
+4. `entrypoint.sh` runs `alembic upgrade head` before gunicorn boots, so migrations apply automatically on the API container.
+
+Pushing to `main` follows the same pattern but against the prod account/region with the `_PROD` secrets (see `deploy-prod.yml`). At present this workflow cannot succeed because the prod cluster does not exist.
+
+> **Known CI annoyance**: the `aws ecs wait services-stable` step can time out even when the deploy actually succeeds — ECS reports steady state a few minutes later and the container is healthy. If the Wait step is red but the `/api/health` endpoint responds 200, treat the deploy as successful. Tracked in `10_known_issues_and_support.md`.
 
 ## Prerequisites
 
@@ -22,7 +49,9 @@ Take a clean AWS account to a running production environment.
 ### Secrets to have on hand before deploying
 All of the env vars listed in `08_environment_and_secrets.md`.
 
-## Deployment — numbered steps
+## First-time provisioning — numbered steps
+
+Use this only when bringing up a new environment (e.g. the prod cluster in me-central-1). For routine deploys see "Day-to-day deploy" above.
 
 > Throughout, substitute your values. Everything assumes `export AWS_REGION=me-central-1`.
 

@@ -66,6 +66,15 @@ A text rendering of the same diagram, legible on its own:
 
 All LLM calls go through a per-provider circuit breaker (`backend/app/utils/circuit_breaker.py`). All requests are tagged with an `X-Correlation-ID` that follows the call from browser → API → worker → CloudWatch logs.
 
+## Current live routing (as of handover)
+
+The diagram above describes the **intended** architecture. The live routing at the dev environment has two deltas worth noting:
+
+1. **Apex `meydanfzai.com`** — Cloudflare DNS is grey-cloud (DNS-only); apex `A` records point directly at raw ALB IPs in us-east-1. Requests skip both Cloudflare edge and CloudFront. This is the cause of the ~300 ms apex vs dev-subdomain latency gap (see `10_known_issues_and_support.md` C1).
+2. **`dev.meydanfzai.com`** — Cloudflare-proxied CNAME to the dev ALB DNS name. Requests hit the nearest Cloudflare edge first, then tunnel to the origin. This is the intended shape.
+
+The simplest consolidation path is to orange-cloud the apex records (one-click fix) so all traffic benefits from Cloudflare's edge layer. CloudFront is not currently in the live path even though older memory notes mention distribution `E368CULECTE3G5`.
+
 ## File formats
 
 - `assets/architecture.png` — rendered, ship-ready image.

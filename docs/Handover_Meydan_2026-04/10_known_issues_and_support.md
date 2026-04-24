@@ -17,6 +17,19 @@ Everything not finished, and everyone who still needs to be called when things b
 
 A fuller triage list (18 items, CRITICAL → LOW) is in the team's security memo. Items 2, 3, 4, 5, 6, 7, 8 are now closed. Item 1 (carousels) remains open and is the only outstanding end-user-visible bug.
 
+## Open configuration / CI issues (as of 2026-04-24)
+
+| # | Title | Severity | How to fix |
+|---|---|---|---|
+| C1 | **Apex `meydanfzai.com` is ~300 ms slower than `dev.meydanfzai.com`** | Medium (UX) | Apex `A` records in Cloudflare are grey-cloud (DNS-only) pointing at raw ALB IPs; the dev subdomain is orange-cloud (Cloudflare-proxied). Flip the 4 apex+www records to proxied in the Cloudflare dashboard or via API. One-click fix, instant propagation. See `reference-dns-cloudflare.md` in team memory for record IDs. |
+| C2 | **SonarCloud Analysis job red on every push** | Low (config) | `CI - Lint, Test, Security` → SonarCloud job fails because repo secret `SONAR_TOKEN` is empty. Add the token at `GitHub → repo Settings → Secrets and variables → Actions → SONAR_TOKEN`. Alternatively remove the SonarCloud job from `.github/workflows/ci.yml`. |
+| C3 | **`deploy-dev.yml` "Wait for stable deployment" step sometimes times out even on successful deploys** | Low (CI noise) | `aws ecs wait services-stable` polls every 15 s and gives up after 40 checks (~10 min). A busy rollout can exceed that while the service does reach steady state a few minutes later. Treat as green if `/api/health` returns 200 after the push. Permanent fix: raise the wait timeout or move the wait to a follow-up step with `aws ecs describe-services` polling. |
+| C4 | **Legacy branches `production` and `staging`** exist but are not wired to any workflow | Cosmetic | Safe to delete: `git push origin --delete production staging` after handover. |
+
+## Pre-existing docs/reality mismatches noted during handover prep
+
+- CloudFront distribution `E368CULECTE3G5` is listed in team memory as fronting `meydanfzai.com`, but the current Cloudflare DNS has no CloudFront CNAME — apex resolves directly to ALB IPs. CloudFront is not currently in the request path for the main site. If you want CloudFront back, the cleanest path is: change the apex DNS in Cloudflare to a CNAME → CloudFront distribution domain (Cloudflare supports CNAME flattening), then re-enable the distribution if it was disabled.
+
 ## Unfinished items — current state
 
 | Item | State | Notes |

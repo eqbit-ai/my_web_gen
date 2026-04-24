@@ -20,7 +20,12 @@ meydan-ai/
 │   ├── Dockerfile           Build + nginx static serve.
 │   └── package.json         JS dependencies.
 │
-├── infrastructure/aws/      Hand-written AWS infra-as-config.
+├── .github/workflows/       **Real** CI/CD lives here.
+│   ├── ci.yml               Lint + test + security scan + frontend build + SonarCloud.
+│   ├── deploy-dev.yml       Triggered on push to `dev` → us-east-1 (account 371170753756).
+│   └── deploy-prod.yml      Triggered on push to `main` → me-central-1 (account 290172088819).
+│
+├── infrastructure/aws/      Hand-written AWS infra-as-config (first-time provisioning).
 │   ├── cloudformation.yml   Parameterised stack for a new environment.
 │   ├── ecs-task-api.json    ECS task definition for the API service.
 │   ├── ecs-task-worker.json ECS task definition for the worker service.
@@ -32,7 +37,7 @@ meydan-ai/
 │   ├── s3-lifecycle.json    S3 lifecycle rules for log / artefact buckets.
 │   ├── deploy.sh            Orchestration script used by CI.
 │   ├── deploy-observability.sh  Applies dashboards + alarms.
-│   ├── github-deploy.yml    Reference GitHub Actions workflow.
+│   ├── github-deploy.yml    Reference GitHub Actions workflow (superseded by `.github/workflows/`).
 │   └── OPERATIONS-GUIDE.md  Ops-team runbook (on-call, recovery).
 │
 ├── docs/                    Documentation (this handover package lives here).
@@ -168,7 +173,8 @@ frontend/src/
 | Admin panel endpoints | `backend/app/routes/admin/` |
 | Add a DB column | New Alembic revision in `backend/alembic/versions/` |
 | Change an env var's shape | `backend/.env.example` then every reader via `os.getenv(...)` |
-| CI/CD | `infrastructure/aws/github-deploy.yml` (reference) + `infrastructure/aws/deploy.sh` |
+| CI/CD (what actually runs) | `.github/workflows/ci.yml`, `deploy-dev.yml`, `deploy-prod.yml` |
+| CI/CD (scripts used by the workflows) | `infrastructure/aws/deploy.sh`, `deploy-observability.sh` |
 
 ## Configuration locations
 - **Local dev**: `backend/.env` (copy `backend/.env.example`), `frontend/.env` (API base URL).
