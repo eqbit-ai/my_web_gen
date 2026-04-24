@@ -346,9 +346,10 @@ async def disable_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
+        logger.exception("Failed to disable user (admin_old) user_id=%s", user_id)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to disable user — is_active column may not exist yet: {e}",
+            detail="Failed to disable user",
         ) from e
 
     return {"message": f"User {user.email} has been disabled"}
@@ -371,9 +372,10 @@ async def enable_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
+        logger.exception("Failed to enable user (admin_old) user_id=%s", user_id)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to enable user — is_active column may not exist yet: {e}",
+            detail="Failed to enable user",
         ) from e
 
     return {"message": f"User {user.email} has been re-enabled"}
@@ -408,7 +410,8 @@ async def grant_tokens(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to grant tokens: {e}") from e
+        logger.exception("Failed to grant tokens (admin_old) user_id=%s", user_id)
+        raise HTTPException(status_code=500, detail="Failed to grant tokens") from e
 
     new_balance = _safe_getattr(user, "token_balance", 0) + req.amount
     return {"message": f"Granted {req.amount:,} tokens to {user.email}. New balance: {new_balance:,}"}
@@ -640,7 +643,8 @@ async def moderation_action(
             return {"message": f"Item {item_id} removed, user banned"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Moderation action failed: {e}") from e
+        logger.exception("Moderation action failed (admin_old)")
+        raise HTTPException(status_code=500, detail="Moderation action failed") from e
 
 
 # ═══════════════════════════════════════════════════════════════════════

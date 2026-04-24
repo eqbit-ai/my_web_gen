@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, TrendingUp, ArrowDown, Search, Calendar, X } from 'lucide-react';
+import { RefreshCw, ArrowDown, Search, Calendar, X } from 'lucide-react';
 import { adminGetUserConsumption } from '../../services/adminApi';
 
 const T = { bg: '#0a0a0f', surface: '#12121a', border: '#2a2a3a', text: '#e4e4e7', muted: '#71717a' };

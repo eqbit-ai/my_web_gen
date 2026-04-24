@@ -256,7 +256,8 @@ async def create_announcement(
         await db.refresh(announcement)
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create announcement: {e}") from e
+        logger.exception("Failed to create announcement")
+        raise HTTPException(status_code=500, detail="Failed to create announcement") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),
@@ -450,7 +451,8 @@ async def save_prompt_version(
         await db.refresh(prompt)
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to save prompt version: {e}") from e
+        logger.exception("Failed to save prompt version key=%s", key)
+        raise HTTPException(status_code=500, detail="Failed to save prompt version") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),
@@ -502,7 +504,8 @@ async def publish_prompt_version(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to publish prompt: {e}") from e
+        logger.exception("Failed to publish prompt version key=%s version=%s", key, version)
+        raise HTTPException(status_code=500, detail="Failed to publish prompt") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),
@@ -678,4 +681,5 @@ async def moderation_action(
             return {"message": f"Item {item_id} removed, user banned"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Moderation action failed: {e}") from e
+        logger.exception("Moderation action failed")
+        raise HTTPException(status_code=500, detail="Moderation action failed") from e

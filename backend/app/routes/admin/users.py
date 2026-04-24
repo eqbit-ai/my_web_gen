@@ -480,11 +480,9 @@ async def bulk_user_action(
         return {"message": f"Enabled {len(req.user_ids)} users"}
 
     elif req.action == "approve":
-        # Only approve users who have already confirmed their email address
         await db.execute(
             update(User)
             .where(User.id.in_(req.user_ids))
-            .where(User.email_verified.is_(True))
             .values(
                 is_approved=True,
                 approved_at=datetime.now(UTC),
@@ -565,9 +563,10 @@ async def set_licence_verified(
         await db.commit()
     except Exception as e:
         await db.rollback()
+        logger.exception("Failed to update licence status user_id=%s", user_id)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to update licence status (column may not exist): {e}",
+            detail="Failed to update licence status",
         ) from e
 
     log_event_bg(
@@ -596,12 +595,6 @@ async def approve_user(
     if _safe_getattr(user, "is_approved", False):
         raise HTTPException(status_code=400, detail="User is already approved")
 
-    if not _safe_getattr(user, "email_verified", False):
-        raise HTTPException(
-            status_code=400,
-            detail="User has not confirmed their email address yet",
-        )
-
     try:
         await db.execute(
             update(User)
@@ -629,7 +622,8 @@ async def approve_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to approve user: {e}") from e
+        logger.exception("Failed to approve user user_id=%s", user_id)
+        raise HTTPException(status_code=500, detail="Failed to approve user") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),
@@ -722,9 +716,10 @@ async def disable_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
+        logger.exception("Failed to disable user user_id=%s", user_id)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to disable user: {e}",
+            detail="Failed to disable user",
         ) from e
 
     log_event_bg(
@@ -755,9 +750,10 @@ async def enable_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
+        logger.exception("Failed to enable user user_id=%s", user_id)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to enable user: {e}",
+            detail="Failed to enable user",
         ) from e
 
     log_event_bg(
@@ -809,7 +805,8 @@ async def grant_tokens(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to grant tokens: {e}") from e
+        logger.exception("Failed to grant tokens user_id=%s", user_id)
+        raise HTTPException(status_code=500, detail="Failed to grant tokens") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),

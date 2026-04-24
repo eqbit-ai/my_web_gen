@@ -23,14 +23,6 @@ const GalleryPicker = ({ isOpen, onClose, onSelectImage }) => {
         ? images
         : images.filter(img => img.category === filter);
 
-    const handleCopyUrl = (e, url) => {
-        e.stopPropagation();
-        const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-        navigator.clipboard.writeText(fullUrl);
-        setCopied(url);
-        setTimeout(() => setCopied(null), 2000);
-    };
-
     const formatSize = (bytes) => {
         if (!bytes) return '';
         if (bytes < 1024) return `${bytes}B`;

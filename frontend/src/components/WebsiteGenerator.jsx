@@ -24,7 +24,7 @@ import {
     generateWebsiteStream, clearSession, editElement, uploadFile, uploadFiles,
     saveProject, getTemplates, getTemplateFull, getSections, syncSession,
     submitJob, getJobStatus, restoreSession, getSession,
-    searchDomains, purchaseDomain, purchaseDomainAndWait,
+    searchDomains, purchaseDomainAndWait,
 } from '../services/api';
 import config from '../config';
 
@@ -1769,6 +1769,7 @@ const WebsiteGenerator = () => {
                 console.error('Poll error:', err);
             }
         }, 2000);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [versions.length]);
 
     // Cleanup polling on unmount

@@ -127,7 +127,8 @@ async def get_site_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch site: {e}") from e
+        logger.exception("Failed to fetch site site_id=%s", site_id)
+        raise HTTPException(status_code=500, detail="Failed to fetch site") from e
 
 
 @router.get("/sites/{site_id}/preview")
@@ -208,7 +209,8 @@ async def preview_site(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to preview site: {e}") from e
+        logger.exception("Failed to preview site site_id=%s", site_id)
+        raise HTTPException(status_code=500, detail="Failed to preview site") from e
 
 
 @router.post("/sites/{site_id}/rebuild")
@@ -304,8 +306,8 @@ async def list_site_versions(
         return {"versions": result_versions, "site_id": site_id, "site_name": site.name}
 
     except Exception as e:
-        logger.error("Failed to list versions for site %s: %s", site_id, e)
-        raise HTTPException(status_code=500, detail=f"Failed to list versions: {e}") from e
+        logger.exception("Failed to list versions for site %s", site_id)
+        raise HTTPException(status_code=500, detail="Failed to list versions") from e
 
 
 @router.post("/sites/{site_id}/restore/{deployment_time}")
@@ -377,8 +379,8 @@ async def restore_site_version(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Failed to restore site %s: %s", site_id, e)
-        raise HTTPException(status_code=500, detail=f"Failed to restore: {e}") from e
+        logger.exception("Failed to restore site %s", site_id)
+        raise HTTPException(status_code=500, detail="Failed to restore site") from e
 
 
 # ── Deleted Items (Trash) ─────────────────────────────────────────────────

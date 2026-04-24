@@ -105,13 +105,6 @@ function GenerationLogs() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
-    // Build unique user list from loaded data for the dropdown
-    const allUsers = React.useMemo(() => {
-        const gens = genData?.generations || [];
-        const map = {};
-        gens.forEach(g => { if (g.user_email) map[g.user_id] = g.user_email; });
-        return Object.entries(map).map(([id, email]) => ({ id, email }));
-    }, [genData]);
 
     const loadGens = useCallback(async () => {
         setGenLoading(true);

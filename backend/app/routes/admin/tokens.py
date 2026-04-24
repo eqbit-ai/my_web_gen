@@ -196,7 +196,8 @@ async def grant_tokens(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to grant tokens: {e}") from e
+        logger.exception("Failed to grant tokens from admin tokens route")
+        raise HTTPException(status_code=500, detail="Failed to grant tokens") from e
 
     log_event_bg(
         user_id=str(admin.get("user_id")),

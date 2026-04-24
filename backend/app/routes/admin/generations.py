@@ -291,7 +291,8 @@ async def retry_generation(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retry generation: {e}") from e
+        logger.exception("Failed to retry generation log_id=%s", log_id)
+        raise HTTPException(status_code=500, detail="Failed to retry generation") from e
 
 
 @router.get("/generations/success-rate")

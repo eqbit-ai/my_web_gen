@@ -474,8 +474,8 @@ async def admin_clear_transfer_request(
     except HTTPException:
         raise
     except Exception as e:
-        logger.warning("Failed to clear transfer request: %s", e)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        logger.exception("Failed to clear transfer request domain_id=%s", domain_id)
+        raise HTTPException(status_code=500, detail="Failed to clear transfer request") from e
 
 
 # ── DNS Health Check ─────────────────────────────────────────────────
@@ -597,7 +597,8 @@ async def get_internal_domain_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch domain: {e}") from e
+        logger.exception("Failed to fetch domain domain_id=%s", domain_id)
+        raise HTTPException(status_code=500, detail="Failed to fetch domain") from e
 
 
 # ── Live Sync from Registrar ─────────────────────────────────────────
@@ -620,7 +621,8 @@ async def admin_sync_domain(
     try:
         live = await op_sync_domain_status(sld, tld)
     except OpenProviderError as e:
-        raise HTTPException(status_code=502, detail=f"Sync failed: {e}") from e
+        logger.exception("OpenProvider sync failed domain_id=%s", domain_id)
+        raise HTTPException(status_code=502, detail="Sync with registrar failed") from e
 
     updates = {
         "auto_renew": live.get("autorenew", domain.auto_renew),
@@ -671,7 +673,8 @@ async def admin_force_renew(
     try:
         await op_renew_domain(sld, tld, req.period)
     except OpenProviderError as e:
-        raise HTTPException(status_code=502, detail=f"Renewal failed: {e}") from e
+        logger.exception("OpenProvider renewal failed domain_id=%s", domain_id)
+        raise HTTPException(status_code=502, detail="Renewal with registrar failed") from e
 
     if domain.expires_at:
         new_expiry = domain.expires_at + timedelta(days=365 * req.period)
@@ -773,7 +776,8 @@ async def admin_override_nameservers(
     try:
         await op_update_nameservers(sld, tld, req.nameservers)
     except OpenProviderError as e:
-        raise HTTPException(status_code=502, detail=f"Failed: {e}") from e
+        logger.exception("OpenProvider nameserver override failed domain_id=%s", domain_id)
+        raise HTTPException(status_code=502, detail="Failed to update nameservers at registrar") from e
 
     await db.execute(
         update(Domain).where(Domain.id == domain.id).values(nameservers=req.nameservers)
@@ -812,7 +816,8 @@ async def admin_override_contact(
     try:
         await op_update_contact(domain.contact_handle, **fields)
     except OpenProviderError as e:
-        raise HTTPException(status_code=502, detail=f"Failed: {e}") from e
+        logger.exception("OpenProvider contact override failed domain_id=%s", domain_id)
+        raise HTTPException(status_code=502, detail="Failed to update contact at registrar") from e
 
     log_event_bg(user_id="admin", action="admin_domain_contact_override", resource_type="domain",
                  resource_id=domain_id, details={"fields": list(fields.keys())})
@@ -984,4 +989,5 @@ async def get_domain_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch domain: {e}") from e
+        logger.exception("Failed to fetch domain details domain_id=%s", domain_id)
+        raise HTTPException(status_code=500, detail="Failed to fetch domain") from e

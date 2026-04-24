@@ -25,7 +25,6 @@ function estimateCost(amount, reason) {
 
 export default function TokenLedgerPage() {
     const [page, setPage] = useState(1);
-    const [txType, setTxType] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [data, setData] = useState(null);
@@ -98,13 +97,6 @@ export default function TokenLedgerPage() {
 
     const transactions = Array.isArray(data) ? data : data?.transactions || data?.items || [];
     const total = data?.total || transactions.length;
-
-    // Calculate total cost from visible transactions
-    const totalCost = transactions.reduce((sum, tx) => {
-        const amt = Number(tx.amount || 0);
-        if (amt < 0) return sum + estimateCost(amt, tx.reason);
-        return sum;
-    }, 0);
 
     const columns = [
         { key: 'id', label: 'ID', width: 60 },

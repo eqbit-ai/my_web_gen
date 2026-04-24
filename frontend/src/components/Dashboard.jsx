@@ -4,7 +4,7 @@ import config from '../config';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomain, connectDomainAndWait, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomain, purchaseDomainAndWait, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains, getFormSubmissions, getUnreadCount, markSubmissionRead, deleteFormSubmission, exportSiteZip, getCustomCode, updateCustomCode, getSiteAnalytics, listAllUploads, uploadFile, deleteUpload } from '../services/api';
+import { listProjects, getProject, deleteProject, listTemplateCatalog, getTemplateFull, listDeployedSites, deleteDeployedSite, connectDomainAndWait, getDomainStatus, disconnectDomain, listDnsRecords, addDnsRecord, deleteDnsRecord, getDnsNameservers, getActiveAnnouncements, searchDomains, purchaseDomainAndWait, getDomainContact, updateDomainContact, requestDomainTransfer, cancelDomainTransfer, requestTokens, getMyTokenRequests, listUserDomains, getFormSubmissions, getUnreadCount, markSubmissionRead, deleteFormSubmission, exportSiteZip, getCustomCode, updateCustomCode, getSiteAnalytics, listAllUploads, uploadFile, deleteUpload } from '../services/api';
 
 // CSS override injected into iframe srcDoc to force-show elements hidden by scroll animations
 const IFRAME_VISIBILITY_FIX = `* { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; } img { display: inline-block !important; }`;
@@ -25,6 +25,7 @@ const IFRAME_CLICK_TRAP = `
 `;
 
 const buildSrcDoc = (css, html) =>
+    // eslint-disable-next-line no-useless-escape
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>${IFRAME_VISIBILITY_FIX}</style><style>${css || ''}</style></head><body>${html || ''}<script>${IFRAME_CLICK_TRAP}<\/script></body></html>`;
 
 // For sandboxed thumbnails (no allow-scripts): strip <script> tags from the
@@ -43,6 +44,7 @@ const Dashboard = () => {
         window.addEventListener('focus', handleFocus);
         const interval = setInterval(() => refreshUser(), 30000);
         return () => { window.removeEventListener('focus', handleFocus); clearInterval(interval); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     const navigate = useNavigate();
     // Inline parked-domain picker (opens below the "Use Existing Domain"
@@ -471,7 +473,6 @@ const Dashboard = () => {
     const [domainSearchResults, setDomainSearchResults] = useState(null);
     const [connectStep, setConnectStep] = useState(1); // 1=search, 2=results, 3=success
     const [searchLoading, setSearchLoading] = useState(false);
-    const [domainSubTab, setDomainSubTab] = useState('sites'); // 'sites' | 'mydomains'
     const [myDomains, setMyDomains] = useState([]);
     const [myDomainsLoading, setMyDomainsLoading] = useState(false);
     const [purchasing, setPurchasing] = useState(false);
@@ -3073,7 +3074,7 @@ const Dashboard = () => {
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                                                         <span style={{ fontWeight: sub.is_read ? 400 : 600, color: '#f3f4f6', fontSize: 14 }}>{senderName}</span>
-                                                        {senderEmail && <span style={{ fontSize: 12, color: '#6b7280' }}>{senderEmail}</span>}
+                                                        {senderEmail && <span style={{ fontSize: 12, fontWeight: 600, color: '#1f2937', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{senderEmail}</span>}
                                                     </div>
                                                     {message && (
                                                         <p style={{ margin: 0, fontSize: 13, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
