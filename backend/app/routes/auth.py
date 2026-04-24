@@ -19,7 +19,7 @@ from app.utils.auth import (
     hash_password,
     verify_password,
 )
-from app.utils.input_sanitizer import validate_license_number
+from app.utils.input_sanitizer import validate_license_number, validate_password_strength
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +135,14 @@ async def signup(data: SignupRequest, request: Request, db: AsyncSession = Depen
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(e),
             ) from e
+
+    try:
+        validate_password_strength(data.password)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        ) from e
 
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == data.email))
@@ -488,8 +496,10 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     if token_record.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=400, detail="Reset token has expired")
 
-    if len(data.new_password) < 10:
-        raise HTTPException(status_code=400, detail="Password must be at least 10 characters")
+    try:
+        validate_password_strength(data.new_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     # Update password
     await db.execute(
@@ -525,8 +535,10 @@ async def change_password(
     if not verify_password(data.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
-    if len(data.new_password) < 10:
-        raise HTTPException(status_code=400, detail="New password must be at least 10 characters")
+    try:
+        validate_password_strength(data.new_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     await db.execute(
         update(User).where(User.id == user.id).values(

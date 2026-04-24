@@ -1,0 +1,12 @@
+Placeholder — replace with a rendered PNG export of `architecture.drawio` before delivery.
+
+Quickest way to export:
+1. Open architecture.drawio at https://app.diagrams.net (or with the VS Code draw.io extension).
+2. File → Export as → PNG.
+   - Zoom: 150%
+   - Border: 20 px
+   - Include a copy of diagram: yes
+3. Save as `architecture.png` in this folder.
+4. Delete this placeholder file.
+
+The ASCII version in `../02_architecture_diagram.md` is the source of truth for box/arrow layout — the rendered PNG must match it.

@@ -19,7 +19,21 @@ from botocore.exceptions import BotoCoreError, ClientError
 logger = logging.getLogger(__name__)
 
 # Base upload directory (local fallback)
-UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
+UPLOAD_DIR = (Path(__file__).resolve().parent.parent.parent / "uploads").resolve()
+
+
+def _resolve_within_upload_dir(rel_path: str) -> Path | None:
+    """Resolve a user-supplied relative path against UPLOAD_DIR and ensure the
+    result stays inside UPLOAD_DIR. Returns None if the path escapes the
+    upload directory (via .. or an absolute path component)."""
+    if not rel_path:
+        return None
+    candidate = (UPLOAD_DIR / rel_path).resolve()
+    try:
+        candidate.relative_to(UPLOAD_DIR)
+    except ValueError:
+        return None
+    return candidate
 
 # S3 config
 S3_UPLOAD_BUCKET = os.getenv("AWS_S3_UPLOAD_BUCKET", os.getenv("AWS_S3_DEPLOY_BUCKET", ""))
@@ -169,11 +183,14 @@ async def delete_file(file_url: str) -> bool:
             logger.warning(f"[STORAGE] S3 delete failed: {e}")
             return False
     else:
-        # Local file
+        # Local file — reject any path that tries to escape UPLOAD_DIR.
         rel = file_url.lstrip("/")
         if rel.startswith("uploads/"):
             rel = rel[len("uploads/"):]
-        abs_path = UPLOAD_DIR / rel
+        abs_path = _resolve_within_upload_dir(rel)
+        if abs_path is None:
+            logger.warning("[STORAGE] Rejected path traversal in delete: %s", file_url)
+            return False
         if await aiofiles.os.path.exists(str(abs_path)):
             await aiofiles.os.remove(str(abs_path))
             return True

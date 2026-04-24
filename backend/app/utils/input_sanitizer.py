@@ -20,6 +20,30 @@ _SAFE_FILENAME_RE = re.compile(r"[^a-zA-Z0-9._-]")
 # License number: alphanumeric + hyphens
 _LICENSE_RE = re.compile(r"^[a-zA-Z0-9\-]{5,50}$")
 
+MIN_PASSWORD_LENGTH = 12
+
+
+def validate_password_strength(password: str) -> str:
+    """Enforce minimum password complexity.
+
+    Requires 12+ characters with at least one uppercase letter, one lowercase
+    letter, one digit, and one non-alphanumeric character. Raises ValueError
+    with a user-facing message on failure. Returns the password on success.
+    """
+    if not isinstance(password, str):
+        raise ValueError("Password must be a string")
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValueError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one digit")
+    if not re.search(r"[^A-Za-z0-9]", password):
+        raise ValueError("Password must contain at least one symbol")
+    return password
+
 
 def sanitize_prompt(prompt: str, max_length: int = 2000) -> str:
     """

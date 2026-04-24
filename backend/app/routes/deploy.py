@@ -98,6 +98,13 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
     if not session:
         raise HTTPException(status_code=404, detail="Session not found or expired. Please regenerate.")
 
+    # Ownership: reject attempts to deploy another user's session.
+    # Pre-existing sessions without a user_id stamp are allowed through
+    # (legacy), but any session stamped with a different user_id is rejected.
+    session_owner = session.get("user_id")
+    if session_owner and str(session_owner) != str(user.get("user_id")):
+        raise HTTPException(status_code=403, detail="Forbidden — session belongs to another user")
+
     # 2. Extract content
     is_multipage = session.get("multipage", False)
     pages = session.get("pages")
@@ -230,8 +237,13 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
             custom_body_code=custom_body,
         )
     except Exception as e:
+        # Log the full traceback internally but do not expose provider error
+        # strings (boto3, CloudFront, etc.) to the API caller.
         logger.error("Deployment failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=502, detail=f"Deployment failed: {str(e)}") from e
+        raise HTTPException(
+            status_code=502,
+            detail="Deployment failed. Our team has been notified — please try again shortly.",
+        ) from e
 
     # 6. Update site record with deploy result
     site_id = deploy_site_id
@@ -355,7 +367,11 @@ async def redeploy_website(site_id: str, req: RedeployRequest, user: dict = Depe
         except Exception as e:
             site.deploy_error = str(e)
             await db.commit()
-            raise HTTPException(status_code=502, detail=f"Redeployment failed: {str(e)}") from e
+            logger.error("Redeployment failed for site %s: %s", site_id, e, exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail="Redeployment failed. Our team has been notified — please try again shortly.",
+            ) from e
 
         site.deployed_url = deploy_result["url"]
         site.status = "published"
@@ -628,8 +644,11 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
             try:
                 zone_result = await create_hosted_zone(domain)
             except Exception as e:
-                logger.error("Route53 hosted zone creation failed for %s: %s", domain, e)
-                raise HTTPException(status_code=502, detail=f"DNS zone creation failed: {e}") from e
+                logger.error("Route53 hosted zone creation failed for %s: %s", domain, e, exc_info=True)
+                raise HTTPException(
+                    status_code=502,
+                    detail="DNS zone creation failed. Please try again shortly.",
+                ) from e
             zone_id = zone_result["zone_id"]
             nameservers = zone_result["nameservers"]
             # Persist on Domain record for future reconnects
@@ -660,13 +679,16 @@ async def connect_domain(site_id: str, req: ConnectDomainRequest, user: dict = D
             try:
                 cert_result = await request_certificate(domain)
             except Exception as e:
-                logger.error("ACM certificate request failed for %s: %s", domain, e)
+                logger.error("ACM certificate request failed for %s: %s", domain, e, exc_info=True)
                 if not has_existing_zone:
                     try:
                         await delete_hosted_zone(zone_id)
                     except Exception:
                         pass
-                raise HTTPException(status_code=502, detail=f"SSL certificate request failed: {e}") from e
+                raise HTTPException(
+                    status_code=502,
+                    detail="SSL certificate request failed. Please try again shortly.",
+                ) from e
             cert_arn = cert_result["arn"]
             validation_records = cert_result.get("validation_records", [])
             # Persist on Domain record

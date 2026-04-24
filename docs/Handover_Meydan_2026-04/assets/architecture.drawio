@@ -1,0 +1,71 @@
+<mxfile host="app.diagrams.net" modified="2026-04-24T00:00:00.000Z" agent="Handover" version="22.0.0">
+  <diagram name="Meydan AI Architecture" id="meydan-arch">
+    <mxGraphModel dx="1422" dy="870" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="user" value="End user&#xa;(browser — meydanfzai.com)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cf" value="CloudFront (CDN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="600" y="140" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s3app" value="S3 — React bundle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="350" y="240" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="s3tenant" value="S3 — per-tenant site buckets" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="850" y="240" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="alb" value="ALB (Application Load Balancer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="580" y="330" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="ECS Fargate — API&#xa;(FastAPI + gunicorn/uvicorn)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="580" y="430" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" value="ECS Fargate — Worker&#xa;(generation pipeline)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="850" y="430" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rds" value="RDS PostgreSQL&#xa;(schema per tenant)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="320" y="540" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="ElastiCache Redis&#xa;(rate limit + job queue + session)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="580" y="540" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cw" value="CloudWatch Logs + Metrics + WAF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="850" y="540" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="openai" value="OpenAI API&#xa;GPT-4.1 (plan)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="120" y="670" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="anthropic" value="Anthropic API&#xa;Claude Sonnet 4 (HTML/JS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="360" y="670" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="resend" value="Resend (email)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="610" y="670" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="op" value="OpenProvider (domains)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="800" y="670" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="clf" value="Cloudflare (DNS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="670" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="endArrow=classic;html=1;" edge="1" parent="1" source="user" target="cf"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;" edge="1" parent="1" source="cf" target="s3app"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="endArrow=classic;html=1;" edge="1" parent="1" source="cf" target="s3tenant"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" style="endArrow=classic;html=1;" edge="1" parent="1" source="cf" target="alb"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" style="endArrow=classic;html=1;" edge="1" parent="1" source="alb" target="api"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="rds"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="redis"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="cw"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" style="endArrow=classic;html=1;" edge="1" parent="1" source="worker" target="redis"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e10" style="endArrow=classic;html=1;" edge="1" parent="1" source="worker" target="rds"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e11" style="endArrow=classic;html=1;" edge="1" parent="1" source="worker" target="openai"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e12" style="endArrow=classic;html=1;" edge="1" parent="1" source="worker" target="anthropic"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e13" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="resend"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e14" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="op"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e15" style="endArrow=classic;html=1;" edge="1" parent="1" source="api" target="clf"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -226,10 +226,17 @@ async def check_prompt_safety_llm(prompt: str) -> dict:
             }
 
     except Exception as e:
-        # Non-blocking: if LLM check fails, allow the prompt through
-        print(f"[Moderation] LLM check failed (allowing prompt): {e}", flush=True)
+        # Fail closed: if the LLM moderation check errors, reject the prompt.
+        # Previous behaviour ("fail open") let bypass prompts through whenever
+        # OpenAI was unreachable. Operators can explicitly disable the LLM
+        # check with MODERATION_LLM_ENABLED=false when keyword-only is desired.
+        print(f"[Moderation] LLM check failed (blocking prompt): {e}", flush=True)
         traceback.print_exc()
-        return {"safe": True, "reason": None, "flagged_terms": []}
+        return {
+            "safe": False,
+            "reason": "[RESTRICTED] Content safety check is temporarily unavailable. Please try again shortly.",
+            "flagged_terms": ["moderation_unavailable"],
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════
