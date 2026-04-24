@@ -45,7 +45,7 @@ A text rendering of the same diagram, legible on its own:
                    │                                │                              │
            ┌───────▼────────┐              ┌────────▼────────┐          ┌──────────▼──────────┐
            │ OpenAI API     │              │ Anthropic API   │          │ OpenProvider (domain)│
-           │ GPT-4.1 plan   │              │ Claude Sonnet 4 │          │ Cloudflare (DNS)     │
+           │ GPT-4.1 plan   │              │ Claude Sonnet 4.6 │          │ Cloudflare (DNS)     │
            │                │              │ HTML + JS       │          │ Resend (email)       │
            └────────────────┘              └─────────────────┘          │ Pexels / Unsplash    │
                                                                          └──────────────────────┘
@@ -59,8 +59,8 @@ A text rendering of the same diagram, legible on its own:
 4. A **Worker** Fargate task picks up the job and runs the 4-stage pipeline:
    - **Stage 0 — Enhance**: GPT-4.1-mini expands the brief.
    - **Stage 1 — Plan**: GPT-4.1 produces a JSON plan (brand, tokens, sections).
-   - **Stage 2 — HTML**: Claude Sonnet 4 produces Tailwind-classed HTML.
-   - **Stage 3 — JS**: Claude Sonnet 4 produces vanilla-JS interactions.
+   - **Stage 2 — HTML**: Claude Sonnet 4.6 produces Tailwind-classed HTML.
+   - **Stage 3 — JS**: Claude Sonnet 4.6 produces vanilla-JS interactions.
 5. Each stage writes progress back to Redis; the API streams those updates to the browser as SSE events.
 6. The completed HTML/CSS/JS is persisted in the tenant's PostgreSQL schema and, if the user clicks Deploy, uploaded to the tenant's S3 bucket, fronted by CloudFront, with DNS pointed by Cloudflare (custom domain) or a wildcard Meydan subdomain.
 

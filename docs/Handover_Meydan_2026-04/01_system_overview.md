@@ -14,7 +14,7 @@ Small and mid-sized businesses licensed in Meydan Free Zone (UAE), who sign up w
 - **Hosting**: AWS ECS Fargate (API + worker + frontend), S3 + CloudFront (deployed customer sites & static assets)
 - **Database**: PostgreSQL 15 on RDS (schema-per-tenant isolation)
 - **Cache / queue**: Redis (ElastiCache) — rate limits, job queue, session cache
-- **Main AI models**: OpenAI GPT-4.1 (planning) and Anthropic Claude Sonnet 4 (HTML and JS generation)
+- **Main AI models**: OpenAI GPT-4.1 (planning) and Anthropic Claude Sonnet 4.6 (HTML and JS generation)
 
 ## Top three external dependencies and their failure modes
 1. **Anthropic API** — generates the HTML and JavaScript for every site and every in-editor edit. If it is down, no new generations or edits succeed; existing sites and the dashboard keep working. A circuit breaker opens after 5 consecutive failures and recovers automatically after 60 seconds.

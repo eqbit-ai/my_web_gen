@@ -54,7 +54,7 @@ This document is a pointer — it lists the paid services that must appear on th
 | Service | Dev (today) | Prod target | Notes |
 |---|---:|---:|---|
 | **OpenAI API** (GPT-4.1 + GPT-4.1-mini) | ~$30 | ~$600 | Stage 0 + Stage 1 per generation + landing-page chat. Per-generation ≈ $0.06. |
-| **Anthropic API** (Claude Sonnet 4) | ~$50 | ~$3 500 | Stage 2 + Stage 3 per generation + every LLM-backed edit. Per-generation ≈ $0.25, per in-editor edit ≈ $0.05–0.15. |
+| **Anthropic API** (Claude Sonnet 4.6) | ~$50 | ~$3 500 | Stage 2 + Stage 3 per generation + every LLM-backed edit. Per-generation ≈ $0.25, per in-editor edit ≈ $0.05–0.15. |
 | **Resend** (email) | $0 | ~$20–50 | Free tier ≤ 3 000 emails/mo. Pro $20 + overage afterwards. |
 | **Cloudflare** (DNS) | $0 | $0 | Free plan is sufficient. |
 | **Pexels** (images) | $0 | $0 | Free with rate caps. |
@@ -82,11 +82,11 @@ Rough unit cost to produce **one initial site** (all four LLM stages):
 |---|---|---|---|
 | 0 — Enhance brief | GPT-4.1-mini | 3 000 / 1 000 | $0.003 |
 | 1 — Plan (JSON) | GPT-4.1 | 5 000 / 4 000 | $0.055 |
-| 2 — HTML | Claude Sonnet 4 | 8 000 / 10 000 | $0.174 |
-| 3 — JS | Claude Sonnet 4 | 5 000 / 4 000 | $0.075 |
+| 2 — HTML | Claude Sonnet 4.6 | 8 000 / 10 000 | $0.174 |
+| 3 — JS | Claude Sonnet 4.6 | 5 000 / 4 000 | $0.075 |
 | **Total per site** | | | **~$0.31** |
 
-In-editor edits typically cost **$0.05–$0.15** per edit (Claude Sonnet 4, smaller prompt + smaller completion).
+In-editor edits typically cost **$0.05–$0.15** per edit (Claude Sonnet 4.6, smaller prompt + smaller completion).
 
 At the target plan of 2 sites + ~20 edits per active user per month, LLM variable cost is **~$2–5 per active user per month**. Infrastructure is fixed-ish; the break-even point is around **~200 active users per month** at prod sizing.
 

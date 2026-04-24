@@ -37,7 +37,7 @@
         <mxCell id="openai" value="OpenAI API&#xa;GPT-4.1 (plan)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="120" y="670" width="200" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="anthropic" value="Anthropic API&#xa;Claude Sonnet 4 (HTML/JS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+        <mxCell id="anthropic" value="Anthropic API&#xa;Claude Sonnet 4.6 (HTML/JS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
           <mxGeometry x="360" y="670" width="220" height="60" as="geometry" />
         </mxCell>
         <mxCell id="resend" value="Resend (email)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">

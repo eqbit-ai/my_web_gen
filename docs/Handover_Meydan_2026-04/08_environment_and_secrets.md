@@ -13,7 +13,7 @@ Every environment variable the product reads, what it controls, an example value
 | `JWT_SECRET` | HMAC secret for JWT signing. 64-char hex. | `a3f1…` | Secrets Manager; **rotate every 180 days**. |
 | `JWT_ALGORITHM` | JWT alg. | `HS256` | Code default, set only to override. |
 | `JWT_EXPIRE_MINUTES` | Access-token lifetime. | `1440` | ECS env (optional). |
-| `ANTHROPIC_API_KEY` | Claude Sonnet 4 HTML/JS generation. | `sk-ant-…` | Secrets Manager; **rotate on leak only** — affects billing attribution. |
+| `ANTHROPIC_API_KEY` | Claude Sonnet 4.6 HTML/JS generation. | `sk-ant-…` | Secrets Manager; **rotate on leak only** — affects billing attribution. |
 | `OPENAI_API_KEY` | GPT-4.1 planning + landing chat. | `sk-proj-…` | Secrets Manager; same rotation rule. |
 | `PEXELS_API_KEY` | Stock imagery. | `…` | Secrets Manager. |
 | `UNSPLASH_ACCESS_KEY` | Stock imagery. | `…` | Secrets Manager. |
