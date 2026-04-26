@@ -69,7 +69,7 @@ async def export_site_zip(site_id: str, user: dict = Depends(require_auth)):
 
     # Download files from S3
     bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
-    region = os.getenv("AWS_REGION", "me-central-1")
+    region = os.getenv("AWS_REGION", "ap-southeast-1")
     if not bucket:
         raise HTTPException(status_code=500, detail="S3 bucket not configured")
 

@@ -32,7 +32,7 @@
 └──────────────┘  └──────────────┘
 ```
 
-**Region:** me-south-1 (Bahrain) - closest AWS region to UAE/Dubai.
+**Region:** ap-southeast-1 (Singapore) — selected for prod (2026-04-26). Dev runs in `us-east-1`.
 
 ## Directory Structure
 
@@ -61,7 +61,7 @@ aws cloudformation create-stack \
     ParameterKey=DBMasterPassword,ParameterValue=YOUR_SECURE_PASSWORD \
     ParameterKey=DomainName,ParameterValue=meydan.ae \
   --capabilities CAPABILITY_NAMED_IAM \
-  --region me-south-1
+  --region ap-southeast-1
 ```
 
 ### 2. Set API Keys in Secrets Manager
@@ -73,13 +73,13 @@ After the stack is created, update the placeholder secrets:
 aws secretsmanager put-secret-value \
   --secret-id meydan/staging/openai-api-key \
   --secret-string "sk-your-openai-key" \
-  --region me-south-1
+  --region ap-southeast-1
 
 # LLM Provider API key
 aws secretsmanager put-secret-value \
   --secret-id meydan/staging/llm-api-key \
   --secret-string "your-llm-api-key" \
-  --region me-south-1
+  --region ap-southeast-1
 ```
 
 ### 3. Build and Deploy
@@ -101,7 +101,7 @@ Set these in your GitHub repository settings under Settings > Secrets and variab
 |--------|-------------|
 | `AWS_ACCESS_KEY_ID` | IAM user access key with ECS/ECR permissions |
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret key |
-| `ECR_REGISTRY` | ECR registry URL (e.g., `123456789.dkr.ecr.me-south-1.amazonaws.com`) |
+| `ECR_REGISTRY` | ECR registry URL (e.g., `123456789.dkr.ecr.ap-southeast-1.amazonaws.com`) |
 
 ## Resources Created by CloudFormation
 
@@ -157,7 +157,7 @@ Production costs will be higher due to more tasks and scaling events. Budget ~$5
 
 ## Key Design Decisions
 
-1. **Bahrain region (me-south-1):** Lowest latency to UAE/Dubai users.
+1. **Singapore region (ap-southeast-1):** Selected for prod — broader AWS feature parity and predictable pricing. UAE end-user latency is +~140 ms vs. me-central-1, but deployed customer sites serve from CloudFront edge so end-user latency is unaffected.
 2. **300s ALB idle timeout:** Website generation via SSE can take 30-60 seconds; 300s provides ample buffer.
 3. **Sticky sessions:** SSE connections must stay on the same task for the duration of generation.
 4. **NAT Gateway:** Workers need outbound internet to call LLM provider APIs.
@@ -170,8 +170,8 @@ Production costs will be higher due to more tasks and scaling events. Budget ~$5
 
 ### View service logs
 ```bash
-aws logs tail /ecs/meydan-api --follow --region me-south-1
-aws logs tail /ecs/meydan-worker --follow --region me-south-1
+aws logs tail /ecs/meydan-api --follow --region ap-southeast-1
+aws logs tail /ecs/meydan-worker --follow --region ap-southeast-1
 ```
 
 ### Check service status
@@ -179,18 +179,18 @@ aws logs tail /ecs/meydan-worker --follow --region me-south-1
 aws ecs describe-services \
   --cluster meydan-staging \
   --services meydan-api-staging meydan-worker-staging \
-  --region me-south-1 \
+  --region ap-southeast-1 \
   --query 'services[].{Name:serviceName,Status:status,Running:runningCount,Desired:desiredCount}'
 ```
 
 ### Force redeploy (no code changes)
 ```bash
-aws ecs update-service --cluster meydan-staging --service meydan-api-staging --force-new-deployment --region me-south-1
+aws ecs update-service --cluster meydan-staging --service meydan-api-staging --force-new-deployment --region ap-southeast-1
 ```
 
 ### Connect to RDS (via bastion or SSM)
 ```bash
-aws ssm start-session --target <bastion-instance-id> --region me-south-1
+aws ssm start-session --target <bastion-instance-id> --region ap-southeast-1
 # Then from bastion:
 psql -h <rds-endpoint> -U meydan -d meydan_db
 ```

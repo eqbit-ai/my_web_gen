@@ -63,7 +63,7 @@ def _send_via_ses(to: str, subject: str, html_body: str, text_body: str = ""):
     try:
         import boto3
 
-        ses = boto3.client("ses", region_name=os.getenv("AWS_REGION", "me-central-1"))
+        ses = boto3.client("ses", region_name=os.getenv("AWS_REGION", "ap-southeast-1"))
         body = {"Html": {"Data": html_body, "Charset": "UTF-8"}}
         if text_body:
             body["Text"] = {"Data": text_body, "Charset": "UTF-8"}

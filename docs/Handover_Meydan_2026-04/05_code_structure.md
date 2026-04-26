@@ -23,7 +23,7 @@ meydan-ai/
 ├── .github/workflows/       **Real** CI/CD lives here.
 │   ├── ci.yml               Lint + test + security scan + frontend build + SonarCloud.
 │   ├── deploy-dev.yml       Triggered on push to `dev` → us-east-1 (account 371170753756).
-│   └── deploy-prod.yml      Triggered on push to `main` → me-central-1 (account 290172088819).
+│   └── deploy-prod.yml      Triggered on push to `main` → ap-southeast-1 Singapore (account 290172088819).
 │
 ├── infrastructure/aws/      Hand-written AWS infra-as-config (first-time provisioning).
 │   ├── cloudformation.yml   Parameterised stack for a new environment.

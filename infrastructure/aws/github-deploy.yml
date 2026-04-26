@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: me-south-1  # Bahrain (closest to UAE/Dubai)
+  AWS_REGION: ap-southeast-1  # Singapore (prod region)
 
 jobs:
   # ===========================================================================

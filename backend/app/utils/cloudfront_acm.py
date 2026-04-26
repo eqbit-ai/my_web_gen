@@ -29,7 +29,7 @@ def _bucket() -> str:
 
 
 def _region() -> str:
-    return os.getenv("AWS_REGION", "me-central-1")
+    return os.getenv("AWS_REGION", "ap-southeast-1")
 
 
 def _aws_creds() -> dict:

@@ -27,7 +27,7 @@ This document is a pointer — it lists the paid services that must appear on th
 >
 > Figures are in **USD / month** unless stated. Two columns:
 > - **Dev (today)** — the current us-east-1 dev environment. Low traffic (single-digit concurrent generations).
-> - **Prod target** — the UAE prod target sized for **500–1 000 concurrent generations** (see capacity plan). Empty at handover; these are forecast numbers you will pay *if and when* you scale to that load.
+> - **Prod target** — the Singapore (`ap-southeast-1`) prod target sized for **500–1 000 concurrent generations** (see capacity plan). Empty at handover; these are forecast numbers you will pay *if and when* you scale to that load.
 
 ### AWS breakdown
 

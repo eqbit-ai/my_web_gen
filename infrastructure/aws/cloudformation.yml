@@ -3,7 +3,7 @@ Description: >
   Meydan Free Zone - Full infrastructure stack.
   Deploys VPC, ECS Fargate, RDS PostgreSQL, ElastiCache Redis,
   ALB, CloudFront, S3, ECR, and supporting resources.
-  Default region: me-south-1 (Bahrain, closest to UAE).
+  Default region: ap-southeast-1 (Singapore — prod region for Meydan).
 
 # ==============================================================================
 # Parameters

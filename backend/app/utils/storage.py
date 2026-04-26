@@ -37,7 +37,7 @@ def _resolve_within_upload_dir(rel_path: str) -> Path | None:
 
 # S3 config
 S3_UPLOAD_BUCKET = os.getenv("AWS_S3_UPLOAD_BUCKET", os.getenv("AWS_S3_DEPLOY_BUCKET", ""))
-S3_REGION = os.getenv("AWS_REGION", "me-central-1")
+S3_REGION = os.getenv("AWS_REGION", "ap-southeast-1")
 S3_UPLOAD_PREFIX = "user-uploads"
 
 # Allowed extensions by category

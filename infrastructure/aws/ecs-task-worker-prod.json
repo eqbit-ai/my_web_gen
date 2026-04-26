@@ -1,0 +1,56 @@
+{
+  "family": "meydan-prod-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::290172088819:role/meydan-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::290172088819:role/meydan-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "meydan-worker",
+      "image": "290172088819.dkr.ecr.ap-southeast-1.amazonaws.com/meydan-api:latest",
+      "essential": true,
+      "command": ["python", "-m", "app.worker"],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "WORKER_CONCURRENCY", "value": "5" },
+        { "name": "AWS_REGION", "value": "ap-southeast-1" },
+        { "name": "AWS_S3_DEPLOY_BUCKET", "value": "meydan-dev-deployed-sites" },
+        { "name": "DEV_MODE", "value": "false" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "MODERATION_LLM_ENABLED", "value": "true" },
+        { "name": "EMAIL_PROVIDER", "value": "resend" },
+        { "name": "EMAIL_SENDER", "value": "noreply@meydanfzai.com" },
+        { "name": "RESEND_SENDER_EMAIL", "value": "noreply@meydanfzai.com" },
+        { "name": "API_BASE_URL", "value": "https://meydanfzai.com/api" },
+        { "name": "AWS_ACCOUNT_ID", "value": "290172088819" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/database-url" },
+        { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/redis-url" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/jwt-secret" },
+        { "name": "OPENAI_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openai-api-key" },
+        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/anthropic-api-key" },
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/gemini-api-key" },
+        { "name": "PEXELS_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/pexels-api-key" },
+        { "name": "UNSPLASH_ACCESS_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/unsplash-access-key" },
+        { "name": "OPENPROVIDER_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-username" },
+        { "name": "OPENPROVIDER_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-password" },
+        { "name": "OPENPROVIDER_RESELLER_ID", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-reseller-id" },
+        { "name": "RESEND_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/resend-api-key" },
+        { "name": "CLOUDFLARE_API_TOKEN", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/cloudflare-api-token" },
+        { "name": "CLOUDFLARE_ACCOUNT_ID", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/cloudflare-account-id" },
+        { "name": "SENTRY_DSN", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/sentry-dsn" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/meydan-prod-worker",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ]
+}

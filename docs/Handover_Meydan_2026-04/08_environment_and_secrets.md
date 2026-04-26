@@ -25,7 +25,7 @@ Every environment variable the product reads, what it controls, an example value
 | `CLOUDFLARE_ACCOUNT_ID` | Account scope. | `abc123…` | Secrets Manager. |
 | `AWS_ACCESS_KEY_ID` | S3 + CloudFront + ACM API access. | `AKIA…` | IAM user via Secrets Manager; prefer **IAM role** on ECS task instead. |
 | `AWS_SECRET_ACCESS_KEY` | Paired with above. | `••••` | Same as above. |
-| `AWS_REGION` | Default region. | `me-central-1` | ECS env. |
+| `AWS_REGION` | Default region. | `ap-southeast-1` (prod Singapore) / `us-east-1` (dev) | ECS env. |
 | `AWS_ACCOUNT_ID` | Used by `s3_deploy.py` to generate ARNs. | `290172088819` | ECS env. |
 | `EMAIL_PROVIDER` | `resend` (default) or `ses`. | `resend` | ECS env. |
 | `EMAIL_SENDER` | From address. | `noreply@meydanfzai.com` | ECS env. |
@@ -33,7 +33,7 @@ Every environment variable the product reads, what it controls, an example value
 | `RESEND_SENDER_EMAIL` | Verified Resend sender. | `noreply@meydanfzai.com` | ECS env. |
 | `ADMIN_EMAIL` | Receives token-request + moderation alerts. | `ops@meydanfzai.com` | ECS env. |
 | `FRONTEND_URL` | Used in email templates + CORS. | `https://meydanfzai.com` | ECS env. |
-| `ALB_URL` | Internal base URL (worker → API callbacks). | `http://meydan-alb-internal.me-central-1.elb.amazonaws.com` | ECS env. |
+| `ALB_URL` | Internal base URL (worker → API callbacks). | `http://meydan-alb-internal.ap-southeast-1.elb.amazonaws.com` | ECS env. |
 | `API_BASE_URL` | Used by worker and scripts to call the API. | `https://meydanfzai.com/api` | ECS env. |
 | `ALLOWED_ORIGINS` | Comma-separated CORS whitelist. | `https://meydanfzai.com,https://www.meydanfzai.com` | ECS env. |
 | `TRUSTED_PROXY` | When `true`, trust `X-Forwarded-*`. | `true` in prod | ECS env. |

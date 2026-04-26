@@ -1,0 +1,72 @@
+{
+  "family": "meydan-prod-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::290172088819:role/meydan-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::290172088819:role/meydan-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "meydan-api",
+      "image": "290172088819.dkr.ecr.ap-southeast-1.amazonaws.com/meydan-api:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "PORT", "value": "8000" },
+        { "name": "WORKERS", "value": "8" },
+        { "name": "AWS_REGION", "value": "ap-southeast-1" },
+        { "name": "AWS_S3_DEPLOY_BUCKET", "value": "meydan-dev-deployed-sites" },
+        { "name": "DEV_MODE", "value": "false" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "TRUSTED_PROXY", "value": "true" },
+        { "name": "MODERATION_LLM_ENABLED", "value": "true" },
+        { "name": "EMAIL_PROVIDER", "value": "resend" },
+        { "name": "EMAIL_SENDER", "value": "noreply@meydanfzai.com" },
+        { "name": "RESEND_SENDER_EMAIL", "value": "noreply@meydanfzai.com" },
+        { "name": "FRONTEND_URL", "value": "https://meydanfzai.com" },
+        { "name": "API_BASE_URL", "value": "https://meydanfzai.com/api" },
+        { "name": "ALLOWED_ORIGINS", "value": "https://meydanfzai.com,https://www.meydanfzai.com" },
+        { "name": "AWS_ACCOUNT_ID", "value": "290172088819" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/database-url" },
+        { "name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/redis-url" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/jwt-secret" },
+        { "name": "OPENAI_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openai-api-key" },
+        { "name": "ANTHROPIC_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/anthropic-api-key" },
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/gemini-api-key" },
+        { "name": "PEXELS_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/pexels-api-key" },
+        { "name": "UNSPLASH_ACCESS_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/unsplash-access-key" },
+        { "name": "OPENPROVIDER_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-username" },
+        { "name": "OPENPROVIDER_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-password" },
+        { "name": "OPENPROVIDER_RESELLER_ID", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/openprovider-reseller-id" },
+        { "name": "RESEND_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/resend-api-key" },
+        { "name": "CLOUDFLARE_API_TOKEN", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/cloudflare-api-token" },
+        { "name": "CLOUDFLARE_ACCOUNT_ID", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/cloudflare-account-id" },
+        { "name": "SENTRY_DSN", "valueFrom": "arn:aws:secretsmanager:ap-southeast-1:290172088819:secret:meydan/prod/sentry-dsn" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/meydan-prod-api",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}

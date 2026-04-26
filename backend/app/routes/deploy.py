@@ -303,7 +303,7 @@ async def deploy_website(req: DeployRequest, user: dict = Depends(require_auth))
 
     # Build CNAME target from S3 hostname
     bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
-    region = os.getenv("AWS_REGION", "me-central-1")
+    region = os.getenv("AWS_REGION", "ap-southeast-1")
     s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
 
     logger.info("Site deployed to S3: %s → %s", sanitize_log(site_name), result["url"])
@@ -416,7 +416,7 @@ async def get_deploy_status(site_id: str, user: dict = Depends(require_auth)):
             raise HTTPException(status_code=404, detail="Site not found")
 
     bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
-    region = os.getenv("AWS_REGION", "me-central-1")
+    region = os.getenv("AWS_REGION", "ap-southeast-1")
     s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
     cname_target = site.cloudfront_domain or s3_hostname
 
@@ -484,7 +484,7 @@ async def list_deployed_sites(user: dict = Depends(require_auth)):
     for s in sites:
         # Build CNAME target: CloudFront domain if available, else S3 website hostname
         bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
-        region = os.getenv("AWS_REGION", "me-central-1")
+        region = os.getenv("AWS_REGION", "ap-southeast-1")
         s3_hostname = f"{bucket}.s3-website.{region}.amazonaws.com" if bucket else None
         cname_target = s.cloudfront_domain or s3_hostname
 
@@ -1037,7 +1037,7 @@ async def disconnect_domain(site_id: str, user: dict = Depends(require_auth)):
         # Restore original S3 URL
         if s3_prefix:
             bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "")
-            region = os.getenv("AWS_REGION", "me-central-1")
+            region = os.getenv("AWS_REGION", "ap-southeast-1")
             # S3 static website hosting only supports HTTP — HTTPS requires CloudFront (added when domain connected)
             site.deployed_url = f"http://{bucket}.s3-website.{region}.amazonaws.com/{s3_prefix}/"  # noqa: S105
 

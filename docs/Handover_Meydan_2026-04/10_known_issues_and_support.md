@@ -39,7 +39,7 @@ A fuller triage list (18 items, CRITICAL → LOW) is in the team's security memo
 | **File-upload generation** (PDF / text / images) | Backend upload endpoints exist (`/api/uploads/*`) but the generator does not ingest uploaded files into the stage-0 brief. | Needs PDF/DOCX text extraction + image-placeholder mapping. Full spec in the team backlog. |
 | **AI Agent FAQ (landing page)** | Design decided; not built. | Replacement for the static FAQ accordion on `meydanfzai.com`. |
 | **E-commerce module** | Architectural plan exists (`docs/ecommerce-feature-plan.md`). Not started. | ~9-week MVP; separate shop microservice. Parked pending client sign-off. |
-| **UAE production migration** | Phase 0 complete (code hygiene, CI/CD split dev→us-east-1 + main→me-central-1, email abstraction). Phases 1+ pending. | Details in the team backlog. |
+| **Singapore production migration** | Phase 0 complete (code hygiene, CI/CD split dev→us-east-1 + main→ap-southeast-1, email abstraction). Phases 1+ pending. Region switched from me-central-1 (UAE) → ap-southeast-1 (Singapore) on 2026-04-26 — UAE end-user latency rises by ~140 ms vs. me-central-1 but deployed customer sites are unaffected (CloudFront edge). | Details in the team backlog. |
 | **Capacity plan: 500–1000 concurrent generations** | Sizing analysis done. Not implemented. | Critical path: LLM provider tier upgrades (Anthropic + OpenAI). RDS r6g.xlarge + RDS Proxy + worker autoscaling needed. Expected run-rate $7K–$15K / month at 1000 concurrent. |
 
 ## Technical debt — recommended for revisiting

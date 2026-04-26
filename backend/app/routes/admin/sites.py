@@ -189,7 +189,7 @@ async def preview_site(
                 import boto3
 
                 bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
-                s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "me-central-1"))
+                s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-southeast-1"))
                 s3_key = f"{site.cloudflare_project_name}/index.html"
                 s3_kwargs = {"Bucket": bucket, "Key": s3_key}
                 expected_owner = os.getenv("AWS_ACCOUNT_ID", "")
@@ -265,7 +265,7 @@ async def list_site_versions(
         return {"versions": [], "site_id": site_id}
 
     bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
-    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "me-central-1"))
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-southeast-1"))
 
     try:
         expected_owner = os.getenv("AWS_ACCOUNT_ID", "")
@@ -332,7 +332,7 @@ async def restore_site_version(
         raise HTTPException(status_code=400, detail="Site has no S3 prefix")
 
     bucket = os.getenv("AWS_S3_DEPLOY_BUCKET", "meydan-dev-deployed-sites")
-    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "me-central-1"))
+    s3 = boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-southeast-1"))
 
     try:
         expected_owner = os.getenv("AWS_ACCOUNT_ID", "")

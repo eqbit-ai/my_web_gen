@@ -9,7 +9,7 @@ Two paths covered:
 | Branch | Triggers workflow | AWS account | Region | Public URL |
 |---|---|---|---|---|
 | `dev` | `.github/workflows/deploy-dev.yml` | `371170753756` (dev) | `us-east-1` | `https://meydanfzai.com` (apex) **and** `https://dev.meydanfzai.com` (Cloudflare-proxied CNAME to the dev ALB). Both currently serve the same dev environment. |
-| `main` | `.github/workflows/deploy-prod.yml` | `290172088819` (prod) | `me-central-1` (UAE) | Not yet provisioned. The prod ECS cluster `meydan-prod-cluster` does not exist at time of handover — prod migration is paused pending client sign-off. |
+| `main` | `.github/workflows/deploy-prod.yml` | `290172088819` (prod) | `ap-southeast-1` (Singapore) | Not yet provisioned. The prod ECS cluster `meydan-prod-cluster` does not exist at time of handover — prod migration is paused pending client sign-off. |
 
 > Legacy branches `production` and `staging` exist in the remote but are not wired to any workflow. They are stale initial commits. Safe to delete after handover.
 
@@ -32,7 +32,7 @@ Pushing to `main` follows the same pattern but against the prod account/region w
 ## Prerequisites
 
 ### Accounts
-- **AWS account** with administrator access. Production region at handover: **me-central-1** (UAE). Dev/staging region: **us-east-1**.
+- **AWS account** with administrator access. Production region at handover: **ap-southeast-1** (Singapore). Dev/staging region: **us-east-1**.
 - **GitHub** access to the private `meydan-ai` repository.
 - **Cloudflare** account — authoritative DNS for `meydanfzai.com` (apex NS delegated at OpenProvider).
 - **OpenProvider** reseller account — domain registration.
@@ -51,9 +51,9 @@ All of the env vars listed in `08_environment_and_secrets.md`.
 
 ## First-time provisioning — numbered steps
 
-Use this only when bringing up a new environment (e.g. the prod cluster in me-central-1). For routine deploys see "Day-to-day deploy" above.
+Use this only when bringing up a new environment (e.g. the prod cluster in ap-southeast-1). For routine deploys see "Day-to-day deploy" above.
 
-> Throughout, substitute your values. Everything assumes `export AWS_REGION=me-central-1`.
+> Throughout, substitute your values. Everything assumes `export AWS_REGION=ap-southeast-1`.
 
 ### 1. Provision the core stack
 ```bash

@@ -38,7 +38,7 @@ Two places to look:
   - Generation success rate: `GET /api/admin/analytics/generation-success`
   - Token consumption: `GET /api/admin/analytics/token-consumption`
 
-- **CloudWatch Dashboard** (AWS console, `me-central-1`): panels for request rate, p95 latency, 5xx rate, LLM spend by provider, and ALB target health. The JSON for the dashboard lives at `infrastructure/aws/dashboard.json` — apply with `aws cloudwatch put-dashboard`.
+- **CloudWatch Dashboard** (AWS console — `us-east-1` for dev, `ap-southeast-1` for prod): panels for request rate, p95 latency, 5xx rate, LLM spend by provider, and ALB target health. The JSON for the dashboard lives at `infrastructure/aws/dashboard.json` — apply with `aws cloudwatch put-dashboard`.
 
 For AWS spend specifically, the authoritative source is **AWS Cost Explorer** filtered by tag `Project=meydan-ai`. The admin panel surfaces *LLM* cost only (computed from token counters in `token_transactions`).
 

@@ -10,7 +10,7 @@
 #   - ECR repositories created (via CloudFormation stack)
 #
 # Environment variables (optional overrides):
-#   AWS_REGION      - AWS region (default: me-south-1 / Bahrain)
+#   AWS_REGION      - AWS region (default: ap-southeast-1 / Singapore)
 #   AWS_ACCOUNT_ID  - AWS account ID (auto-detected if not set)
 #   SKIP_BUILD      - Set to "true" to skip Docker build and only deploy
 # =============================================================================
@@ -19,7 +19,7 @@ set -euo pipefail
 
 # --- Configuration ---
 ENVIRONMENT=${1:-staging}
-AWS_REGION=${AWS_REGION:-me-south-1}
+AWS_REGION=${AWS_REGION:-ap-southeast-1}
 
 # Validate environment
 if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "production" ]]; then

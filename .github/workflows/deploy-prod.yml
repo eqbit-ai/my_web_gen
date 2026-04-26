@@ -1,4 +1,4 @@
-name: Deploy to Production (me-central-1 UAE)
+name: Deploy to Production (ap-southeast-1 Singapore)
 
 on:
   push:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: me-central-1
-  ECR_REGISTRY: 290172088819.dkr.ecr.me-central-1.amazonaws.com
+  AWS_REGION: ap-southeast-1
+  ECR_REGISTRY: 290172088819.dkr.ecr.ap-southeast-1.amazonaws.com
   ECS_CLUSTER: meydan-prod-cluster
 
 jobs:
   deploy:
-    name: Build & Deploy to Prod ECS (UAE)
+    name: Build & Deploy to Prod ECS (Singapore)
     runs-on: ubuntu-latest
     environment: production
     steps:

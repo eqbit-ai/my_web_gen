@@ -5,8 +5,8 @@
 
 ## Snapshot at handover
 
-- **Current branch with live users**: `dev` — deployed to AWS us-east-1, served at `https://meydanfzai.com` (and `https://dev.meydanfzai.com`).
-- **Prod branch**: `main` — wired to `deploy-prod.yml` targeting UAE me-central-1, but the prod cluster is **not yet provisioned**. The migration is paused (see `10_known_issues_and_support.md`).
+- **Current branch with live users**: `dev` — deployed to AWS us-east-1, served at `https://meydanfzai.com` (and `https://dev.meydanfzai.com`). *Note*: us-east-1 is the de-facto prod today; planned migration to Singapore is documented in `11_singapore_migration_runbook.md`.
+- **Prod branch**: `main` — wired to `deploy-prod.yml` targeting Singapore `ap-southeast-1`. The prod cluster is **not yet provisioned**; provisioning + data migration steps are in `11_singapore_migration_runbook.md`. After migration: `dev` → us-east-1 (testing) and `main` → ap-southeast-1 (live users).
 - **Live health checks**: `GET /api/health` returns `{"status":"ok"}` on both URLs at time of writing.
 - **Outstanding end-user bugs**: 1 (carousels in generated sites — `10_known_issues_and_support.md` item 1).
 - **Outstanding security/config items**: apex DNS not Cloudflare-proxied (C1), SonarCloud token missing (C2), CI wait-for-stable occasionally noisy (C3). Full list in `10_known_issues_and_support.md`.
@@ -27,6 +27,7 @@ Start at the top of the list and work down. Every document is self-contained; yo
 | 8 | `08_environment_and_secrets.md` | Every env var and where it comes from. |
 | 9 | `09_ongoing_costs.md` | Pointer — see the Ongoing Costs sheet in the handover workbook. |
 | 10 | `10_known_issues_and_support.md` | What is unfinished, and who to call. |
+| 11 | `11_singapore_migration_runbook.md` | Step-by-step migration of the live us-east-1 stack to ap-southeast-1 Singapore prod. |
 
 ## Source assets
 
