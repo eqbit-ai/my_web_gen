@@ -932,7 +932,9 @@ TYPOGRAPHY:
 - Heading font must be distinctive — NEVER use Inter, Roboto, or Arial for headings.
 
 SECTIONS:
-- Every section: generous padding (4rem-6rem vertical)
+- Every section: generous padding (4rem-6rem vertical) — applied ONCE, on the <section> element only.
+- NEVER stack vertical padding on both the <section> AND an inner wrapper. If you wrap content in a decorative inner div (e.g. `.cta-wrap`, `.aurora-glow`, gradient-banner div), put the padding on EITHER the section OR the wrapper — not both. Pick one; set the other's padding to 0.
+- CTA sections specifically: when using `.aurora-glow`, decorative orbs, or a gradient-banner wrapper, set the outer `<section>` padding small (2rem-3rem vertical) and let the inner wrapper define vertical rhythm. Cap total CTA vertical space at ~10rem top + 10rem bottom on desktop, ~5rem + 5rem on mobile. CTA must never be taller than 60vh.
 - Cards: hover effects (translateY + shadow + optional border-color change)
 - Alternate backgrounds: create visual rhythm between sections
 - Feature split sections: include bullet-point benefit lists (check icon + text), not just paragraphs
