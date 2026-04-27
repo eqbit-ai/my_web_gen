@@ -43,3 +43,6 @@ backend/pattern_history.json
 Thumbs.db
 *.heapsnapshot
 .scannerwork/
+
+# Claude Code local config — never commit
+.claude/
