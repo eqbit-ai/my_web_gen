@@ -134,7 +134,6 @@ def send_password_reset(to: str, reset_token: str):
 <p>We received a request to reset your password. Click the button below to set a new password:</p>
 <p style="text-align:center"><a href="{reset_url}" class="btn">Reset Password</a></p>
 <p style="font-size:13px;color:#6b7280;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-<p style="font-size:12px;color:#9ca3af;word-break:break-all;">Or copy this link: {reset_url}</p>
 """)
     send_email_bg(to, "Reset Your Password — Meydan Free Zone", html)
 
@@ -163,7 +162,6 @@ def send_email_verification(to: str, verification_token: str, full_name: str = "
 <p>Thanks for signing up for the Meydan Free Zone AI Website Generator. Please confirm your email address by clicking the button below — this is required before your account can be reviewed for approval.</p>
 <p style="text-align:center"><a href="{verify_url}" class="btn">Confirm Email</a></p>
 <p style="font-size:13px;color:#6b7280;">After confirming, an admin will review your account and notify you once it's approved.</p>
-<p style="font-size:12px;color:#9ca3af;word-break:break-all;">Or copy this link into your browser: {verify_url}</p>
 <p style="font-size:13px;color:#6b7280;">If you didn't sign up, you can safely ignore this email.</p>
 """)
     send_email_bg(to, "Confirm your email — Meydan Free Zone", html)

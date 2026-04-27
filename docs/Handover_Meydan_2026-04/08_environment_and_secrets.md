@@ -1,84 +1,92 @@
 # 8. Environment and Secrets
 
-Every environment variable the product reads, what it controls, an example value, and where it comes from.
+Every environment variable the product reads. Plain values are set in the ECS task definition `environment` array; sensitive values are pulled at task-start from AWS Secrets Manager via `valueFrom` ARNs.
+
+## Source of truth
+
+- **Live source**: the running ECS task definition. Inspect with:
+  ```bash
+  aws ecs describe-task-definition --task-definition meydan-prod-api \
+    --region ap-southeast-1 --profile prod \
+    --query 'taskDefinition.containerDefinitions[0].{env:environment,secrets:secrets[].name}'
+  ```
+- **Documented baseline**: `backend/.env.example` (every var with example value and one-line comment).
 
 ## Environment variable table
 
-| Name | Purpose | Example | Source |
+| Name | Purpose | Example value | Source |
 |---|---|---|---|
-| `DATABASE_URL` | Async Postgres connection string used by SQLAlchemy. | `postgresql+asyncpg://meydan:••••@rds-prod.xxx.rds.amazonaws.com:5432/meydan_db` | Secrets Manager → ECS env. |
-| `DB_POOL_SIZE` | SQLAlchemy pool size per process. | `10` | ECS env (optional, default 10). |
-| `DB_MAX_OVERFLOW` | SQLAlchemy extra connections beyond pool size. | `20` | ECS env (optional). |
-| `REDIS_URL` | Redis connection string (rate limits, job queue, session cache). | `rediss://:••••@meydan-cache.xxx.amazonaws.com:6379/0` | Secrets Manager → ECS env. |
-| `JWT_SECRET` | HMAC secret for JWT signing. 64-char hex. | `a3f1…` | Secrets Manager; **rotate every 180 days**. |
-| `JWT_ALGORITHM` | JWT alg. | `HS256` | Code default, set only to override. |
-| `JWT_EXPIRE_MINUTES` | Access-token lifetime. | `1440` | ECS env (optional). |
-| `ANTHROPIC_API_KEY` | Claude Sonnet 4.6 HTML/JS generation. | `sk-ant-…` | Secrets Manager; **rotate on leak only** — affects billing attribution. |
-| `OPENAI_API_KEY` | GPT-4.1 planning + landing chat. | `sk-proj-…` | Secrets Manager; same rotation rule. |
-| `PEXELS_API_KEY` | Stock imagery. | `…` | Secrets Manager. |
-| `UNSPLASH_ACCESS_KEY` | Stock imagery. | `…` | Secrets Manager. |
-| `OPENPROVIDER_USERNAME` | Registrar login. | `meydan-ai` | Secrets Manager. |
-| `OPENPROVIDER_PASSWORD` | Registrar password. | `••••` | Secrets Manager; **rotate every 90 days**. |
-| `OPENPROVIDER_API_URL` | Override the default API URL (use sandbox in dev). | `https://api.openprovider.eu/v1beta` | ECS env. |
-| `OPENPROVIDER_CONTACT_*` | Registrant contact block (first/last name, company, email, phone, street, zip, number). | see `.env.example` | Secrets Manager. |
-| `CLOUDFLARE_API_TOKEN` | DNS CRUD on `meydanfzai.com` zone. Scoped to Zone:DNS:Edit. | `••••` | Secrets Manager; rotate every 180 days. |
-| `CLOUDFLARE_ACCOUNT_ID` | Account scope. | `abc123…` | Secrets Manager. |
-| `AWS_ACCESS_KEY_ID` | S3 + CloudFront + ACM API access. | `AKIA…` | IAM user via Secrets Manager; prefer **IAM role** on ECS task instead. |
-| `AWS_SECRET_ACCESS_KEY` | Paired with above. | `••••` | Same as above. |
-| `AWS_REGION` | Default region. | `ap-southeast-1` (prod Singapore) / `us-east-1` (dev) | ECS env. |
-| `AWS_ACCOUNT_ID` | Used by `s3_deploy.py` to generate ARNs. | `290172088819` | ECS env. |
-| `EMAIL_PROVIDER` | `resend` (default) or `ses`. | `resend` | ECS env. |
-| `EMAIL_SENDER` | From address. | `noreply@meydanfzai.com` | ECS env. |
-| `RESEND_API_KEY` | Transactional email API key. | `re_…` | Secrets Manager; rotate every 180 days. |
-| `RESEND_SENDER_EMAIL` | Verified Resend sender. | `noreply@meydanfzai.com` | ECS env. |
-| `ADMIN_EMAIL` | Receives token-request + moderation alerts. | `ops@meydanfzai.com` | ECS env. |
-| `FRONTEND_URL` | Used in email templates + CORS. | `https://meydanfzai.com` | ECS env. |
-| `ALB_URL` | Internal base URL (worker → API callbacks). | `http://meydan-alb-internal.ap-southeast-1.elb.amazonaws.com` | ECS env. |
-| `API_BASE_URL` | Used by worker and scripts to call the API. | `https://meydanfzai.com/api` | ECS env. |
-| `ALLOWED_ORIGINS` | Comma-separated CORS whitelist. | `https://meydanfzai.com,https://www.meydanfzai.com` | ECS env. |
-| `TRUSTED_PROXY` | When `true`, trust `X-Forwarded-*`. | `true` in prod | ECS env. |
-| `ENVIRONMENT` | `production`, `staging`, `dev`. Gates Swagger UI and some defaults. | `production` | ECS env. |
-| `DEV_MODE` | Enables generous debug endpoints + verbose logs. **Must be `false` in prod.** | `false` | ECS env. |
-| `LOG_LEVEL` | Python log level. | `INFO` | ECS env. |
-| `WORKER_CONCURRENCY` | Number of generation jobs a worker processes in parallel. | `4` | Worker ECS env. |
-| `MODERATION_LLM_ENABLED` | Enable LLM-based pre-generation moderation. | `true` | ECS env. |
-| `METRICS_API_KEY` | Gate for `/api/metrics`. | `••••` | Secrets Manager. |
-| `SENTRY_DSN` | Optional error reporting. Empty → Sentry disabled. | `https://…@sentry.io/…` | Secrets Manager. |
-| `SKIP_MIGRATIONS` | Set on the worker container to skip `alembic upgrade` on boot (API runs it). | `1` | Worker ECS task def. |
+| `ENVIRONMENT` | `production` / `staging` / `dev`. Gates Swagger UI and some defaults. | `production` | ECS env (plain) |
+| `AWS_REGION` | Default region for boto3 clients. | `ap-southeast-1` | ECS env (plain) |
+| `AWS_S3_DEPLOY_BUCKET` | Bucket for customer-deployed sites. | `meydan-prod-sites-sg` | ECS env (plain) |
+| `API_BASE_URL` | Used in email links and worker → API callbacks. | `https://meydanfzai.com` | ECS env (plain) |
+| `FRONTEND_URL` | Used in email templates and CORS. | `https://meydanfzai.com` | ECS env (plain) |
+| `ALLOWED_ORIGINS` | CORS whitelist (comma-separated). | `https://meydanfzai.com,https://www.meydanfzai.com` | ECS env (plain) |
+| `JWT_ALGORITHM` | JWT signing alg. | `HS256` | ECS env (plain) |
+| `JWT_EXPIRE_MINUTES` | Token lifetime. | `1440` (24 h) | ECS env (plain) |
+| `JWT_SECRET` | HMAC key for signing. **Must match across all tasks/regions for session continuity.** | `(64 hex chars)` | Secrets Manager `meydan/prod/jwt-secret` |
+| `DB_POOL_SIZE` | SQLAlchemy connection pool per worker process. | `15` | ECS env (plain) |
+| `DB_MAX_OVERFLOW` | Burst capacity above pool size. | `25` | ECS env (plain) |
+| `DATABASE_URL` | Async PG DSN. | `postgresql+asyncpg://meydan:…@meydan-prod-db.…rds.amazonaws.com:5432/meydan_db` | Secrets Manager `meydan/prod/database-url` |
+| `REDIS_URL` | Redis connection. | `redis://meydan-prod-redis.…cache.amazonaws.com:6379/0` | Secrets Manager `meydan/prod/redis-url` |
+| `DEV_MODE` | Enables generous debug endpoints + verbose logs. **Must be `false` in prod.** | `false` | ECS env (plain) |
+| `LOG_LEVEL` | Python logger level. | `INFO` | ECS env (plain) |
+| `TRUSTED_PROXY` | Trust `X-Forwarded-*` headers (set true behind ALB). | `true` | ECS env (plain) |
+| `MODERATION_LLM_ENABLED` | Enable LLM-based pre-generation moderation. Flip to `false` in an OpenAI outage to fall back to keyword-only. | `true` | ECS env (plain) |
+| `EMAIL_PROVIDER` | `resend` (default) or `ses`. | `resend` | ECS env (plain) |
+| `EMAIL_SENDER` | From-address. | `noreply@meydanfzai.com` | ECS env (plain) |
+| `RESEND_SENDER_EMAIL` | Verified Resend sender. | `noreply@meydanfzai.com` | ECS env (plain) |
+| `RESEND_API_KEY` | Resend API key. | `re_…` | Secrets Manager `meydan/prod/resend-api-key` |
+| `OPENPROVIDER_API_URL` | Domain registrar base URL. | `https://api.openprovider.eu/v1beta` | ECS env (plain) |
+| `OPENPROVIDER_USERNAME` | OpenProvider login. | (email) | Secrets Manager `meydan/prod/openprovider-username` |
+| `OPENPROVIDER_PASSWORD` | OpenProvider password. | `…` | Secrets Manager `meydan/prod/openprovider-password` |
+| `OPENPROVIDER_RESELLER_ID` | OpenProvider reseller account ID. | `…` | Secrets Manager `meydan/prod/openprovider-reseller-id` |
+| `ANTHROPIC_API_KEY` | Anthropic API key (Stage 2 + 3). | `sk-ant-…` | Secrets Manager `meydan/prod/anthropic-api-key` |
+| `OPENAI_API_KEY` | OpenAI API key (Stage 0 + 1, moderation). | `sk-proj-…` | Secrets Manager `meydan/prod/openai-api-key` |
+| `GEMINI_API_KEY` | Optional fallback model (currently unused). | `AIza…` | Secrets Manager `meydan/prod/gemini-api-key` |
+| `PEXELS_API_KEY` | Pexels stock-photo API. | `…` | Secrets Manager `meydan/prod/pexels-api-key` |
+| `UNSPLASH_ACCESS_KEY` | Unsplash stock-photo API. | `…` | Secrets Manager `meydan/prod/unsplash-access-key` |
+| `WORKER_CONCURRENCY` | Concurrent generation jobs per worker task. | `5` | Worker ECS env (plain) |
+| `PORT` | API listen port. | `8000` | API ECS env (plain) |
+| `WORKERS` | Number of gunicorn workers per task. | `8` | API ECS env (plain) |
+| `SENTRY_DSN` | Optional — error tracking. | `https://…@sentry.io/…` | Secrets Manager `meydan/prod/sentry-dsn` (optional) |
+| `AWS_ACCOUNT_ID` | Used for ARN generation. | `290172088819` | ECS env (plain) |
 
-See `backend/.env.example` for the canonical local-dev starter.
+## Critical: trim trailing whitespace before storing in Secrets Manager
+
+When creating a Secrets Manager entry from a CLI redirect (e.g. `aws … --output text > file && aws secretsmanager create-secret --secret-string file://file`), the `--output text` step appends a `\n`. ECS injects whatever bytes Secrets Manager has — newlines and all — into the env var. The `httpx` library (inside the OpenAI / Anthropic Python SDKs) then rejects header values containing newlines as `LocalProtocolError: Illegal header value`.
+
+**Always trim before storing**:
+```bash
+printf '%s' "$VALUE" > /tmp/sec.txt        # printf, not echo
+aws secretsmanager put-secret-value --secret-id meydan/prod/openai-api-key \
+  --secret-string "file:///tmp/sec.txt"
+```
+
+This bit us during the Singapore migration — after fixing all 12 secrets, generation calls started working.
 
 ## Rotation schedule
 
-| Secret | Cadence | Procedure |
+| Secret | Rotate every | Procedure |
 |---|---|---|
-| `JWT_SECRET` | 180 days | (1) Add a new secret value in Secrets Manager. (2) Support both old and new keys for one deploy cycle using `JWT_SECRET` primary + `JWT_SECRET_PREVIOUS` fallback (code change needed if not present). (3) Roll primary, keep previous for 24 h, then remove. |
-| `DATABASE_URL` password | 90 days | (1) Create a new role or set a new password via `ALTER USER meydan WITH PASSWORD …`. (2) Update Secrets Manager. (3) Force new ECS deploy (`--force-new-deployment`). |
-| `RESEND_API_KEY` | 180 days | Generate new key in Resend dashboard → update Secrets Manager → force-deploy. Delete the old key after confirming the new one works. |
-| `CLOUDFLARE_API_TOKEN` | 180 days | Same pattern. Scope strictly to Zone:DNS:Edit on `meydanfzai.com`. |
-| `OPENPROVIDER_PASSWORD` | 90 days | Change in OpenProvider portal → update Secrets Manager → force-deploy. |
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | On leak or quarterly | Rotate in provider dashboard → update Secrets Manager → force-deploy. Cost attribution resets; note the rotation in the cost sheet. |
-| AWS keys | **Do not rotate — use IAM roles instead.** | Replace static keys on ECS tasks with an IAM task role referencing the least-privilege policy in `infrastructure/aws/cloudformation.yml`. |
-| `METRICS_API_KEY` | 180 days | Update Secrets Manager; update Grafana / Prometheus scraper config. |
+| `JWT_SECRET` | 12 months OR after suspected leak | Rolling rotation requires keeping both old + new keys briefly so existing sessions don't all invalidate. Implementation pending — currently a hard rotation forces re-login. |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | 6 months | Generate new in provider console → update Secrets Manager → force-redeploy ECS → revoke old key in provider console. |
+| `RESEND_API_KEY` | 6 months | Same flow on resend.com. |
+| `OPENPROVIDER_PASSWORD` | 12 months | OpenProvider dashboard. |
+| `DB master password` | 12 months OR upon staff change | Rotate via `aws rds modify-db-instance --master-user-password` → update `meydan/prod/database-url` Secret with new value → force-redeploy. |
+| `AWS IAM access keys` | 6 months OR upon staff change | IAM console → create new key → update GitHub Actions secrets `AWS_ACCESS_KEY_ID_PROD` / `AWS_SECRET_ACCESS_KEY_PROD` → deactivate old. |
 
-## Secrets-in-repo scan
+## Secret-leak audit
 
-Confirmation that no secret is committed to the repository:
+Run this to confirm no secret values are committed to the repository:
 
 ```bash
-# Run from the repo root. Should print no findings.
-git log --all --full-history -p -- backend/.env | grep -E '(sk-ant-|sk-proj-|AKIA|re_|eyJ[A-Za-z0-9_-]{20,})' || echo "clean"
+# Scan full git history for AWS-style keys, Anthropic / OpenAI style, JWT secrets
+git log --all -p | grep -E "AKIA[A-Z0-9]{16}|sk-ant-api[0-9]{2}|sk-proj-|JWT_SECRET\s*=\s*['\"][a-f0-9]{32,}" | head
+git log --all -p -S "ANTHROPIC_API_KEY=" | head
+git log --all -p -S "OPENAI_API_KEY=" | head
 ```
 
-Additional scans to run before hand-off:
-```bash
-pip install detect-secrets
-detect-secrets scan --all-files > .secrets.baseline.scan
+Result at handover: **no production-key values appear in committed source**. The only key-shaped strings are placeholder values in `backend/.env.example` (`sk-ant-…`, `sk-proj-…`, `re_…`).
 
-# or using trufflehog:
-docker run --rm -v "$PWD:/repo" trufflesecurity/trufflehog:latest git file:///repo --only-verified
-```
-
-At time of handover, both scans pass with zero verified findings. `backend/.env` is `.gitignore`'d; only `backend/.env.example` (placeholder values) is tracked.
-
-> **Hard rule**: `backend/.env` must never be `git add`ed. The `.gitignore` enforces this, but verify with `git check-ignore -v backend/.env` before any push.
+> A previous session (2026-04-23) noted dev IAM access keys had been pasted in chat. Those keys have been rotated as part of the Singapore migration; the value pasted in chat is no longer valid against any AWS account.

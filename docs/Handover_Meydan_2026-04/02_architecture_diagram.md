@@ -1,83 +1,23 @@
 # 2. Architecture Diagram
 
-## Diagram
+![System Architecture](assets/diagrams/architecture.png)
 
-See `assets/architecture.png` (rendered) and `assets/architecture.drawio` (editable source — open with diagrams.net / draw.io).
+**Editable source**: `assets/diagrams/architecture.html` — open in any browser to inspect or edit.
 
-A text rendering of the same diagram, legible on its own:
+## Caption — request path for the main user action
 
-```
-                        ┌──────────────────────────────┐
-                        │          End user            │
-                        │  (browser, meydanfzai.com)   │
-                        └──────────────┬───────────────┘
-                                       │ HTTPS
-                                       ▼
-                        ┌──────────────────────────────┐
-                        │     CloudFront (CDN)         │
-                        │  E368CULECTE3G5 + others     │
-                        └──────┬──────────────┬────────┘
-                               │              │
-                ┌──────────────▼──────┐   ┌───▼─────────────────┐
-                │ S3: app static bundle│   │ S3: per-tenant site │
-                │ (React build)        │   │  buckets (deployed) │
-                └──────────────────────┘   └─────────────────────┘
-                               │
-                               │ /api/* (XHR)
-                               ▼
-                        ┌──────────────────────────────┐
-                        │  ALB (Application LB)        │
-                        │   TLS terminate, 60s idle    │
-                        └──────────────┬───────────────┘
-                                       │
-                        ┌──────────────▼───────────────┐
-                        │  ECS Fargate: API service    │
-                        │  FastAPI + gunicorn/uvicorn  │
-                        └────┬────────────┬─────────┬──┘
-                             │            │         │
-                     ┌───────▼────┐  ┌────▼────┐  ┌─▼──────────┐
-                     │ RDS Postgres│  │ Redis   │  │ ECS Fargate│
-                     │  (schema    │  │ (Elasti │  │  Worker    │
-                     │   per tenant)│ │  Cache) │  │ (jobs)     │
-                     └─────────────┘  └─────────┘  └─┬──────────┘
-                                                    │
-                   ┌────────────────────────────────┼──────────────────────────────┐
-                   │                                │                              │
-           ┌───────▼────────┐              ┌────────▼────────┐          ┌──────────▼──────────┐
-           │ OpenAI API     │              │ Anthropic API   │          │ OpenProvider (domain)│
-           │ GPT-4.1 plan   │              │ Claude Sonnet 4.6 │          │ Cloudflare (DNS)     │
-           │                │              │ HTML + JS       │          │ Resend (email)       │
-           └────────────────┘              └─────────────────┘          │ Pexels / Unsplash    │
-                                                                         └──────────────────────┘
-```
+A user submits a generation brief from the React UI. The request leaves their browser as HTTPS to CloudFront (the authoritative DNS), which proxies it to the ALB in `ap-southeast-1`. The ALB routes by path:
 
-## Caption — request path for "Generate a website"
+- `/` and the dashboard → **Frontend** service (nginx + React build, 2 tasks)
+- `/api/*` → **API** service (FastAPI + gunicorn, 2-6 tasks autoscaling on CPU)
 
-1. The user submits a brief from the React app (`frontend/src/components/WebsiteGenerator.jsx`).
-2. The browser issues `POST /api/generator/generate-stream` through CloudFront → ALB → an **API** Fargate task.
-3. The API authenticates the JWT, checks Redis rate limits and usage caps, then enqueues a generation job in Redis and streams Server-Sent Events back to the browser.
-4. A **Worker** Fargate task picks up the job and runs the 4-stage pipeline:
-   - **Stage 0 — Enhance**: GPT-4.1-mini expands the brief.
-   - **Stage 1 — Plan**: GPT-4.1 produces a JSON plan (brand, tokens, sections).
-   - **Stage 2 — HTML**: Claude Sonnet 4.6 produces Tailwind-classed HTML.
-   - **Stage 3 — JS**: Claude Sonnet 4.6 produces vanilla-JS interactions.
-5. Each stage writes progress back to Redis; the API streams those updates to the browser as SSE events.
-6. The completed HTML/CSS/JS is persisted in the tenant's PostgreSQL schema and, if the user clicks Deploy, uploaded to the tenant's S3 bucket, fronted by CloudFront, with DNS pointed by Cloudflare (custom domain) or a wildcard Meydan subdomain.
+The API persists the request to PostgreSQL, enqueues a generation job in Redis, and returns immediately. The user's browser opens a Server-Sent Events stream to the same ALB; the API streams progress events back as the job advances.
 
-All LLM calls go through a per-provider circuit breaker (`backend/app/utils/circuit_breaker.py`). All requests are tagged with an `X-Correlation-ID` that follows the call from browser → API → worker → CloudWatch logs.
+The **Worker** service consumes the Redis queue and runs the four-stage generation pipeline:
 
-## Current live routing (as of handover)
+1. **Stage 0 (Enhance)** — GPT-4.1-mini expands the brief into a creative brief (~2 s, ~1.5K tokens)
+2. **Stage 1 (Plan)** — GPT-4.1 produces a JSON plan with brand tokens and section layout (~7 s)
+3. **Stage 2 (HTML)** — Claude Sonnet 4.6 emits the full Tailwind-styled HTML (~50 s, the heaviest stage)
+4. **Stage 3 (JS)** — Claude Sonnet 4.6 emits vanilla JS interactions (~20 s)
 
-The diagram above describes the **intended** architecture. The live routing at the dev environment has two deltas worth noting:
-
-1. **Apex `meydanfzai.com`** — Cloudflare DNS is grey-cloud (DNS-only); apex `A` records point directly at raw ALB IPs in us-east-1. Requests skip both Cloudflare edge and CloudFront. This is the cause of the ~300 ms apex vs dev-subdomain latency gap (see `10_known_issues_and_support.md` C1).
-2. **`dev.meydanfzai.com`** — Cloudflare-proxied CNAME to the dev ALB DNS name. Requests hit the nearest Cloudflare edge first, then tunnel to the origin. This is the intended shape.
-
-The simplest consolidation path is to orange-cloud the apex records (one-click fix) so all traffic benefits from Cloudflare's edge layer. CloudFront is not currently in the live path even though older memory notes mention distribution `E368CULECTE3G5`.
-
-## File formats
-
-- `assets/architecture.png` — rendered, ship-ready image.
-- `assets/architecture.drawio` — editable source; open in https://app.diagrams.net or the VS Code extension.
-
-> If the `assets/` files are missing at the time you read this, regenerate them from this ASCII spec — it is the source of truth for box / arrow layout.
+The Worker writes generated artefacts to a tenant schema in PostgreSQL and uploads the deployable artefact bundle to S3 (`meydan-prod-sites-sg`). The frontend then loads the result; the user can edit and redeploy from the editor.

@@ -1,213 +1,234 @@
 # 7. Deployment Runbook
 
-Two paths covered:
-- **Day-to-day deploys** — `git push` triggers the right GitHub Actions workflow. You will use this 99 % of the time.
-- **First-time provisioning** — taking a clean AWS account to a running environment. You do this once per environment.
+Two flavours: **routine deploy** (push to a branch — CI does the rest) and **first-time provisioning** (clean cloud account → running production).
 
-## Branches and environments
+## Routine deploy — push and CI does it
 
-| Branch | Triggers workflow | AWS account | Region | Public URL |
-|---|---|---|---|---|
-| `dev` | `.github/workflows/deploy-dev.yml` | `371170753756` (dev) | `us-east-1` | `https://meydanfzai.com` (apex) **and** `https://dev.meydanfzai.com` (Cloudflare-proxied CNAME to the dev ALB). Both currently serve the same dev environment. |
-| `main` | `.github/workflows/deploy-prod.yml` | `290172088819` (prod) | `ap-southeast-1` (Singapore) | Not yet provisioned. The prod ECS cluster `meydan-prod-cluster` does not exist at time of handover — prod migration is paused pending client sign-off. |
+| Branch | CI workflow | AWS account | Region |
+|---|---|---|---|
+| `dev` | `.github/workflows/deploy-dev.yml` | `371170753756` | `us-east-1` |
+| `main` | `.github/workflows/deploy-prod.yml` | `290172088819` | `ap-southeast-1` (Singapore) |
 
-> Legacy branches `production` and `staging` exist in the remote but are not wired to any workflow. They are stale initial commits. Safe to delete after handover.
+Each workflow:
+1. Builds `meydan-api` and `meydan-frontend` images with `--platform linux/amd64`.
+2. Pushes to ECR.
+3. `aws ecs update-service --force-new-deployment` on each of the 3 services (api, worker, frontend).
+4. `aws ecs wait services-stable` (up to ~10 min).
 
-**Every push** to `dev` or `main` also runs `ci.yml` (lint + test + security scan + frontend build + SonarCloud scan).
+`entrypoint.sh` runs `alembic upgrade head` before gunicorn boots — migrations apply automatically.
 
-## Day-to-day deploy — what actually happens on `git push`
-
-1. You push to `dev`.
-2. `ci.yml` runs in parallel: Python lint + pytest, Frontend build (with `CI=true` so ESLint warnings fail the job), Security scan (Trivy or equivalent), SonarCloud analysis. Any red job surfaces in the PR/commit.
-3. `deploy-dev.yml` runs in parallel to `ci.yml`:
-   - Builds `meydan-api` + `meydan-frontend` images with `--platform linux/amd64` and pushes to ECR `371170753756.dkr.ecr.us-east-1.amazonaws.com`.
-   - `aws ecs update-service --force-new-deployment` on each of `meydan-dev-api`, `meydan-dev-worker`, `meydan-dev-frontend`.
-   - `aws ecs wait services-stable` waits up to ~10 minutes for the new task set to reach steady state.
-4. `entrypoint.sh` runs `alembic upgrade head` before gunicorn boots, so migrations apply automatically on the API container.
-
-Pushing to `main` follows the same pattern but against the prod account/region with the `_PROD` secrets (see `deploy-prod.yml`). At present this workflow cannot succeed because the prod cluster does not exist.
-
-> **Known CI annoyance**: the `aws ecs wait services-stable` step can time out even when the deploy actually succeeds — ECS reports steady state a few minutes later and the container is healthy. If the Wait step is red but the `/api/health` endpoint responds 200, treat the deploy as successful. Tracked in `10_known_issues_and_support.md`.
+> **Known annoyance**: the wait step occasionally times out on a successful deploy. If `/api/health` returns 200 within 5 min of the push, treat the deploy as green.
 
 ## Prerequisites
 
 ### Accounts
-- **AWS account** with administrator access. Production region at handover: **ap-southeast-1** (Singapore). Dev/staging region: **us-east-1**.
-- **GitHub** access to the private `meydan-ai` repository.
-- **Cloudflare** account — authoritative DNS for `meydanfzai.com` (apex NS delegated at OpenProvider).
-- **OpenProvider** reseller account — domain registration.
-- **Resend** account with `meydanfzai.com` domain verified.
-- **OpenAI** and **Anthropic** API keys with production quotas.
-- **Sentry** project (optional — set `SENTRY_DSN` to enable).
+- AWS account with administrator access. Production region: **`ap-southeast-1`** (Singapore). Dev region: **`us-east-1`**.
+- GitHub access to the private `meydan-website-generator` repo.
+- AWS Route 53 hosted zone for `meydanfzai.com` (apex + wildcard records).
+- OpenProvider reseller account.
+- Resend account, `meydanfzai.com` domain verified (SPF + DKIM TXT records).
+- OpenAI + Anthropic API keys (production tier — see `10_known_issues_and_support.md` for tier requirements at scale).
 
 ### Local tools
-- Docker Desktop (for `--platform linux/amd64` builds — **critical**, see below).
-- AWS CLI v2, configured (`aws configure`).
-- GitHub CLI (`gh`), optional.
-- Node 18+, Python 3.12+, `psql` client (for one-off SQL).
+- Docker Desktop (for `--platform linux/amd64` cross-build — **required**, not optional).
+- AWS CLI v2.
+- GitHub CLI (optional).
+- Node 20+, Python 3.12, `psql` 15 client.
 
-### Secrets to have on hand before deploying
-All of the env vars listed in `08_environment_and_secrets.md`.
+### Secrets
+All listed in `08_environment_and_secrets.md`.
 
-## First-time provisioning — numbered steps
+## First-time provisioning — clean account → running prod
 
-Use this only when bringing up a new environment (e.g. the prod cluster in ap-southeast-1). For routine deploys see "Day-to-day deploy" above.
+> Throughout, set `export AWS_REGION=ap-southeast-1 && export AWS_PROFILE=prod`.
 
-> Throughout, substitute your values. Everything assumes `export AWS_REGION=ap-southeast-1`.
-
-### 1. Provision the core stack
+### 1. ECR + Secrets Manager (free / near-free)
 ```bash
-cd infrastructure/aws
-aws cloudformation deploy \
-  --stack-name meydan-core \
-  --template-file cloudformation.yml \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides \
-      Environment=production \
-      DomainName=meydanfzai.com
-```
-This creates: VPC, private/public subnets, ECS cluster, ALB, target groups, RDS (PostgreSQL 15), ElastiCache Redis, CloudWatch log groups, S3 asset buckets, IAM roles.
+aws ecr create-repository --repository-name meydan-api --image-scanning-configuration scanOnPush=true
+aws ecr create-repository --repository-name meydan-frontend --image-scanning-configuration scanOnPush=true
 
-### 2. Store secrets in AWS Secrets Manager
-```bash
-aws secretsmanager create-secret --name meydan/prod/env --secret-string file://prod.env.json
-```
-`prod.env.json` is a JSON map of every env var from `08_environment_and_secrets.md`. The ECS task definitions resolve each entry at runtime.
-
-### 3. Push Docker images to ECR
-```bash
-aws ecr create-repository --repository-name meydan-api  # once
-aws ecr create-repository --repository-name meydan-frontend
-
-docker buildx build --platform linux/amd64 -t meydan-api ./backend
-docker buildx build --platform linux/amd64 -t meydan-frontend ./frontend
-```
-**CRITICAL**: always build with `--platform linux/amd64`. Building on Apple Silicon without this flag produces an arm64 image that ECS Fargate cannot run; the task will crash-loop with no clear error.
-
-Tag and push:
-```bash
-aws ecr get-login-password | docker login --username AWS --password-stdin \
-  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-docker tag meydan-api     $ECR/meydan-api:latest
-docker tag meydan-frontend $ECR/meydan-frontend:latest
-docker push $ECR/meydan-api:latest
-docker push $ECR/meydan-frontend:latest
+# Populate Secrets Manager — see 08_environment_and_secrets.md for the full list.
+# For each secret, IMPORTANT: strip trailing whitespace before storing or the value
+# becomes an Illegal HTTP header value when injected as env var into ECS.
+for s in jwt-secret openai-api-key anthropic-api-key resend-api-key openprovider-username \
+         openprovider-password openprovider-reseller-id pexels-api-key unsplash-access-key \
+         gemini-api-key; do
+  read -p "Value for meydan/prod/$s: " v
+  printf '%s' "$v" > /tmp/sec.txt   # printf, not echo — no trailing newline
+  aws secretsmanager create-secret --name "meydan/prod/$s" --secret-string "file:///tmp/sec.txt"
+done
+shred -u /tmp/sec.txt
 ```
 
-### 4. Register ECS task definitions
+### 2. Network (VPC + subnets + IGW + SGs)
 ```bash
-aws ecs register-task-definition --cli-input-json file://ecs-task-api.json
-aws ecs register-task-definition --cli-input-json file://ecs-task-worker.json
-```
-`entrypoint.sh` runs `alembic upgrade head` automatically on API boot, so the database migrates itself on the first deploy. The worker container has `SKIP_MIGRATIONS=1`.
+VPC_ID=$(aws ec2 create-vpc --cidr-block 10.10.0.0/16 \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=meydan-prod-vpc}]' \
+  --query 'Vpc.VpcId' --output text)
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support
 
-### 5. Create ECS services
-```bash
-aws ecs create-service --cli-input-json file://ecs-service-api.json
-aws ecs create-service --cli-input-json file://ecs-service-worker.json
-```
-Three Fargate services run: **API**, **Worker**, **Frontend**. Desired count at handover: API × 2, Worker × 2, Frontend × 2.
+# Public subnets in 3 AZs
+for i in a b c; do
+  aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.10.$([ $i = a ] && echo 1 || ([ $i = b ] && echo 2 || echo 3)).0/24 \
+    --availability-zone ap-southeast-1$i \
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=meydan-prod-subnet-1$i}]"
+done
 
-### 6. Bootstrap the first admin user
-Once the API is up and migrations have run:
-```bash
-# Sign up as the admin via the UI, verify the email, then:
-psql "$DATABASE_URL" -c "UPDATE public.users SET is_admin=true, approved=true, tokens_remaining=10000000 WHERE email='admin@meydanfzai.com';"
+# IGW, route table, security groups — see infrastructure/aws/cloudformation.yml for the parameterised version.
 ```
 
-### 7. Apply observability config
+### 3. RDS (PostgreSQL 15 Multi-AZ)
 ```bash
-./deploy-observability.sh       # applies dashboards + alarms + WAF
+DB_PASS=$(openssl rand -base64 32 | tr -d '+/=' | head -c 24)
+aws rds create-db-instance \
+  --db-instance-identifier meydan-prod-db \
+  --db-instance-class db.t4g.medium \
+  --engine postgres --engine-version 15.17 \
+  --master-username meydan --master-user-password "$DB_PASS" \
+  --allocated-storage 20 --max-allocated-storage 100 \
+  --storage-type gp3 --storage-encrypted \
+  --multi-az \
+  --vpc-security-group-ids "$DB_SG" \
+  --db-subnet-group-name meydan-prod-db-subnet \
+  --backup-retention-period 14 \
+  --deletion-protection \
+  --db-name meydan_db
+# Wait ~12 min until status=available, then write the URL into Secrets Manager.
 ```
 
-### 8. Point DNS
-At **Cloudflare** (authoritative for `meydanfzai.com`):
-- `A meydanfzai.com → ALB IP` (or CNAME to CloudFront if using the CDN path)
-- `CNAME www.meydanfzai.com → meydanfzai.com`
-- `CNAME *.meydanfzai.com → CloudFront distribution` (for tenant subdomains)
-- Resend-verification records (DKIM, SPF, DMARC) — values come from the Resend dashboard.
+### 4. ElastiCache Redis
+```bash
+aws elasticache create-cache-cluster \
+  --cache-cluster-id meydan-prod-redis \
+  --engine redis --cache-node-type cache.t3.small --num-cache-nodes 1 \
+  --cache-subnet-group-name meydan-prod-redis-subnet \
+  --security-group-ids "$REDIS_SG" \
+  --snapshot-retention-limit 7
+```
 
-> **Do not** edit these records in Route 53 — the authoritative zone is Cloudflare. Route 53 records in the AWS account are cosmetic and not resolved by the internet.
+### 5. ALB + target groups + ACM cert
+```bash
+ALB_ARN=$(aws elbv2 create-load-balancer --name meydan-prod-alb --type application \
+  --subnets $SUBNET_1A $SUBNET_1B $SUBNET_1C --security-groups $ALB_SG \
+  --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+aws elbv2 modify-load-balancer-attributes --load-balancer-arn $ALB_ARN \
+  --attributes Key=idle_timeout.timeout_seconds,Value=300
 
-### 9. Smoke-test
-See the post-deployment checks section below.
+# Target groups: api on 8000, frontend on 3000. API uses lb_cookie stickiness for SSE.
+# HTTPS listener on 443 with ACM cert; HTTP 80 redirects 301 to HTTPS.
+# /api/* rule → API target group at priority 10; default → frontend.
+
+# ACM cert with DNS validation:
+aws acm request-certificate --domain-name meydanfzai.com \
+  --subject-alternative-names "*.meydanfzai.com" --validation-method DNS
+# Add the validation CNAME to Route 53 (or whichever DNS authority holds the zone).
+```
+
+### 6. ECS cluster + task definitions + services
+```bash
+aws ecs create-cluster --cluster-name meydan-prod-cluster \
+  --capacity-providers FARGATE --settings name=containerInsights,value=enabled
+
+aws ecs register-task-definition --cli-input-json file://infrastructure/aws/ecs-task-api-prod.json
+aws ecs register-task-definition --cli-input-json file://infrastructure/aws/ecs-task-worker-prod.json
+# Frontend task def is similar but image=meydan-frontend, port=3000, no secrets.
+
+# Services — public subnets with assignPublicIp=ENABLED (no NAT Gateway, mirrors dev pattern).
+aws ecs create-service --cluster meydan-prod-cluster \
+  --service-name meydan-prod-api --task-definition meydan-prod-api \
+  --desired-count 0 --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[...],securityGroups=[...],assignPublicIp=ENABLED}" \
+  --load-balancers "targetGroupArn=$API_TG,containerName=meydan-api,containerPort=8000" \
+  --health-check-grace-period-seconds 120
+
+# Repeat for worker (no LB) and frontend.
+```
+
+### 7. Autoscaling
+```bash
+# API: 2 → 6 on CPU 60%; Worker: 1 → 8 on CPU 50%; Frontend: 2 → 4 on CPU 60%.
+aws application-autoscaling register-scalable-target \
+  --service-namespace ecs \
+  --resource-id service/meydan-prod-cluster/meydan-prod-api \
+  --scalable-dimension ecs:service:DesiredCount \
+  --min-capacity 2 --max-capacity 6
+aws application-autoscaling put-scaling-policy \
+  --service-namespace ecs --resource-id service/meydan-prod-cluster/meydan-prod-api \
+  --scalable-dimension ecs:service:DesiredCount --policy-name api-cpu-target \
+  --policy-type TargetTrackingScaling \
+  --target-tracking-scaling-policy-configuration '{"TargetValue":60.0,"PredefinedMetricSpecification":{"PredefinedMetricType":"ECSServiceAverageCPUUtilization"},"ScaleInCooldown":300,"ScaleOutCooldown":60}'
+```
+
+### 8. Data migration (only if migrating from an existing dev environment)
+
+See `infrastructure/migration/` helper scripts:
+- `pg_dump_us_east.sh` — dump dev DB
+- `pg_restore_singapore.sh` — restore (drops and recreates `public` schema first to avoid the `schema "public" already exists` error from a fresh restore)
+- `s3_sync_uploads.sh` — sync customer-uploaded assets cross-region
+- `verify_migration.sh` — diff row counts between dev and prod
+
+### 9. DNS cutover (CloudFront)
+
+```
+apex (meydanfzai.com)  A   →  CNAME  →  meydan-prod-alb-XXXX.ap-southeast-1.elb.amazonaws.com  (proxied / orange-cloud)
+www                    A   →  CNAME  →  same
+dev                    CNAME unchanged (still points to us-east-1 ALB for testing)
+```
+
+CloudFront's CNAME-flattening handles the apex CNAME natively. Set `proxied=true` to also get DDoS + WAF + edge caching.
+
+### 10. WAF + CloudWatch + alarms
+
+Apply `infrastructure/aws/waf.yml`, `infrastructure/aws/alarms.yml`, `infrastructure/aws/dashboard.json` via CloudFormation / AWS CLI.
 
 ## Post-deployment checks
 
-Open each URL and confirm the expected response before announcing the deploy:
+- `curl https://meydanfzai.com/api/health` returns `{"status":"ok","service":"meydan-website-generator"}`.
+- `curl https://meydanfzai.com/` returns 200 with `Content-Type: text/html` and the React shell HTML.
+- Sign up a throwaway user, generate one site, deploy it. The deployed site loads from `https://<slug>.s3-website.ap-southeast-1.amazonaws.com`.
+- CloudWatch dashboard `meydan-production` panels green for 30 minutes.
 
-| Check | URL | Expected |
-|---|---|---|
-| Public health | `https://meydanfzai.com/api/health` | `{"status":"ok"}` |
-| Deep health | `https://meydanfzai.com/api/health/deep` | `{"db":"ok","redis":"ok"}` |
-| Frontend shell | `https://meydanfzai.com/` | Landing page renders, no console errors. |
-| OpenAPI | `https://meydanfzai.com/api/openapi.json` | JSON, 200. |
-| Login | UI login with the admin account | JWT received; dashboard loads. |
-| Sample generation | Dashboard → New site, a two-sentence brief | SSE events stream, a site is produced in under 120 s. |
-| Sample deploy | Deploy the generated site to a `*.meydanfzai.com` subdomain | URL returns 200 within 60 s of invalidation. |
+## Rollback
 
-**Logs to inspect**: CloudWatch Logs groups `/ecs/meydan-api` and `/ecs/meydan-worker`. Filter by the correlation ID returned by the smoke-test deploy.
-
-**Metrics to verify**: CloudWatch dashboard `meydan-production` panels: request rate > 0, p95 < 1 s on non-generation routes, 5xx rate < 1 %.
-
-## Rollback procedure
-
-### If a new image is bad (API or worker)
+For a bad code deploy:
 ```bash
-# Identify the last-known-good task definition revision:
-aws ecs describe-services --cluster meydan --services meydan-api | jq '.services[0].taskDefinition'
-# Roll back:
-aws ecs update-service --cluster meydan --service meydan-api \
-  --task-definition meydan-api:<N-1>  --force-new-deployment
-```
-Do the same for `meydan-worker` or `meydan-frontend` as needed.
+# Find the previous task def revision
+aws ecs describe-services --cluster meydan-prod-cluster --services meydan-prod-api \
+  --query 'services[0].deployments[].{rev:taskDefinition,status:status}'
 
-### If a migration is bad
-1. Revert the Alembic revision locally: `alembic downgrade -1`.
-2. Generate a forward-compatible revision that *un-applies* the change.
-3. Commit, rebuild, redeploy. **Never** edit a merged migration in place — write a new one.
-
-### If CloudFront misbehaves
-- Primary site (`meydanfzai.com`): distribution `E368CULECTE3G5`. Create an invalidation for `/*` from the AWS console.
-- Tenant sites: the admin panel has a one-click redeploy-and-invalidate (`POST /api/deploy/{site_id}/redeploy`).
-
-### Full DR restore
-See the disaster-recovery snapshot rotation plan documented in `infrastructure/aws/OPERATIONS-GUIDE.md`. RDS automated backups are retained 14 days; cross-region snapshots land in `us-west-2`. Deletion protection is on.
-
-## Local setup — a new developer to running product in under 30 minutes
-
-```bash
-# 1. Clone and configure
-git clone git@github.com:meydan-ai/meydan-ai.git
-cd meydan-ai
-cp backend/.env.example backend/.env      # fill in the keys (at minimum: DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, ANTHROPIC_API_KEY)
-
-# 2. Bring up the stack
-docker compose up -d --build
-# Services come up on:
-#   Frontend: http://localhost:3000
-#   API:      http://localhost:8000  (Swagger: http://localhost:8000/api/docs)
-#   Postgres: localhost:5432
-#   Redis:    localhost:6379
-
-# 3. Wait for migrations
-docker compose logs -f api    # look for "Application startup complete"
-
-# 4. Create a local admin
-docker compose exec postgres psql -U meydan -d meydan_db -c \
-  "INSERT INTO public.users (email, hashed_password, full_name, company_name, license_number, is_admin, approved, email_verified_at, tokens_remaining)
-   VALUES ('admin@localhost', '<bcrypt-of-password>', 'Local Admin', 'Dev', 'DEV-0001', true, true, now(), 1000000);"
-
-# 5. Log in at http://localhost:3000 with admin@localhost / your password.
+# Roll the API back
+aws ecs update-service --cluster meydan-prod-cluster --service meydan-prod-api \
+  --task-definition meydan-prod-api:N-1 --force-new-deployment
 ```
 
-A shorter path — skip Docker and run Postgres/Redis locally, then:
+For a bad data state — restore from the latest RDS snapshot (snapshot-restore creates a new instance; you then point Secrets Manager `database-url` at the new endpoint and force-redeploy).
+
+## Local setup — under 30 minutes for a new developer
+
 ```bash
-cd backend && python -m venv venv && source venv/bin/activate
+git clone <repo>
+cd meydan-website-generator
+
+# 1. Backend
+cd backend
+python3.12 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env   # fill in DATABASE_URL, OPENAI_API_KEY, ANTHROPIC_API_KEY at minimum
+docker run -d --name meydan-pg -p 5432:5432 -e POSTGRES_USER=meydan -e POSTGRES_PASSWORD=meydan -e POSTGRES_DB=meydan_db postgres:15
+docker run -d --name meydan-redis -p 6379:6379 redis:7
 alembic upgrade head
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8000   # API on http://localhost:8000
 
-# in another tab:
-cd frontend && npm ci && npm start
+# 2. Worker (separate terminal)
+cd backend && source venv/bin/activate
+python -m app.worker
+
+# 3. Frontend (separate terminal)
+cd ../frontend
+npm install
+npm start   # http://localhost:3000
+
+# Or skip the manual setup and run everything via docker-compose:
+docker compose up
 ```

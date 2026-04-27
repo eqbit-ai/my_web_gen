@@ -1,126 +1,85 @@
 # 9. Ongoing Costs
 
-As specified in the brief, the authoritative cost data is delivered directly in the **Ongoing Costs sheet** of the handover workbook.
+> **Authoritative source**: the **Ongoing Costs sheet** in the handover workbook. The numbers below are engineering estimates. Update the workbook from AWS Cost Explorer and the provider billing pages on the day of delivery.
 
-This document is a pointer — it lists the paid services that must appear on that sheet, so the reviewer can confirm nothing was left out. Do not treat the figures here as authoritative; the workbook is the source of truth.
+## Snapshot — what's live and billing today
 
-## Services that must appear on the sheet
+### Production (`ap-southeast-1`, account `290172088819`)
 
-| Service | What it does | Plan to verify is listed |
-|---|---|---|
-| **AWS** (consolidated bill) | ECS Fargate (API + Worker + Frontend), RDS PostgreSQL, ElastiCache Redis, ALB, S3 (app + per-tenant site buckets + logs), CloudFront, CloudWatch, ACM (free), Route 53 (minimal), Secrets Manager, WAF, ECR. | Pay-as-you-go; list as a single line with an itemised breakdown in a sub-table. |
-| **OpenAI API** | Stage 0 (enhance) + Stage 1 (plan) + landing-page chat. | Usage-based; include current month-to-date and a 30-day projection. |
-| **Anthropic API** | Stage 2 (HTML) + Stage 3 (JS) + in-editor LLM edits. | Usage-based; same as above. |
-| **Resend** | Transactional email (verification, password reset, form submissions, admin alerts). | Free up to 3 000 emails / month, then per-email pricing; list the plan and renewal date. |
-| **OpenProvider** | Domain registration (resold to users). | Per-domain cost; list margin model separately. |
-| **Cloudflare** | Authoritative DNS for `meydanfzai.com` + tenant DNS automation. | Free plan at time of handover; note any paid features in use. |
-| **Pexels** | Stock imagery search. | Free tier, API-rate-limited; list even if $0. |
-| **Unsplash** | Stock imagery search. | Free tier; same. |
-| **Sentry** (optional) | Error reporting. Only if `SENTRY_DSN` is set in prod. | List plan + renewal. |
-| **SonarCloud** (optional) | Static analysis / code quality. Dev-time only. | List if kept active post-handover. |
-| **GitHub** | Repository hosting + Actions minutes. | Seat count + Actions overage. |
-| **Domain: `meydanfzai.com`** | Registered at OpenProvider. | Annual renewal date. |
-
-## Approximate monthly cost (snapshot)
-
-> **These are engineering estimates, not invoices.** The Ongoing Costs sheet in the workbook carries the authoritative, invoice-backed numbers. Update the workbook from AWS Cost Explorer and the provider billing pages on the day of delivery.
->
-> Figures are in **USD / month** unless stated. Two columns:
-> - **Dev (today)** — the current us-east-1 dev environment. Low traffic (single-digit concurrent generations).
-> - **Prod target** — the Singapore (`ap-southeast-1`) prod target sized for **500–1 000 concurrent generations** (see capacity plan). Empty at handover; these are forecast numbers you will pay *if and when* you scale to that load.
-
-### AWS breakdown
-
-| AWS service | Dev (today) | Prod target | Notes |
-|---|---:|---:|---|
-| ECS Fargate — API | ~$25 | ~$350 | Dev: 1 task × 0.5 vCPU / 1 GB. Prod: 5–10 tasks × 2 vCPU / 4 GB autoscale. |
-| ECS Fargate — Worker | ~$25 | ~$700 | Dev: 1 task. Prod: 10–20 tasks × 2 vCPU / 4 GB to absorb burst. |
-| ECS Fargate — Frontend | ~$10 | ~$40 | Tiny nginx container; could be replaced with S3+CloudFront only at prod. |
-| RDS PostgreSQL | ~$25 | ~$450 | Dev: db.t3.micro single-AZ. Prod: r6g.xlarge Multi-AZ + RDS Proxy. |
-| ElastiCache Redis | ~$15 | ~$300 | Dev: cache.t3.micro. Prod: cache.r6g.large 2-node replication. |
-| Application Load Balancer | ~$20 | ~$100 | Hourly fee + LCU + data-transfer. |
-| S3 (app + tenant sites + logs) | ~$5 | ~$150 | Storage + egress scales roughly linearly with tenant count. |
-| CloudFront (CDN) | ~$5 | ~$150 | Edge egress to customer-site visitors. |
-| CloudWatch (logs, metrics, alarms) | ~$20 | ~$150 | Log retention is the big lever; see s3-lifecycle.json. |
-| AWS WAF | ~$10 | ~$40 | Fixed + per-rule. |
-| Secrets Manager | ~$4 | ~$10 | $0.40 / secret / month × ~10–25 secrets. |
-| ECR (image registry) | ~$1 | ~$5 | Storage only; pulls within AWS are free. |
-| NAT Gateway (private → internet for LLM) | ~$5 | ~$150 | Runs hot on worker egress to OpenAI/Anthropic. |
-| ACM (TLS certs), Route 53 (zones) | $0 | ~$5 | ACM is free; Route 53 zones are $0.50 each if you keep the cosmetic zones. |
-| **AWS subtotal** | **~$170** | **~$2 600** | |
-
-### Third-party breakdown
-
-| Service | Dev (today) | Prod target | Notes |
-|---|---:|---:|---|
-| **OpenAI API** (GPT-4.1 + GPT-4.1-mini) | ~$30 | ~$600 | Stage 0 + Stage 1 per generation + landing-page chat. Per-generation ≈ $0.06. |
-| **Anthropic API** (Claude Sonnet 4.6) | ~$50 | ~$3 500 | Stage 2 + Stage 3 per generation + every LLM-backed edit. Per-generation ≈ $0.25, per in-editor edit ≈ $0.05–0.15. |
-| **Resend** (email) | $0 | ~$20–50 | Free tier ≤ 3 000 emails/mo. Pro $20 + overage afterwards. |
-| **Cloudflare** (DNS) | $0 | $0 | Free plan is sufficient. |
-| **Pexels** (images) | $0 | $0 | Free with rate caps. |
-| **Unsplash** (images) | $0 | $0 | Free with rate caps. |
-| **Sentry** (error tracking, optional) | $0 | ~$26 | Team plan when set up; currently disabled if `SENTRY_DSN` empty. |
-| **SonarCloud** (static analysis, optional) | $0 | ~$10 | Paid only if kept after handover. |
-| **GitHub** (repo + Actions) | ~$15 | ~$30 | ~3 seats × Team plan + Actions overage. |
-| **OpenProvider** (domain registrar) | pass-through | pass-through | Cost of each domain is passed through to the user; margin set per the domains table. Not an operational expense. |
-| **Domain: `meydanfzai.com`** | ~$1.25 | ~$1.25 | ~$15 / year at OpenProvider. |
-| **Third-party subtotal** | **~$100** | **~$4 250** | |
-
-### Totals
-
-| | Dev (today) | Prod target |
+| Resource | Sizing | $ / month |
 |---|---:|---:|
-| **All-in monthly cost** | **~$270 / mo** | **~$6 850 / mo** |
+| RDS PostgreSQL `db.t4g.medium` Multi-AZ + 20 GB gp3 | 2 vCPU, 4 GB | ~$140 |
+| ElastiCache Redis `cache.t3.small` | 1 node | ~$30 |
+| ALB | + LCU + WAF rules | ~$25 |
+| ECS Fargate API — 2 tasks min, autoscale 6 max (2 vCPU / 4 GB) | $83 / task / mo at min | $166 idle → $498 peak |
+| ECS Fargate Worker — 1 task min, autoscale 8 max (2 vCPU / 4 GB) | $83 / task / mo | $83 idle → $663 peak |
+| ECS Fargate Frontend — 2 tasks fixed (1 vCPU / 2 GB) | $42 / task / mo | $84 |
+| WAF | rules + WCU | ~$10 |
+| CloudWatch logs + alarms + dashboard | | ~$20 |
+| Secrets Manager (12 secrets) | $0.40 / secret | $5 |
+| ECR + S3 + small misc | | ~$5 |
+| **Idle (no traffic)** | | **~$570** |
+| **Peak (200 concurrent generations sustained)** | | **~$1,520** |
+| **Realistic monthly bill (B2B SaaS pattern, 4–6 hr active per day)** | | **~$700 – $900** |
 
-Range for prod at sustained 500–1 000 concurrent generations: **~$6 000 – $12 000 / mo**, depending mostly on LLM volume. Peak-hour bursts (when every worker is generating) can push the LLM line 2–3× for short windows — see `todo-prod-migration-capacity.md` in the team backlog.
+### Dev (`us-east-1`, account `371170753756`) — testing only post-migration
 
-### Per-generation economic unit
+| Resource | Sizing | $ / month |
+|---|---:|---:|
+| RDS PostgreSQL `db.t3.medium` single-AZ | 2 vCPU, 4 GB | ~$60 |
+| ElastiCache Redis `cache.t3.small` | 1 node | ~$24 |
+| ALB | | ~$16 |
+| ECS Fargate API + Worker + Frontend | fixed counts | ~$70 |
+| **Subtotal — running 24/7** | | **~$170** |
 
-Rough unit cost to produce **one initial site** (all four LLM stages):
+> **Optimisation**: the user has indicated dev should be scaled to 0 between testing sessions. If that lands, dev burn drops to ~$30 / month (RDS storage + Redis idle + ALB), regaining ~$140 / month.
 
-| Stage | Model | Rough tokens (in / out) | ≈ Cost |
-|---|---|---|---|
-| 0 — Enhance brief | GPT-4.1-mini | 3 000 / 1 000 | $0.003 |
-| 1 — Plan (JSON) | GPT-4.1 | 5 000 / 4 000 | $0.055 |
-| 2 — HTML | Claude Sonnet 4.6 | 8 000 / 10 000 | $0.174 |
-| 3 — JS | Claude Sonnet 4.6 | 5 000 / 4 000 | $0.075 |
-| **Total per site** | | | **~$0.31** |
+## Third-party services
 
-In-editor edits typically cost **$0.05–$0.15** per edit (Claude Sonnet 4.6, smaller prompt + smaller completion).
+| Service | Plan | Monthly | Billing cycle | Notes |
+|---|---|---:|---|---|
+| **OpenAI** | (production tier) | **$300 – $5,000** | Monthly post-pay | At observed rate (~$0.04 per generation for stages 0+1), 1,000 sites/mo ≈ $40; 50,000 sites/mo ≈ $2,000. **Tier upgrades are critical-path for scale** — see `10_known_issues_and_support.md`. |
+| **Anthropic** | (production tier) | **$1,000 – $12,000** | Monthly post-pay | Stages 2+3 dominate cost (~$0.21 per generation). Same tier-upgrade caveat. |
+| **Resend** | (Transactional) | $20 – $100 | Monthly | Welcome emails, password reset, generation notifications, custom-domain alerts. |
+| **OpenProvider** | (Domain reseller) | $0 fixed + per-domain | Per-purchase | Each customer-purchased domain (~$10 – $25 / year retail margin). Pass-through cost. |
+| **AWS CloudFront** | Pay-as-you-go | $5 – $50 | Monthly | First 1 TB egress / month free; thereafter ~$0.085 / GB in ap-southeast-1. Per-customer-domain distributions add $0 fixed (request-priced). One distribution per custom domain currently. |
+| **Pexels API** | Free | $0 | — | Stock photos for generated sites. |
+| **Unsplash API** | Free | $0 | — | Same. |
+| **Sentry** (optional) | Developer | $0 – $26 | Monthly | Error tracking. Currently disabled — `SENTRY_DSN` is unset. |
+| **SonarCloud** | Open-source | $0 | — | Code quality scans — currently red on every push because `SONAR_TOKEN` is missing from GitHub repo secrets. Fix or remove the SonarCloud step from `ci.yml`. |
 
-At the target plan of 2 sites + ~20 edits per active user per month, LLM variable cost is **~$2–5 per active user per month**. Infrastructure is fixed-ish; the break-even point is around **~200 active users per month** at prod sizing.
+## Cost-per-active-user estimate
 
-## Required columns on the sheet (per the brief)
+**Assumptions**:
+- Each *active user* generates 3 sites per month (typical SMB onboarding).
+- Each generation costs ~$0.25 in LLM tokens (Stage 0–3 combined).
+- Each generation hits the API ~30 times during the editing session (CRUD, edit-stream, deploy).
+- AWS infrastructure cost is amortised across all active users at a given month.
 
-For each service:
-1. Service name
-2. Plan (e.g. "Pro", "Pay-as-you-go")
-3. Monthly cost
-4. Billing cycle (monthly, annual, usage)
-5. Renewal date (where applicable)
+**Per-active-user cost**:
+- LLM: 3 generations × $0.25 = **$0.75**
+- AWS variable (extra ECS task-time, S3 puts, CloudWatch ingestion): **~$0.10**
+- Email + DNS + misc: **~$0.05**
+- **Variable cost per active user: ~$0.90 / month**
+- **Fixed cost**: $700 – $900 monthly. Per-user fixed cost falls fast with scale (e.g. 1,000 active users → ~$0.80 / user fixed; 10,000 active users → ~$0.08 / user fixed).
+- **All-in per-active-user at 1,000 active users / month: ~$1.70**.
 
-## Derived figures that must appear
+## Free tiers, trial periods, and cutover dates
 
-- **Cost per active user** — monthly total ÷ approved users with ≥ 1 site generated in the month.
-- **Assumptions used** — at minimum:
-  - Average generations per active user per month.
-  - Average tokens per generation (input + output, per model).
-  - Average deployed sites per active user.
-  - Average S3 egress per site per month.
-  - Currency (AED or USD) and FX rate used.
+| Service | Free tier ends when | Action when it ends |
+|---|---|---|
+| **AWS new-account credits** | The prod account `290172088819` does not currently have promotional credits applied; if the client transfers AWS credits, apply via Billing → Credits before regular charges land. | N/A unless transferred. |
+| **AWS CloudFront** | First 1 TB egress / month is free permanently. Above that, ~$0.085 / GB in ap-southeast-1. | Watch the egress trend in CloudFront → Reports → Usage. |
+| **Sentry Developer plan** | At 5,000 errors / month — automatic upgrade prompt. | Currently disabled; no immediate concern. |
+| **Pexels / Unsplash** | Soft-rate-limited, never billed at our scale. | — |
+| **Resend** | First 3,000 emails / month free, then $20 / mo for 50,000. | Already billing — verify in workbook. |
+| **OpenAI / Anthropic** | Pay-as-you-go from token #1; no free tier. | Already billing. |
 
-## Free tiers, trials, cutover dates to flag
+## Where to look on day-of-delivery
 
-- **Resend** — free 3 000 emails/month; cutover when monthly volume exceeds this.
-- **Pexels / Unsplash** — free with rate caps; note expected caps at target user count.
-- **Cloudflare** — free plan sufficient today; flag if usage nears paid-plan requirements (e.g. if Workers or Advanced Rate Limiting are added).
-- **AWS** — no free tier applies at production scale; historical credits (if any) should be recorded on the sheet with the expiry date.
-- **Sentry** — the hobby tier has an error-event cap; flag when production reaches ~70 % of cap.
-
-## Where cost data lives in-system
-
-- **LLM cost attribution** — the `token_transactions` table records model, prompt tokens, completion tokens, and computed USD cost per call. `GET /api/admin/tokens/consumption` aggregates these.
-- **AWS spend** — authoritative in AWS Cost Explorer; filter by tag `Project=meydan-ai`. The CloudWatch dashboard surfaces ECS + RDS headline costs but is not billing-accurate.
-- **Domains sold** — the `domains` table has `cost_paid` and `reseller_margin` columns populated from the OpenProvider callback.
-
-When updating the workbook, pull fresh numbers from these three sources. The workbook sheet is the handover artefact — refresh it the day of delivery.
+| Question | Where |
+|---|---|
+| "What did AWS bill us last month?" | AWS Cost Explorer, filter `Environment=production` and `Project=meydan-ai`. |
+| "What did OpenAI bill us last month?" | platform.openai.com → Usage → Costs. |
+| "What did Anthropic bill us last month?" | console.anthropic.com → Plans & billing. |
+| "What's our run-rate this month?" | Combine the three above; the **Ongoing Costs sheet** in the workbook keeps the historical roll-up. |

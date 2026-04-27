@@ -1,27 +1,31 @@
 # 1. System Overview
 
-**Read time: 5 minutes.**
-
 ## What it is
-Meydan AI is a web application that lets a Meydan Free Zone business generate, edit, preview, and deploy a complete marketing website from a short text brief, without writing code.
+
+An AI-powered website generator that produces a deployed, brand-consistent business website from a short brief in under 90 seconds.
 
 ## Who uses it
-Small and mid-sized businesses licensed in Meydan Free Zone (UAE), who sign up with their company details and trade licence number and need a live website in hours rather than weeks.
+
+Small and mid-sized businesses licensed in Meydan Free Zone (UAE), who sign up with their company details and trade-licence number and need a live website in hours rather than weeks.
 
 ## Tech stack
-- **Language**: Python 3.12 (backend), JavaScript / React 18 (frontend)
-- **Frameworks**: FastAPI (async), React (Create React App), SQLAlchemy async
-- **Hosting**: AWS ECS Fargate (API + worker + frontend), S3 + CloudFront (deployed customer sites & static assets)
-- **Database**: PostgreSQL 15 on RDS (schema-per-tenant isolation)
-- **Cache / queue**: Redis (ElastiCache) — rate limits, job queue, session cache
-- **Main AI models**: OpenAI GPT-4.1 (planning) and Anthropic Claude Sonnet 4.6 (HTML and JS generation)
 
-## Top three external dependencies and their failure modes
-1. **Anthropic API** — generates the HTML and JavaScript for every site and every in-editor edit. If it is down, no new generations or edits succeed; existing sites and the dashboard keep working. A circuit breaker opens after 5 consecutive failures and recovers automatically after 60 seconds.
-2. **OpenAI API** — produces the JSON plan for every site (stage 1 of the pipeline). If it is down, generation fails at the first stage before any Anthropic cost is incurred. Same circuit-breaker behaviour as Anthropic.
-3. **AWS S3 + CloudFront** — hosts every deployed customer site. If S3 is unavailable in the active region, *new* deploys fail but already-deployed sites continue to serve from CloudFront edge caches. If CloudFront misbehaves, previously-deployed sites stop serving — this is the highest-blast-radius dependency.
+| Layer | Choice |
+|---|---|
+| **Frontend** | React 18 (Create React App), React Router v6, GSAP animations, Monaco editor, custom CSS |
+| **Backend** | Python 3.12, FastAPI (async), gunicorn + UvicornWorker |
+| **Database** | PostgreSQL 15 (RDS Multi-AZ), tenant-per-schema isolation |
+| **Cache + queue** | Redis 7 (ElastiCache) |
+| **Hosting** | AWS ECS Fargate (`ap-southeast-1`), ALB, S3 static hosting for deployed customer sites |
+| **Edge** | AWS CloudFront (CDN + SSL via ACM) + AWS WAF |
+| **DNS** | AWS Route 53 (apex `meydanfzai.com` and customer custom domains) |
+| **Email** | Resend (transactional) |
+| **AI models** | OpenAI `gpt-4.1-mini` (enhance) + `gpt-4.1` (plan) and Anthropic `claude-sonnet-4-6` (HTML + JS generation) |
 
-A secondary set — Resend (transactional email), OpenProvider (domain registration), Cloudflare (authoritative DNS for meydanfzai.com), and Pexels/Unsplash (stock imagery) — can each fail without taking the product down, but will break specific workflows (signup verification, domain purchase, DNS changes, image search).
+## Top three external dependencies
 
-## One-sentence summary
-A multi-tenant, AI-driven website builder that turns a business brief into a deployed site on a custom or Meydan-subdomain, with an admin plane for approving tenants, capping usage, and observing costs.
+| Dependency | What breaks if it goes down | Mitigation in code |
+|---|---|---|
+| **Anthropic API** | Stage 2 (HTML) and Stage 3 (JS) generation halts. Users see an error page before any HTML is produced. | Circuit breaker opens after 5 failures (60s recovery); user gets a clean retry message. |
+| **OpenAI API** | Stage 0 (enhance) and Stage 1 (plan) halt; pre-generation moderation fails closed → all new prompts blocked. | Same circuit-breaker pattern. Operator can flip `MODERATION_LLM_ENABLED=false` for keyword-only mode in an outage. |
+| **AWS CloudFront** | The CDN edge for the platform and for every customer-deployed custom domain. If CloudFront has a region-wide degradation, customer sites slow / 5xx. | CloudFront has its own multi-region failover; outages are rare. Origin (ALB / S3) remains directly reachable, so an emergency runbook can re-point DNS straight at origin while CloudFront recovers. |

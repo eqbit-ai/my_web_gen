@@ -1,23 +1,21 @@
 # Handover — Meydan AI Website Generator
+
 **Package**: `Handover_Meydan_2026-04`
-**Delivered**: April 2026 (last reviewed 2026-04-24)
-**Audience**: A developer who has not seen the product before.
+**Delivered**: April 2026 (last reviewed 2026-04-27)
+**Audience**: A developer who has not seen the product before. Read top to bottom; each document is self-contained.
 
 ## Snapshot at handover
 
-- **Current branch with live users**: `dev` — deployed to AWS us-east-1, served at `https://meydanfzai.com` (and `https://dev.meydanfzai.com`). *Note*: us-east-1 is the de-facto prod today; planned migration to Singapore is documented in `11_singapore_migration_runbook.md`.
-- **Prod branch**: `main` — wired to `deploy-prod.yml` targeting Singapore `ap-southeast-1`. The prod cluster is **not yet provisioned**; provisioning + data migration steps are in `11_singapore_migration_runbook.md`. After migration: `dev` → us-east-1 (testing) and `main` → ap-southeast-1 (live users).
-- **Live health checks**: `GET /api/health` returns `{"status":"ok"}` on both URLs at time of writing.
-- **Outstanding end-user bugs**: 1 (carousels in generated sites — `10_known_issues_and_support.md` item 1).
-- **Outstanding security/config items**: apex DNS not Cloudflare-proxied (C1), SonarCloud token missing (C2), CI wait-for-stable occasionally noisy (C3). Full list in `10_known_issues_and_support.md`.
+- **Live site**: `https://meydanfzai.com` — served from AWS Singapore (`ap-southeast-1`), prod account `290172088819`. via CloudFront edge (CDN + SSL + WAF).
+- **Dev environment**: AWS us-east-1, account `371170753756`, served from the same `meydanfzai.com` domain prior to migration; now retained as the testing environment that receives `dev` branch pushes.
+- **Health**: `GET /api/health` returns `{"status":"ok","service":"meydan-website-generator"}`.
+- **Git**: branch `dev` is the latest. Push to `dev` triggers `deploy-dev.yml`; push to `main` triggers `deploy-prod.yml` (Singapore).
 
 ## How to read this folder
 
-Start at the top of the list and work down. Every document is self-contained; you do not need to read files in order to understand one of them, but reading them in order is the fastest way to become operational.
-
 | # | Document | What it answers |
 |---|---|---|
-| 1 | `01_system_overview.md` | What is this product, in 5 minutes? |
+| 1 | `01_system_overview.md` | What is the product, in five minutes? |
 | 2 | `02_architecture_diagram.md` | How do the pieces fit together? |
 | 3 | `03_user_workflow.md` | What does an end user actually do? |
 | 4 | `04_admin_workflow.md` | How do I operate the product as an admin? |
@@ -27,19 +25,17 @@ Start at the top of the list and work down. Every document is self-contained; yo
 | 8 | `08_environment_and_secrets.md` | Every env var and where it comes from. |
 | 9 | `09_ongoing_costs.md` | Pointer — see the Ongoing Costs sheet in the handover workbook. |
 | 10 | `10_known_issues_and_support.md` | What is unfinished, and who to call. |
-| 11 | `11_singapore_migration_runbook.md` | Step-by-step migration of the live us-east-1 stack to ap-southeast-1 Singapore prod. |
+| + | `disaster_recovery.md` | Backup state + recovery procedures + restore drill plan. |
 
 ## Source assets
 
-Editable architecture diagram source: `assets/architecture.drawio`
-Rendered diagram: `assets/architecture.png`
-Screenshots for workflows: `assets/screenshots/` (placeholders listed in each workflow doc)
+- Editable architecture diagram source: `assets/diagrams/architecture.html` (open with any browser to edit)
+- Rendered diagram: `assets/diagrams/architecture.png`
+- Screenshots for workflows: `assets/screenshots/user/` and `assets/screenshots/admin/`
 
 ## Contact at handover
 
 - **Technical lead (vendor)**: Ashutosh — ashuken266@gmail.com
 - **Meydan AI lead**: see `10_known_issues_and_support.md`
 
-## Questions
-
-Any questions on a specific document: raise *before* drafting changes, not after delivery. Contact the technical lead above.
+Any questions on a specific document: raise *before* drafting changes, not after delivery.

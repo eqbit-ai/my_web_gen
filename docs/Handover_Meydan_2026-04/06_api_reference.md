@@ -1,258 +1,201 @@
 # 6. API Reference
 
-All endpoints are served by the FastAPI app at `https://meydanfzai.com/api`. OpenAPI JSON is exposed at `/api/openapi.json`; Swagger UI is available at `/api/docs` in non-production environments (gated by `ENVIRONMENT != "production"`).
+Base URL: `https://meydanfzai.com/api`. Interactive Swagger at `/docs` (only in non-production `ENVIRONMENT` values).
 
 ## Authentication
 
-- **Scheme**: Bearer JWT in the `Authorization` header.
-  `Authorization: Bearer <token>`
-- **Obtain a token**: `POST /api/auth/login` with `{ "email": "...", "password": "..." }`. The response contains `access_token` and `user`. Tokens expire after `JWT_EXPIRE_MINUTES` (default 1440 / 24 h).
-- **Claims**: `user_id`, `license_number`, `db_schema`, `exp`. Admin-only endpoints additionally require `is_admin=true` on the `users` row.
-- **Refresh**: no refresh token — the frontend re-authenticates by asking the user to log in again when the token expires (401 response).
-- **Public endpoints** (no auth): `POST /api/forms/submit/{site_id}`, `POST /api/landing/chat`, `GET /api/health*`, `GET /api/images/search`, `GET /api/templates*`, `GET /api/components*`.
+All non-public endpoints require a JWT in the `Authorization` header:
 
-## Error codes
+```
+Authorization: Bearer <token>
+```
 
-All errors return JSON `{ "detail": "<message>" }` with one of:
+Obtain a token via `POST /api/auth/login`. Token claims: `user_id`, `email`, `is_admin`, `license_number`, `db_schema`. Default expiry **24 hours** (`JWT_EXPIRE_MINUTES=1440`).
 
-| Code | Meaning | Notes |
-|---|---|---|
-| 400 | Validation error | Check `detail` for Pydantic field errors. |
-| 401 | Unauthenticated | Missing or expired token. |
-| 403 | Forbidden | Logged in but not authorised (e.g. non-admin hitting `/api/admin/*`, or user acting on another tenant's site). |
-| 404 | Not found | Resource does not exist or is soft-deleted. |
-| 409 | Conflict | Duplicate signup, site name already taken, etc. |
-| 413 | Payload too large | Upload exceeds per-route cap. |
-| 422 | Unprocessable entity | FastAPI / Pydantic validation, structured list in `detail`. |
-| 429 | Too many requests | Rate limit hit — see **Rate limits** below. |
-| 451 | Unavailable for legal reasons | Content moderation rejected the prompt. |
-| 500 | Server error | Always logged with a correlation ID. Include `X-Correlation-ID` from the response headers when filing a ticket. |
-| 503 | Upstream unavailable | LLM circuit breaker open, or S3/CloudFront fault during deploy. |
+## Common error codes
+
+| Status | Meaning |
+|---|---|
+| `400` | Validation failure — payload didn't match the schema. Body: `{"detail": "..."}`. |
+| `401` | Missing / invalid / expired JWT. Body: `{"detail": "Authentication required"}`. |
+| `403` | Authenticated but not authorised (e.g. non-admin hitting `/api/admin/*`, or trying to access another tenant's data). |
+| `404` | Resource not found OR exists in another tenant (we deliberately conflate to prevent IDOR fishing). |
+| `409` | Conflict — e.g. signup with an existing email; deploy slug collision. |
+| `429` | Rate limited. `Retry-After` header tells you when. |
+| `500` | Server error. Body: `{"detail": "Internal server error"}`. The full traceback is in CloudWatch keyed by the `X-Correlation-ID` header. |
+| `503` | LLM circuit breaker open (provider failing). Retry after 60 s. |
 
 ## Rate limits
 
-Redis sliding-window, enforced by `app/middleware/rate_limiter.py`:
-- **Per authenticated user**: 60 requests / minute global; generation endpoints additionally limited to 10 / hour.
-- **Per IP (unauthenticated)**: 30 requests / minute.
-- **Per-user monthly generation cap**: stored on `users.max_generations_per_month`, default 50 on approval.
-- On breach: `429 Too Many Requests` with `Retry-After` header in seconds.
+Sliding-window per `(user_id, route_class)` keyed in Redis.
 
-## Endpoint catalogue
+| Route class | Limit |
+|---|---|
+| `/api/auth/*` | 10 req / 5 min per IP |
+| `/api/landing/*` | 30 req / 5 min per IP |
+| `/api/generator/*` | 20 req / hour per user |
+| `/api/admin/*` | 200 req / min per admin |
+| All other | 60 req / min per user |
 
-Format for each endpoint:
-`METHOD PATH` — purpose. Inputs → outputs.
+---
 
-### Health
-- `GET /api/health` — liveness probe. → `{"status":"ok"}`
-- `GET /api/health/deep` — checks DB + Redis. → `{"db":"ok","redis":"ok"}` or 503.
-- `GET /api/health/sse-test` — SSE ping for debugging.
-- `POST /api/health/migrate` — admin-only, runs `alembic upgrade head`. Input: none. Output: summary of applied revisions.
+## Endpoints
 
-### Auth (`/api/auth`)
-- `POST /signup` — create a tenant. Input: `{email, password, full_name, company_name, license_number}`. Output: `{message, user_id}`.
-- `POST /verify-email` — confirm email. Input: `{token}`.
-- `POST /resend-verification` — resend link. Input: `{email}`.
-- `POST /login` — authenticate. Input: `{email, password}`. Output: `{access_token, user}`.
-- `GET /me` — current user profile (auth). Output: full user object including plan limits.
-- `POST /forgot-password` — send reset email. Input: `{email}`.
-- `POST /reset-password` — complete reset. Input: `{token, new_password}`.
-- `POST /change-password` — authenticated password change. Input: `{current_password, new_password}`.
-- `POST /token-request` — user asks for more generation tokens. Input: `{amount, reason}`.
-- `GET /token-requests` — list the caller's own requests.
+### `POST /api/auth/signup`
 
-### Generator (`/api/generator`) — the core site builder
-- `POST /generate-stream` — start a generation. Server-Sent Events stream. Input: `{brief, niche?, files?, template_id?}`. Events: `stage`, `progress`, `partial_html`, `done`, `error`. Output body on `done`: `{site_id, html, css, js, plan}`.
-- `POST /upload-files` — attach reference files to an ongoing session. Multipart.
-- `POST /restore-session` — reopen a prior generation session.
-- `POST /sync-session` — persist in-editor state (auto-save).
+Create a new account. Triggers email verification.
 
-### Sections (`/api/sections`) — per-section edits
-- `GET /{session_id}` — full current section tree.
-- `POST /reorder` — move a section. Input: `{session_id, from, to}`.
-- `POST /delete` — remove a section. Input: `{session_id, section_id}`.
-- `POST /duplicate` — clone a section.
-- `POST /regenerate` — LLM regenerate one section. Input: `{session_id, section_id, instruction}`.
-- `POST /update-text` — in-place text edit, no LLM. Input: `{session_id, section_id, path, value}`.
-- `POST /update-style` — style tweak. Input: `{session_id, section_id, css_vars}`.
-- `POST /update-nav` — edit global nav.
-- `POST /update-footer` — edit global footer.
-- `POST /update-meta` — SEO title / description / og-image.
-- `POST /update-contact` — update contact-details widget across pages.
-- `POST /toggle-visibility` — hide/show section.
-- `POST /insert` — insert a section from the library.
-
-### Projects (`/api/projects`)
-- `GET /` — list the caller's sites.
-- `GET /{project_id}` — detail (HTML + plan + metadata).
-- `PATCH /{project_id}` — rename / describe.
-- `DELETE /{project_id}` — soft-delete.
-
-### Deploy (`/api/deploy`)
-- `POST /` — deploy a site. Input: `{site_id, subdomain?, custom_domain?}`. Output: `{deploy_url, cloudfront_distribution_id, status}`.
-- `POST /{site_id}/redeploy` — rebuild + reupload without touching DNS.
-- `GET /{site_id}/status` — current deploy status.
-- `GET /` — caller's deploy history.
-- `POST /{site_id}/offline` — take a site offline (bucket policy flip).
-- `POST /{site_id}/connect-domain` — point a user-owned domain at an existing deploy.
-- `GET /{site_id}/domain-status` — ACM validation + CNAME status.
-- `DELETE /{site_id}/disconnect-domain` — revert to Meydan subdomain.
-- `GET /{site_id}/available-domains` — suggestions list.
-- `DELETE /{site_id}` — delete S3 objects + CloudFront for a site.
-- `GET /aws/status` — cross-region infra health summary.
-
-### Domains (`/api/domains`) — OpenProvider registrar integration
-- `GET /search?q=` — availability + pricing.
-- `POST /purchase` — register a new domain. Input: `{domain, tld, contact}`.
-- `POST /{domain_id}/retry-activation` — retry after registrar error.
-- `GET /` — caller's domains.
-- `GET /{domain_id}` — one domain.
-- `POST /{domain_id}/connect` / `disconnect` — attach to a site.
-- `PUT /{domain_id}/nameservers` — set custom NS.
-- `GET/POST/DELETE /{domain_id}/dns` — CRUD DNS records at the registrar.
-- `POST /{domain_id}/renew`, `PUT /{domain_id}/auto-renew` — lifecycle.
-- `PUT /{domain_id}/contact`, `GET /{domain_id}/contact` — whois / registrant data.
-- `PUT /{domain_id}/transfer-lock`, `…/whois-privacy`.
-- `POST /{domain_id}/request-transfer`, `DELETE /{domain_id}/cancel-transfer`.
-- `POST /{domain_id}/sync` — resync state from registrar.
-- `GET /provider/status` — upstream health.
-
-### DNS (`/api/dns`) — Cloudflare authoritative DNS per site
-- `GET /{site_id}/records` — list records.
-- `POST /{site_id}/records` — create record.
-- `DELETE /{site_id}/records` — delete record.
-- `GET /{site_id}/nameservers` — current NS values.
-
-### Forms (`/api/forms`)
-- `POST /submit/{site_id}` — public; receives a contact-form submission from a deployed site. Input: form-encoded body. Writes to `form_submissions`, emails the site owner. Rate-limited by IP.
-- `GET /submissions` — caller's inbox (auth).
-- `GET /unread-count` — badge count.
-- `PATCH /submissions/{submission_id}/read` — mark read.
-- `DELETE /submissions/{submission_id}` — soft-delete.
-
-### Uploads (`/api/uploads`)
-- `POST /upload` — multipart file upload. Output: `{url, filename, size}`.
-- `GET /gallery` — the caller's uploaded assets.
-- `GET /list/{project_id}` — assets for one project.
-- `DELETE /{filename}` — remove an asset.
-- `POST /from-url` — ingest from a URL.
-- `POST /transform` — crop / resize (Pillow).
-
-### Images (`/api/images`)
-- `GET /search?q=&provider=pexels|unsplash` — stock imagery search proxy.
-
-### Components (`/api/components`) — section library
-- `GET /` — all section types.
-- `GET /types` — categories.
-- `GET /{component_type}` — variants within a type.
-- `POST /generate` — LLM-generate a new component variant.
-- `POST /preview-swap` — dry-run a swap (returns HTML diff).
-- `POST /swap` — commit a swap.
-
-### Templates (`/api/templates`) — 10 premium starters
-- `GET /` — list.
-- `GET /{template_id}` — detail.
-- `GET /{template_id}/preview` — HTML preview.
-
-### Site features (`/api/sites`)
-- `GET /{site_id}/export` — download a ZIP of the current site.
-- `GET/PUT /{site_id}/custom-code` — user-supplied `<head>` / `<body>` injections.
-- `POST /track/{site_id}` — public; pageview ping from deployed sites.
-- `GET /track/{site_id}` — admin: pageview series.
-- `GET /{site_id}/analytics` — analytics for one site.
-
-### Jobs (`/api/jobs`)
-- `POST /submit` — enqueue a generic job.
-- `GET /{job_id}` — status + result.
-- `GET /` — caller's jobs.
-- `DELETE /{job_id}` — cancel (best-effort).
-
-### Edit feedback (`/api`)
-- `POST /edit-feedback` — thumbs up/down on a recent edit. Input: `{edit_log_id, rating, comment?}`.
-
-### Landing chat (`/api/landing`)
-- `POST /chat` — public marketing-page chat. Input: `{message, session_id?}`. Output: `{reply, session_id}`.
-
-### Metrics (`/api/metrics`)
-- `GET /` — Prometheus-formatted metrics, gated by `METRICS_API_KEY`.
-
-### Admin (`/api/admin`) — all endpoints require `is_admin=true`
-Representative subset (full catalogue in `backend/app/routes/admin/`):
-- **Users**: `GET /users`, `GET /users/{user_id}`, `POST /users/{user_id}/approve|disable|enable|reset-password|grant-tokens|set_limits`.
-- **Stats**: `GET /stats`, `GET /system`.
-- **Tokens**: `GET /tokens/transactions`, `POST /tokens/grant`, `GET /tokens/pool`, `GET /tokens/expiring`, `GET /tokens/requests`, `POST /tokens/requests/{id}/review`, `GET /tokens/consumption`.
-- **Generations**: `GET /generations`, `/generations/queue`, `/generations/failed`, `/generations/redis-failed`, `POST /generations/{id}/retry`, `GET /generations/success-rate`.
-- **Analytics**: `GET /analytics/growth|generation-success|token-consumption`.
-- **Edit logs**: `GET /edit-logs`, `/edit-logs/stats`, `POST /edit-logs/categorize`.
-- **Operations**: `GET /templates`, `PATCH /templates/{id}`, `GET /audit-logs`, CRUD `/announcements`, `GET /prompts`, `POST /prompts/{key}`, `POST /prompts/{key}/{version}/publish`, `POST /circuit/{provider}/reset`, `GET /moderation`, `POST /moderation/{action}`.
-
-## Example request / response
-
-### Login
-```http
-POST /api/auth/login HTTP/1.1
-Host: meydanfzai.com
-Content-Type: application/json
-
-{"email":"founder@example.ae","password":"•••••••••"}
-```
+**Request**:
 ```json
-200 OK
 {
-  "access_token": "eyJhbGciOi...",
+  "email": "founder@acme.com",
+  "password": "ValidStrong#1Pass",
+  "full_name": "Acme Founder",
+  "company_name": "ACME Trading FZ-LLC",
+  "license_number": "MZ-12345"
+}
+```
+
+**Response 201**:
+```json
+{ "user_id": 1429, "pending_approval": true, "email_verified": false }
+```
+
+Errors: `409` if email exists; `400` for validation (e.g. weak password — must be 12+ chars with upper, lower, digit, symbol).
+
+---
+
+### `POST /api/auth/login`
+
+**Request**:
+```json
+{ "email": "founder@acme.com", "password": "ValidStrong#1Pass" }
+```
+
+**Response 200**:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
   "token_type": "bearer",
-  "user": {
-    "id": 42,
-    "email": "founder@example.ae",
-    "full_name": "Jane Founder",
-    "approved": true,
-    "is_admin": false,
-    "tokens_remaining": 842315,
-    "max_sites": 2
-  }
+  "expires_in": 86400,
+  "user": { "id": 1429, "email": "founder@acme.com", "is_admin": false, "is_approved": true }
 }
 ```
 
-### Generate a site (SSE)
-```http
-POST /api/generator/generate-stream HTTP/1.1
-Authorization: Bearer eyJhbGciOi...
-Content-Type: application/json
+Errors: `401` with generic "Invalid credentials" (does not reveal whether email exists).
 
-{"brief":"Boutique Dubai flower shop, modern, warm tones","niche":"flower_shop"}
-```
-```
-event: stage
-data: {"stage":"enhance","progress":0.1}
+---
 
-event: stage
-data: {"stage":"plan","progress":0.3}
+### `POST /api/auth/forgot-password`
 
-event: partial_html
-data: {"html":"<section...>...</section>"}
+**Request**: `{ "email": "founder@acme.com" }`
+**Response 200**: `{"ok": true}` — always 200, regardless of whether the email exists (anti-enumeration).
 
-event: done
-data: {"site_id":"7a3c...","html":"...","plan":{...}}
-```
+---
 
-### Deploy
-```http
-POST /api/deploy HTTP/1.1
-Authorization: Bearer ...
-Content-Type: application/json
+### `GET /api/auth/me`
 
-{"site_id":"7a3c...","subdomain":"petal-studio"}
-```
+Returns the JWT-authenticated user's record.
+
+**Response 200**:
 ```json
-200 OK
-{
-  "deploy_url": "https://petal-studio.meydanfzai.com",
-  "cloudfront_distribution_id": "E2XXXXXXXX",
-  "status": "deployed"
-}
+{ "id": 1429, "email": "founder@acme.com", "is_admin": false, "is_approved": true, "tokens_balance": 847200 }
 ```
 
-## OpenAPI
-The FastAPI-generated OpenAPI document is the authoritative, always-up-to-date reference. Pull it with:
+---
+
+### `POST /api/generator/generate-stream`
+
+Streams generation events back via Server-Sent Events. Long-lived connection (up to 300 s).
+
+**Request**:
+```json
+{ "niche": "trading", "prompt": "ACME Trading is an import-export business based in Dubai..." }
 ```
-curl https://meydanfzai.com/api/openapi.json > openapi.json
+
+**Response 200** (`text/event-stream`):
 ```
+event: stage
+data: {"stage": "enhance", "progress": 0.10}
+
+event: stage
+data: {"stage": "plan", "progress": 0.25}
+
+...
+
+event: complete
+data: {"site_id": "uuid-...", "preview_url": "/editor/uuid-..."}
+```
+
+Errors: `400` if moderation rejects; `429` if rate-limited; `503` if LLM circuit open.
+
+---
+
+### `POST /api/sections/{section_id}/edit`
+
+Apply an LLM-driven edit to a single section. Returns the patched section HTML/CSS/JS.
+
+**Request**: `{ "instruction": "make the hero text bigger and use brand red" }`
+**Response 200**: `{ "html": "...", "css": "...", "js": "...", "edit_log_id": 8821 }`
+
+---
+
+### `POST /api/deploy`
+
+Package the current draft and publish to S3.
+
+**Request**: `{ "session_id": "uuid-..." }`
+**Response 200**:
+```json
+{ "url": "https://acme-trading.s3-website.ap-southeast-1.amazonaws.com", "deployed_at": "2026-04-27T00:34:11Z" }
+```
+
+Errors: `403` if `session_id` doesn't belong to caller; `500` if upload fails (generic message; full traceback logged).
+
+---
+
+### `POST /api/domains/buy`
+
+Purchase a domain via OpenProvider, attach to the user's deployed site.
+
+**Request**: `{ "domain": "acme-trading.com", "registration_years": 1 }`
+**Response 200**: `{ "domain": "acme-trading.com", "status": "pending_dns", "estimated_active_in_seconds": 600 }`
+
+The flow is async — the DNS record (Route 53) is created, ACM cert is requested, the API returns immediately and the user is notified via email when the domain is active. ALB idle is 300 s, so the request must not block on DNS propagation; clients use the `purchaseDomainAndWait` helper that polls `GET /api/domains/{name}/status`.
+
+---
+
+### `POST /api/landing/chat`
+
+Public FAQ chatbot — no auth required. Anthropic Sonnet 4.6 backed.
+
+**Request**:
+```json
+{ "messages": [ { "role": "user", "content": "How long does generation take?" } ] }
+```
+**Response 200**: `{ "answer": "Generation takes about 60-90 seconds end-to-end..." }`
+
+Rate-limited 30 req / 5 min / IP.
+
+---
+
+### Admin endpoints (all require `is_admin=true`)
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/admin/overview` | Stats panels for the Overview page |
+| `GET` | `/api/admin/users?q=&page=` | Paginated user search |
+| `GET` | `/api/admin/users/{id}` | User detail |
+| `POST` | `/api/admin/users/{id}/approve` | Flip `is_approved=true` and grant 1M tokens |
+| `POST` | `/api/admin/users/{id}/reject` | Mark user rejected, send email |
+| `POST` | `/api/admin/users/{id}/grant-tokens` | `{amount, reason}` — credits tokens |
+| `POST` | `/api/admin/users/{id}/suspend` | Compliance hold |
+| `GET` | `/api/admin/sites` | All deployed sites across tenants |
+| `GET` | `/api/admin/generation-stats` | Token spend, latency by stage |
+| `GET` | `/api/admin/prompts` | Prompt manager — list stages |
+| `POST` | `/api/admin/prompts/{stage}/versions` | Submit new prompt version |
+| `POST` | `/api/admin/prompts/{stage}/versions/{id}/publish` | Activate a version |
+| `POST` | `/api/admin/prompts/{stage}/versions/{id}/rollback` | Revert to prior |
+| `GET` | `/api/admin/audit-log?from=&to=&q=` | Audit trail (paginated, filterable) |
+| `GET` | `/api/admin/system-health` | Circuit-breaker state, queue depth |
+| `POST` | `/api/admin/circuit/{provider}/reset` | Force-close a circuit breaker |

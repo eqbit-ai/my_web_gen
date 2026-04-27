@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+* { box-sizing:border-box; font-family:-apple-system, system-ui, sans-serif; }
+body { background:#fff; padding:30px; color:#0f1724; }
+h2 { font-size:18px; font-weight:700; margin-bottom:6px; color:#0f1724; }
+.caption { font-size:12.5px; color:#64748b; margin-bottom:24px; max-width:1400px; line-height:1.55; }
+.canvas { position:relative; width:1400px; height:700px; }
+.box { position:absolute; padding:14px 16px; border-radius:10px; font-size:13px; font-weight:600; text-align:center; line-height:1.35; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.box .sub { display:block; font-size:11px; font-weight:400; color:rgba(0,0,0,.55); margin-top:3px; }
+.user      { left:30px;  top:300px; width:140px; background:#fef3c7; border:2px solid #f59e0b; }
+.cf        { left:230px; top:300px; width:160px; background:#fde68a; border:2px solid #f59e0b; }
+.alb       { left:450px; top:300px; width:160px; background:#dbeafe; border:2px solid #3b82f6; }
+.fe        { left:670px; top:200px; width:170px; background:#dcfce7; border:2px solid #16a34a; }
+.api       { left:670px; top:300px; width:170px; background:#dcfce7; border:2px solid #16a34a; }
+.worker    { left:670px; top:400px; width:170px; background:#dcfce7; border:2px solid #16a34a; }
+.rds       { left:920px; top:230px; width:160px; background:#e0e7ff; border:2px solid #6366f1; }
+.redis     { left:920px; top:330px; width:160px; background:#e0e7ff; border:2px solid #6366f1; }
+.s3        { left:920px; top:430px; width:160px; background:#e0e7ff; border:2px solid #6366f1; }
+.ai        { left:1180px; top:200px; width:180px; background:#fce7f3; border:2px solid #db2777; }
+.email     { left:1180px; top:300px; width:180px; background:#fce7f3; border:2px solid #db2777; }
+.dns       { left:1180px; top:400px; width:180px; background:#fce7f3; border:2px solid #db2777; }
+.label-zone { position:absolute; font-size:10px; font-weight:600; color:#94a3b8; letter-spacing:1.2px; text-transform:uppercase; }
+svg { position:absolute; top:0; left:0; pointer-events:none; }
+.arrow-label { font-size:10.5px; fill:#475569; font-family:-apple-system, sans-serif; }
+.zone1 { left:215px; top:230px; }
+.zone2 { left:435px; top:130px; }
+.zone3 { left:670px; top:130px; }
+.zone4 { left:920px; top:170px; }
+.zone5 { left:1180px; top:130px; }
+</style>
+</head><body>
+<h2>Meydan AI · System Architecture</h2>
+<div class="caption">Request path for the main user action ("Generate a website"): The user submits a brief from the React generator UI →
+the request reaches the ALB through CloudFront → the ALB forwards <code>/api/*</code> to the FastAPI service → FastAPI writes a job to Redis →
+the Worker reads the job, calls OpenAI (Stage 0+1) and Anthropic (Stage 2+3), persists progress to Postgres, and finally uploads the generated site to S3.
+The Worker streams progress events back to the user through Server-Sent Events on the same ALB connection.</div>
+<div class="canvas">
+  <div class="label-zone zone1">Edge / DNS</div>
+  <div class="label-zone zone2">AWS Network</div>
+  <div class="label-zone zone3">ECS Fargate (Singapore)</div>
+  <div class="label-zone zone4">Managed State</div>
+  <div class="label-zone zone5">Third-party APIs</div>
+
+  <div class="box user">User<br><span class="sub">browser / mobile</span></div>
+  <div class="box cf">CloudFront<br><span class="sub">DNS · CDN · WAF</span></div>
+  <div class="box alb">ALB<br><span class="sub">HTTPS 443<br>idle 300s</span></div>
+  <div class="box fe">Frontend (React)<br><span class="sub">nginx · 2 tasks</span></div>
+  <div class="box api">API (FastAPI)<br><span class="sub">gunicorn · autoscale 2-6</span></div>
+  <div class="box worker">Worker<br><span class="sub">async generation · 1-8</span></div>
+  <div class="box rds">PostgreSQL 15<br><span class="sub">RDS Multi-AZ<br>tenant-per-schema</span></div>
+  <div class="box redis">Redis 7<br><span class="sub">ElastiCache<br>job queue + cache</span></div>
+  <div class="box s3">S3<br><span class="sub">deployed-sites<br>uploads</span></div>
+  <div class="box ai">OpenAI · Anthropic<br><span class="sub">GPT-4.1 · Sonnet 4.6<br>generation pipeline</span></div>
+  <div class="box email">Resend<br><span class="sub">transactional<br>email</span></div>
+  <div class="box dns">OpenProvider<br><span class="sub">domain<br>registrar</span></div>
+
+  <svg width="1400" height="700">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#475569" />
+      </marker>
+    </defs>
+    <line x1="170" y1="333" x2="225" y2="333" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="395" y1="333" x2="445" y2="333" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="615" y1="320" x2="665" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="615" y1="333" x2="665" y2="333" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="615" y1="345" x2="665" y2="430" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="845" y1="320" x2="915" y2="270" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="845" y1="333" x2="915" y2="365" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="845" y1="430" x2="915" y2="380" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="3,3" />
+    <line x1="845" y1="430" x2="915" y2="465" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="840" y1="425" x2="1175" y2="240" stroke="#db2777" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,4" />
+    <line x1="840" y1="320" x2="1175" y2="335" stroke="#db2777" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,4" />
+    <line x1="840" y1="430" x2="1175" y2="430" stroke="#db2777" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,4" />
+    <text class="arrow-label" x="178" y="324">HTTPS</text>
+    <text class="arrow-label" x="403" y="324">443</text>
+    <text class="arrow-label" x="618" y="287">/</text>
+    <text class="arrow-label" x="615" y="324">/api/*</text>
+    <text class="arrow-label" x="618" y="383">queue</text>
+    <text class="arrow-label" x="855" y="280">SQL</text>
+    <text class="arrow-label" x="855" y="328">cache+job</text>
+    <text class="arrow-label" x="845" y="445">PUT</text>
+  </svg>
+</div>
+</body></html>
