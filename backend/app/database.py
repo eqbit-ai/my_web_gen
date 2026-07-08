@@ -9,7 +9,12 @@ from sqlalchemy.orm import DeclarativeBase
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgresql://",
+        "postgresql+asyncpg://",
+        1,
+    )
 _pool_size = int(os.getenv("DB_POOL_SIZE", "80"))
 _max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "120"))
 

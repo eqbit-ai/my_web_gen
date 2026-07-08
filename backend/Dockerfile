@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
-
+ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
