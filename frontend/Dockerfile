@@ -9,6 +9,12 @@ RUN npm install --legacy-peer-deps
 
 # Copy source and build
 COPY . .
+
+
+RUN echo "================================="
+RUN echo "REACT_APP_API_URL=$REACT_APP_API_URL"
+RUN echo "================================="
+
 RUN npm run build
 
 # ── Stage 2: Serve with Nginx ──────────────────────────────────────
