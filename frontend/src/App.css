@@ -2225,8 +2225,8 @@ body {
 .dm-live-url-card { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
 .dm-live-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
 .dm-live-url { display: flex; align-items: center; gap: 8px; }
-.dm-live-url a { flex: 1; display: flex; align-items: center; gap: 6px; color: var(--accent); font-size: 0.9375rem; font-weight: 500; text-decoration: none; word-break: break-all; transition: color 0.15s; }
-.dm-live-url a:hover { color: var(--accent-hover); }
+.dm-live-url a { flex: 1; display: flex; align-items: center; gap: 6px; color: #0A0A0A; font-size: 0.9375rem; font-weight: 500; text-decoration: none; word-break: break-all; transition: color 0.15s; }
+.dm-live-url a:hover { color: #4B5563; }
 .dm-copy-btn { flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
 .dm-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
 

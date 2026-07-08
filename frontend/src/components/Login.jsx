@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resendVerification } from '../services/api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -10,6 +11,8 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [needsVerification, setNeedsVerification] = useState(false);
+    const [resendState, setResendState] = useState({ loading: false, message: '' });
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -17,6 +20,8 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setNeedsVerification(false);
+        setResendState({ loading: false, message: '' });
         setIsLoading(true);
         try {
             const data = await login(email, password);
@@ -28,9 +33,24 @@ const Login = () => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            setError(err.message);
+            const msg = err.message || '';
+            if (msg.toLowerCase().includes('confirm your email')) {
+                setNeedsVerification(true);
+            }
+            setError(msg);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) return;
+        setResendState({ loading: true, message: '' });
+        try {
+            const res = await resendVerification(email);
+            setResendState({ loading: false, message: res.message || 'Confirmation link sent. Check your inbox.' });
+        } catch (err) {
+            setResendState({ loading: false, message: err.message || 'Failed to resend. Try again.' });
         }
     };
 
@@ -52,6 +72,27 @@ const Login = () => {
                             <div className="auth-error">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                                 {error}
+                            </div>
+                        )}
+                        {needsVerification && (
+                            <div style={{ marginBottom: 16 }}>
+                                {resendState.message && (
+                                    <div className="auth-error" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0', marginBottom: 8 }}>
+                                        {resendState.message}
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    disabled={resendState.loading}
+                                    style={{
+                                        width: '100%', padding: '10px 16px', background: 'transparent',
+                                        border: '1px solid #6366f1', borderRadius: 8, color: '#6366f1',
+                                        fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                                    }}
+                                >
+                                    {resendState.loading ? 'Sending…' : 'Resend confirmation link'}
+                                </button>
                             </div>
                         )}
 

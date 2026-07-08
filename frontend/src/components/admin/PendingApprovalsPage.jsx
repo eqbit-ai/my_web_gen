@@ -15,9 +15,7 @@ export default function PendingApprovalsPage() {
         try {
             const res = await adminGetUsers(1, 100);
             const all = Array.isArray(res) ? res : res?.users || res?.items || [];
-            // Only show users who have confirmed their email — unverified
-            // signups stay hidden from admins until the user clicks the link.
-            setUsers(all.filter(u => u.is_approved === false && u.email_verified === true));
+            setUsers(all.filter(u => u.is_approved === false));
         } catch (e) { setError(e.message); }
         finally { setLoading(false); }
     }, []);

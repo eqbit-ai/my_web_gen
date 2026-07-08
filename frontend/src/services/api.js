@@ -6,6 +6,7 @@ const getAuthHeaders = () => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
+
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 };
@@ -101,7 +102,7 @@ export const generateWebsiteStream = (prompt, sessionId = null, niche = null, on
 
     const cleanup = () => {
         if (lockRelease) { lockRelease(); lockRelease = null; }
-        if (wakeLock) { try { wakeLock.release(); } catch (_) {} wakeLock = null; }
+        if (wakeLock) { try { wakeLock.release(); } catch (_) { } wakeLock = null; }
         document.removeEventListener('visibilitychange', handleVisibility);
     };
 
@@ -631,15 +632,15 @@ export const signup = async (data) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.detail || 'Signup failed');
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.detail || (response.status >= 500 ? 'Failed to create account. Please try again later.' : 'Signup failed'));
     return result;
 };
 
 export const login = async (email, password) => {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ email, password }),
     });
     const result = await response.json();
@@ -925,7 +926,7 @@ export const connectDomainAndWait = async (siteId, domainName, { timeoutMs = 120
             if (attachedDomain === targetDomain) {
                 // Backend has done its work. Let the in-flight call resolve in the
                 // background; return a synthesized success so the UI can advance.
-                connectPromise.catch(() => {});
+                connectPromise.catch(() => { });
                 return {
                     success: true,
                     domain: attachedDomain,
@@ -1084,7 +1085,7 @@ export const getActiveAnnouncements = async () => {
 
 export const verifyEmail = async (token) => {
     const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ token }),
     });
     const data = await response.json();
@@ -1094,7 +1095,7 @@ export const verifyEmail = async (token) => {
 
 export const resendVerification = async (email) => {
     const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ email }),
     });
     const data = await response.json();
@@ -1106,7 +1107,7 @@ export const resendVerification = async (email) => {
 
 export const forgotPassword = async (email) => {
     const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ email }),
     });
     const data = await response.json();
@@ -1116,7 +1117,7 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, newPassword) => {
     const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', },
         body: JSON.stringify({ token, new_password: newPassword }),
     });
     const data = await response.json();
@@ -1314,7 +1315,7 @@ export const purchaseDomainAndWait = async (sld, tld, siteId = null, period = 1,
             if (found) {
                 // Best effort: also let the in-flight purchase resolve so the
                 // caller's "domains have refreshed" data is consistent.
-                purchasePromise.catch(() => {});
+                purchasePromise.catch(() => { });
                 return { domain: found, domains };
             }
         } catch { /* ignore polling errors — keep trying */ }

@@ -5140,6 +5140,18 @@ async def generate_website_stream(req: GenerateRequest, user: dict = Depends(req
                 from app.utils.usage_limits import increment_usage
                 asyncio.ensure_future(increment_usage(user["user_id"], "edit"))
 
+                # Log edit to edit_logs so admin panel + thumbs feedback work.
+                from app.utils.edit_logger import log_edit_bg
+                _prev_html_len = len((existing_sess or {}).get("html", "")) if 'existing_sess' in locals() else 0
+                log_edit_bg(
+                    user_id=user["user_id"], session_id=session_id,
+                    prompt=req.prompt, edit_kind="iterate",
+                    target_page=req.currentPage or "index",
+                    success=True,
+                    duration_ms=int((time.time() - pipeline_start) * 1000) if pipeline_start else None,
+                    output_chars_delta=len(code.get("html", "")) - _prev_html_len,
+                )
+
             await emit("complete", complete_payload)
 
         except CircuitOpenError:

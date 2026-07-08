@@ -40,7 +40,7 @@ def log_edit_bg(
 ):
     """Schedule a write to edit_logs without blocking the calling request."""
     payload = dict(
-        user_id=_coerce_uuid(user_id),
+        user_id=_coerce_int(user_id),
         project_id=_coerce_uuid(project_id),
         session_id=session_id,
         correlation_id=correlation_id,
@@ -82,6 +82,15 @@ def _coerce_uuid(v):
         return None
 
 
+def _coerce_int(v):
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return None
+
+
 # ── Stopwatch helper for routes that want duration_ms ────────────────────
 class Stopwatch:
     def __enter__(self):
@@ -102,7 +111,7 @@ async def write_feedback(db, *, edit_log_id, user_id, rating: str, comment: Opti
         raise ValueError("rating must be 'up' or 'down'")
     db.add(EditFeedback(
         edit_log_id=_coerce_uuid(edit_log_id),
-        user_id=_coerce_uuid(user_id),
+        user_id=_coerce_int(user_id),
         rating=rating,
         comment=(comment or None) and comment[:2000],
     ))

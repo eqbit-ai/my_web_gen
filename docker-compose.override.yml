@@ -1,0 +1,10 @@
+services:
+  api:
+    deploy:
+      replicas: 1
+  worker:
+    deploy:
+      replicas: 1
+  frontend:
+    deploy:
+      replicas: 1

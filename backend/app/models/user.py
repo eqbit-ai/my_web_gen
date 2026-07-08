@@ -37,6 +37,11 @@ class User(Base):
     approved_at = Column(DateTime(timezone=True), nullable=True)
     approved_by = Column(Integer, nullable=True)
 
+    # Email verification — user must click confirmation link before admin sees them
+    email_verified = Column(Boolean, default=False, server_default="false", nullable=False)
+    email_verification_token = Column(String, nullable=True, index=True)
+    email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
+
     # Usage limits — generations and edits
     edit_count = Column(Integer, default=0, server_default="0", nullable=False)
     max_generations = Column(Integer, default=2, server_default="2", nullable=False)

@@ -304,6 +304,25 @@ export const adminGetAuditLogs = async (page = 1, limit = 20, actionType = null,
     return apiGet(`/admin/audit-logs${qs}`);
 };
 
+// ── Edit Logs ────────────────────────────────────────────────────────────
+
+export const adminGetEditLogs = async (page = 1, limit = 50, category = null, editKind = null, success = null) => {
+    const offset = (page - 1) * limit;
+    let qs = `?limit=${limit}&offset=${offset}`;
+    if (category) qs += `&category=${encodeURIComponent(category)}`;
+    if (editKind) qs += `&edit_kind=${encodeURIComponent(editKind)}`;
+    if (success !== null && success !== undefined) qs += `&success=${success}`;
+    return apiGet(`/admin/edit-logs${qs}`);
+};
+
+export const adminGetEditLogStats = async () => {
+    return apiGet('/admin/edit-logs/stats');
+};
+
+export const adminCategorizeEditLogs = async (batch = 50) => {
+    return apiPost(`/admin/edit-logs/categorize?batch=${batch}`);
+};
+
 export const adminGetAnnouncements = async () => {
     return apiGet('/admin/announcements');
 };

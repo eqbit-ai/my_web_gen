@@ -101,6 +101,7 @@ const TokenPoolPage = lazyRetry(() => import('./components/admin/TokenPoolPage')
 const ExpiringTokensPage = lazyRetry(() => import('./components/admin/ExpiringTokensPage'));
 const TemplateManagerPage = lazyRetry(() => import('./components/admin/TemplateManagerPage'));
 const AuditLogPage = lazyRetry(() => import('./components/admin/AuditLogPage'));
+const EditLogsPage = lazyRetry(() => import('./components/admin/EditLogsPage'));
 const AnnouncementsPage = lazyRetry(() => import('./components/admin/AnnouncementsPage'));
 const PromptManagerPage = lazyRetry(() => import('./components/admin/PromptManagerPage'));
 const SystemHealthPage = lazyRetry(() => import('./components/admin/SystemHealthPage'));
@@ -184,6 +185,7 @@ function AppLayout() {
             <Route path="expiring-tokens" element={<ExpiringTokensPage />} />
             <Route path="templates" element={<TemplateManagerPage />} />
             <Route path="audit-logs" element={<AuditLogPage />} />
+            <Route path="edit-logs" element={<EditLogsPage />} />
             <Route path="announcements" element={<AnnouncementsPage />} />
             <Route path="prompts" element={<PromptManagerPage />} />
             <Route path="trash" element={<TrashPage />} />

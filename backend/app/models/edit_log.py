@@ -31,7 +31,7 @@ class EditLog(Base):
     __tablename__ = "edit_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     project_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     session_id = Column(String(64), nullable=True, index=True)
     correlation_id = Column(String(64), nullable=True, index=True)
@@ -73,7 +73,7 @@ class EditFeedback(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     edit_log_id = Column(UUID(as_uuid=True), ForeignKey("edit_logs.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     rating = Column(String(8), nullable=False)  # 'up' | 'down'
     comment = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

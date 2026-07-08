@@ -34,7 +34,7 @@ def upgrade() -> None:
         op.create_table(
             "edit_logs",
             sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-            sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+            sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
             sa.Column("project_id", UUID(as_uuid=True), nullable=True),
             sa.Column("session_id", sa.String(64), nullable=True),
             sa.Column("correlation_id", sa.String(64), nullable=True),
@@ -66,7 +66,7 @@ def upgrade() -> None:
             "edit_feedback",
             sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
             sa.Column("edit_log_id", UUID(as_uuid=True), sa.ForeignKey("edit_logs.id", ondelete="CASCADE"), nullable=False),
-            sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+            sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
             sa.Column("rating", sa.String(8), nullable=False),
             sa.Column("comment", sa.Text, nullable=True),
             sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),

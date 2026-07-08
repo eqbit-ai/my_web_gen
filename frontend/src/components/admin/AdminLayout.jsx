@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
     Activity, Globe, AlertTriangle, Clock, Shield, ShoppingCart,
     Users, UserCheck, Receipt, Database, Timer, Coins,
-    FileText, ClipboardList, Bell, Terminal, Server, Trash2,
+    FileText, ClipboardList, Bell, Terminal, Server, Trash2, MessageSquare,
     TrendingUp, BarChart3, PieChart,
     ChevronDown, ChevronLeft, ChevronRight, ArrowLeft, LogOut, Menu,
 } from 'lucide-react';
@@ -53,6 +53,7 @@ const NAV_SECTIONS = [
         items: [
             { path: '/admin/templates', label: 'Templates', icon: FileText },
             { path: '/admin/audit-logs', label: 'Audit Logs', icon: ClipboardList },
+            { path: '/admin/edit-logs', label: 'Edit Prompt Logs', icon: MessageSquare },
             { path: '/admin/announcements', label: 'Announcements', icon: Bell },
             { path: '/admin/prompts', label: 'Prompt Manager', icon: Terminal },
             { path: '/admin/trash', label: 'Trash', icon: Trash2 },
