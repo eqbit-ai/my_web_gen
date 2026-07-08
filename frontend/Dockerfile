@@ -1,32 +1,43 @@
-# ── Stage 1: Build ──────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Stage 1: Build React App
+# ─────────────────────────────────────────────────────────────
 FROM node:20-alpine AS build
 
 WORKDIR /app
+
+# Accept build argument from Railway
+ARG REACT_APP_API_URL
+
+# Make it available during React build
+ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 
 # Install dependencies
 COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps
 
-# Copy source and build
+# Copy source code
 COPY . .
 
-
+# Debug (remove later)
 RUN echo "================================="
-RUN echo "REACT_APP_API_URL=$REACT_APP_API_URL"
+RUN echo "REACT_APP_API_URL=${REACT_APP_API_URL}"
 RUN echo "================================="
 
+# Build React application
 RUN npm run build
 
-# ── Stage 2: Serve with Nginx ──────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Stage 2: Nginx
+# ─────────────────────────────────────────────────────────────
 FROM nginx:alpine AS runtime
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx config
+# Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy build output
+# Copy React build
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 3000
